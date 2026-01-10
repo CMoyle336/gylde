@@ -6,13 +6,8 @@ import {
   uploadBytesResumable,
   getDownloadURL,
   deleteObject,
-  UploadTaskSnapshot,
 } from '@angular/fire/storage';
-
-export interface UploadProgress {
-  progress: number;
-  snapshot: UploadTaskSnapshot;
-}
+import { UploadProgress } from '../interfaces';
 
 @Injectable({
   providedIn: 'root',

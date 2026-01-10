@@ -130,10 +130,12 @@
       "AGE_NO": "No, I am under 18",
       "AGE_REQUIRED": "You must be at least 18 years old to join Gylde.",
       "LOCATION_QUESTION": "Where are you located?",
-      "CITY_LABEL": "City",
-      "CITY_PLACEHOLDER": "Enter your city",
-      "COUNTRY_LABEL": "Country",
-      "COUNTRY_PLACEHOLDER": "Select your country"
+      "CITY_AUTOCOMPLETE_PLACEHOLDER": "Start typing your city...",
+      "LOCATION_DETECTING": "Detecting your location...",
+      "LOCATION_SUCCESS": "Location detected for better matching",
+      "LOCATION_CONFIRMED": "Distance matching enabled",
+      "LOCATION_RETRY": "Try again",
+      "LOCATION_USE_GPS": "Use GPS"
     },
     "STEP_2": {
       "TITLE": "About You",
@@ -261,7 +263,11 @@
       "ALL": "All",
       "VERIFIED": "Verified",
       "ONLINE": "Online Now",
-      "NEW": "New Members"
+      "NEW": "New Members",
+      "DISTANCE": "Distance",
+      "WITHIN_MILES": "Within {{distance}} miles",
+      "NEARBY": "Nearby",
+      "MILES_AWAY": "{{distance}} mi away"
     },
     "MATCHES_TITLE": "Your Matches",
     "MATCHES_EMPTY": "When you match with someone, they'll appear here.",

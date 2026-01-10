@@ -48,29 +48,80 @@
   <div class="question-group">
     <span class="question-label">{{ 'ONBOARDING.STEP_1.LOCATION_QUESTION' | translate }}</span>
     
-    <div class="input-row">
-      <div>
-        <label for="city" class="visually-hidden">{{ 'ONBOARDING.STEP_1.CITY_LABEL' | translate }}</label>
+    <!-- Location Status Banner -->
+    @if (locationStatus() !== 'idle') {
+      <div class="location-status" [class]="locationStatus()">
+        @switch (locationStatus()) {
+          @case ('detecting') {
+            <span class="location-spinner"></span>
+            <span>{{ 'ONBOARDING.STEP_1.LOCATION_DETECTING' | translate }}</span>
+          }
+          @case ('success') {
+            <span class="material-icons-outlined">check_circle</span>
+            <span>{{ locationMessage() || ('ONBOARDING.STEP_1.LOCATION_SUCCESS' | translate) }}</span>
+          }
+          @case ('error') {
+            <span class="material-icons-outlined">error_outline</span>
+            <span>{{ locationMessage() }}</span>
+            <button type="button" class="retry-btn" (click)="retryGeolocation()">
+              {{ 'ONBOARDING.STEP_1.LOCATION_RETRY' | translate }}
+            </button>
+          }
+          @case ('manual') {
+            <span class="material-icons-outlined">edit_location</span>
+            <span>{{ locationMessage() }}</span>
+            <button type="button" class="retry-btn" (click)="retryGeolocation()">
+              {{ 'ONBOARDING.STEP_1.LOCATION_USE_GPS' | translate }}
+            </button>
+          }
+        }
+      </div>
+    }
+
+    <!-- City Autocomplete Input -->
+    <div class="autocomplete-wrapper">
+      <div class="input-wrapper">
+        <span class="input-icon material-icons-outlined">location_on</span>
         <input 
+          #cityInput
           type="text" 
-          id="city"
-          class="input-field"
-          [placeholder]="'ONBOARDING.STEP_1.CITY_PLACEHOLDER' | translate"
-          [(ngModel)]="city">
+          class="input-field with-icon"
+          [class.searching]="isSearching()"
+          [placeholder]="'ONBOARDING.STEP_1.CITY_AUTOCOMPLETE_PLACEHOLDER' | translate"
+          [value]="cityInputValue()"
+          (input)="onInputChange($any($event.target).value)"
+          (keydown)="onKeyDown($event)"
+          (focus)="onInputFocus()"
+          autocomplete="off"
+          role="combobox"
+          aria-autocomplete="list"
+          [attr.aria-expanded]="showSuggestions()"
+          aria-haspopup="listbox">
+        @if (isSearching()) {
+          <span class="input-spinner"></span>
+        }
       </div>
       
-      <div>
-        <label for="country" class="visually-hidden">{{ 'ONBOARDING.STEP_1.COUNTRY_LABEL' | translate }}</label>
-        <select 
-          id="country"
-          class="select-field"
-          [(ngModel)]="country">
-          <option value="" disabled>{{ 'ONBOARDING.STEP_1.COUNTRY_PLACEHOLDER' | translate }}</option>
-          @for (c of countries; track c.code) {
-            <option [value]="c.code">{{ c.name }}</option>
+      <!-- Autocomplete Suggestions Dropdown -->
+      @if (showSuggestions()) {
+        <ul class="suggestions-list" role="listbox">
+          @for (suggestion of suggestions(); track suggestion.placeId; let i = $index) {
+            <li 
+              class="suggestion-item"
+              [class.highlighted]="highlightedIndex() === i"
+              role="option"
+              [attr.aria-selected]="highlightedIndex() === i"
+              (click)="selectSuggestion(suggestion)"
+              (mouseenter)="highlightedIndex.set(i)">
+              <span class="suggestion-icon material-icons-outlined">place</span>
+              <span class="suggestion-text">
+                <span class="suggestion-main">{{ suggestion.mainText }}</span>
+                <span class="suggestion-secondary">{{ suggestion.secondaryText }}</span>
+              </span>
+            </li>
           }
-        </select>
-      </div>
+        </ul>
+      }
     </div>
   </div>
 }

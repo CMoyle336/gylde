@@ -2,7 +2,8 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { Router } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 
-import { UserProfileService, OnboardingProfile } from '../../core/services/user-profile.service';
+import { UserProfileService } from '../../core/services/user-profile.service';
+import { OnboardingProfile } from '../../core/interfaces';
 import { OnboardingService } from './onboarding.service';
 import { Step1EligibilityComponent } from './steps/step-1-eligibility';
 import { Step2IdentityComponent } from './steps/step-2-identity';
@@ -90,6 +91,9 @@ export class OnboardingComponent {
       }
       if (data.supportMeaning) {
         onboardingProfile.supportMeaning = data.supportMeaning;
+      }
+      if (data.location) {
+        onboardingProfile.location = data.location;
       }
 
       console.log('Saving onboarding data:', onboardingProfile);

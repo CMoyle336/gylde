@@ -1,8 +1,9 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
-import { AuthModalComponent, AuthResult } from '../../components/auth-modal/auth-modal';
+import { AuthModalComponent } from '../../components/auth-modal/auth-modal';
 import { AuthService } from '../../core/services/auth.service';
+import { AuthResult } from '../../core/interfaces';
 
 @Component({
   selector: 'app-home',

@@ -1,53 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { FirestoreService } from './firestore.service';
 import { AuthService } from './auth.service';
-
-export interface UserProfile {
-  uid: string;
-  email: string | null;
-  displayName: string | null;
-  photoURL: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-  onboardingCompleted: boolean;
-  
-  // Onboarding data
-  onboarding?: OnboardingProfile;
-}
-
-export interface OnboardingProfile {
-  // Step 1: Eligibility
-  isAdult: boolean;
-  city: string;
-  country: string;
-
-  // Step 2: Dating Identity
-  genderIdentity: string;
-  genderCustom?: string;
-  interestedIn: string[];
-  ageRangeMin: number;
-  ageRangeMax: number;
-
-  // Step 3: Relationship Intent
-  connectionTypes: string[];
-
-  // Step 4: Support Orientation
-  supportOrientation: string[];
-
-  // Step 5: Values & Lifestyle
-  values: string[];
-  lifestyle: string;
-
-  // Step 6: Open-Ended Prompts
-  idealRelationship: string;
-  supportMeaning?: string;
-
-  // Step 7: Photos
-  photos: string[];
-
-  // Step 8: Verification
-  verificationOptions: string[];
-}
+import { UserProfile, OnboardingProfile } from '../interfaces';
 
 @Injectable({
   providedIn: 'root',
@@ -114,7 +68,7 @@ export class UserProfileService {
     await this.firestoreService.setDocument('users', user.uid, profileData, true);
 
     // Update local profile
-    this._profile.set({
+      this._profile.set({
       uid: user.uid,
       email: user.email,
       displayName: user.displayName,
@@ -122,8 +76,8 @@ export class UserProfileService {
       createdAt: existingProfile?.createdAt ?? new Date(),
       updatedAt: new Date(),
       onboardingCompleted: true,
-      onboarding: onboardingData,
-    });
+        onboarding: onboardingData,
+      });
   }
 
   async updateProfile(updates: Partial<UserProfile>): Promise<void> {

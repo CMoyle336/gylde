@@ -12,6 +12,39 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 - Prefer type inference when the type is obvious
 - Avoid the `any` type; use `unknown` when type is uncertain
 
+## Interface Organization
+
+All interface and type declarations MUST be in dedicated `*.interface.ts` files.
+
+### Core Interfaces
+Located in `app/src/app/core/interfaces/`:
+- `geo.interface.ts` - Geographic/location types (`GeoLocation`, `GeocodingResult`, etc.)
+- `auth.interface.ts` - Authentication types (`AuthUser`, `AuthResult`)
+- `user.interface.ts` - User profile types (`UserProfile`, `OnboardingProfile`)
+- `discovery.interface.ts` - Discovery/matching types (`DiscoverableProfile`, `DiscoveryFilters`)
+- `storage.interface.ts` - Storage types (`UploadProgress`)
+- `index.ts` - Barrel file exporting all core interfaces
+
+### Feature-Specific Interfaces
+Located alongside the feature:
+- `app/src/app/pages/onboarding/onboarding.interface.ts` - Onboarding wizard state
+
+### Rules
+- Do NOT declare interfaces inside component or service files
+- Group related interfaces in the same file when it makes sense
+- Use barrel files (`index.ts`) for convenient imports
+- Import from `../../core/interfaces` for core types
+- Import from relative paths for feature-specific types
+
+### Example Import
+```typescript
+// Core interfaces
+import { UserProfile, GeoLocation, AuthResult } from '../../core/interfaces';
+
+// Feature-specific interfaces
+import { OnboardingData } from './onboarding.interface';
+```
+
 ## Angular Best Practices
 
 - Always use standalone components over NgModules
@@ -115,6 +148,11 @@ It is NOT a sex work platform, escort service, or adult content marketplace.
 The platform must avoid facilitating prostitution, escorting, or transactional sexual services.
 All features, copy, and architecture should reinforce that this is a dating platform.
 
+Location and geographic context are core to the platform’s design and must support real dating behavior
+without enabling on-demand access, availability signaling, or transactional implications.
+
+---
+
 ## HARD LEGAL CONSTRAINTS (NON-NEGOTIABLE)
 
 ### Prohibited Concepts
@@ -129,7 +167,10 @@ Cursor must NOT generate or suggest:
 - Tips or gifts tied to intimacy or meetings
 - Sexual performance reviews or ratings
 
-If a requested feature resembles these, Cursor should warn and propose a safer alternative.
+If a requested feature resembles these, Cursor should:
+1. Flag the risk
+2. Explain why it is risky
+3. Propose a safer alternative
 
 ---
 
@@ -217,12 +258,66 @@ Cursor should NEVER suggest reading all private messages, but may suggest reacti
 
 ---
 
+## LOCATION & GEOGRAPHIC REQUIREMENTS
+
+### Core Location Principles
+- The platform is location-aware, not location-exploitative.
+- Location exists to support real-world dating feasibility, not on-demand access.
+- Location must never be framed as availability, booking, or proximity-for-payment.
+
+---
+
+### Location Data Collection
+The platform MUST:
+- Collect a user’s primary location at signup (city + country minimum)
+- Allow users to update location intentionally
+- Distinguish between:
+  - Current location
+  - Home or base location
+  - Open to travel (optional, non-transactional)
+
+The platform must NOT:
+- Display exact locations or real-time tracking
+- Use language implying immediacy or availability (e.g., "near you now")
+- Tie location to payment, urgency, or conditional interactions
+
+---
+
+### Location in Profiles
+Allowed:
+- City or metro area display
+- Region-based discovery and matching
+- Travel openness indicators (e.g., "Open to travel", "Occasional traveler")
+
+Disallowed:
+- Real-time location sharing
+- Availability schedules tied to geography
+- Location-based calls to action implying immediate meetups
+
+---
+
+### Location-Based Discovery & Matching
+Cursor MAY suggest:
+- Location filters (city, region, country)
+- Long-distance openness preferences
+- Travel willingness as a lifestyle signal
+- Visibility boosts in selected regions
+
+These must:
+- Be framed as dating preferences
+- Avoid urgency or time-based implications
+- Avoid transactional or on-demand framing
+
+---
+
 ## SAFETY & COMPLIANCE
 
 ### Age & Consent
 - 18+ only
 - Identity verification tiers encouraged
 - Zero tolerance for coercion or trafficking
+
+---
 
 ### Platform Stance
 Cursor should assume:
@@ -233,6 +328,28 @@ Cursor should assume:
 Cursor should default to solutions that demonstrate good-faith compliance.
 
 ---
+
+## WHEN IN DOUBT
+If a feature, copy choice, or flow could plausibly be interpreted as facilitating prostitution:
+1. Flag the risk
+2. Explain why it is risky
+3. Propose a safer alternative
+
+The goal is long-term survivability, not maximum edginess.
+
+---
+
+## OVERALL GOAL
+Build a clear, honest, legally defensible dating platform that serves users seeking supported relationships
+without crossing into explicit sexual commerce or facilitation.
+
+Cursor should optimize for:
+- Legal safety
+- Payment processor tolerance
+- User trust
+- Clear intent signaling
+- Sustainable growth
+
 
 ## TECHNICAL PREFERENCES
 

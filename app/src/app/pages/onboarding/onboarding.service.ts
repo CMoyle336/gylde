@@ -1,43 +1,11 @@
 import { Injectable, signal, computed } from '@angular/core';
-
-export interface OnboardingData {
-  // Step 1: Eligibility
-  isAdult: boolean | null;
-  city: string;
-  country: string;
-
-  // Step 2: Dating Identity
-  genderIdentity: string;
-  genderCustom: string;
-  interestedIn: string[];
-  ageRangeMin: number;
-  ageRangeMax: number;
-
-  // Step 3: Relationship Intent
-  connectionTypes: string[];
-
-  // Step 4: Support Orientation
-  supportOrientation: string[];
-
-  // Step 5: Values & Lifestyle
-  values: string[];
-  lifestyle: string;
-
-  // Step 6: Open-Ended Prompts
-  idealRelationship: string;
-  supportMeaning: string;
-
-  // Step 7: Photos
-  photos: string[];
-
-  // Step 8: Verification
-  verificationOptions: string[];
-}
+import { OnboardingData } from './onboarding.interface';
 
 const INITIAL_DATA: OnboardingData = {
   isAdult: null,
   city: '',
   country: '',
+  location: null,
   genderIdentity: '',
   genderCustom: '',
   interestedIn: [],
@@ -72,7 +40,9 @@ export class OnboardingService {
 
     switch (step) {
       case 1:
-        return data.isAdult === true && data.city.trim() !== '' && data.country !== '';
+        // City contains the full location string (e.g., "Ypsilanti, Michigan, USA")
+        // Location must have coordinates for distance matching
+        return data.isAdult === true && data.city.trim() !== '' && data.location !== null;
       case 2:
         return data.genderIdentity !== '' && data.interestedIn.length > 0;
       case 3:

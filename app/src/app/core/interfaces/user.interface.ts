@@ -1,0 +1,61 @@
+/**
+ * User profile interfaces
+ * Core user data stored in Firestore
+ */
+
+import { GeoLocation } from './geo.interface';
+
+/**
+ * Main user profile document structure
+ */
+export interface UserProfile {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  photoURL: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  onboardingCompleted: boolean;
+
+  // Onboarding data (populated after onboarding)
+  onboarding?: OnboardingProfile;
+}
+
+/**
+ * User's onboarding profile data
+ * Collected during the onboarding flow
+ */
+export interface OnboardingProfile {
+  // Step 1: Eligibility
+  isAdult: boolean;
+  city: string;
+  country: string;
+  location?: GeoLocation;
+
+  // Step 2: Dating Identity
+  genderIdentity: string;
+  genderCustom?: string;
+  interestedIn: string[];
+  ageRangeMin: number;
+  ageRangeMax: number;
+
+  // Step 3: Relationship Intent
+  connectionTypes: string[];
+
+  // Step 4: Support Orientation
+  supportOrientation: string[];
+
+  // Step 5: Values & Lifestyle
+  values: string[];
+  lifestyle: string;
+
+  // Step 6: Open-Ended Prompts
+  idealRelationship: string;
+  supportMeaning?: string;
+
+  // Step 7: Photos
+  photos: string[];
+
+  // Step 8: Verification
+  verificationOptions: string[];
+}

@@ -1,31 +1,31 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
-
-interface ProfileCard {
-  id: string;
-  name: string;
-  age: number;
-  location: string;
-  tagline: string;
-  verified: boolean;
-  lifestyle: string;
-  connectionTypes: string[];
-  photoUrl: string;
-}
+import { FormsModule } from '@angular/forms';
+import { SlicePipe } from '@angular/common';
+import { DiscoveryService } from '../../core/services/discovery.service';
+import { AuthService } from '../../core/services/auth.service';
+import { DiscoverableProfile } from '../../core/interfaces';
 
 @Component({
   selector: 'app-dashboard',
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [TranslateModule],
+  imports: [TranslateModule, FormsModule, SlicePipe],
 })
-export class DashboardComponent {
+export class DashboardComponent implements OnInit {
   private readonly router = inject(Router);
+  private readonly discoveryService = inject(DiscoveryService);
+  private readonly authService = inject(AuthService);
 
   protected readonly activeNav = signal<string>('discover');
   protected readonly profileCompletion = signal(75);
+  protected readonly showDistanceFilter = signal(false);
+
+  // Distance filter options
+  protected readonly distanceOptions = [10, 25, 50, 100, 250, null]; // null = unlimited
+  protected readonly selectedDistance = signal<number | null>(50);
 
   protected readonly navItems = [
     { id: 'discover', icon: 'explore', labelKey: 'DISCOVER' },
@@ -35,75 +35,10 @@ export class DashboardComponent {
     { id: 'settings', icon: 'settings', labelKey: 'SETTINGS' },
   ];
 
-  // Mock data for demo purposes
-  protected readonly featuredProfiles = signal<ProfileCard[]>([
-    {
-      id: '1',
-      name: 'Alexandra',
-      age: 28,
-      location: 'New York, NY',
-      tagline: 'Ambitious creative seeking a partner who values growth and genuine connection.',
-      verified: true,
-      lifestyle: 'Very flexible',
-      connectionTypes: ['Intentional dating', 'Long-term'],
-      photoUrl: '',
-    },
-    {
-      id: '2',
-      name: 'Michael',
-      age: 34,
-      location: 'Los Angeles, CA',
-      tagline: 'Entrepreneur with a passion for mentorship and building meaningful relationships.',
-      verified: true,
-      lifestyle: 'Structured',
-      connectionTypes: ['Mentorship', 'Lifestyle-aligned'],
-      photoUrl: '',
-    },
-    {
-      id: '3',
-      name: 'Sophia',
-      age: 26,
-      location: 'Miami, FL',
-      tagline: 'Looking for someone who appreciates ambition and isn\'t afraid of adventure.',
-      verified: false,
-      lifestyle: 'Somewhat flexible',
-      connectionTypes: ['Intentional dating', 'Exploring'],
-      photoUrl: '',
-    },
-    {
-      id: '4',
-      name: 'James',
-      age: 42,
-      location: 'Chicago, IL',
-      tagline: 'Successful professional seeking a genuine connection built on mutual respect.',
-      verified: true,
-      lifestyle: 'Highly demanding',
-      connectionTypes: ['Long-term', 'Lifestyle-aligned'],
-      photoUrl: '',
-    },
-    {
-      id: '5',
-      name: 'Emma',
-      age: 31,
-      location: 'San Francisco, CA',
-      tagline: 'Creative soul with big dreams, looking for someone who values authenticity.',
-      verified: true,
-      lifestyle: 'Very flexible',
-      connectionTypes: ['Intentional dating', 'Mentorship'],
-      photoUrl: '',
-    },
-    {
-      id: '6',
-      name: 'David',
-      age: 38,
-      location: 'Seattle, WA',
-      tagline: 'Tech entrepreneur who believes in supporting dreams and growing together.',
-      verified: true,
-      lifestyle: 'Structured',
-      connectionTypes: ['Long-term', 'Mentorship'],
-      photoUrl: '',
-    },
-  ]);
+  // Connect to discovery service
+  protected readonly profiles = this.discoveryService.filteredProfiles;
+  protected readonly loading = this.discoveryService.loading;
+  protected readonly filters = this.discoveryService.filters;
 
   protected readonly recentActivity = signal([
     { type: 'match', name: 'Sarah', time: '2 hours ago' },
@@ -111,26 +46,60 @@ export class DashboardComponent {
     { type: 'like', name: 'Emma', time: '1 day ago' },
   ]);
 
+  ngOnInit(): void {
+    this.loadProfiles();
+  }
+
+  protected async loadProfiles(): Promise<void> {
+    await this.discoveryService.loadProfiles();
+  }
+
   protected setActiveNav(id: string): void {
     this.activeNav.set(id);
   }
 
-  protected onLogout(): void {
+  protected toggleDistanceFilter(): void {
+    this.showDistanceFilter.update(v => !v);
+  }
+
+  protected setDistanceFilter(distance: number | null): void {
+    this.selectedDistance.set(distance);
+    this.discoveryService.setMaxDistance(distance);
+    this.showDistanceFilter.set(false);
+  }
+
+  protected getDistanceLabel(distance: number | null): string {
+    if (distance === null) return 'Any distance';
+    return `Within ${distance} mi`;
+  }
+
+  protected async onLogout(): Promise<void> {
+    await this.authService.signOutUser();
     this.router.navigate(['/']);
   }
 
-  protected onViewProfile(profileId: string): void {
-    console.log('View profile:', profileId);
+  protected onViewProfile(profile: DiscoverableProfile): void {
+    console.log('View profile:', profile.uid);
     // TODO: Navigate to profile detail
   }
 
-  protected onLikeProfile(profileId: string): void {
-    console.log('Like profile:', profileId);
+  protected onLikeProfile(profile: DiscoverableProfile): void {
+    console.log('Like profile:', profile.uid);
     // TODO: Implement like functionality
   }
 
-  protected onPassProfile(profileId: string): void {
-    console.log('Pass profile:', profileId);
+  protected onPassProfile(profile: DiscoverableProfile): void {
+    console.log('Pass profile:', profile.uid);
     // TODO: Implement pass functionality
+  }
+
+  protected getProfilePhoto(profile: DiscoverableProfile): string | null {
+    return profile.photos.length > 0 ? profile.photos[0] : null;
+  }
+
+  protected formatDistance(distance: number | undefined): string {
+    if (distance === undefined) return '';
+    if (distance < 1) return '< 1 mi away';
+    return `${distance} mi away`;
   }
 }

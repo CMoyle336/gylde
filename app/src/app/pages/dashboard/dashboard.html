@@ -77,76 +77,133 @@
                 <span class="material-icons-outlined">tune</span>
                 {{ 'DASHBOARD.FILTERS.ALL' | translate }}
               </button>
+              
+              <!-- Distance Filter -->
+              <div class="distance-filter-wrapper">
+                <button 
+                  type="button" 
+                  class="filter-btn distance-btn"
+                  [class.active]="showDistanceFilter()"
+                  (click)="toggleDistanceFilter()">
+                  <span class="material-icons-outlined">near_me</span>
+                  {{ getDistanceLabel(selectedDistance()) }}
+                  <span class="material-icons-outlined dropdown-icon">expand_more</span>
+                </button>
+                
+                @if (showDistanceFilter()) {
+                  <div class="distance-dropdown">
+                    @for (distance of distanceOptions; track distance) {
+                      <button 
+                        type="button"
+                        class="distance-option"
+                        [class.selected]="selectedDistance() === distance"
+                        (click)="setDistanceFilter(distance)">
+                        {{ getDistanceLabel(distance) }}
+                        @if (selectedDistance() === distance) {
+                          <span class="material-icons-outlined">check</span>
+                        }
+                      </button>
+                    }
+                  </div>
+                }
+              </div>
+              
               <button type="button" class="filter-btn">
                 {{ 'DASHBOARD.FILTERS.VERIFIED' | translate }}
-              </button>
-              <button type="button" class="filter-btn">
-                {{ 'DASHBOARD.FILTERS.ONLINE' | translate }}
               </button>
               <button type="button" class="filter-btn">
                 {{ 'DASHBOARD.FILTERS.NEW' | translate }}
               </button>
             </div>
 
-            <!-- Profile Grid -->
-            <div class="profile-grid">
-              @for (profile of featuredProfiles(); track profile.id) {
-                <article class="profile-card">
-                  <div class="card-photo">
-                    <div class="photo-placeholder">
-                      <span class="material-icons-outlined">person</span>
-                    </div>
-                    @if (profile.verified) {
-                      <span class="verified-badge" title="Verified profile">
-                        <span class="material-icons-outlined">verified</span>
-                      </span>
-                    }
-                  </div>
-
-                  <div class="card-content">
-                    <div class="card-header">
-                      <h3 class="card-name">{{ profile.name }}, {{ profile.age }}</h3>
-                      <span class="card-location">
-                        <span class="material-icons-outlined">location_on</span>
-                        {{ profile.location }}
-                      </span>
-                    </div>
-
-                    <p class="card-tagline">{{ profile.tagline }}</p>
-
-                    <div class="card-tags">
-                      @for (type of profile.connectionTypes.slice(0, 2); track type) {
-                        <span class="tag">{{ type }}</span>
+            <!-- Loading State -->
+            @if (loading()) {
+              <div class="loading-state">
+                <div class="loading-spinner"></div>
+                <p>Finding profiles near you...</p>
+              </div>
+            } @else if (profiles().length === 0) {
+              <!-- Empty State -->
+              <div class="empty-state">
+                <span class="material-icons-outlined">search_off</span>
+                <h3>No profiles found</h3>
+                <p>Try adjusting your distance filter or check back later.</p>
+                <button type="button" class="retry-btn" (click)="loadProfiles()">
+                  <span class="material-icons-outlined">refresh</span>
+                  Refresh
+                </button>
+              </div>
+            } @else {
+              <!-- Profile Grid -->
+              <div class="profile-grid">
+                @for (profile of profiles(); track profile.uid) {
+                  <article class="profile-card">
+                    <div class="card-photo">
+                      @if (getProfilePhoto(profile)) {
+                        <img [src]="getProfilePhoto(profile)" [alt]="profile.displayName" class="profile-image">
+                      } @else {
+                        <div class="photo-placeholder">
+                          <span class="material-icons-outlined">person</span>
+                        </div>
+                      }
+                      @if (profile.verified) {
+                        <span class="verified-badge" title="Verified profile">
+                          <span class="material-icons-outlined">verified</span>
+                        </span>
+                      }
+                      @if (profile.distance !== undefined) {
+                        <span class="distance-badge">
+                          <span class="material-icons-outlined">near_me</span>
+                          {{ formatDistance(profile.distance) }}
+                        </span>
                       }
                     </div>
 
-                    <div class="card-actions">
-                      <button 
-                        type="button" 
-                        class="action-btn pass"
-                        (click)="onPassProfile(profile.id)"
-                        aria-label="Pass on {{ profile.name }}">
-                        <span class="material-icons-outlined">close</span>
-                      </button>
-                      <button 
-                        type="button" 
-                        class="action-btn view"
-                        (click)="onViewProfile(profile.id)"
-                        aria-label="View {{ profile.name }}'s profile">
-                        <span class="material-icons-outlined">visibility</span>
-                      </button>
-                      <button 
-                        type="button" 
-                        class="action-btn like"
-                        (click)="onLikeProfile(profile.id)"
-                        aria-label="Like {{ profile.name }}">
-                        <span class="material-icons-outlined">favorite</span>
-                      </button>
+                    <div class="card-content">
+                      <div class="card-header">
+                        <h3 class="card-name">{{ profile.displayName || 'Anonymous' }}, {{ profile.age }}</h3>
+                        <span class="card-location">
+                          <span class="material-icons-outlined">location_on</span>
+                          {{ profile.city }}, {{ profile.country }}
+                        </span>
+                      </div>
+
+                      <p class="card-tagline">{{ profile.idealRelationship | slice:0:120 }}{{ profile.idealRelationship.length > 120 ? '...' : '' }}</p>
+
+                      <div class="card-tags">
+                        @for (type of profile.connectionTypes.slice(0, 2); track type) {
+                          <span class="tag">{{ type }}</span>
+                        }
+                      </div>
+
+                      <div class="card-actions">
+                        <button 
+                          type="button" 
+                          class="action-btn pass"
+                          (click)="onPassProfile(profile)"
+                          aria-label="Pass on {{ profile.displayName }}">
+                          <span class="material-icons-outlined">close</span>
+                        </button>
+                        <button 
+                          type="button" 
+                          class="action-btn view"
+                          (click)="onViewProfile(profile)"
+                          aria-label="View {{ profile.displayName }}'s profile">
+                          <span class="material-icons-outlined">visibility</span>
+                        </button>
+                        <button 
+                          type="button" 
+                          class="action-btn like"
+                          (click)="onLikeProfile(profile)"
+                          aria-label="Like {{ profile.displayName }}">
+                          <span class="material-icons-outlined">favorite</span>
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                </article>
-              }
-            </div>
+                  </article>
+                }
+              </div>
+            }
           </section>
         }
 

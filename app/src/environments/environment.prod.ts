@@ -10,4 +10,5 @@ export const environment = {
     appId: '1:786713739296:web:c6495e7d8e278982213c45',
     measurementId: 'G-ETS6XP4QJ9',
   },
+  googleMapsApiKey: 'AIzaSyC6M7RmuWYXJaIkoqSLBa8zY189JMzqvNI', // TODO: Add your Google Maps API key
 };

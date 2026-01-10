@@ -11,12 +11,9 @@ import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { AuthService } from '../../core/services/auth.service';
 import { UserProfileService } from '../../core/services/user-profile.service';
+import { AuthResult } from '../../core/interfaces';
 
 type AuthMode = 'login' | 'signup' | 'reset';
-
-export interface AuthResult {
-  isNewUser: boolean;
-}
 
 @Component({
   selector: 'app-auth-modal',
@@ -98,7 +95,7 @@ export class AuthModalComponent {
           const user = this.authService.user();
           if (user) {
             try {
-              await this.userProfileService.createUserProfile(user.uid, user.email, user.displayName);
+            await this.userProfileService.createUserProfile(user.uid, user.email, user.displayName);
             } catch (firestoreError) {
               console.error('Failed to create user profile:', firestoreError);
               // Still allow user to proceed - profile can be created later
