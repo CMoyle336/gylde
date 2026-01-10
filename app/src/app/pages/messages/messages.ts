@@ -5,13 +5,12 @@ import {
   signal,
   OnInit,
   OnDestroy,
-  ElementRef,
-  ViewChild,
-  AfterViewChecked,
   effect,
+  ViewChild,
 } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { CdkScrollable, ScrollingModule } from '@angular/cdk/scrolling';
 import { MessageService } from '../../core/services/message.service';
 import { ConversationDisplay } from '../../core/interfaces';
 
@@ -20,17 +19,18 @@ import { ConversationDisplay } from '../../core/interfaces';
   templateUrl: './messages.html',
   styleUrl: './messages.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule],
+  imports: [FormsModule, ScrollingModule],
 })
-export class MessagesComponent implements OnInit, OnDestroy, AfterViewChecked {
+export class MessagesComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly messageService = inject(MessageService);
 
-  @ViewChild('messagesContainer') messagesContainer!: ElementRef<HTMLDivElement>;
+  @ViewChild(CdkScrollable) scrollable!: CdkScrollable;
 
   protected readonly messageInput = signal('');
-  private shouldScrollToBottom = false;
+  private isNearBottom = true;
+  private previousMessageCount = 0;
   private conversationIdFromRoute: string | null = null;
 
   // Expose service signals
@@ -39,6 +39,7 @@ export class MessagesComponent implements OnInit, OnDestroy, AfterViewChecked {
   protected readonly messages = this.messageService.messages;
   protected readonly loading = this.messageService.loading;
   protected readonly sending = this.messageService.sending;
+  protected readonly isOtherUserTyping = this.messageService.isOtherUserTyping;
 
   constructor() {
     // Watch for conversations to load, then open the one from route if specified
@@ -47,9 +48,34 @@ export class MessagesComponent implements OnInit, OnDestroy, AfterViewChecked {
       if (this.conversationIdFromRoute && convos.length > 0 && !this.activeConversation()) {
         const targetConvo = convos.find(c => c.id === this.conversationIdFromRoute);
         if (targetConvo) {
+          this.previousMessageCount = 0; // Reset for initial scroll
+          this.isNearBottom = true;
           this.messageService.openConversation(targetConvo);
-          this.shouldScrollToBottom = true;
         }
+      }
+    });
+
+    // Watch for new messages and auto-scroll after DOM renders
+    effect(() => {
+      const messages = this.messages();
+      const currentCount = messages.length;
+      
+      if (currentCount > this.previousMessageCount) {
+        // Initial load (first batch of messages) - always scroll to bottom
+        // Subsequent messages - only scroll if user is near bottom
+        if (this.previousMessageCount === 0 || this.isNearBottom) {
+          // Use setTimeout to wait for DOM to render the new messages
+          setTimeout(() => this.scrollToBottom(), 0);
+        }
+      }
+      this.previousMessageCount = currentCount;
+    });
+
+    // Watch for typing indicator and scroll if near bottom
+    effect(() => {
+      const isTyping = this.isOtherUserTyping();
+      if (isTyping && this.isNearBottom) {
+        setTimeout(() => this.scrollToBottom(), 0);
       }
     });
   }
@@ -64,16 +90,10 @@ export class MessagesComponent implements OnInit, OnDestroy, AfterViewChecked {
     this.messageService.closeConversation();
   }
 
-  ngAfterViewChecked(): void {
-    if (this.shouldScrollToBottom) {
-      this.scrollToBottom();
-      this.shouldScrollToBottom = false;
-    }
-  }
-
   protected openConversation(conversation: ConversationDisplay): void {
+    this.previousMessageCount = 0; // Reset so initial load scrolls to bottom
+    this.isNearBottom = true;
     this.messageService.openConversation(conversation);
-    this.shouldScrollToBottom = true;
     // Update URL to include conversation ID
     this.router.navigate(['/messages', conversation.id], { replaceUrl: true });
   }
@@ -89,8 +109,8 @@ export class MessagesComponent implements OnInit, OnDestroy, AfterViewChecked {
     if (!content) return;
 
     this.messageInput.set('');
+    this.isNearBottom = true; // User sent message, so scroll to see it
     await this.messageService.sendMessage(content);
-    this.shouldScrollToBottom = true;
   }
 
   protected onKeyDown(event: KeyboardEvent): void {
@@ -98,6 +118,11 @@ export class MessagesComponent implements OnInit, OnDestroy, AfterViewChecked {
       event.preventDefault();
       this.sendMessage();
     }
+  }
+
+  protected onInput(): void {
+    // Notify that the user is typing
+    this.messageService.setTyping(true);
   }
 
   protected formatTime(date: Date | null): string {
@@ -122,10 +147,31 @@ export class MessagesComponent implements OnInit, OnDestroy, AfterViewChecked {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
 
+  /**
+   * Handle scroll events to track if user is near bottom
+   */
+  protected onScroll(): void {
+    this.isNearBottom = this.checkIfNearBottom();
+  }
+
+  /**
+   * Check if scroll position is within threshold of bottom
+   */
+  private checkIfNearBottom(): boolean {
+    if (!this.scrollable) return true;
+    
+    const element = this.scrollable.getElementRef().nativeElement;
+    const threshold = 100; // pixels from bottom to consider "near"
+    const distanceFromBottom = element.scrollHeight - element.scrollTop - element.clientHeight;
+    
+    return distanceFromBottom <= threshold;
+  }
+
   private scrollToBottom(): void {
-    if (this.messagesContainer?.nativeElement) {
-      const container = this.messagesContainer.nativeElement;
-      container.scrollTop = container.scrollHeight;
+    if (this.scrollable) {
+      const element = this.scrollable.getElementRef().nativeElement;
+      element.scrollTop = element.scrollHeight;
+      this.isNearBottom = true;
     }
   }
 }

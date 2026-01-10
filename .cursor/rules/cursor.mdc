@@ -546,6 +546,29 @@ Use Angular Material for all components where possible:
   Tooltip
   Tree
 
+Use Angular Material CDK where possible for these things:
+  Accessibility
+  Accordion
+  Bidirectionality
+  Clipboard
+  Coercion
+  Collections
+  Component Harnesses
+  Dialog
+  Drag and Drop
+  Layout
+  Listbox
+  Menu
+  Observers
+  Overlay
+  Platform
+  Portal
+  Scrolling
+  Stepper
+  Table
+  Text Field
+  Tree
+
 Avoid:
 - Overriding Material styles excessively
 - Mixing multiple component libraries

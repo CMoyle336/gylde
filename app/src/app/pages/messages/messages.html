@@ -63,7 +63,7 @@
       </header>
 
       <!-- Messages -->
-      <div class="messages-scroll" #messagesContainer>
+      <div class="messages-scroll" cdkScrollable (scroll)="onScroll()">
         @if (messages().length === 0) {
           <div class="start-chat">
             <span class="material-icons-outlined">waving_hand</span>
@@ -79,6 +79,17 @@
                 </div>
               </div>
             }
+            
+            <!-- Typing Indicator -->
+            @if (isOtherUserTyping()) {
+              <div class="message typing-indicator">
+                <div class="bubble typing-bubble">
+                  <span class="dot"></span>
+                  <span class="dot"></span>
+                  <span class="dot"></span>
+                </div>
+              </div>
+            }
           </div>
         }
       </div>
@@ -89,7 +100,7 @@
           type="text"
           placeholder="Type a message..."
           [value]="messageInput()"
-          (input)="messageInput.set($any($event.target).value)"
+          (input)="messageInput.set($any($event.target).value); onInput()"
           (keydown)="onKeyDown($event)"
           [disabled]="sending()">
         <button 

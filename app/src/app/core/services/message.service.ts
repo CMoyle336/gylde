@@ -35,15 +35,20 @@ export class MessageService {
   private readonly _messages = signal<MessageDisplay[]>([]);
   private readonly _loading = signal(false);
   private readonly _sending = signal(false);
+  private readonly _isOtherUserTyping = signal(false);
 
   private conversationsUnsubscribe: Unsubscribe | null = null;
   private messagesUnsubscribe: Unsubscribe | null = null;
+  private typingUnsubscribe: Unsubscribe | null = null;
+  private typingTimeout: ReturnType<typeof setTimeout> | null = null;
+  private lastTypingUpdate = 0;
 
   readonly conversations = this._conversations.asReadonly();
   readonly activeConversation = this._activeConversation.asReadonly();
   readonly messages = this._messages.asReadonly();
   readonly loading = this._loading.asReadonly();
   readonly sending = this._sending.asReadonly();
+  readonly isOtherUserTyping = this._isOtherUserTyping.asReadonly();
 
   readonly totalUnreadCount = computed(() => {
     return this._conversations().reduce((sum, conv) => sum + conv.unreadCount, 0);
@@ -117,7 +122,9 @@ export class MessageService {
   openConversation(conversation: ConversationDisplay): void {
     this._activeConversation.set(conversation);
     this._messages.set([]);
+    this._isOtherUserTyping.set(false);
     this.subscribeToMessages(conversation.id);
+    this.subscribeToTypingStatus(conversation.id);
     this.markConversationAsRead(conversation.id);
   }
 
@@ -125,9 +132,114 @@ export class MessageService {
    * Close the active conversation
    */
   closeConversation(): void {
+    // Clear our typing status before closing
+    this.clearTypingStatus();
+    this.unsubscribeFromTyping();
     this._activeConversation.set(null);
     this._messages.set([]);
+    this._isOtherUserTyping.set(false);
     this.unsubscribeFromMessages();
+  }
+
+  /**
+   * Subscribe to typing status for a conversation
+   */
+  private subscribeToTypingStatus(conversationId: string): void {
+    const currentUser = this.authService.user();
+    if (!currentUser) return;
+
+    this.unsubscribeFromTyping();
+
+    const conversationRef = doc(this.firestore, 'conversations', conversationId);
+    
+    this.typingUnsubscribe = onSnapshot(conversationRef, (snapshot) => {
+      const data = snapshot.data() as Conversation | undefined;
+      if (!data?.typing) {
+        this._isOtherUserTyping.set(false);
+        return;
+      }
+
+      // Find if any other participant is typing
+      const otherUserTyping = Object.entries(data.typing).some(
+        ([uid, isTyping]) => uid !== currentUser.uid && isTyping
+      );
+      
+      this._isOtherUserTyping.set(otherUserTyping);
+    });
+  }
+
+  /**
+   * Unsubscribe from typing status
+   */
+  private unsubscribeFromTyping(): void {
+    if (this.typingUnsubscribe) {
+      this.typingUnsubscribe();
+      this.typingUnsubscribe = null;
+    }
+  }
+
+  /**
+   * Set current user's typing status
+   * Debounced to prevent excessive writes
+   */
+  async setTyping(isTyping: boolean): Promise<void> {
+    const currentUser = this.authService.user();
+    const activeConvo = this._activeConversation();
+    if (!currentUser || !activeConvo) return;
+
+    const now = Date.now();
+    
+    // Debounce: only update if 2 seconds have passed since last update
+    if (isTyping && now - this.lastTypingUpdate < 2000) {
+      // Reset the auto-clear timeout
+      if (this.typingTimeout) {
+        clearTimeout(this.typingTimeout);
+      }
+      this.typingTimeout = setTimeout(() => this.clearTypingStatus(), 3000);
+      return;
+    }
+
+    this.lastTypingUpdate = now;
+
+    try {
+      const conversationRef = doc(this.firestore, 'conversations', activeConvo.id);
+      await updateDoc(conversationRef, {
+        [`typing.${currentUser.uid}`]: isTyping,
+      });
+
+      // Auto-clear typing status after 3 seconds of no input
+      if (isTyping) {
+        if (this.typingTimeout) {
+          clearTimeout(this.typingTimeout);
+        }
+        this.typingTimeout = setTimeout(() => this.clearTypingStatus(), 3000);
+      }
+    } catch (error) {
+      console.error('Error setting typing status:', error);
+    }
+  }
+
+  /**
+   * Clear the current user's typing status
+   */
+  private async clearTypingStatus(): Promise<void> {
+    const currentUser = this.authService.user();
+    const activeConvo = this._activeConversation();
+    if (!currentUser || !activeConvo) return;
+
+    if (this.typingTimeout) {
+      clearTimeout(this.typingTimeout);
+      this.typingTimeout = null;
+    }
+
+    try {
+      const conversationRef = doc(this.firestore, 'conversations', activeConvo.id);
+      await updateDoc(conversationRef, {
+        [`typing.${currentUser.uid}`]: false,
+      });
+    } catch (error) {
+      console.error('Error clearing typing status:', error);
+    }
   }
 
   /**
@@ -195,6 +307,9 @@ export class MessageService {
     if (!currentUser || !activeConversation || !content.trim()) return;
 
     this._sending.set(true);
+
+    // Clear typing status when sending
+    this.clearTypingStatus();
 
     try {
       const messagesRef = collection(
@@ -347,5 +462,10 @@ export class MessageService {
   cleanup(): void {
     this.unsubscribeFromConversations();
     this.unsubscribeFromMessages();
+    this.unsubscribeFromTyping();
+    if (this.typingTimeout) {
+      clearTimeout(this.typingTimeout);
+      this.typingTimeout = null;
+    }
   }
 }

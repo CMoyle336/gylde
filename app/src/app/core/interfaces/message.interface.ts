@@ -35,6 +35,9 @@ export interface Conversation {
   unreadCount: {
     [uid: string]: number;
   };
+  typing?: {
+    [uid: string]: boolean;
+  };
 }
 
 /**
