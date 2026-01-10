@@ -61,7 +61,7 @@ export const guestGuard: CanActivateFn = async () => {
   }
 
   if (profile?.onboardingCompleted) {
-    router.navigate(['/dashboard']);
+    router.navigate(['/discover']);
   } else {
     router.navigate(['/onboarding']);
   }
@@ -149,7 +149,7 @@ export const onboardingIncompleteGuard: CanActivateFn = async () => {
     return true;
   }
 
-  // Redirect to dashboard if onboarding already complete
-  router.navigate(['/dashboard']);
+  // Redirect to discover if onboarding already complete
+  router.navigate(['/discover']);
   return false;
 };

@@ -1,0 +1,174 @@
+<mat-sidenav-container class="shell-container" [class.sidebar-collapsed]="!sidenavExpanded()">
+  <!-- Sidenav -->
+  <mat-sidenav
+    #sidenav
+    [mode]="isMobile() ? 'over' : 'side'"
+    [opened]="isMobile() ? sidenavOpen() : true"
+    (openedChange)="isMobile() && sidenavOpen.set($event)"
+    class="sidebar"
+    [class.collapsed]="!isMobile() && !sidenavExpanded()"
+    [class.mobile-expanded]="isMobile() && sidenavOpen()"
+    [style.width]="isMobile() ? '280px' : (sidenavExpanded() ? '280px' : '72px')">
+    
+    <!-- Sidebar Header -->
+    <div class="sidebar-header">
+      <a routerLink="/" class="logo">
+        <span class="logo-icon">G</span>
+        <span class="logo-text">ylde</span>
+      </a>
+    </div>
+
+    <!-- User Profile Section -->
+    <div class="sidebar-profile-wrapper">
+      <button 
+        type="button" 
+        class="sidebar-profile"
+        [matMenuTriggerFor]="profileMenu"
+        [title]="sidenavExpanded() ? '' : (currentUser()?.displayName || 'Your Profile')">
+        <div class="profile-avatar">
+          @if (userPhotoURL()) {
+            <img [src]="userPhotoURL()" alt="Your profile" class="avatar-image">
+          } @else {
+            <span class="material-icons-outlined">person</span>
+          }
+        </div>
+        <div class="profile-info">
+          <span class="profile-name">{{ currentUser()?.displayName || 'Your Profile' }}</span>
+          <div class="profile-completion-mini">
+            <div class="completion-bar-mini">
+              <div class="completion-fill-mini" [style.width.%]="profileCompletion()"></div>
+            </div>
+            <span class="completion-text">{{ profileCompletion() }}%</span>
+          </div>
+        </div>
+        <span class="material-icons-outlined profile-chevron">expand_more</span>
+      </button>
+
+      <!-- Material Menu -->
+      <mat-menu #profileMenu="matMenu" class="profile-menu">
+        <a mat-menu-item routerLink="/profile">
+          <span class="material-icons-outlined">person</span>
+          <span>View Profile</span>
+        </a>
+        <a mat-menu-item routerLink="/settings">
+          <span class="material-icons-outlined">settings</span>
+          <span>Settings</span>
+        </a>
+        <mat-divider></mat-divider>
+        <button mat-menu-item class="logout-menu-item" (click)="onLogout()">
+          <span class="material-icons-outlined">logout</span>
+          <span>Logout</span>
+        </button>
+      </mat-menu>
+    </div>
+
+    <!-- Sidebar Content (scrollable) -->
+    <div class="sidebar-content">
+      <!-- Navigation -->
+      <nav class="sidebar-nav">
+        @for (item of navItems; track item.id) {
+          <a 
+            class="nav-item"
+            [routerLink]="item.path"
+            routerLinkActive="active"
+            (click)="onNavItemClick()"
+            [title]="sidenavExpanded() ? '' : ('DASHBOARD.NAV.' + item.labelKey | translate)">
+            <span class="material-icons-outlined nav-icon">{{ item.icon }}</span>
+            <span class="nav-label">{{ 'DASHBOARD.NAV.' + item.labelKey | translate }}</span>
+            @if (item.id === 'messages' && messageUnreadCount() > 0) {
+              <span class="nav-badge">{{ messageUnreadCount() }}</span>
+            } @else if (item.badge) {
+              <span class="nav-badge">{{ item.badge }}</span>
+            }
+          </a>
+        }
+      </nav>
+
+      <!-- Recent Activity -->
+      <div class="sidebar-activity">
+        <div class="activity-header">
+          <span class="activity-title">{{ 'DASHBOARD.ACTIVITY_TITLE' | translate }}</span>
+          @if (unreadActivityCount() > 0) {
+            <span class="activity-badge">{{ unreadActivityCount() }}</span>
+          }
+        </div>
+        
+        <ul class="activity-list">
+          @for (activity of recentActivity() | slice:0:5; track activity.id) {
+            <li 
+              class="activity-item" 
+              [class.unread]="!activity.read"
+              [title]="sidenavExpanded() ? '' : activity.name">
+              <div class="activity-avatar">
+                @if (activity.photo) {
+                  <img [src]="activity.photo" [alt]="activity.name" class="activity-avatar-img">
+                } @else {
+                  <span class="material-icons-outlined">
+                    @switch (activity.type) {
+                      @case ('match') { favorite }
+                      @case ('message') { chat }
+                      @case ('favorite') { star }
+                      @case ('view') { visibility }
+                    }
+                  </span>
+                }
+              </div>
+              <div class="activity-content">
+                <span class="activity-text">
+                  @switch (activity.type) {
+                    @case ('match') { Matched with {{ activity.name }} }
+                    @case ('message') { {{ activity.name }} messaged }
+                    @case ('favorite') { {{ activity.name }} favorited you }
+                    @case ('view') { {{ activity.name }} viewed }
+                  }
+                </span>
+                <span class="activity-time">{{ activity.timeAgo }}</span>
+              </div>
+            </li>
+          } @empty {
+            <li class="activity-empty" [title]="sidenavExpanded() ? '' : 'No activity'">
+              <span class="material-icons-outlined">notifications_none</span>
+              <span class="activity-empty-text">No activity yet</span>
+            </li>
+          }
+        </ul>
+      </div>
+    </div>
+
+    <!-- Collapse/Expand Button - Absolute Bottom -->
+    <div class="sidebar-collapse">
+      <button 
+        type="button" 
+        class="collapse-btn" 
+        (click)="isMobile() ? toggleSidenav() : toggleSidenavExpanded()"
+        [title]="isMobile() ? 'Close sidebar' : (sidenavExpanded() ? 'Collapse sidebar' : 'Expand sidebar')">
+        <span class="material-icons-outlined">{{ (isMobile() || sidenavExpanded()) ? 'chevron_left' : 'chevron_right' }}</span>
+      </button>
+    </div>
+  </mat-sidenav>
+
+  <!-- Main Content -->
+  <mat-sidenav-content class="main-content">
+    <!-- Mobile Header Bar (hidden when in active chat) -->
+    @if (isMobile() && !isMessagesWithActiveChat()) {
+      <div class="mobile-nav-bar">
+        <button type="button" class="mobile-nav-toggle" (click)="toggleSidenav()" aria-label="Open menu">
+          <span class="material-icons-outlined">{{ sidenavOpen() ? 'close' : 'menu' }}</span>
+        </button>
+        <span class="mobile-logo">Gylde</span>
+        <button type="button" class="mobile-profile-btn" routerLink="/profile">
+          @if (userPhotoURL()) {
+            <img [src]="userPhotoURL()" alt="Profile" class="mobile-avatar">
+          } @else {
+            <span class="material-icons-outlined">person</span>
+          }
+        </button>
+      </div>
+    }
+
+    <!-- Router Outlet for Child Routes -->
+    <div class="content-area">
+      <router-outlet></router-outlet>
+    </div>
+  </mat-sidenav-content>
+</mat-sidenav-container>

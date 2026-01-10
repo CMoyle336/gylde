@@ -7,3 +7,4 @@ export * from './places.service';
 export * from './discovery.service';
 export * from './favorite.service';
 export * from './activity.service';
+export * from './message.service';

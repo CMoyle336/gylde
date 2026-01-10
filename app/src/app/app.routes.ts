@@ -12,8 +12,36 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/onboarding/onboarding').then((m) => m.OnboardingComponent),
   },
   {
-    path: 'dashboard',
+    path: '',
     canActivate: [onboardingCompleteGuard],
-    loadComponent: () => import('./pages/dashboard/dashboard').then((m) => m.DashboardComponent),
+    loadComponent: () => import('./pages/shell/shell').then((m) => m.ShellComponent),
+    children: [
+      {
+        path: 'discover',
+        loadComponent: () => import('./pages/discover/discover').then((m) => m.DiscoverComponent),
+      },
+      {
+        path: 'messages',
+        loadComponent: () => import('./pages/messages/messages').then((m) => m.MessagesComponent),
+      },
+      {
+        path: 'matches',
+        loadComponent: () => import('./pages/matches/matches').then((m) => m.MatchesComponent),
+      },
+      {
+        path: 'profile',
+        loadComponent: () => import('./pages/profile/profile').then((m) => m.ProfileComponent),
+      },
+      {
+        path: 'settings',
+        loadComponent: () => import('./pages/settings/settings').then((m) => m.SettingsComponent),
+      },
+    ],
+  },
+  // Redirect old dashboard route to discover
+  {
+    path: 'dashboard',
+    redirectTo: 'discover',
+    pathMatch: 'full',
   },
 ];

@@ -8,3 +8,4 @@ export * from './user.interface';
 export * from './discovery.interface';
 export * from './storage.interface';
 export * from './activity.interface';
+export * from './message.interface';

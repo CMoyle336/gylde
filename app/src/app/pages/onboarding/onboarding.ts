@@ -100,9 +100,9 @@ export class OnboardingComponent {
       await this.userProfileService.saveOnboardingData(onboardingProfile);
       console.log('Onboarding data saved successfully');
       
-      // Reset onboarding state and navigate to dashboard
+      // Reset onboarding state and navigate to discover
       this.onboarding.reset();
-      this.router.navigate(['/dashboard']);
+      this.router.navigate(['/discover']);
     } catch (error: unknown) {
       console.error('Failed to save onboarding data:', error);
       

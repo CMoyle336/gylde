@@ -37,13 +37,13 @@ export class HomeComponent {
       // New user or incomplete onboarding - go to onboarding
       this.router.navigate(['/onboarding']);
     } else {
-      // Existing user with completed onboarding - go to dashboard
-      this.router.navigate(['/dashboard']);
+      // Existing user with completed onboarding - go to discover
+      this.router.navigate(['/discover']);
     }
   }
 
   protected goToDashboard(): void {
-    this.router.navigate(['/dashboard']);
+    this.router.navigate(['/discover']);
   }
 
   protected async logout(): Promise<void> {
