@@ -62,3 +62,30 @@ a {
   background: rgba(201, 169, 98, 0.3);
   color: #f5f3f0;
 }
+
+/* Activity Toast Notifications */
+.mat-mdc-snack-bar-container.activity-toast {
+  --mdc-snackbar-container-color: #1a1720;
+  --mdc-snackbar-supporting-text-color: #f5f3f0;
+  --mat-snack-bar-button-color: #c9a962;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.mat-mdc-snack-bar-container.activity-toast-like {
+  border-left: 3px solid #e91e63;
+}
+
+.mat-mdc-snack-bar-container.activity-toast-match {
+  border-left: 3px solid #c9a962;
+  --mdc-snackbar-container-color: rgba(201, 169, 98, 0.15);
+}
+
+.mat-mdc-snack-bar-container.activity-toast-message {
+  border-left: 3px solid #2196f3;
+}
+
+.mat-mdc-snack-bar-container.activity-toast-view {
+  border-left: 3px solid #6b6777;
+}

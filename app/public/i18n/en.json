@@ -283,7 +283,8 @@
     "ACTIVITY": {
       "MATCH": "You matched with {{name}}",
       "MESSAGE": "{{name}} sent you a message",
-      "LIKE": "{{name}} liked your profile"
+      "LIKE": "{{name}} liked your profile",
+      "VIEW": "{{name}} viewed your profile"
     },
     "STATS_TITLE": "This Week",
     "STATS": {

@@ -6,3 +6,4 @@ export * from './geocoding.service';
 export * from './places.service';
 export * from './discovery.service';
 export * from './like.service';
+export * from './activity.service';

@@ -1,11 +1,12 @@
 /**
- * User profile interfaces
+ * Activity types for the activity feed
  * Re-exports shared types and adds client-specific extensions
  */
 
 // Re-export shared types
 export type {
-  UserProfile,
-  UserDisplayInfo,
-  OnboardingProfile,
+  ActivityType,
+  Activity,
+  ActivityBase,
+  ActivityDisplay,
 } from '@gylde/shared';

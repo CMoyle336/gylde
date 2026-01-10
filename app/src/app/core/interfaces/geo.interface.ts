@@ -1,31 +1,13 @@
 /**
  * Geographic location interfaces
- * Used across onboarding, discovery, and geocoding services
+ * Re-exports shared types and adds client-specific extensions
  */
 
-/**
- * Basic geographic coordinates
- */
-export interface GeoLocation {
-  latitude: number;
-  longitude: number;
-}
+// Re-export shared types
+export type { GeoLocation, GeocodingResult } from '@gylde/shared';
 
 /**
- * Result from geocoding operations (forward or reverse)
- */
-export interface GeocodingResult {
-  latitude: number;
-  longitude: number;
-  formattedAddress: string;
-  city: string;
-  state: string;
-  country: string;
-  countryCode: string;
-}
-
-/**
- * Google Places autocomplete prediction
+ * Google Places autocomplete prediction (client-only)
  */
 export interface PlacePrediction {
   placeId: string;
