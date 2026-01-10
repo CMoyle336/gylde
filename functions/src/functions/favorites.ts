@@ -58,7 +58,7 @@ export const onFavoriteCreated = onDocumentCreated(
 
 /**
  * Triggered when a user unfavorites another user.
- * Deletes the corresponding activity record.
+ * Deletes the corresponding activity record and handles unmatching.
  */
 export const onFavoriteDeleted = onDocumentDeleted(
   "users/{userId}/favorites/{favoritedUserId}",
@@ -69,12 +69,48 @@ export const onFavoriteDeleted = onDocumentDeleted(
     logger.info(`User ${fromUserId} unfavorited user ${toUserId}`);
 
     try {
+      // Delete the favorite activity
       await ActivityService.deleteActivities(toUserId, "favorite", fromUserId);
+
+      // Check if there was a match and handle unmatching
+      await handleUnmatch(fromUserId, toUserId);
     } catch (error) {
       logger.error("Error deleting favorite activity:", error);
     }
   }
 );
+
+/**
+ * Handle unmatch when a user removes a favorite
+ * Deletes match record and match activities for both users
+ */
+async function handleUnmatch(
+  fromUserId: string,
+  toUserId: string
+): Promise<void> {
+  // Check if a match exists between these users
+  const matchId = [fromUserId, toUserId].sort().join("_");
+  const matchRef = db.collection("matches").doc(matchId);
+  const matchDoc = await matchRef.get();
+
+  if (!matchDoc.exists) {
+    logger.info(`No match to remove between ${fromUserId} and ${toUserId}`);
+    return;
+  }
+
+  logger.info(`Removing match ${matchId}`);
+
+  // Delete the match record
+  await matchRef.delete();
+
+  // Delete match activities for both users
+  await Promise.all([
+    ActivityService.deleteActivities(fromUserId, "match", toUserId),
+    ActivityService.deleteActivities(toUserId, "match", fromUserId),
+  ]);
+
+  logger.info(`Match and match activities removed for both users`);
+}
 
 /**
  * Handle match creation when mutual favorites are detected
