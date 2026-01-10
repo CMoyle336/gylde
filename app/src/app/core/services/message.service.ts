@@ -14,6 +14,8 @@ import {
   limit,
   getDocs,
   writeBatch,
+  arrayUnion,
+  deleteField,
 } from '@angular/fire/firestore';
 import { AuthService } from './auth.service';
 import { StorageService } from './storage.service';
@@ -264,18 +266,27 @@ export class MessageService {
     this.messagesUnsubscribe = onSnapshot(
       q,
       (snapshot) => {
-        const messages: MessageDisplay[] = snapshot.docs.map((doc) => {
-          const data = doc.data() as Message;
-          return {
-            id: doc.id,
-            content: data.content,
+        const messages: MessageDisplay[] = [];
+        
+        for (const docSnapshot of snapshot.docs) {
+          const data = docSnapshot.data() as Message;
+          
+          // Skip messages deleted for this user (but not deletedForAll)
+          if (data.deletedFor?.includes(currentUser.uid) && !data.deletedForAll) {
+            continue;
+          }
+
+          messages.push({
+            id: docSnapshot.id,
+            content: data.deletedForAll ? '' : data.content,
             isOwn: data.senderId === currentUser.uid,
             createdAt: this.toDate(data.createdAt),
             read: data.read,
-            type: data.type,
-            imageUrls: data.imageUrls,
-          };
-        });
+            type: data.deletedForAll ? 'system' : data.type,
+            imageUrls: data.deletedForAll ? undefined : data.imageUrls,
+            isDeletedForAll: data.deletedForAll,
+          });
+        }
 
         this._messages.set(messages);
 
@@ -387,6 +398,98 @@ export class MessageService {
       throw error;
     } finally {
       this._sending.set(false);
+    }
+  }
+
+  /**
+   * Delete a message for the current user only
+   */
+  async deleteMessageForMe(messageId: string): Promise<void> {
+    const currentUser = this.authService.user();
+    const activeConversation = this._activeConversation();
+    
+    if (!currentUser || !activeConversation) return;
+
+    try {
+      const messageRef = doc(
+        this.firestore,
+        'conversations',
+        activeConversation.id,
+        'messages',
+        messageId
+      );
+
+      await updateDoc(messageRef, {
+        deletedFor: arrayUnion(currentUser.uid),
+      });
+    } catch (error) {
+      console.error('Error deleting message for me:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a message for everyone (sender only)
+   */
+  async deleteMessageForEveryone(messageId: string): Promise<void> {
+    const currentUser = this.authService.user();
+    const activeConversation = this._activeConversation();
+    
+    if (!currentUser || !activeConversation) return;
+
+    // Find the message to verify sender
+    const message = this._messages().find(m => m.id === messageId);
+    if (!message?.isOwn) {
+      throw new Error('Can only delete your own messages for everyone');
+    }
+
+    try {
+      const messageRef = doc(
+        this.firestore,
+        'conversations',
+        activeConversation.id,
+        'messages',
+        messageId
+      );
+
+      // Get the current message data for archiving
+      const messagesRef = collection(
+        this.firestore,
+        'conversations',
+        activeConversation.id,
+        'messages'
+      );
+      const messageSnapshot = await getDocs(
+        query(messagesRef, where('__name__', '==', messageId), limit(1))
+      );
+      
+      if (!messageSnapshot.empty) {
+        const originalData = messageSnapshot.docs[0].data();
+        
+        // Archive the original content to admin-only collection
+        const archiveRef = collection(this.firestore, 'deletedMessages');
+        await addDoc(archiveRef, {
+          originalMessageId: messageId,
+          conversationId: activeConversation.id,
+          senderId: currentUser.uid,
+          content: originalData['content'] || '',
+          imageUrls: originalData['imageUrls'] || [],
+          originalCreatedAt: originalData['createdAt'],
+          deletedAt: serverTimestamp(),
+          deletedBy: currentUser.uid,
+        });
+      }
+
+      // Clear the content from the original message
+      await updateDoc(messageRef, {
+        deletedForAll: true,
+        deletedForAllAt: serverTimestamp(),
+        content: '', // Clear the text content
+        imageUrls: deleteField(), // Remove image URLs entirely
+      });
+    } catch (error) {
+      console.error('Error deleting message for everyone:', error);
+      throw error;
     }
   }
 

@@ -12,9 +12,11 @@ import {
 } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { NgOptimizedImage } from '@angular/common';
 import { CdkScrollable, ScrollingModule } from '@angular/cdk/scrolling';
+import { MatMenuModule } from '@angular/material/menu';
 import { MessageService } from '../../core/services/message.service';
-import { ConversationDisplay } from '../../core/interfaces';
+import { ConversationDisplay, MessageDisplay } from '../../core/interfaces';
 
 interface ImagePreview {
   file: File;
@@ -32,7 +34,7 @@ interface GalleryState {
   templateUrl: './messages.html',
   styleUrl: './messages.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, ScrollingModule],
+  imports: [FormsModule, ScrollingModule, MatMenuModule, NgOptimizedImage],
 })
 export class MessagesComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
@@ -291,6 +293,25 @@ export class MessagesComponent implements OnInit, OnDestroy {
         this.nextImage();
         break;
     }
+  }
+
+  // ============================================
+  // MESSAGE DELETION
+  // ============================================
+
+  /**
+   * Delete a message for the current user only
+   */
+  protected async deleteForMe(message: MessageDisplay): Promise<void> {
+    await this.messageService.deleteMessageForMe(message.id);
+  }
+
+  /**
+   * Delete a message for everyone (sender only)
+   */
+  protected async deleteForEveryone(message: MessageDisplay): Promise<void> {
+    if (!message.isOwn) return;
+    await this.messageService.deleteMessageForEveryone(message.id);
   }
 
   protected formatTime(date: Date | null): string {

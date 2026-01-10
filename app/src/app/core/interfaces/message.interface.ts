@@ -12,6 +12,9 @@ export interface Message {
   read: boolean;
   type: 'text' | 'image' | 'system';
   imageUrls?: string[]; // For image messages
+  deletedFor?: string[]; // User IDs who deleted this message for themselves
+  deletedForAll?: boolean; // Sender deleted for everyone
+  deletedForAllAt?: Date | FieldValue; // When it was deleted for everyone
 }
 
 /**
@@ -68,4 +71,5 @@ export interface MessageDisplay {
   read: boolean;
   type: 'text' | 'image' | 'system';
   imageUrls?: string[]; // For image messages
+  isDeletedForAll?: boolean; // Show "message was deleted" placeholder
 }

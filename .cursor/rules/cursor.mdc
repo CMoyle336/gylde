@@ -93,6 +93,8 @@ import { OnboardingData } from './onboarding.interface';
 - Use the `providedIn: 'root'` option for singleton services
 - Use the `inject()` function instead of constructor injection
 
+## Image Optimization. Use NgOptimizedImage (https://angular.dev/guide/image-optimization)
+
 ## Internationalization (ngx-translate)
 
 All user-facing text MUST use ngx-translate for internationalization.

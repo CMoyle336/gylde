@@ -72,26 +72,73 @@
         } @else {
           <div class="messages-list">
             @for (message of messages(); track message.id) {
-              <div class="message" [class.own]="message.isOwn" [class.image-message]="message.type === 'image'">
-                @if (message.type === 'image' && message.imageUrls?.length) {
-                  <div class="image-bubble">
-                    <!-- Show text content if present (not a placeholder) -->
-                    @if (message.content && !message.content.startsWith('Sent ')) {
-                      <p class="image-caption">{{ message.content }}</p>
-                    }
-                    <div class="image-grid" [class.single]="message.imageUrls!.length === 1" [class.grid-2]="message.imageUrls!.length === 2" [class.grid-many]="message.imageUrls!.length > 2">
-                      @for (imageUrl of message.imageUrls; track imageUrl; let idx = $index) {
-                        <button type="button" class="image-item" (click)="openGallery(message.imageUrls!, idx, $event)">
-                          <img [src]="imageUrl" alt="Shared image" loading="lazy">
+              <div class="message" [class.own]="message.isOwn" [class.image-message]="message.type === 'image'" [class.deleted]="message.isDeletedForAll">
+                
+                <!-- Deleted for everyone placeholder -->
+                @if (message.isDeletedForAll) {
+                  <div class="bubble deleted-bubble">
+                    <span class="material-icons-outlined deleted-icon">block</span>
+                    <span class="deleted-text">{{ message.isOwn ? 'You deleted this message' : 'This message was deleted' }}</span>
+                  </div>
+                }
+                <!-- Image message -->
+                @else if (message.type === 'image' && message.imageUrls?.length) {
+                  <div class="message-wrapper">
+                    <div class="image-bubble">
+                      <!-- Show text content if present (not a placeholder) -->
+                      @if (message.content && !message.content.startsWith('Sent ')) {
+                        <p class="image-caption">{{ message.content }}</p>
+                      }
+                      <div class="image-grid" [class.single]="message.imageUrls!.length === 1" [class.grid-2]="message.imageUrls!.length === 2" [class.grid-many]="message.imageUrls!.length > 2">
+                        @for (imageUrl of message.imageUrls; track imageUrl; let idx = $index) {
+                          <button type="button" class="image-item" (click)="openGallery(message.imageUrls!, idx, $event)">
+                            <img [src]="imageUrl" alt="Shared image" loading="lazy">
+                          </button>
+                        }
+                      </div>
+                      <time>{{ formatMessageTime(message.createdAt) }}</time>
+                    </div>
+                    <!-- Message actions menu -->
+                    <button type="button" class="message-menu-btn" [matMenuTriggerFor]="messageMenu">
+                      <span class="material-icons-outlined">more_vert</span>
+                    </button>
+                    <mat-menu #messageMenu="matMenu" class="message-actions-menu">
+                      <button mat-menu-item (click)="deleteForMe(message)">
+                        <span class="material-icons-outlined">delete</span>
+                        <span>Delete for me</span>
+                      </button>
+                      @if (message.isOwn) {
+                        <button mat-menu-item (click)="deleteForEveryone(message)" class="delete-everyone">
+                          <span class="material-icons-outlined">delete_forever</span>
+                          <span>Delete for everyone</span>
                         </button>
                       }
-                    </div>
-                    <time>{{ formatMessageTime(message.createdAt) }}</time>
+                    </mat-menu>
                   </div>
-                } @else {
-                  <div class="bubble">
-                    <p>{{ message.content }}</p>
-                    <time>{{ formatMessageTime(message.createdAt) }}</time>
+                }
+                <!-- Text message -->
+                @else {
+                  <div class="message-wrapper">
+                    <div class="bubble">
+                      <p>{{ message.content }}</p>
+                      <time>{{ formatMessageTime(message.createdAt) }}</time>
+                    </div>
+                    <!-- Message actions menu -->
+                    <button type="button" class="message-menu-btn" [matMenuTriggerFor]="messageMenu">
+                      <span class="material-icons-outlined">more_vert</span>
+                    </button>
+                    <mat-menu #messageMenu="matMenu" class="message-actions-menu">
+                      <button mat-menu-item (click)="deleteForMe(message)">
+                        <span class="material-icons-outlined">delete</span>
+                        <span>Delete for me</span>
+                      </button>
+                      @if (message.isOwn) {
+                        <button mat-menu-item (click)="deleteForEveryone(message)" class="delete-everyone">
+                          <span class="material-icons-outlined">delete_forever</span>
+                          <span>Delete for everyone</span>
+                        </button>
+                      }
+                    </mat-menu>
                   </div>
                 }
               </div>
@@ -205,7 +252,7 @@
 
       <!-- Main Image -->
       <div class="gallery-image-wrapper">
-        <img [src]="gallery().images[gallery().currentIndex]" alt="Image" class="gallery-image">
+        <img [ngSrc]="gallery().images[gallery().currentIndex]" alt="Image" class="gallery-image" fill priority>
       </div>
 
       <!-- Navigation: Next -->
@@ -231,7 +278,7 @@
               class="thumbnail" 
               [class.active]="i === gallery().currentIndex"
               (click)="goToImage(i)">
-              <img [src]="img" alt="Thumbnail">
+              <img [ngSrc]="img" alt="Thumbnail" width="60" height="60">
             </button>
           }
         </div>

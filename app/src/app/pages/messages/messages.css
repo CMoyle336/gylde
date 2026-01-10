@@ -251,11 +251,15 @@
 
 .message {
   display: flex;
-  max-width: 65%;
+  max-width: 70%;
 }
 
 .message.own {
   align-self: flex-end;
+}
+
+.message:hover .message-menu-btn {
+  opacity: 1;
 }
 
 .bubble {
@@ -291,6 +295,121 @@
 
 .message.own .bubble time {
   text-align: right;
+}
+
+/* ============================================
+   MESSAGE WRAPPER & ACTIONS
+   ============================================ */
+
+.message-wrapper {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.25rem;
+}
+
+.message.own .message-wrapper {
+  flex-direction: row-reverse;
+}
+
+.message-menu-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  color: var(--text-muted);
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.message-menu-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  opacity: 1;
+}
+
+.message-menu-btn .material-icons-outlined {
+  font-size: 1.125rem;
+}
+
+/* Message actions menu styling */
+::ng-deep .message-actions-menu {
+  --mat-menu-container-color: var(--bg-elevated, #252030);
+  border-radius: 8px !important;
+  overflow: hidden;
+}
+
+::ng-deep .message-actions-menu .mat-mdc-menu-content {
+  padding: 0.25rem 0;
+}
+
+::ng-deep .message-actions-menu .mat-mdc-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 40px;
+  padding: 0 1rem;
+  font-size: 0.875rem;
+  color: var(--text-primary, #f5f3f0);
+}
+
+::ng-deep .message-actions-menu .mat-mdc-menu-item .mat-mdc-menu-item-text {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+::ng-deep .message-actions-menu .mat-mdc-menu-item .material-icons-outlined {
+  font-size: 1.125rem;
+  color: var(--text-muted);
+  width: 20px;
+  text-align: center;
+}
+
+::ng-deep .message-actions-menu .delete-everyone {
+  color: #ef4444;
+}
+
+::ng-deep .message-actions-menu .delete-everyone .material-icons-outlined {
+  color: #ef4444;
+}
+
+/* ============================================
+   DELETED MESSAGE PLACEHOLDER
+   ============================================ */
+
+.message.deleted {
+  opacity: 0.7;
+}
+
+.deleted-bubble {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem !important;
+  background: var(--bg-elevated) !important;
+  border: 1px dashed var(--border);
+  font-style: italic;
+}
+
+.message.own .deleted-bubble {
+  background: transparent !important;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.deleted-icon {
+  font-size: 1rem;
+  color: var(--text-muted);
+}
+
+.deleted-text {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
 }
 
 /* ============================================
@@ -565,16 +684,25 @@
 .image-item {
   display: block;
   aspect-ratio: 1;
+  min-height: 120px; /* Pre-allocate space before image loads */
   overflow: hidden;
   padding: 0;
   border: none;
-  background: none;
+  background: var(--bg-elevated); /* Visual placeholder while loading */
   cursor: pointer;
+  border-radius: 8px;
 }
 
 .image-grid.single .image-item {
-  aspect-ratio: auto;
-  max-height: 300px;
+  aspect-ratio: 4 / 3; /* Fixed aspect ratio for single images */
+  width: 100%;
+  max-width: 280px;
+  min-height: 180px;
+}
+
+.image-grid.grid-2 .image-item,
+.image-grid.grid-many .image-item {
+  min-height: 100px;
 }
 
 .image-item img {
@@ -835,16 +963,15 @@
 }
 
 .gallery-image-wrapper {
-  max-width: calc(100% - 140px);
-  max-height: calc(100% - 140px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  position: relative; /* Required for NgOptimizedImage fill mode */
+  width: calc(100% - 140px);
+  height: calc(100% - 140px);
+  max-width: 90vw;
+  max-height: 80vh;
 }
 
 .gallery-image {
-  max-width: 100%;
-  max-height: 100%;
+  object-fit: contain;
   object-fit: contain;
   border-radius: 4px;
   animation: zoomIn 0.2s ease;
@@ -921,8 +1048,8 @@
   }
 
   .gallery-image-wrapper {
-    max-width: calc(100% - 20px);
-    max-height: calc(100% - 120px);
+    width: calc(100% - 20px);
+    height: calc(100% - 120px);
   }
 
   .gallery-thumbnails {
