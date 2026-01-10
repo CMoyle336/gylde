@@ -139,20 +139,20 @@
       <button 
         type="button" 
         class="collapse-btn" 
-        (click)="toggleSidenavExpanded()"
-        [title]="sidenavExpanded() ? 'Collapse sidebar' : 'Expand sidebar'">
-        <span class="material-icons-outlined">{{ sidenavExpanded() ? 'chevron_left' : 'chevron_right' }}</span>
+        (click)="isMobile() ? toggleSidenav() : toggleSidenavExpanded()"
+        [title]="isMobile() ? 'Close sidebar' : (sidenavExpanded() ? 'Collapse sidebar' : 'Expand sidebar')">
+        <span class="material-icons-outlined">{{ (isMobile() || sidenavExpanded()) ? 'chevron_left' : 'chevron_right' }}</span>
       </button>
     </div>
   </mat-sidenav>
 
   <!-- Main Content -->
   <mat-sidenav-content class="main-content">
-    <!-- Mobile Collapsed Bar -->
-    @if (isMobile() && !sidenavOpen()) {
+    <!-- Mobile Header Bar -->
+    @if (isMobile()) {
       <div class="mobile-nav-bar">
         <button type="button" class="mobile-nav-toggle" (click)="toggleSidenav()" aria-label="Open menu">
-          <span class="material-icons-outlined">menu</span>
+          <span class="material-icons-outlined">{{ sidenavOpen() ? 'close' : 'menu' }}</span>
         </button>
         <span class="mobile-logo">Gylde</span>
         <button type="button" class="mobile-profile-btn" (click)="setActiveNav('profile')">

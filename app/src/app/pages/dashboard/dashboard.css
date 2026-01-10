@@ -54,6 +54,26 @@
   border-radius: 0 !important;
 }
 
+/* Smooth slide animation for mobile overlay */
+@media (max-width: 1023px) {
+  ::ng-deep .mat-drawer-container {
+    --mat-sidenav-container-shape: 0;
+  }
+  
+  ::ng-deep .mat-drawer {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.3s !important;
+  }
+  
+  ::ng-deep .mat-drawer-backdrop {
+    transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.3s !important;
+  }
+  
+  /* Ensure sidebar content doesn't flash */
+  ::ng-deep .mat-drawer-inner-container {
+    background: var(--color-bg-secondary);
+  }
+}
+
 .sidebar {
   width: var(--sidebar-width-expanded);
   background: var(--color-bg-secondary) !important;
