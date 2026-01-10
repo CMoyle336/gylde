@@ -738,3 +738,14 @@
     height: 100%;
   }
 }
+
+/* ============================================
+   TOOLTIP STYLING
+   ============================================ */
+
+::ng-deep .mat-mdc-tooltip {
+  --mdc-plain-tooltip-container-color: var(--color-bg-elevated, #252030);
+  --mdc-plain-tooltip-supporting-text-color: var(--color-text-primary, #f5f3f0);
+  --mdc-plain-tooltip-supporting-text-size: 0.75rem;
+  --mdc-plain-tooltip-container-shape: 6px;
+}

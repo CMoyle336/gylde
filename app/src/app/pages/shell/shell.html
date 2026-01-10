@@ -24,7 +24,9 @@
         type="button" 
         class="sidebar-profile"
         [matMenuTriggerFor]="profileMenu"
-        [title]="sidenavExpanded() ? '' : (currentUser()?.displayName || 'Your Profile')">
+        [matTooltip]="currentUser()?.displayName || 'Your Profile'"
+        [matTooltipDisabled]="sidenavExpanded()"
+        matTooltipPosition="right">
         <div class="profile-avatar">
           @if (userPhotoURL()) {
             <img [src]="userPhotoURL()" alt="Your profile" class="avatar-image">
@@ -72,7 +74,9 @@
             [routerLink]="item.path"
             routerLinkActive="active"
             (click)="onNavItemClick()"
-            [title]="sidenavExpanded() ? '' : ('DASHBOARD.NAV.' + item.labelKey | translate)">
+            [matTooltip]="'DASHBOARD.NAV.' + item.labelKey | translate"
+            [matTooltipDisabled]="sidenavExpanded()"
+            matTooltipPosition="right">
             <span class="material-icons-outlined nav-icon">{{ item.icon }}</span>
             <span class="nav-label">{{ 'DASHBOARD.NAV.' + item.labelKey | translate }}</span>
             @if (item.id === 'messages' && messageUnreadCount() > 0) {
@@ -94,7 +98,8 @@
               type="button" 
               class="mark-all-read-btn"
               (click)="markAllActivitiesAsRead()"
-              title="Mark all as read">
+              matTooltip="Mark all as read"
+              matTooltipPosition="right">
               <span class="material-icons-outlined">done_all</span>
             </button>
           }
@@ -106,7 +111,9 @@
               type="button"
               class="activity-item" 
               [class.unread]="!activity.read"
-              [title]="sidenavExpanded() ? '' : activity.name"
+              [matTooltip]="activity.name"
+              [matTooltipDisabled]="sidenavExpanded()"
+              matTooltipPosition="right"
               (click)="onActivityClick(activity)">
               <div class="activity-avatar">
                 @if (activity.photo) {
@@ -138,7 +145,10 @@
               </div>
             </button>
           } @empty {
-            <li class="activity-empty" [title]="sidenavExpanded() ? '' : 'No activity'">
+            <li class="activity-empty"
+              matTooltip="No activity"
+              [matTooltipDisabled]="sidenavExpanded()"
+              matTooltipPosition="right">
               <span class="material-icons-outlined">notifications_none</span>
               <span class="activity-empty-text">No activity yet</span>
             </li>
@@ -153,7 +163,9 @@
         type="button" 
         class="collapse-btn" 
         (click)="isMobile() ? toggleSidenav() : toggleSidenavExpanded()"
-        [title]="isMobile() ? 'Close sidebar' : (sidenavExpanded() ? 'Collapse sidebar' : 'Expand sidebar')">
+        [matTooltip]="sidenavExpanded() ? 'Collapse sidebar' : 'Expand sidebar'"
+        [matTooltipDisabled]="isMobile()"
+        matTooltipPosition="right">
         <span class="material-icons-outlined">{{ (isMobile() || sidenavExpanded()) ? 'chevron_left' : 'chevron_right' }}</span>
       </button>
     </div>

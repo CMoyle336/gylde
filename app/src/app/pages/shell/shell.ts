@@ -6,6 +6,7 @@ import { SlicePipe } from '@angular/common';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { AuthService } from '../../core/services/auth.service';
 import { UserProfileService } from '../../core/services/user-profile.service';
 import { FavoriteService } from '../../core/services/favorite.service';
@@ -24,6 +25,7 @@ import { ActivityDisplay } from '../../core/interfaces';
     MatSidenavModule,
     MatMenuModule,
     MatDividerModule,
+    MatTooltipModule,
     RouterOutlet,
     RouterLink,
     RouterLinkActive,
