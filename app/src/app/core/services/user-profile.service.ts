@@ -94,22 +94,36 @@ export class UserProfileService {
       throw new Error('User not authenticated');
     }
 
-    await this.firestoreService.updateDocument('users', user.uid, {
+    // Use setDocument with merge to handle case where profile doesn't exist yet
+    const profileData = {
+      uid: user.uid,
+      email: user.email,
+      displayName: user.displayName,
+      photoURL: user.photoURL,
       onboarding: onboardingData,
       onboardingCompleted: true,
       updatedAt: new Date(),
-    });
+    };
+
+    // If profile doesn't exist, include createdAt
+    const existingProfile = this._profile();
+    if (!existingProfile) {
+      (profileData as UserProfile).createdAt = new Date();
+    }
+
+    await this.firestoreService.setDocument('users', user.uid, profileData, true);
 
     // Update local profile
-    const currentProfile = this._profile();
-    if (currentProfile) {
-      this._profile.set({
-        ...currentProfile,
-        onboarding: onboardingData,
-        onboardingCompleted: true,
-        updatedAt: new Date(),
-      });
-    }
+    this._profile.set({
+      uid: user.uid,
+      email: user.email,
+      displayName: user.displayName,
+      photoURL: user.photoURL,
+      createdAt: existingProfile?.createdAt ?? new Date(),
+      updatedAt: new Date(),
+      onboardingCompleted: true,
+      onboarding: onboardingData,
+    });
   }
 
   async updateProfile(updates: Partial<UserProfile>): Promise<void> {

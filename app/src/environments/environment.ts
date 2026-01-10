@@ -1,5 +1,6 @@
 export const environment = {
   production: false,
+  useEmulators: true, // Set to false to use production Firebase
   firebase: {
     apiKey: 'AIzaSyAh86oAhHxMIZxqJBIreBF6lOHbC3bU7XY',
     authDomain: 'gylde-dba55.firebaseapp.com',

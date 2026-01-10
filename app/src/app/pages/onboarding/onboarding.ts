@@ -66,12 +66,12 @@ export class OnboardingComponent {
       const data = this.onboarding.data();
       
       // Map onboarding data to profile structure
+      // Note: Don't include undefined values - Firestore doesn't support them
       const onboardingProfile: OnboardingProfile = {
         isAdult: data.isAdult === true,
         city: data.city,
         country: data.country,
         genderIdentity: data.genderIdentity,
-        genderCustom: data.genderCustom || undefined,
         interestedIn: data.interestedIn,
         ageRangeMin: data.ageRangeMin,
         ageRangeMax: data.ageRangeMax,
@@ -80,19 +80,37 @@ export class OnboardingComponent {
         values: data.values,
         lifestyle: data.lifestyle,
         idealRelationship: data.idealRelationship,
-        supportMeaning: data.supportMeaning || undefined,
         photos: data.photos,
         verificationOptions: data.verificationOptions,
       };
 
+      // Only add optional fields if they have values
+      if (data.genderCustom) {
+        onboardingProfile.genderCustom = data.genderCustom;
+      }
+      if (data.supportMeaning) {
+        onboardingProfile.supportMeaning = data.supportMeaning;
+      }
+
+      console.log('Saving onboarding data:', onboardingProfile);
       await this.userProfileService.saveOnboardingData(onboardingProfile);
+      console.log('Onboarding data saved successfully');
       
       // Reset onboarding state and navigate to dashboard
       this.onboarding.reset();
       this.router.navigate(['/dashboard']);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to save onboarding data:', error);
-      this.saveError.set('Failed to save your profile. Please try again.');
+      
+      // Extract more useful error message
+      let errorMessage = 'Failed to save your profile. Please try again.';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'object' && error !== null && 'code' in error) {
+        errorMessage = `Firebase error: ${(error as { code: string }).code}`;
+      }
+      
+      this.saveError.set(errorMessage);
     } finally {
       this.saving.set(false);
     }

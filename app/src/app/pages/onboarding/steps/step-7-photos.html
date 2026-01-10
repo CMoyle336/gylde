@@ -28,39 +28,54 @@
   </ul>
 </div>
 
+@if (uploadError()) {
+  <div class="error-message" role="alert">
+    <span class="material-icons-outlined">error_outline</span>
+    {{ uploadError() }}
+  </div>
+}
+
 <div class="question-group" style="margin-top: 2rem;">
   <div class="photo-grid">
     <!-- Primary Photo Slot -->
     <div class="photo-slot primary">
-      @if (photos().length > 0) {
-        <img [src]="photos()[0]" alt="Primary photo" class="photo-preview">
+      @if (photoPreviews().length > 0) {
+        <img [src]="photoPreviews()[0].preview" alt="Primary photo" class="photo-preview">
         <button 
           type="button" 
           class="photo-remove" 
+          [disabled]="uploading()"
           (click)="removePhoto(0)"
           aria-label="Remove photo">
           <span class="material-icons-outlined">close</span>
         </button>
       } @else {
-        <label class="photo-upload-btn">
+        <label class="photo-upload-btn" [class.uploading]="uploading()">
           <input 
             type="file" 
             accept="image/jpeg,image/jpg,image/png"
+            [disabled]="uploading()"
             (change)="onFileSelected($event, true)"
             style="display: none;">
-          <span class="material-icons-outlined">add_a_photo</span>
-          <span>{{ 'ONBOARDING.STEP_7.PRIMARY_PHOTO' | translate }}</span>
+          @if (uploading()) {
+            <span class="upload-spinner"></span>
+            <span>Uploading...</span>
+          } @else {
+            <span class="material-icons-outlined">add_a_photo</span>
+            <span>{{ 'ONBOARDING.STEP_7.PRIMARY_PHOTO' | translate }}</span>
+          }
         </label>
       }
     </div>
 
     <!-- Additional Photo Slots -->
-    @for (photo of photos().slice(1); track $index) {
+    @for (photo of photoPreviews().slice(1); track $index) {
       <div class="photo-slot">
-        <img [src]="photo" alt="Photo {{ $index + 2 }}" class="photo-preview">
+        <img [src]="photo.preview" alt="Photo {{ $index + 2 }}" class="photo-preview">
         <button 
           type="button" 
           class="photo-remove" 
+          [disabled]="uploading()"
           (click)="removePhoto($index + 1)"
           aria-label="Remove photo">
           <span class="material-icons-outlined">close</span>
@@ -69,16 +84,22 @@
     }
 
     <!-- Empty Slots -->
-    @if (photos().length > 0 && photos().length < maxPhotos) {
+    @if (photoPreviews().length > 0 && photoPreviews().length < maxPhotos) {
       <div class="photo-slot">
-        <label class="photo-upload-btn">
+        <label class="photo-upload-btn" [class.uploading]="uploading()">
           <input 
             type="file" 
             accept="image/jpeg,image/jpg,image/png"
+            [disabled]="uploading()"
             (change)="onFileSelected($event, false)"
             style="display: none;">
-          <span class="material-icons-outlined">add</span>
-          <span>{{ 'ONBOARDING.STEP_7.ADD_PHOTO' | translate }}</span>
+          @if (uploading()) {
+            <span class="upload-spinner"></span>
+            <span>Uploading...</span>
+          } @else {
+            <span class="material-icons-outlined">add</span>
+            <span>{{ 'ONBOARDING.STEP_7.ADD_PHOTO' | translate }}</span>
+          }
         </label>
       </div>
     }

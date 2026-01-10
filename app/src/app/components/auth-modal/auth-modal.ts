@@ -97,7 +97,12 @@ export class AuthModalComponent {
           // Create user profile in Firestore
           const user = this.authService.user();
           if (user) {
-            await this.userProfileService.createUserProfile(user.uid, user.email, user.displayName);
+            try {
+              await this.userProfileService.createUserProfile(user.uid, user.email, user.displayName);
+            } catch (firestoreError) {
+              console.error('Failed to create user profile:', firestoreError);
+              // Still allow user to proceed - profile can be created later
+            }
           }
           this.authenticated.emit({ isNewUser: true });
           break;
@@ -107,8 +112,9 @@ export class AuthModalComponent {
           this.resetSent.set(true);
           break;
       }
-    } catch {
-      // Error is handled by authService.error signal
+    } catch (error) {
+      // Auth errors are handled by authService.error signal
+      console.error('Auth error:', error);
     } finally {
       this.submitting.set(false);
     }
