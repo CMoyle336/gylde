@@ -1,8 +1,12 @@
-import { ChangeDetectionStrategy, Component, inject, signal, OnInit, OnDestroy, computed } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal, OnInit, OnDestroy, computed, PLATFORM_ID, HostListener } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { FormsModule } from '@angular/forms';
 import { SlicePipe } from '@angular/common';
+import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatDividerModule } from '@angular/material/divider';
 import { DiscoveryService } from '../../core/services/discovery.service';
 import { AuthService } from '../../core/services/auth.service';
 import { FavoriteService } from '../../core/services/favorite.service';
@@ -14,7 +18,7 @@ import { DiscoverableProfile } from '../../core/interfaces';
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [TranslateModule, FormsModule, SlicePipe],
+  imports: [TranslateModule, FormsModule, SlicePipe, MatSidenavModule, MatMenuModule, MatDividerModule],
 })
 export class DashboardComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
@@ -22,10 +26,16 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private readonly authService = inject(AuthService);
   private readonly favoriteService = inject(FavoriteService);
   private readonly activityService = inject(ActivityService);
+  private readonly platformId = inject(PLATFORM_ID);
 
   protected readonly activeNav = signal<string>('discover');
   protected readonly profileCompletion = signal(75);
   protected readonly showDistanceFilter = signal(false);
+  
+  // Sidebar state
+  protected readonly sidenavOpen = signal(false); // For mobile overlay
+  protected readonly sidenavExpanded = signal(true); // For desktop collapsed/expanded
+  protected readonly isMobile = signal(false);
   
   // Current user info
   protected readonly currentUser = this.authService.user;
@@ -59,6 +69,27 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.loadProfiles();
     this.favoriteService.loadFavorites();
     this.activityService.subscribeToActivities();
+    this.checkScreenSize();
+  }
+
+  @HostListener('window:resize')
+  onResize(): void {
+    this.checkScreenSize();
+  }
+
+  private checkScreenSize(): void {
+    if (isPlatformBrowser(this.platformId)) {
+      const mobile = window.innerWidth < 1024;
+      this.isMobile.set(mobile);
+    }
+  }
+
+  protected toggleSidenav(): void {
+    this.sidenavOpen.update(v => !v);
+  }
+
+  protected toggleSidenavExpanded(): void {
+    this.sidenavExpanded.update(v => !v);
   }
 
   ngOnDestroy(): void {

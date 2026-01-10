@@ -507,14 +507,44 @@ Cursor should:
 ## ANGULAR MATERIAL GUIDELINES
 
 ### Role of Angular Material
-Use Angular Material for:
-- Forms
-- Dialogs
-- Menus
-- Tabs
-- Modals
-- Inputs
-- Accessibility
+Use Angular Material for all components where possible:
+  Autocomplete
+  Badge
+  Bottom Sheet
+  Button
+  Button Toggle
+  Card
+  Checkbox
+  Chips
+  Core
+  Datepicker
+  Dialog
+  Divider
+  Expansion Panel
+  Form Field
+  Grid List
+  Icon
+  Input
+  List
+  Menu
+  Paginator
+  Progress Bar
+  Progress Spinner
+  Radio Button
+  Ripples
+  Select
+  Sidenav
+  Slide Toggle
+  Slider
+  Snackbar
+  Sort Header
+  Stepper
+  Table
+  Tabs
+  Timepicker
+  Toolbar
+  Tooltip
+  Tree
 
 Avoid:
 - Overriding Material styles excessively

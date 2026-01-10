@@ -1,274 +1,344 @@
-<div class="dashboard">
-  <!-- Sidebar -->
-  <aside class="sidebar" role="navigation" aria-label="Main navigation">
-    <!-- User Profile Section -->
-    <div class="sidebar-profile">
-      <button type="button" class="profile-avatar" (click)="setActiveNav('profile')">
-        @if (userPhotoURL()) {
-          <img [src]="userPhotoURL()" alt="Your profile" class="avatar-image">
-        } @else {
-          <span class="material-icons-outlined">person</span>
-        }
-      </button>
-      <div class="profile-info">
-        <span class="profile-name">{{ currentUser()?.displayName || 'Your Profile' }}</span>
-        <div class="profile-completion-mini">
-          <div class="completion-bar-mini">
-            <div class="completion-fill-mini" [style.width.%]="profileCompletion()"></div>
-          </div>
-          <span class="completion-text">{{ profileCompletion() }}%</span>
-        </div>
-      </div>
+<mat-sidenav-container class="dashboard-container" [class.sidebar-collapsed]="!isMobile() && !sidenavExpanded()">
+  <!-- Sidenav -->
+  <mat-sidenav
+    #sidenav
+    [mode]="isMobile() ? 'over' : 'side'"
+    [opened]="isMobile() ? sidenavOpen() : true"
+    (openedChange)="isMobile() && sidenavOpen.set($event)"
+    class="sidebar"
+    [class.collapsed]="!isMobile() && !sidenavExpanded()"
+    [style.width]="isMobile() ? null : (sidenavExpanded() ? '280px' : '72px')">
+    
+    <!-- Sidebar Header -->
+    <div class="sidebar-header">
+      <a href="/" class="logo">
+        <span class="logo-icon">G</span>
+        <span class="logo-text">ylde</span>
+      </a>
     </div>
 
-    <!-- Navigation -->
-    <nav class="sidebar-nav">
-      @for (item of navItems; track item.id) {
-        <button 
-          type="button"
-          class="nav-item"
-          [class.active]="activeNav() === item.id"
-          (click)="setActiveNav(item.id)"
-          [attr.aria-current]="activeNav() === item.id ? 'page' : null">
-          <span class="material-icons-outlined nav-icon">{{ item.icon }}</span>
-          <span class="nav-label">{{ 'DASHBOARD.NAV.' + item.labelKey | translate }}</span>
-          @if (item.badge) {
-            <span class="nav-badge">{{ item.badge }}</span>
+    <!-- User Profile Section -->
+    <div class="sidebar-profile-wrapper">
+      <button 
+        type="button" 
+        class="sidebar-profile"
+        [matMenuTriggerFor]="profileMenu"
+        [title]="sidenavExpanded() ? '' : (currentUser()?.displayName || 'Your Profile')">
+        <div class="profile-avatar">
+          @if (userPhotoURL()) {
+            <img [src]="userPhotoURL()" alt="Your profile" class="avatar-image">
+          } @else {
+            <span class="material-icons-outlined">person</span>
           }
-        </button>
-      }
-    </nav>
+        </div>
+        <div class="profile-info">
+          <span class="profile-name">{{ currentUser()?.displayName || 'Your Profile' }}</span>
+          <div class="profile-completion-mini">
+            <div class="completion-bar-mini">
+              <div class="completion-fill-mini" [style.width.%]="profileCompletion()"></div>
+            </div>
+            <span class="completion-text">{{ profileCompletion() }}%</span>
+          </div>
+        </div>
+        <span class="material-icons-outlined profile-chevron">expand_more</span>
+      </button>
 
-    <!-- Recent Activity -->
-    <div class="sidebar-activity">
-      <div class="activity-header">
-        <span class="activity-title">{{ 'DASHBOARD.ACTIVITY_TITLE' | translate }}</span>
-        @if (unreadActivityCount() > 0) {
-          <span class="activity-badge">{{ unreadActivityCount() }}</span>
+      <!-- Material Menu -->
+      <mat-menu #profileMenu="matMenu" class="profile-menu">
+        <button mat-menu-item (click)="setActiveNav('profile')">
+          <span class="material-icons-outlined">person</span>
+          <span>View Profile</span>
+        </button>
+        <button mat-menu-item (click)="setActiveNav('settings')">
+          <span class="material-icons-outlined">settings</span>
+          <span>Settings</span>
+        </button>
+        <mat-divider></mat-divider>
+        <button mat-menu-item class="logout-menu-item" (click)="onLogout()">
+          <span class="material-icons-outlined">logout</span>
+          <span>Logout</span>
+        </button>
+      </mat-menu>
+    </div>
+
+    <!-- Sidebar Content (scrollable) -->
+    <div class="sidebar-content">
+      <!-- Navigation -->
+      <nav class="sidebar-nav">
+        @for (item of navItems; track item.id) {
+          <button 
+            type="button"
+            class="nav-item"
+            [class.active]="activeNav() === item.id"
+            (click)="setActiveNav(item.id); isMobile() && toggleSidenav()"
+            [attr.aria-current]="activeNav() === item.id ? 'page' : null"
+            [title]="sidenavExpanded() ? '' : ('DASHBOARD.NAV.' + item.labelKey | translate)">
+            <span class="material-icons-outlined nav-icon">{{ item.icon }}</span>
+            <span class="nav-label">{{ 'DASHBOARD.NAV.' + item.labelKey | translate }}</span>
+            @if (item.badge) {
+              <span class="nav-badge">{{ item.badge }}</span>
+            }
+          </button>
         }
-      </div>
-      
-      <ul class="activity-list">
-        @for (activity of recentActivity() | slice:0:5; track activity.id) {
-          <li class="activity-item" [class.unread]="!activity.read">
-            <div class="activity-avatar">
-              @if (activity.photo) {
-                <img [src]="activity.photo" [alt]="activity.name" class="activity-avatar-img">
-              } @else {
-                <span class="material-icons-outlined">
+      </nav>
+
+      <!-- Recent Activity -->
+      <div class="sidebar-activity">
+        <div class="activity-header">
+          <span class="activity-title">{{ 'DASHBOARD.ACTIVITY_TITLE' | translate }}</span>
+          @if (unreadActivityCount() > 0) {
+            <span class="activity-badge">{{ unreadActivityCount() }}</span>
+          }
+        </div>
+        
+        <ul class="activity-list">
+          @for (activity of recentActivity() | slice:0:5; track activity.id) {
+            <li 
+              class="activity-item" 
+              [class.unread]="!activity.read"
+              [title]="sidenavExpanded() ? '' : activity.name">
+              <div class="activity-avatar">
+                @if (activity.photo) {
+                  <img [src]="activity.photo" [alt]="activity.name" class="activity-avatar-img">
+                } @else {
+                  <span class="material-icons-outlined">
+                    @switch (activity.type) {
+                      @case ('match') { favorite }
+                      @case ('message') { chat }
+                      @case ('favorite') { star }
+                      @case ('view') { visibility }
+                    }
+                  </span>
+                }
+              </div>
+              <div class="activity-content">
+                <span class="activity-text">
                   @switch (activity.type) {
-                    @case ('match') { favorite }
-                    @case ('message') { chat }
-                    @case ('favorite') { star }
-                    @case ('view') { visibility }
+                    @case ('match') { Matched with {{ activity.name }} }
+                    @case ('message') { {{ activity.name }} messaged }
+                    @case ('favorite') { {{ activity.name }} favorited you }
+                    @case ('view') { {{ activity.name }} viewed }
                   }
                 </span>
-              }
-            </div>
-            <div class="activity-content">
-              <span class="activity-text">
-                @switch (activity.type) {
-                  @case ('match') { Matched with {{ activity.name }} }
-                  @case ('message') { {{ activity.name }} messaged }
-                  @case ('favorite') { {{ activity.name }} favorited you }
-                  @case ('view') { {{ activity.name }} viewed }
-                }
-              </span>
-              <span class="activity-time">{{ activity.timeAgo }}</span>
-            </div>
-          </li>
-        } @empty {
-          <li class="activity-empty">
-            <span class="material-icons-outlined">notifications_none</span>
-            <span>No activity yet</span>
-          </li>
-        }
-      </ul>
+                <span class="activity-time">{{ activity.timeAgo }}</span>
+              </div>
+            </li>
+          } @empty {
+            <li class="activity-empty" [title]="sidenavExpanded() ? '' : 'No activity'">
+              <span class="material-icons-outlined">notifications_none</span>
+              <span class="activity-empty-text">No activity yet</span>
+            </li>
+          }
+        </ul>
+      </div>
     </div>
 
-    <!-- Footer -->
-    <div class="sidebar-footer">
-      <a href="/" class="logo">Gylde</a>
-      <button type="button" class="logout-btn" (click)="onLogout()" title="Logout">
-        <span class="material-icons-outlined">logout</span>
+    <!-- Collapse/Expand Button - Absolute Bottom -->
+    <div class="sidebar-collapse">
+      <button 
+        type="button" 
+        class="collapse-btn" 
+        (click)="toggleSidenavExpanded()"
+        [title]="sidenavExpanded() ? 'Collapse sidebar' : 'Expand sidebar'">
+        <span class="material-icons-outlined">{{ sidenavExpanded() ? 'chevron_left' : 'chevron_right' }}</span>
       </button>
     </div>
-  </aside>
+  </mat-sidenav>
 
   <!-- Main Content -->
-  <main class="main-content">
-    @switch (activeNav()) {
-      @case ('discover') {
-        <!-- Discover Section -->
-        <section class="discover-section" aria-labelledby="discover-heading">
-          <!-- Filter Bar -->
-          <div class="filter-bar">
-            <button type="button" class="filter-btn active">
-              <span class="material-icons-outlined">tune</span>
-              {{ 'DASHBOARD.FILTERS.ALL' | translate }}
-            </button>
-            
-            <!-- Distance Filter -->
-            <div class="distance-filter-wrapper">
-              <button 
-                type="button" 
-                class="filter-btn distance-btn"
-                [class.active]="showDistanceFilter()"
-                (click)="toggleDistanceFilter()">
-                <span class="material-icons-outlined">near_me</span>
-                {{ getDistanceLabel(selectedDistance()) }}
-                <span class="material-icons-outlined dropdown-icon">expand_more</span>
+  <mat-sidenav-content class="main-content">
+    <!-- Mobile Header -->
+    @if (isMobile()) {
+      <header class="mobile-header">
+        <button type="button" class="menu-toggle" (click)="toggleSidenav()" aria-label="Open menu">
+          <span class="material-icons-outlined">menu</span>
+        </button>
+        <span class="header-logo">Gylde</span>
+        <button type="button" class="profile-toggle" (click)="setActiveNav('profile')">
+          @if (userPhotoURL()) {
+            <img [src]="userPhotoURL()" alt="Profile" class="header-avatar">
+          } @else {
+            <span class="material-icons-outlined">person</span>
+          }
+        </button>
+      </header>
+    }
+
+    <!-- Content Area -->
+    <div class="content-area">
+      @switch (activeNav()) {
+        @case ('discover') {
+          <!-- Discover Section -->
+          <section class="discover-section" aria-labelledby="discover-heading">
+            <!-- Filter Bar -->
+            <div class="filter-bar">
+              <button type="button" class="filter-btn active">
+                <span class="material-icons-outlined">tune</span>
+                {{ 'DASHBOARD.FILTERS.ALL' | translate }}
               </button>
               
-              @if (showDistanceFilter()) {
-                <div class="distance-dropdown">
-                  @for (distance of distanceOptions; track distance) {
-                    <button 
-                      type="button"
-                      class="distance-option"
-                      [class.selected]="selectedDistance() === distance"
-                      (click)="setDistanceFilter(distance)">
-                      {{ getDistanceLabel(distance) }}
-                      @if (selectedDistance() === distance) {
-                        <span class="material-icons-outlined">check</span>
-                      }
-                    </button>
-                  }
-                </div>
-              }
-            </div>
-            
-            <button type="button" class="filter-btn">
-              {{ 'DASHBOARD.FILTERS.VERIFIED' | translate }}
-            </button>
-            <button type="button" class="filter-btn">
-              {{ 'DASHBOARD.FILTERS.NEW' | translate }}
-            </button>
-          </div>
-
-          <!-- Loading State -->
-          @if (loading()) {
-            <div class="loading-state">
-              <div class="loading-spinner"></div>
-              <p>Finding profiles near you...</p>
-            </div>
-          } @else if (profiles().length === 0) {
-            <!-- Empty State -->
-            <div class="empty-state">
-              <span class="material-icons-outlined">search_off</span>
-              <h3>No profiles found</h3>
-              <p>Try adjusting your distance filter or check back later.</p>
-              <button type="button" class="retry-btn" (click)="loadProfiles()">
-                <span class="material-icons-outlined">refresh</span>
-                Refresh
+              <!-- Distance Filter -->
+              <div class="distance-filter-wrapper">
+                <button 
+                  type="button" 
+                  class="filter-btn distance-btn"
+                  [class.active]="showDistanceFilter()"
+                  (click)="toggleDistanceFilter()">
+                  <span class="material-icons-outlined">near_me</span>
+                  {{ getDistanceLabel(selectedDistance()) }}
+                  <span class="material-icons-outlined dropdown-icon">expand_more</span>
+                </button>
+                
+                @if (showDistanceFilter()) {
+                  <div class="distance-dropdown">
+                    @for (distance of distanceOptions; track distance) {
+                      <button 
+                        type="button"
+                        class="distance-option"
+                        [class.selected]="selectedDistance() === distance"
+                        (click)="setDistanceFilter(distance)">
+                        {{ getDistanceLabel(distance) }}
+                        @if (selectedDistance() === distance) {
+                          <span class="material-icons-outlined">check</span>
+                        }
+                      </button>
+                    }
+                  </div>
+                }
+              </div>
+              
+              <button type="button" class="filter-btn">
+                {{ 'DASHBOARD.FILTERS.VERIFIED' | translate }}
+              </button>
+              <button type="button" class="filter-btn">
+                {{ 'DASHBOARD.FILTERS.NEW' | translate }}
               </button>
             </div>
-          } @else {
-            <!-- Profile Grid -->
-            <div class="profile-grid">
-              @for (profile of profiles(); track profile.uid) {
-                <article class="profile-card">
-                  <div class="card-photo">
-                    @if (getProfilePhoto(profile)) {
-                      <img [src]="getProfilePhoto(profile)" [alt]="profile.displayName" class="profile-image">
-                    } @else {
-                      <div class="photo-placeholder">
-                        <span class="material-icons-outlined">person</span>
-                      </div>
-                    }
-                    @if (profile.verified) {
-                      <span class="verified-badge" title="Verified profile">
-                        <span class="material-icons-outlined">verified</span>
-                      </span>
-                    }
-                    @if (profile.distance !== undefined) {
-                      <span class="distance-badge">
-                        <span class="material-icons-outlined">near_me</span>
-                        {{ formatDistance(profile.distance) }}
-                      </span>
-                    }
-                  </div>
 
-                  <div class="card-content">
-                    <div class="card-header">
-                      <h3 class="card-name">{{ profile.displayName || 'Anonymous' }}, {{ profile.age }}</h3>
-                      <span class="card-location">
-                        <span class="material-icons-outlined">location_on</span>
-                        {{ profile.city }}
-                      </span>
-                    </div>
-
-                    <p class="card-tagline">{{ profile.idealRelationship | slice:0:100 }}{{ profile.idealRelationship.length > 100 ? '...' : '' }}</p>
-
-                    <div class="card-tags">
-                      @for (type of profile.connectionTypes.slice(0, 2); track type) {
-                        <span class="tag">{{ type }}</span>
+            <!-- Loading State -->
+            @if (loading()) {
+              <div class="loading-state">
+                <div class="loading-spinner"></div>
+                <p>Finding profiles near you...</p>
+              </div>
+            } @else if (profiles().length === 0) {
+              <!-- Empty State -->
+              <div class="empty-state">
+                <span class="material-icons-outlined">search_off</span>
+                <h3>No profiles found</h3>
+                <p>Try adjusting your distance filter or check back later.</p>
+                <button type="button" class="retry-btn" (click)="loadProfiles()">
+                  <span class="material-icons-outlined">refresh</span>
+                  Refresh
+                </button>
+              </div>
+            } @else {
+              <!-- Profile Grid -->
+              <div class="profile-grid">
+                @for (profile of profiles(); track profile.uid) {
+                  <article class="profile-card">
+                    <div class="card-photo">
+                      @if (getProfilePhoto(profile)) {
+                        <img [src]="getProfilePhoto(profile)" [alt]="profile.displayName" class="profile-image">
+                      } @else {
+                        <div class="photo-placeholder">
+                          <span class="material-icons-outlined">person</span>
+                        </div>
+                      }
+                      @if (profile.verified) {
+                        <span class="verified-badge" title="Verified profile">
+                          <span class="material-icons-outlined">verified</span>
+                        </span>
+                      }
+                      @if (profile.distance !== undefined) {
+                        <span class="distance-badge">
+                          <span class="material-icons-outlined">near_me</span>
+                          {{ formatDistance(profile.distance) }}
+                        </span>
                       }
                     </div>
 
-                    <div class="card-actions">
-                      <button 
-                        type="button" 
-                        class="action-btn pass"
-                        (click)="onPassProfile(profile)"
-                        aria-label="Pass on {{ profile.displayName }}">
-                        <span class="material-icons-outlined">close</span>
-                      </button>
-                      <button 
-                        type="button" 
-                        class="action-btn view"
-                        (click)="onViewProfile(profile)"
-                        aria-label="View {{ profile.displayName }}'s profile">
-                        <span class="material-icons-outlined">visibility</span>
-                      </button>
-                      <button 
-                        type="button" 
-                        class="action-btn favorite"
-                        [class.favorited]="isFavorited(profile.uid)"
-                        (click)="onFavoriteProfile(profile)"
-                        [attr.aria-label]="isFavorited(profile.uid) ? 'Unfavorite ' + profile.displayName : 'Favorite ' + profile.displayName">
-                        <span class="material-icons-outlined">{{ isFavorited(profile.uid) ? 'favorite' : 'favorite_border' }}</span>
-                      </button>
+                    <div class="card-content">
+                      <div class="card-header">
+                        <h3 class="card-name">{{ profile.displayName || 'Anonymous' }}, {{ profile.age }}</h3>
+                        <span class="card-location">
+                          <span class="material-icons-outlined">location_on</span>
+                          {{ profile.city }}
+                        </span>
+                      </div>
+
+                      <p class="card-tagline">{{ profile.idealRelationship | slice:0:100 }}{{ profile.idealRelationship.length > 100 ? '...' : '' }}</p>
+
+                      <div class="card-tags">
+                        @for (type of profile.connectionTypes.slice(0, 2); track type) {
+                          <span class="tag">{{ type }}</span>
+                        }
+                      </div>
+
+                      <div class="card-actions">
+                        <button 
+                          type="button" 
+                          class="action-btn pass"
+                          (click)="onPassProfile(profile)"
+                          aria-label="Pass on {{ profile.displayName }}">
+                          <span class="material-icons-outlined">close</span>
+                        </button>
+                        <button 
+                          type="button" 
+                          class="action-btn view"
+                          (click)="onViewProfile(profile)"
+                          aria-label="View {{ profile.displayName }}'s profile">
+                          <span class="material-icons-outlined">visibility</span>
+                        </button>
+                        <button 
+                          type="button" 
+                          class="action-btn favorite"
+                          [class.favorited]="isFavorited(profile.uid)"
+                          (click)="onFavoriteProfile(profile)"
+                          [attr.aria-label]="isFavorited(profile.uid) ? 'Unfavorite ' + profile.displayName : 'Favorite ' + profile.displayName">
+                          <span class="material-icons-outlined">{{ isFavorited(profile.uid) ? 'favorite' : 'favorite_border' }}</span>
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                </article>
-              }
-            </div>
-          }
-        </section>
-      }
+                  </article>
+                }
+              </div>
+            }
+          </section>
+        }
 
-      @case ('matches') {
-        <section class="placeholder-section">
-          <span class="material-icons-outlined placeholder-icon">favorite</span>
-          <h2>{{ 'DASHBOARD.MATCHES_TITLE' | translate }}</h2>
-          <p>{{ 'DASHBOARD.MATCHES_EMPTY' | translate }}</p>
-        </section>
-      }
+        @case ('matches') {
+          <section class="placeholder-section">
+            <span class="material-icons-outlined placeholder-icon">favorite</span>
+            <h2>{{ 'DASHBOARD.MATCHES_TITLE' | translate }}</h2>
+            <p>{{ 'DASHBOARD.MATCHES_EMPTY' | translate }}</p>
+          </section>
+        }
 
-      @case ('messages') {
-        <section class="placeholder-section">
-          <span class="material-icons-outlined placeholder-icon">chat_bubble</span>
-          <h2>{{ 'DASHBOARD.MESSAGES_TITLE' | translate }}</h2>
-          <p>{{ 'DASHBOARD.MESSAGES_EMPTY' | translate }}</p>
-        </section>
-      }
+        @case ('messages') {
+          <section class="placeholder-section">
+            <span class="material-icons-outlined placeholder-icon">chat_bubble</span>
+            <h2>{{ 'DASHBOARD.MESSAGES_TITLE' | translate }}</h2>
+            <p>{{ 'DASHBOARD.MESSAGES_EMPTY' | translate }}</p>
+          </section>
+        }
 
-      @case ('profile') {
-        <section class="placeholder-section">
-          <span class="material-icons-outlined placeholder-icon">person</span>
-          <h2>{{ 'DASHBOARD.PROFILE_TITLE' | translate }}</h2>
-          <p>{{ 'DASHBOARD.PROFILE_SUB' | translate }}</p>
-        </section>
-      }
+        @case ('profile') {
+          <section class="placeholder-section">
+            <span class="material-icons-outlined placeholder-icon">person</span>
+            <h2>{{ 'DASHBOARD.PROFILE_TITLE' | translate }}</h2>
+            <p>{{ 'DASHBOARD.PROFILE_SUB' | translate }}</p>
+          </section>
+        }
 
-      @case ('settings') {
-        <section class="placeholder-section">
-          <span class="material-icons-outlined placeholder-icon">settings</span>
-          <h2>{{ 'DASHBOARD.SETTINGS_TITLE' | translate }}</h2>
-          <p>{{ 'DASHBOARD.SETTINGS_SUB' | translate }}</p>
-        </section>
+        @case ('settings') {
+          <section class="placeholder-section">
+            <span class="material-icons-outlined placeholder-icon">settings</span>
+            <h2>{{ 'DASHBOARD.SETTINGS_TITLE' | translate }}</h2>
+            <p>{{ 'DASHBOARD.SETTINGS_SUB' | translate }}</p>
+          </section>
+        }
       }
-    }
-  </main>
-</div>
+    </div>
+  </mat-sidenav-content>
+</mat-sidenav-container>
