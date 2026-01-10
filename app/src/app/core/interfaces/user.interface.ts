@@ -14,6 +14,7 @@ export interface UserProfile {
   photoURL: string | null;
   createdAt: unknown;
   updatedAt: unknown;
+  lastActiveAt?: unknown; // Timestamp of last user activity
   onboardingCompleted: boolean;
 
   // Onboarding data (populated after onboarding)

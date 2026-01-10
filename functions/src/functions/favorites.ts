@@ -138,6 +138,14 @@ async function handleMatch(
     createdAt: FieldValue.serverTimestamp(),
   });
 
+  // Delete existing "favorite" activities for both users (replaced by match)
+  await Promise.all([
+    ActivityService.deleteActivities(fromUserId, "favorite", toUserId),
+    ActivityService.deleteActivities(toUserId, "favorite", fromUserId),
+  ]);
+
+  logger.info(`Deleted favorite activities, replacing with match activities`);
+
   // Get the other user's display info
   const toUser = await UserService.getDisplayInfo(toUserId);
 

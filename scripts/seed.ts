@@ -101,6 +101,11 @@ async function seedFirestoreUsers(db: FirebaseFirestore.Firestore) {
   for (const user of sampleUsers) {
     const userRef = db.collection('users').doc(user.uid);
     
+    // Generate a random lastActiveAt within the last 7 days
+    const now = Date.now();
+    const sevenDaysAgo = now - (7 * 24 * 60 * 60 * 1000);
+    const randomLastActive = new Date(sevenDaysAgo + Math.random() * (now - sevenDaysAgo));
+    
     batch.set(userRef, {
       uid: user.uid,
       email: user.email,
@@ -108,15 +113,26 @@ async function seedFirestoreUsers(db: FirebaseFirestore.Firestore) {
       photoURL: user.photoURL,
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
+      lastActiveAt: randomLastActive,
       onboardingCompleted: user.onboardingCompleted,
       onboarding: user.onboarding,
     });
     
-    console.log(`  ✓ ${user.displayName} (${user.onboarding.city})`);
+    const activeAgo = getTimeAgo(randomLastActive);
+    console.log(`  ✓ ${user.displayName} (${user.onboarding.city}) - active ${activeAgo}`);
   }
   
   await batch.commit();
   console.log(`\n✅ Created ${sampleUsers.length} Firestore profiles`);
+}
+
+function getTimeAgo(date: Date): string {
+  const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
+  
+  if (seconds < 60) return 'just now';
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+  return `${Math.floor(seconds / 86400)}d ago`;
 }
 
 async function clearAuthUsers(auth: ReturnType<typeof getAuth>) {

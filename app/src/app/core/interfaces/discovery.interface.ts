@@ -15,6 +15,7 @@ export interface DiscoverableProfile {
   country: string;
   location?: GeoLocation;
   distance?: number; // in miles
+  lastActiveAt?: Date; // Last activity timestamp for sorting
   genderIdentity: string;
   lifestyle: string;
   connectionTypes: string[];

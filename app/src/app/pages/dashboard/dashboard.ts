@@ -9,6 +9,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatDividerModule } from '@angular/material/divider';
 import { DiscoveryService } from '../../core/services/discovery.service';
 import { AuthService } from '../../core/services/auth.service';
+import { UserProfileService } from '../../core/services/user-profile.service';
 import { FavoriteService } from '../../core/services/favorite.service';
 import { ActivityService } from '../../core/services/activity.service';
 import { DiscoverableProfile } from '../../core/interfaces';
@@ -24,6 +25,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly discoveryService = inject(DiscoveryService);
   private readonly authService = inject(AuthService);
+  private readonly userProfileService = inject(UserProfileService);
   private readonly favoriteService = inject(FavoriteService);
   private readonly activityService = inject(ActivityService);
   private readonly platformId = inject(PLATFORM_ID);
@@ -70,6 +72,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.favoriteService.loadFavorites();
     this.activityService.subscribeToActivities();
     this.checkScreenSize();
+    
+    // Track user activity
+    this.userProfileService.updateLastActive();
   }
 
   @HostListener('window:resize')
@@ -81,6 +86,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (isPlatformBrowser(this.platformId)) {
       const mobile = window.innerWidth < 1024;
       this.isMobile.set(mobile);
+      
+      // Default to collapsed on mobile
+      if (mobile && this.sidenavExpanded()) {
+        this.sidenavExpanded.set(false);
+      }
     }
   }
 

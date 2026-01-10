@@ -58,9 +58,19 @@ export class DiscoveryService {
       });
     }
 
-    // Sort by distance if available
+    // Sort by recent activity first, then by distance
     return filtered.sort((a, b) => {
-      // Profiles with distance come first, sorted by distance
+      // Primary sort: last active (most recent first)
+      if (a.lastActiveAt && b.lastActiveAt) {
+        const timeDiff = b.lastActiveAt.getTime() - a.lastActiveAt.getTime();
+        if (timeDiff !== 0) return timeDiff;
+      } else if (a.lastActiveAt) {
+        return -1; // Active users come first
+      } else if (b.lastActiveAt) {
+        return 1;
+      }
+
+      // Secondary sort: distance (if both have distance data)
       if (a.distance !== undefined && b.distance !== undefined) {
         return a.distance - b.distance;
       }
@@ -150,6 +160,19 @@ export class DiscoveryService {
       );
     }
 
+    // Parse lastActiveAt if available
+    let lastActiveAt: Date | undefined;
+    if (profile.lastActiveAt) {
+      // Handle Firestore Timestamp or Date
+      if (typeof (profile.lastActiveAt as { toDate?: () => Date }).toDate === 'function') {
+        lastActiveAt = (profile.lastActiveAt as { toDate: () => Date }).toDate();
+      } else if (profile.lastActiveAt instanceof Date) {
+        lastActiveAt = profile.lastActiveAt;
+      } else if (typeof profile.lastActiveAt === 'string') {
+        lastActiveAt = new Date(profile.lastActiveAt);
+      }
+    }
+
     return {
       uid: profile.uid,
       displayName: profile.displayName,
@@ -158,6 +181,7 @@ export class DiscoveryService {
       country: onboarding.country,
       location: onboarding.location,
       distance,
+      lastActiveAt,
       genderIdentity: onboarding.genderIdentity,
       lifestyle: onboarding.lifestyle,
       connectionTypes: onboarding.connectionTypes,

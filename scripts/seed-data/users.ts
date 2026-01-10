@@ -9,6 +9,7 @@ export interface SeedUser {
   displayName: string;
   photoURL: string | null;
   onboardingCompleted: boolean;
+  lastActiveAt?: Date; // When user was last active
   onboarding: {
     birthDate: string;
     city: string;

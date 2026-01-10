@@ -115,6 +115,33 @@ export class UserProfileService {
     return this._profile()?.onboardingCompleted ?? false;
   }
 
+  /**
+   * Update the user's last active timestamp.
+   * Should be called on login and periodically while active.
+   */
+  async updateLastActive(): Promise<void> {
+    const user = this.authService.user();
+    if (!user) return;
+
+    try {
+      await this.firestoreService.updateDocument('users', user.uid, {
+        lastActiveAt: new Date(),
+      });
+
+      // Update local profile
+      const currentProfile = this._profile();
+      if (currentProfile) {
+        this._profile.set({
+          ...currentProfile,
+          lastActiveAt: new Date(),
+        });
+      }
+    } catch (error) {
+      // Silently fail - this is not critical
+      console.warn('Failed to update last active:', error);
+    }
+  }
+
   clearProfile(): void {
     this._profile.set(null);
   }

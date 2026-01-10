@@ -1,4 +1,4 @@
-<mat-sidenav-container class="dashboard-container" [class.sidebar-collapsed]="!isMobile() && !sidenavExpanded()">
+<mat-sidenav-container class="dashboard-container" [class.sidebar-collapsed]="!sidenavExpanded()">
   <!-- Sidenav -->
   <mat-sidenav
     #sidenav
@@ -7,7 +7,8 @@
     (openedChange)="isMobile() && sidenavOpen.set($event)"
     class="sidebar"
     [class.collapsed]="!isMobile() && !sidenavExpanded()"
-    [style.width]="isMobile() ? null : (sidenavExpanded() ? '280px' : '72px')">
+    [class.mobile-expanded]="isMobile() && sidenavOpen()"
+    [style.width]="isMobile() ? '280px' : (sidenavExpanded() ? '280px' : '72px')">
     
     <!-- Sidebar Header -->
     <div class="sidebar-header">
@@ -147,21 +148,21 @@
 
   <!-- Main Content -->
   <mat-sidenav-content class="main-content">
-    <!-- Mobile Header -->
-    @if (isMobile()) {
-      <header class="mobile-header">
-        <button type="button" class="menu-toggle" (click)="toggleSidenav()" aria-label="Open menu">
+    <!-- Mobile Collapsed Bar -->
+    @if (isMobile() && !sidenavOpen()) {
+      <div class="mobile-nav-bar">
+        <button type="button" class="mobile-nav-toggle" (click)="toggleSidenav()" aria-label="Open menu">
           <span class="material-icons-outlined">menu</span>
         </button>
-        <span class="header-logo">Gylde</span>
-        <button type="button" class="profile-toggle" (click)="setActiveNav('profile')">
+        <span class="mobile-logo">Gylde</span>
+        <button type="button" class="mobile-profile-btn" (click)="setActiveNav('profile')">
           @if (userPhotoURL()) {
-            <img [src]="userPhotoURL()" alt="Profile" class="header-avatar">
+            <img [src]="userPhotoURL()" alt="Profile" class="mobile-avatar">
           } @else {
             <span class="material-icons-outlined">person</span>
           }
         </button>
-      </header>
+      </div>
     }
 
     <!-- Content Area -->

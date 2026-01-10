@@ -556,17 +556,26 @@
   position: relative;
 }
 
-/* Override Angular Material's margin-left on content */
-.dashboard-container .main-content {
-  margin-left: var(--sidebar-width-expanded) !important;
+/* Content margin based on sidebar state - desktop only */
+@media (min-width: 1024px) {
+  .dashboard-container .main-content {
+    margin-left: var(--sidebar-width-expanded) !important;
+  }
+
+  .dashboard-container.sidebar-collapsed .main-content {
+    margin-left: var(--sidebar-width-collapsed) !important;
+  }
 }
 
-.dashboard-container.sidebar-collapsed .main-content {
-  margin-left: var(--sidebar-width-collapsed) !important;
+/* Mobile: no margin since sidebar overlays */
+@media (max-width: 1023px) {
+  .dashboard-container .main-content {
+    margin-left: 0 !important;
+  }
 }
 
-/* Mobile Header */
-.mobile-header {
+/* Mobile Navigation Bar */
+.mobile-nav-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -578,8 +587,8 @@
   z-index: 10;
 }
 
-.menu-toggle,
-.profile-toggle {
+.mobile-nav-toggle,
+.mobile-profile-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -593,24 +602,28 @@
   transition: all 0.2s ease;
 }
 
-.menu-toggle:hover,
-.profile-toggle:hover {
+.mobile-nav-toggle:hover,
+.mobile-profile-btn:hover {
   background: var(--color-bg-hover);
   color: var(--color-text-primary);
 }
 
-.header-logo {
+.mobile-logo {
   font-family: var(--font-display);
   font-size: 1.25rem;
   font-weight: 600;
   color: var(--color-accent);
 }
 
-.header-avatar {
+.mobile-avatar {
   width: 32px;
   height: 32px;
   border-radius: 50%;
   object-fit: cover;
+}
+
+.mobile-profile-btn .material-icons-outlined {
+  font-size: 1.5rem;
 }
 
 .profile-toggle .material-icons-outlined {
