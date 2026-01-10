@@ -1,12 +1,38 @@
 /**
  * Activity types for the activity feed
- * Re-exports shared types and adds client-specific extensions
  */
 
-// Re-export shared types
-export type {
-  ActivityType,
-  Activity,
-  ActivityBase,
-  ActivityDisplay,
-} from '@gylde/shared';
+export type ActivityType = 'favorite' | 'match' | 'message' | 'view';
+
+/**
+ * Base activity record stored in Firestore
+ */
+export interface ActivityBase {
+  type: ActivityType;
+  fromUserId: string;
+  fromUserName: string;
+  fromUserPhoto: string | null;
+  toUserId: string;
+  read: boolean;
+}
+
+/**
+ * Activity record as stored in Firestore
+ */
+export interface Activity extends ActivityBase {
+  id?: string;
+  createdAt: unknown; // Timestamp on read
+}
+
+/**
+ * Activity for display in the UI (with formatted time)
+ */
+export interface ActivityDisplay {
+  id: string;
+  type: ActivityType;
+  name: string;
+  photo: string | null;
+  time: string;
+  timeAgo: string;
+  read: boolean;
+}

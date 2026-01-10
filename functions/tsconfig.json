@@ -6,18 +6,13 @@
     "noImplicitReturns": true,
     "noUnusedLocals": true,
     "outDir": "lib",
+    "rootDir": "src",
     "sourceMap": true,
     "strict": true,
-    "target": "es2017",
-    "baseUrl": ".",
-    "paths": {
-      "@gylde/shared": ["../shared/types/index"],
-      "@gylde/shared/*": ["../shared/types/*"]
-    }
+    "target": "es2017"
   },
   "compileOnSave": true,
   "include": [
-    "src",
-    "../shared/types"
+    "src"
   ]
 }

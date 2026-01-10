@@ -1,21 +1,22 @@
 /**
  * Activity-related type definitions
- * Re-exports shared types and adds server-specific extensions
  */
 import { FieldValue } from "firebase-admin/firestore";
 
-// Re-export shared types
-export { ActivityType, ActivityBase, Activity } from "@gylde/shared";
+export type ActivityType = "favorite" | "match" | "message" | "view";
 
-/**
- * Activity data for writing to Firestore (with server timestamp)
- */
-export interface ActivityWrite {
-  type: import("@gylde/shared").ActivityType;
+export interface ActivityBase {
+  type: ActivityType;
   fromUserId: string;
   fromUserName: string;
   fromUserPhoto: string | null;
   toUserId: string;
-  createdAt: FieldValue;
   read: boolean;
+}
+
+/**
+ * Activity data for writing to Firestore (with server timestamp)
+ */
+export interface ActivityWrite extends ActivityBase {
+  createdAt: FieldValue;
 }

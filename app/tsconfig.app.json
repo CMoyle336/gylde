@@ -10,8 +10,7 @@
     ]
   },
   "include": [
-    "src/**/*.ts",
-    "../shared/types/**/*.ts"
+    "src/**/*.ts"
   ],
   "exclude": [
     "src/**/*.spec.ts"
