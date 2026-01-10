@@ -30,6 +30,7 @@ export interface Activity extends ActivityBase {
 export interface ActivityDisplay {
   id: string;
   type: ActivityType;
+  fromUserId: string;
   name: string;
   photo: string | null;
   time: string;

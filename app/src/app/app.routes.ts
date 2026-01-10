@@ -25,6 +25,10 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/messages/messages').then((m) => m.MessagesComponent),
       },
       {
+        path: 'messages/:conversationId',
+        loadComponent: () => import('./pages/messages/messages').then((m) => m.MessagesComponent),
+      },
+      {
         path: 'matches',
         loadComponent: () => import('./pages/matches/matches').then((m) => m.MatchesComponent),
       },

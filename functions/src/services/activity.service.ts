@@ -42,6 +42,48 @@ export class ActivityService {
   }
 
   /**
+   * Create or update an activity record (upsert).
+   * If an activity of the same type from the same user already exists,
+   * update it instead of creating a new one.
+   * Useful for message activities to avoid duplicates.
+   */
+  static async upsertActivity(
+    toUserId: string,
+    type: ActivityType,
+    fromUserId: string,
+    fromUserName: string,
+    fromUserPhoto: string | null
+  ): Promise<string> {
+    const activitiesRef = db
+      .collection("users")
+      .doc(toUserId)
+      .collection("activities");
+
+    // Check for existing activity of same type from same user
+    const snapshot = await activitiesRef
+      .where("type", "==", type)
+      .where("fromUserId", "==", fromUserId)
+      .limit(1)
+      .get();
+
+    if (!snapshot.empty) {
+      // Update existing activity
+      const existingDoc = snapshot.docs[0];
+      await existingDoc.ref.update({
+        fromUserName,
+        fromUserPhoto,
+        createdAt: FieldValue.serverTimestamp(),
+        read: false,
+      });
+      logger.info(`Activity updated: ${type} for user ${toUserId} from ${fromUserName}`);
+      return existingDoc.id;
+    }
+
+    // Create new activity
+    return this.createActivity(toUserId, type, fromUserId, fromUserName, fromUserPhoto);
+  }
+
+  /**
    * Delete activities matching criteria
    */
   static async deleteActivities(

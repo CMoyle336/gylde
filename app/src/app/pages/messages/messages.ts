@@ -3,11 +3,14 @@ import {
   Component,
   inject,
   signal,
+  OnInit,
   OnDestroy,
   ElementRef,
   ViewChild,
   AfterViewChecked,
+  effect,
 } from '@angular/core';
+import { Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MessageService } from '../../core/services/message.service';
 import { ConversationDisplay } from '../../core/interfaces';
@@ -19,13 +22,16 @@ import { ConversationDisplay } from '../../core/interfaces';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [FormsModule],
 })
-export class MessagesComponent implements OnDestroy, AfterViewChecked {
+export class MessagesComponent implements OnInit, OnDestroy, AfterViewChecked {
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly messageService = inject(MessageService);
 
   @ViewChild('messagesContainer') messagesContainer!: ElementRef<HTMLDivElement>;
 
   protected readonly messageInput = signal('');
   private shouldScrollToBottom = false;
+  private conversationIdFromRoute: string | null = null;
 
   // Expose service signals
   protected readonly conversations = this.messageService.conversations;
@@ -33,6 +39,25 @@ export class MessagesComponent implements OnDestroy, AfterViewChecked {
   protected readonly messages = this.messageService.messages;
   protected readonly loading = this.messageService.loading;
   protected readonly sending = this.messageService.sending;
+
+  constructor() {
+    // Watch for conversations to load, then open the one from route if specified
+    effect(() => {
+      const convos = this.conversations();
+      if (this.conversationIdFromRoute && convos.length > 0 && !this.activeConversation()) {
+        const targetConvo = convos.find(c => c.id === this.conversationIdFromRoute);
+        if (targetConvo) {
+          this.messageService.openConversation(targetConvo);
+          this.shouldScrollToBottom = true;
+        }
+      }
+    });
+  }
+
+  ngOnInit(): void {
+    // Check for conversationId in route params
+    this.conversationIdFromRoute = this.route.snapshot.paramMap.get('conversationId');
+  }
 
   ngOnDestroy(): void {
     // Close any open conversation when leaving messages
@@ -49,10 +74,14 @@ export class MessagesComponent implements OnDestroy, AfterViewChecked {
   protected openConversation(conversation: ConversationDisplay): void {
     this.messageService.openConversation(conversation);
     this.shouldScrollToBottom = true;
+    // Update URL to include conversation ID
+    this.router.navigate(['/messages', conversation.id], { replaceUrl: true });
   }
 
   protected closeConversation(): void {
     this.messageService.closeConversation();
+    // Navigate back to messages list
+    this.router.navigate(['/messages'], { replaceUrl: true });
   }
 
   protected async sendMessage(): Promise<void> {

@@ -163,6 +163,7 @@ export class ActivityService implements OnDestroy {
     return {
       id: activity.id || '',
       type: activity.type,
+      fromUserId: activity.fromUserId,
       name: activity.fromUserName,
       photo: activity.fromUserPhoto,
       time: createdAt.toISOString(),

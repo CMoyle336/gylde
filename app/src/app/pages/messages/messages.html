@@ -1,129 +1,116 @@
-<div class="messages-container">
+<div class="messages-layout">
   <!-- Conversation List -->
-  <div class="conversations-panel" [class.hidden-on-mobile]="activeConversation()">
-    <div class="panel-header">
-      <h2 class="panel-title">Messages</h2>
-    </div>
-
-    <div class="conversations-list">
-      @if (loading()) {
-        <div class="loading-state">
-          <div class="loading-spinner"></div>
-          <span>Loading conversations...</span>
-        </div>
-      } @else if (conversations().length === 0) {
-        <div class="empty-state">
-          <span class="material-icons-outlined empty-icon">chat_bubble_outline</span>
-          <h3>No messages yet</h3>
-          <p>When you match with someone, you can start a conversation here.</p>
-        </div>
-      } @else {
-        @for (conversation of conversations(); track conversation.id) {
-          <button 
-            type="button"
-            class="conversation-item"
-            [class.active]="activeConversation()?.id === conversation.id"
-            [class.unread]="conversation.unreadCount > 0"
-            (click)="openConversation(conversation)">
-            <div class="conversation-avatar">
-              @if (conversation.otherUser.photoURL) {
-                <img [src]="conversation.otherUser.photoURL" [alt]="conversation.otherUser.displayName || 'User'" class="avatar-image">
-              } @else {
-                <span class="material-icons-outlined avatar-placeholder">person</span>
-              }
-              @if (conversation.unreadCount > 0) {
-                <span class="unread-badge">{{ conversation.unreadCount }}</span>
-              }
-            </div>
-            <div class="conversation-content">
-              <div class="conversation-header">
-                <span class="conversation-name">{{ conversation.otherUser.displayName || 'Unknown User' }}</span>
-                <span class="conversation-time">{{ formatTime(conversation.lastMessageTime) }}</span>
-              </div>
-              <p class="conversation-preview">{{ conversation.lastMessage || 'Start a conversation' }}</p>
-            </div>
-          </button>
-        }
-      }
-    </div>
-  </div>
-
-  <!-- Chat Panel -->
-  <div class="chat-panel" [class.visible-on-mobile]="activeConversation()">
-    @if (activeConversation()) {
-      <!-- Chat Header -->
-      <div class="chat-header">
-        <button type="button" class="back-btn" (click)="closeConversation()" aria-label="Back to conversations">
-          <span class="material-icons-outlined">arrow_back</span>
-        </button>
-        <div class="chat-user">
-          <div class="chat-avatar">
-            @if (activeConversation()!.otherUser.photoURL) {
-              <img [src]="activeConversation()!.otherUser.photoURL" [alt]="activeConversation()!.otherUser.displayName || 'User'" class="avatar-image">
+  <aside class="conversation-list" [class.hidden-on-mobile]="activeConversation()">
+    @if (loading()) {
+      <div class="loading-state">
+        <div class="loading-spinner"></div>
+        <span>Loading...</span>
+      </div>
+    } @else if (conversations().length === 0) {
+      <div class="empty-state">
+        <span class="material-icons-outlined">chat_bubble_outline</span>
+        <p>No conversations yet</p>
+      </div>
+    } @else {
+      @for (conversation of conversations(); track conversation.id) {
+        <button 
+          type="button"
+          class="conversation-item"
+          [class.active]="activeConversation()?.id === conversation.id"
+          [class.unread]="conversation.unreadCount > 0"
+          (click)="openConversation(conversation)">
+          <div class="conversation-avatar">
+            @if (conversation.otherUser.photoURL) {
+              <img [src]="conversation.otherUser.photoURL" [alt]="conversation.otherUser.displayName || 'User'" class="avatar-image">
             } @else {
               <span class="material-icons-outlined avatar-placeholder">person</span>
             }
+            @if (conversation.unreadCount > 0) {
+              <span class="unread-indicator"></span>
+            }
           </div>
-          <div class="chat-user-info">
-            <span class="chat-user-name">{{ activeConversation()!.otherUser.displayName || 'Unknown User' }}</span>
+          <div class="conversation-info">
+            <span class="conversation-name">{{ conversation.otherUser.displayName || 'Unknown' }}</span>
+            <span class="conversation-preview">{{ conversation.lastMessage || 'New chat' }}</span>
           </div>
-        </div>
-        <button type="button" class="options-btn" aria-label="More options">
-          <span class="material-icons-outlined">more_vert</span>
+          <span class="conversation-time">{{ formatTime(conversation.lastMessageTime) }}</span>
         </button>
-      </div>
+      }
+    }
+  </aside>
 
-      <!-- Messages Area -->
-      <div class="messages-area" #messagesContainer>
-        @if (messages().length === 0) {
-          <div class="chat-empty-state">
-            <span class="material-icons-outlined">waving_hand</span>
-            <p>Say hello! Start your conversation.</p>
-          </div>
-        } @else {
-          @for (message of messages(); track message.id) {
-            <div class="message" [class.own]="message.isOwn" [class.other]="!message.isOwn">
-              <div class="message-bubble">
-                <p class="message-content">{{ message.content }}</p>
-                <span class="message-time">{{ formatMessageTime(message.createdAt) }}</span>
-              </div>
+  <!-- Chat Area -->
+  <main class="chat-area" [class.visible-on-mobile]="activeConversation()">
+    @if (activeConversation()) {
+      <!-- Mobile Back Button & User Info -->
+      <header class="chat-header">
+        <button type="button" class="back-btn" (click)="closeConversation()" aria-label="Back">
+          <span class="material-icons-outlined">arrow_back</span>
+        </button>
+        <div class="chat-user">
+          @if (activeConversation()!.otherUser.photoURL) {
+            <img [src]="activeConversation()!.otherUser.photoURL" class="chat-avatar" [alt]="activeConversation()!.otherUser.displayName">
+          } @else {
+            <div class="chat-avatar placeholder">
+              <span class="material-icons-outlined">person</span>
             </div>
           }
+          <span class="chat-user-name">{{ activeConversation()!.otherUser.displayName || 'Unknown' }}</span>
+        </div>
+        <button type="button" class="options-btn" aria-label="Options">
+          <span class="material-icons-outlined">more_vert</span>
+        </button>
+      </header>
+
+      <!-- Messages -->
+      <div class="messages-scroll" #messagesContainer>
+        @if (messages().length === 0) {
+          <div class="start-chat">
+            <span class="material-icons-outlined">waving_hand</span>
+            <p>Start the conversation!</p>
+          </div>
+        } @else {
+          <div class="messages-list">
+            @for (message of messages(); track message.id) {
+              <div class="message" [class.own]="message.isOwn">
+                <div class="bubble">
+                  <p>{{ message.content }}</p>
+                  <time>{{ formatMessageTime(message.createdAt) }}</time>
+                </div>
+              </div>
+            }
+          </div>
         }
       </div>
 
-      <!-- Message Input -->
-      <div class="message-input-container">
-        <div class="input-wrapper">
-          <input
-            type="text"
-            class="message-input"
-            placeholder="Type a message..."
-            [value]="messageInput()"
-            (input)="messageInput.set($any($event.target).value)"
-            (keydown)="onKeyDown($event)"
-            [disabled]="sending()">
-          <button 
-            type="button" 
-            class="send-btn"
-            [disabled]="!messageInput().trim() || sending()"
-            (click)="sendMessage()"
-            aria-label="Send message">
-            @if (sending()) {
-              <div class="sending-spinner"></div>
-            } @else {
-              <span class="material-icons-outlined">send</span>
-            }
-          </button>
-        </div>
-      </div>
+      <!-- Input -->
+      <footer class="chat-input">
+        <input
+          type="text"
+          placeholder="Type a message..."
+          [value]="messageInput()"
+          (input)="messageInput.set($any($event.target).value)"
+          (keydown)="onKeyDown($event)"
+          [disabled]="sending()">
+        <button 
+          type="button"
+          class="send-btn"
+          [disabled]="!messageInput().trim() || sending()"
+          (click)="sendMessage()">
+          @if (sending()) {
+            <div class="spinner"></div>
+          } @else {
+            <span class="material-icons-outlined">send</span>
+          }
+        </button>
+      </footer>
     } @else {
-      <!-- No conversation selected -->
-      <div class="no-chat-selected">
+      <!-- No chat selected (desktop only) -->
+      <div class="no-chat">
         <span class="material-icons-outlined">forum</span>
         <h3>Select a conversation</h3>
-        <p>Choose a conversation from the list to start chatting.</p>
+        <p>Choose someone to chat with</p>
       </div>
     }
-  </div>
+  </main>
 </div>

@@ -319,6 +319,29 @@ export class MessageService {
   }
 
   /**
+   * Find an existing conversation with a user by their ID
+   * Returns the conversation ID if found, null otherwise
+   */
+  async findConversationByUserId(otherUserId: string): Promise<string | null> {
+    const currentUser = this.authService.user();
+    if (!currentUser) return null;
+
+    const conversationsRef = collection(this.firestore, 'conversations');
+    const q = query(
+      conversationsRef,
+      where('participants', 'array-contains', currentUser.uid)
+    );
+
+    const snapshot = await getDocs(q);
+    const existingConv = snapshot.docs.find((doc) => {
+      const data = doc.data() as Conversation;
+      return data.participants.includes(otherUserId);
+    });
+
+    return existingConv?.id ?? null;
+  }
+
+  /**
    * Clean up all subscriptions
    */
   cleanup(): void {

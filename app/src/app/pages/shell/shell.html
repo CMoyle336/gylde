@@ -90,28 +90,40 @@
           <span class="activity-title">{{ 'DASHBOARD.ACTIVITY_TITLE' | translate }}</span>
           @if (unreadActivityCount() > 0) {
             <span class="activity-badge">{{ unreadActivityCount() }}</span>
+            <button 
+              type="button" 
+              class="mark-all-read-btn"
+              (click)="markAllActivitiesAsRead()"
+              title="Mark all as read">
+              <span class="material-icons-outlined">done_all</span>
+            </button>
           }
         </div>
         
         <ul class="activity-list">
           @for (activity of recentActivity() | slice:0:5; track activity.id) {
-            <li 
+            <button 
+              type="button"
               class="activity-item" 
               [class.unread]="!activity.read"
-              [title]="sidenavExpanded() ? '' : activity.name">
+              [title]="sidenavExpanded() ? '' : activity.name"
+              (click)="onActivityClick(activity)">
               <div class="activity-avatar">
                 @if (activity.photo) {
                   <img [src]="activity.photo" [alt]="activity.name" class="activity-avatar-img">
                 } @else {
+                  <span class="material-icons-outlined avatar-placeholder">person</span>
+                }
+                <span class="activity-type-badge" [class]="'type-' + activity.type">
                   <span class="material-icons-outlined">
                     @switch (activity.type) {
                       @case ('match') { favorite }
-                      @case ('message') { chat }
+                      @case ('message') { chat_bubble }
                       @case ('favorite') { star }
                       @case ('view') { visibility }
                     }
                   </span>
-                }
+                </span>
               </div>
               <div class="activity-content">
                 <span class="activity-text">
@@ -124,7 +136,7 @@
                 </span>
                 <span class="activity-time">{{ activity.timeAgo }}</span>
               </div>
-            </li>
+            </button>
           } @empty {
             <li class="activity-empty" [title]="sidenavExpanded() ? '' : 'No activity'">
               <span class="material-icons-outlined">notifications_none</span>

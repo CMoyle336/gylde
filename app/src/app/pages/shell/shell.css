@@ -418,7 +418,7 @@
 .activity-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 0.5rem;
   padding: 0.875rem 1.25rem;
   flex-shrink: 0;
 }
@@ -429,6 +429,30 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--color-text-muted);
+  flex: 1;
+}
+
+.mark-all-read-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.mark-all-read-btn:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-accent);
+}
+
+.mark-all-read-btn .material-icons-outlined {
+  font-size: 1rem;
 }
 
 .activity-badge {
@@ -454,7 +478,12 @@
   display: flex;
   align-items: center;
   gap: 0.625rem;
+  width: 100%;
   padding: 0.625rem 1.25rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
   transition: background 0.2s ease;
 }
 
@@ -466,7 +495,12 @@
   background: rgba(201, 169, 98, 0.05);
 }
 
+.activity-item.unread:hover {
+  background: rgba(201, 169, 98, 0.1);
+}
+
 .activity-avatar {
+  position: relative;
   width: 32px;
   height: 32px;
   border-radius: 50%;
@@ -475,18 +509,72 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .activity-avatar-img {
   width: 100%;
   height: 100%;
+  border-radius: 50%;
   object-fit: cover;
 }
 
-.activity-avatar .material-icons-outlined {
+.activity-avatar .avatar-placeholder {
   font-size: 1rem;
   color: var(--color-text-muted);
+}
+
+/* Activity Type Badge */
+.activity-type-badge {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--color-bg-secondary);
+  background: var(--color-bg-elevated);
+}
+
+.activity-type-badge .material-icons-outlined {
+  font-size: 0.625rem;
+  color: var(--color-text-muted);
+}
+
+/* Type-specific badge colors */
+.activity-type-badge.type-match {
+  background: #e91e63;
+}
+
+.activity-type-badge.type-match .material-icons-outlined {
+  color: white;
+}
+
+.activity-type-badge.type-favorite {
+  background: var(--color-accent);
+}
+
+.activity-type-badge.type-favorite .material-icons-outlined {
+  color: var(--color-bg-primary);
+}
+
+.activity-type-badge.type-message {
+  background: #60a5fa;
+}
+
+.activity-type-badge.type-message .material-icons-outlined {
+  color: white;
+}
+
+.activity-type-badge.type-view {
+  background: #a78bfa;
+}
+
+.activity-type-badge.type-view .material-icons-outlined {
+  color: white;
 }
 
 .activity-content {

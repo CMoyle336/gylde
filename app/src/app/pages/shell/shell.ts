@@ -11,6 +11,7 @@ import { UserProfileService } from '../../core/services/user-profile.service';
 import { FavoriteService } from '../../core/services/favorite.service';
 import { ActivityService } from '../../core/services/activity.service';
 import { MessageService } from '../../core/services/message.service';
+import { ActivityDisplay } from '../../core/interfaces';
 
 @Component({
   selector: 'app-shell',
@@ -116,5 +117,49 @@ export class ShellComponent implements OnInit, OnDestroy {
 
   protected isMessagesWithActiveChat(): boolean {
     return this.router.url.startsWith('/messages') && !!this.activeConversation();
+  }
+
+  protected async onActivityClick(activity: ActivityDisplay): Promise<void> {
+    // Mark as read
+    if (!activity.read) {
+      this.activityService.markAsRead(activity.id);
+    }
+
+    // Close sidenav on mobile
+    if (this.isMobile()) {
+      this.sidenavOpen.set(false);
+    }
+
+    switch (activity.type) {
+      case 'message':
+        // Find the conversation with this user and navigate to it
+        const conversationId = await this.messageService.findConversationByUserId(activity.fromUserId);
+        if (conversationId) {
+          this.router.navigate(['/messages', conversationId]);
+        } else {
+          // Fallback to messages list if conversation not found
+          this.router.navigate(['/messages']);
+        }
+        break;
+
+      case 'match':
+      case 'favorite':
+        // Navigate to the user's profile (when implemented)
+        // For now, navigate to matches
+        this.router.navigate(['/matches']);
+        break;
+
+      case 'view':
+        // Navigate to discover or profile
+        this.router.navigate(['/discover']);
+        break;
+
+      default:
+        this.router.navigate(['/discover']);
+    }
+  }
+
+  protected markAllActivitiesAsRead(): void {
+    this.activityService.markAllAsRead();
   }
 }
