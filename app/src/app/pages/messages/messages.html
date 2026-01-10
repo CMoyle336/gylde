@@ -84,18 +84,68 @@
                 <!-- Image message -->
                 @else if (message.type === 'image' && message.imageUrls?.length) {
                   <div class="message-wrapper">
-                    <div class="image-bubble">
+                    <div class="image-bubble" [class.timed]="message.imageTimer" [class.expired]="message.isImageExpired && !message.isOwn">
                       <!-- Show text content if present (not a placeholder) -->
                       @if (message.content && !message.content.startsWith('Sent ')) {
                         <p class="image-caption">{{ message.content }}</p>
                       }
-                      <div class="image-grid" [class.single]="message.imageUrls!.length === 1" [class.grid-2]="message.imageUrls!.length === 2" [class.grid-many]="message.imageUrls!.length > 2">
-                        @for (imageUrl of message.imageUrls; track imageUrl; let idx = $index) {
-                          <button type="button" class="image-item" (click)="openGallery(message.imageUrls!, idx, $event)">
-                            <img [src]="imageUrl" alt="Shared image" loading="lazy">
-                          </button>
-                        }
-                      </div>
+                      
+                      <!-- Expired timed image placeholder -->
+                      @if (message.isImageExpired && !message.isOwn) {
+                        <div class="expired-image-placeholder">
+                          <span class="material-icons-outlined">timer_off</span>
+                          <span>Image expired</span>
+                        </div>
+                      }
+                      <!-- Timed image - show placeholder instead of thumbnail -->
+                      @else if (message.imageTimer && !message.isOwn) {
+                        <button type="button" class="timed-image-placeholder" (click)="openGallery(message.imageUrls!, 0, $event, message)">
+                          <div class="timed-icon-wrapper">
+                            <span class="material-icons-outlined">photo_camera</span>
+                            <span class="material-icons-outlined timer-overlay">timer</span>
+                          </div>
+                          <span class="tap-to-view">Tap to view</span>
+                          <span class="timer-duration">{{ message.imageTimer }}s</span>
+                        </button>
+                      }
+                      <!-- Sender's timed image - show thumbnail with status -->
+                      @else if (message.imageTimer && message.isOwn) {
+                        <div class="sender-timed-image">
+                          <div class="image-grid single">
+                            <button type="button" class="image-item" (click)="openGallery(message.imageUrls!, 0, $event, message)">
+                              <img [src]="message.imageUrls![0]" alt="Shared image" loading="lazy">
+                              <!-- Status overlay -->
+                              <div class="sender-status-overlay" 
+                                   [class.waiting]="!message.recipientViewedAt"
+                                   [class.viewing]="message.isRecipientViewing"
+                                   [class.viewed]="message.recipientViewExpired">
+                                @if (!message.recipientViewedAt) {
+                                  <span class="material-icons-outlined">visibility_off</span>
+                                  <span>Not opened</span>
+                                }
+                                @else if (message.isRecipientViewing) {
+                                  <span class="material-icons-outlined">visibility</span>
+                                  <span class="countdown-live">{{ getSenderCountdown(message.id) ?? 0 }}s</span>
+                                }
+                                @else if (message.recipientViewExpired) {
+                                  <span class="material-icons-outlined">done_all</span>
+                                  <span>Opened {{ formatMessageTime(message.recipientViewedAt!) }}</span>
+                                }
+                              </div>
+                            </button>
+                          </div>
+                        </div>
+                      }
+                      <!-- Regular image - show thumbnail -->
+                      @else {
+                        <div class="image-grid" [class.single]="message.imageUrls!.length === 1" [class.grid-2]="message.imageUrls!.length === 2" [class.grid-many]="message.imageUrls!.length > 2">
+                          @for (imageUrl of message.imageUrls; track imageUrl; let idx = $index) {
+                            <button type="button" class="image-item" (click)="openGallery(message.imageUrls!, idx, $event, message)">
+                              <img [src]="imageUrl" alt="Shared image" loading="lazy">
+                            </button>
+                          }
+                        </div>
+                      }
                       <time>{{ formatMessageTime(message.createdAt) }}</time>
                     </div>
                     <!-- Message actions menu -->
@@ -173,12 +223,23 @@
                 </div>
               }
             </div>
-            @if (selectedImages().length > 1) {
-              <button type="button" class="clear-all-btn" (click)="clearImages()">
-                <span class="material-icons-outlined">close</span>
-                Clear all
-              </button>
-            }
+            <div class="image-actions">
+              <!-- Timer selector -->
+              <div class="timer-selector">
+                <span class="material-icons-outlined timer-icon" [class.active]="imageTimer() !== null">timer</span>
+                <select [value]="imageTimer() ?? ''" (change)="imageTimer.set($any($event.target).value === '' ? null : +$any($event.target).value)">
+                  @for (option of timerOptions; track option.value) {
+                    <option [value]="option.value ?? ''">{{ option.label }}</option>
+                  }
+                </select>
+              </div>
+              @if (selectedImages().length > 1) {
+                <button type="button" class="clear-all-btn" (click)="clearImages()">
+                  <span class="material-icons-outlined">close</span>
+                  Clear all
+                </button>
+              }
+            </div>
           </div>
         }
 
@@ -236,52 +297,70 @@
 
 <!-- Image Gallery Lightbox -->
 @if (gallery().isOpen) {
-  <div class="gallery-overlay" (click)="closeGallery()">
+  <div class="gallery-overlay" [class.expired]="gallery().isExpired" (click)="closeGallery()">
     <div class="gallery-container" (click)="$event.stopPropagation()">
       <!-- Close Button -->
       <button type="button" class="gallery-close" (click)="closeGallery()" aria-label="Close gallery">
         <span class="material-icons-outlined">close</span>
       </button>
 
-      <!-- Navigation: Previous -->
-      @if (gallery().images.length > 1) {
-        <button type="button" class="gallery-nav prev" (click)="prevImage()" aria-label="Previous image">
-          <span class="material-icons-outlined">chevron_left</span>
-        </button>
-      }
-
-      <!-- Main Image -->
-      <div class="gallery-image-wrapper">
-        <img [ngSrc]="gallery().images[gallery().currentIndex]" alt="Image" class="gallery-image" fill priority>
-      </div>
-
-      <!-- Navigation: Next -->
-      @if (gallery().images.length > 1) {
-        <button type="button" class="gallery-nav next" (click)="nextImage()" aria-label="Next image">
-          <span class="material-icons-outlined">chevron_right</span>
-        </button>
-      }
-
-      <!-- Image Counter -->
-      @if (gallery().images.length > 1) {
-        <div class="gallery-counter">
-          {{ gallery().currentIndex + 1 }} / {{ gallery().images.length }}
+      <!-- Countdown Timer for timed images -->
+      @if (gallery().isTimed && galleryCountdown() !== null) {
+        <div class="gallery-countdown" [class.urgent]="galleryCountdown()! <= 5">
+          <span class="material-icons-outlined">timer</span>
+          <span class="countdown-value">{{ galleryCountdown() }}s</span>
         </div>
       }
 
-      <!-- Thumbnail Strip -->
-      @if (gallery().images.length > 1) {
-        <div class="gallery-thumbnails">
-          @for (img of gallery().images; track img; let i = $index) {
-            <button 
-              type="button" 
-              class="thumbnail" 
-              [class.active]="i === gallery().currentIndex"
-              (click)="goToImage(i)">
-              <img [ngSrc]="img" alt="Thumbnail" width="60" height="60">
-            </button>
-          }
+      <!-- Expired overlay -->
+      @if (gallery().isExpired) {
+        <div class="gallery-expired-overlay">
+          <span class="material-icons-outlined">timer_off</span>
+          <h3>Image expired</h3>
+          <p>This image is no longer available</p>
+          <button type="button" class="close-expired-btn" (click)="closeGallery()">Close</button>
         </div>
+      } @else {
+        <!-- Navigation: Previous -->
+        @if (gallery().images.length > 1) {
+          <button type="button" class="gallery-nav prev" (click)="prevImage()" aria-label="Previous image">
+            <span class="material-icons-outlined">chevron_left</span>
+          </button>
+        }
+
+        <!-- Main Image -->
+        <div class="gallery-image-wrapper">
+          <img [ngSrc]="gallery().images[gallery().currentIndex]" alt="Image" class="gallery-image" fill priority>
+        </div>
+
+        <!-- Navigation: Next -->
+        @if (gallery().images.length > 1) {
+          <button type="button" class="gallery-nav next" (click)="nextImage()" aria-label="Next image">
+            <span class="material-icons-outlined">chevron_right</span>
+          </button>
+        }
+
+        <!-- Image Counter -->
+        @if (gallery().images.length > 1) {
+          <div class="gallery-counter">
+            {{ gallery().currentIndex + 1 }} / {{ gallery().images.length }}
+          </div>
+        }
+
+        <!-- Thumbnail Strip -->
+        @if (gallery().images.length > 1) {
+          <div class="gallery-thumbnails">
+            @for (img of gallery().images; track img; let i = $index) {
+              <button 
+                type="button" 
+                class="thumbnail" 
+                [class.active]="i === gallery().currentIndex"
+                (click)="goToImage(i)">
+                <img [ngSrc]="img" alt="Thumbnail" width="60" height="60">
+              </button>
+            }
+          </div>
+        }
       }
     </div>
   </div>

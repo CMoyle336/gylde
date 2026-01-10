@@ -276,6 +276,33 @@ export class MessageService {
             continue;
           }
 
+          // Calculate timed image status for current user (as recipient)
+          let imageViewedAt: Date | null = null;
+          let isImageExpired = false;
+          
+          if (data.imageTimer && data.imageViewedBy?.[currentUser.uid]) {
+            imageViewedAt = this.toDate(data.imageViewedBy[currentUser.uid]);
+            const expiresAt = new Date(imageViewedAt.getTime() + data.imageTimer * 1000);
+            isImageExpired = new Date() > expiresAt;
+          }
+
+          // Calculate recipient viewing status for sender
+          let recipientViewedAt: Date | null = null;
+          let isRecipientViewing = false;
+          let recipientViewExpired = false;
+          
+          if (data.imageTimer && data.senderId === currentUser.uid) {
+            // Find the recipient's view timestamp (anyone who isn't the sender)
+            const recipientUid = Object.keys(data.imageViewedBy || {}).find(uid => uid !== currentUser.uid);
+            if (recipientUid && data.imageViewedBy?.[recipientUid]) {
+              recipientViewedAt = this.toDate(data.imageViewedBy[recipientUid]);
+              const expiresAt = new Date(recipientViewedAt.getTime() + data.imageTimer * 1000);
+              const now = new Date();
+              isRecipientViewing = now <= expiresAt;
+              recipientViewExpired = now > expiresAt;
+            }
+          }
+
           messages.push({
             id: docSnapshot.id,
             content: data.deletedForAll ? '' : data.content,
@@ -285,6 +312,12 @@ export class MessageService {
             type: data.deletedForAll ? 'system' : data.type,
             imageUrls: data.deletedForAll ? undefined : data.imageUrls,
             isDeletedForAll: data.deletedForAll,
+            imageTimer: data.imageTimer,
+            imageViewedAt,
+            isImageExpired,
+            recipientViewedAt,
+            isRecipientViewing,
+            recipientViewExpired,
           });
         }
 
@@ -314,8 +347,11 @@ export class MessageService {
   /**
    * Send a message in the active conversation
    * Supports text only, images only, or both text and images
+   * @param content Text content
+   * @param files Image files to upload
+   * @param imageTimer Optional duration in seconds for timed images
    */
-  async sendMessage(content: string, files: File[] = []): Promise<void> {
+  async sendMessage(content: string, files: File[] = [], imageTimer?: number): Promise<void> {
     const currentUser = this.authService.user();
     const activeConversation = this._activeConversation();
     const hasText = content.trim().length > 0;
@@ -363,6 +399,9 @@ export class MessageService {
 
       if (hasImages) {
         messageData['imageUrls'] = imageUrls;
+        if (imageTimer && imageTimer > 0) {
+          messageData['imageTimer'] = imageTimer;
+        }
       }
 
       await addDoc(messagesRef, messageData);
@@ -489,6 +528,35 @@ export class MessageService {
       });
     } catch (error) {
       console.error('Error deleting message for everyone:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Mark a timed image as viewed by the current user
+   * This starts the countdown timer for that user
+   */
+  async markImageAsViewed(messageId: string): Promise<void> {
+    const currentUser = this.authService.user();
+    const activeConversation = this._activeConversation();
+    
+    if (!currentUser || !activeConversation) return;
+
+    try {
+      const messageRef = doc(
+        this.firestore,
+        'conversations',
+        activeConversation.id,
+        'messages',
+        messageId
+      );
+
+      // Use dot notation to update nested field
+      await updateDoc(messageRef, {
+        [`imageViewedBy.${currentUser.uid}`]: serverTimestamp(),
+      });
+    } catch (error) {
+      console.error('Error marking image as viewed:', error);
       throw error;
     }
   }

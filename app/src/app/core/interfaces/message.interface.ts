@@ -15,6 +15,11 @@ export interface Message {
   deletedFor?: string[]; // User IDs who deleted this message for themselves
   deletedForAll?: boolean; // Sender deleted for everyone
   deletedForAllAt?: Date | FieldValue; // When it was deleted for everyone
+  // Temporary/timed image fields
+  imageTimer?: number; // Duration in seconds the recipient can view the image
+  imageViewedBy?: { // Track when each user viewed the timed image
+    [uid: string]: Date | FieldValue;
+  };
 }
 
 /**
@@ -72,4 +77,12 @@ export interface MessageDisplay {
   type: 'text' | 'image' | 'system';
   imageUrls?: string[]; // For image messages
   isDeletedForAll?: boolean; // Show "message was deleted" placeholder
+  // Temporary/timed image fields
+  imageTimer?: number; // Duration in seconds
+  imageViewedAt?: Date | null; // When current user first viewed (null if not yet)
+  isImageExpired?: boolean; // True if the user has already viewed and timer expired
+  // For sender: track when recipient viewed
+  recipientViewedAt?: Date | null; // When recipient first opened the image
+  isRecipientViewing?: boolean; // True if recipient is currently viewing (timer not expired)
+  recipientViewExpired?: boolean; // True if recipient's timer has expired
 }

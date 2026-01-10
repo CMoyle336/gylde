@@ -27,6 +27,9 @@ interface GalleryState {
   isOpen: boolean;
   images: string[];
   currentIndex: number;
+  messageId?: string;
+  isTimed?: boolean;
+  isExpired?: boolean;
 }
 
 @Component({
@@ -46,14 +49,28 @@ export class MessagesComponent implements OnInit, OnDestroy {
 
   protected readonly messageInput = signal('');
   protected readonly selectedImages = signal<ImagePreview[]>([]);
+  protected readonly imageTimer = signal<number | null>(null); // Duration in seconds for timed images
   protected readonly gallery = signal<GalleryState>({
     isOpen: false,
     images: [],
     currentIndex: 0,
   });
+  protected readonly galleryCountdown = signal<number | null>(null); // Countdown for timed images in gallery
+  protected readonly senderCountdowns = signal<Map<string, number>>(new Map()); // Live countdowns for sender's timed images
+  private galleryCountdownInterval: ReturnType<typeof setInterval> | null = null;
+  private senderCountdownInterval: ReturnType<typeof setInterval> | null = null;
   private isNearBottom = true;
   private previousMessageCount = 0;
   private conversationIdFromRoute: string | null = null;
+
+  // Timer options for timed images
+  protected readonly timerOptions = [
+    { label: 'No timer', value: null },
+    { label: '5 sec', value: 5 },
+    { label: '10 sec', value: 10 },
+    { label: '30 sec', value: 30 },
+    { label: '1 min', value: 60 },
+  ];
 
   // Expose service signals
   protected readonly conversations = this.messageService.conversations;
@@ -100,6 +117,20 @@ export class MessagesComponent implements OnInit, OnDestroy {
         setTimeout(() => this.scrollToBottom(), 0);
       }
     });
+
+    // Watch for messages with active sender countdowns
+    effect(() => {
+      const messages = this.messages();
+      const activeTimedMessages = messages.filter(m => 
+        m.isOwn && m.imageTimer && m.isRecipientViewing && m.recipientViewedAt
+      );
+      
+      if (activeTimedMessages.length > 0) {
+        this.startSenderCountdowns(activeTimedMessages);
+      } else {
+        this.stopSenderCountdowns();
+      }
+    });
   }
 
   ngOnInit(): void {
@@ -110,6 +141,65 @@ export class MessagesComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     // Close any open conversation when leaving messages
     this.messageService.closeConversation();
+    this.stopSenderCountdowns();
+  }
+
+  /**
+   * Start live countdown for sender's timed images being viewed
+   */
+  private startSenderCountdowns(messages: MessageDisplay[]): void {
+    // Update immediately
+    this.updateSenderCountdowns(messages);
+    
+    // Start interval if not already running
+    if (!this.senderCountdownInterval) {
+      this.senderCountdownInterval = setInterval(() => {
+        const currentMessages = this.messages().filter(m => 
+          m.isOwn && m.imageTimer && m.isRecipientViewing && m.recipientViewedAt
+        );
+        if (currentMessages.length > 0) {
+          this.updateSenderCountdowns(currentMessages);
+        } else {
+          this.stopSenderCountdowns();
+        }
+      }, 1000);
+    }
+  }
+
+  /**
+   * Update the countdown values for sender's timed images
+   */
+  private updateSenderCountdowns(messages: MessageDisplay[]): void {
+    const countdowns = new Map<string, number>();
+    const now = Date.now();
+    
+    for (const msg of messages) {
+      if (msg.recipientViewedAt && msg.imageTimer) {
+        const elapsed = (now - msg.recipientViewedAt.getTime()) / 1000;
+        const remaining = Math.max(0, Math.ceil(msg.imageTimer - elapsed));
+        countdowns.set(msg.id, remaining);
+      }
+    }
+    
+    this.senderCountdowns.set(countdowns);
+  }
+
+  /**
+   * Stop the sender countdown interval
+   */
+  private stopSenderCountdowns(): void {
+    if (this.senderCountdownInterval) {
+      clearInterval(this.senderCountdownInterval);
+      this.senderCountdownInterval = null;
+    }
+    this.senderCountdowns.set(new Map());
+  }
+
+  /**
+   * Get the countdown for a specific message (for template)
+   */
+  protected getSenderCountdown(messageId: string): number | null {
+    return this.senderCountdowns().get(messageId) ?? null;
   }
 
   protected openConversation(conversation: ConversationDisplay): void {
@@ -132,6 +222,7 @@ export class MessagesComponent implements OnInit, OnDestroy {
   protected async send(): Promise<void> {
     const content = this.messageInput().trim();
     const images = this.selectedImages();
+    const timer = this.imageTimer();
     
     // Must have text or images
     if (!content && images.length === 0) return;
@@ -142,9 +233,10 @@ export class MessagesComponent implements OnInit, OnDestroy {
     // Clear inputs immediately for responsiveness
     this.messageInput.set('');
     this.clearImages();
+    this.imageTimer.set(null);
     this.isNearBottom = true;
 
-    await this.messageService.sendMessage(content, files);
+    await this.messageService.sendMessage(content, files, timer ?? undefined);
   }
 
   /**
@@ -231,20 +323,77 @@ export class MessagesComponent implements OnInit, OnDestroy {
   /**
    * Open the image gallery at a specific image
    */
-  protected openGallery(images: string[], startIndex: number, event: Event): void {
+  protected async openGallery(images: string[], startIndex: number, event: Event, message?: MessageDisplay): Promise<void> {
     event.preventDefault();
     event.stopPropagation();
+
+    // Check if this is a timed image that has expired
+    if (message?.imageTimer && message.isImageExpired && !message.isOwn) {
+      // Image has expired, don't open gallery
+      return;
+    }
+
     this.gallery.set({
       isOpen: true,
       images,
       currentIndex: startIndex,
+      messageId: message?.id,
+      isTimed: !!message?.imageTimer && !message?.isOwn,
+      isExpired: false,
     });
+
+    // If this is a timed image and the user hasn't viewed it yet, mark as viewed
+    if (message?.imageTimer && !message.imageViewedAt && !message.isOwn) {
+      await this.messageService.markImageAsViewed(message.id);
+      // Start countdown from the full timer duration
+      this.startGalleryCountdown(message.imageTimer);
+    } else if (message?.imageTimer && message.imageViewedAt && !message.isOwn) {
+      // Already viewed, calculate remaining time
+      const elapsed = (Date.now() - message.imageViewedAt.getTime()) / 1000;
+      const remaining = Math.max(0, message.imageTimer - elapsed);
+      if (remaining > 0) {
+        this.startGalleryCountdown(remaining);
+      } else {
+        // Timer already expired
+        this.gallery.update(g => ({ ...g, isExpired: true }));
+      }
+    }
+  }
+
+  /**
+   * Start the countdown timer for timed images
+   */
+  private startGalleryCountdown(seconds: number): void {
+    this.stopGalleryCountdown();
+    this.galleryCountdown.set(Math.ceil(seconds));
+    
+    this.galleryCountdownInterval = setInterval(() => {
+      const current = this.galleryCountdown();
+      if (current !== null && current > 0) {
+        this.galleryCountdown.set(current - 1);
+      } else {
+        this.stopGalleryCountdown();
+        this.gallery.update(g => ({ ...g, isExpired: true }));
+      }
+    }, 1000);
+  }
+
+  /**
+   * Stop the countdown timer
+   */
+  private stopGalleryCountdown(): void {
+    if (this.galleryCountdownInterval) {
+      clearInterval(this.galleryCountdownInterval);
+      this.galleryCountdownInterval = null;
+    }
+    this.galleryCountdown.set(null);
   }
 
   /**
    * Close the image gallery
    */
   protected closeGallery(): void {
+    this.stopGalleryCountdown();
     this.gallery.update(g => ({ ...g, isOpen: false }));
   }
 
