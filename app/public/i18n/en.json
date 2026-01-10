@@ -125,9 +125,10 @@
     "STEP_1": {
       "TITLE": "Let's Get Started",
       "SUBTITLE": "First, a few basics to ensure Gylde is right for you.",
-      "AGE_QUESTION": "Are you at least 18 years old?",
-      "AGE_YES": "Yes, I am 18 or older",
-      "AGE_NO": "No, I am under 18",
+      "BIRTHDAY_QUESTION": "When is your birthday?",
+      "BIRTHDAY_HINT": "We use this to verify your age and show it on your profile.",
+      "BIRTHDAY_LABEL": "Date of birth",
+      "AGE_VERIFIED": "You're {{age}} years old",
       "AGE_REQUIRED": "You must be at least 18 years old to join Gylde.",
       "LOCATION_QUESTION": "Where are you located?",
       "CITY_AUTOCOMPLETE_PLACEHOLDER": "Start typing your city...",

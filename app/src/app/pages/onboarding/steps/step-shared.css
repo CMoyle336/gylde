@@ -84,6 +84,11 @@
   color: var(--color-text-muted);
 }
 
+.input-field:hover:not(:focus):not(:disabled) {
+  border-color: var(--color-accent);
+  background: #3d3350;
+}
+
 .input-field:focus {
   border-color: var(--color-accent);
   box-shadow: 0 0 0 3px var(--color-accent-glow);
@@ -113,6 +118,11 @@
   background-position: right 1rem center;
   background-size: 1.25rem;
   padding-right: 3rem;
+}
+
+.select-field:hover:not(:focus) {
+  border-color: var(--color-accent);
+  background: #3d3350;
 }
 
 .select-field:focus {
@@ -169,8 +179,8 @@
 }
 
 .option-label:hover {
-  border-color: rgba(255, 255, 255, 0.15);
-  background: rgba(37, 32, 48, 0.8);
+  border-color: var(--color-accent);
+  background: #3d3350;
 }
 
 .option-input:focus-visible + .option-label {
@@ -295,6 +305,11 @@
 
 .textarea-field::placeholder {
   color: var(--color-text-muted);
+}
+
+.textarea-field:hover:not(:focus) {
+  border-color: var(--color-accent);
+  background: #3d3350;
 }
 
 .textarea-field:focus {
@@ -669,21 +684,66 @@
   animation: location-spin 0.8s linear infinite;
 }
 
-/* Location Confirmed Badge */
-.location-confirmed {
+/* Age Display Badge */
+.age-display {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   margin-top: 0.75rem;
-  padding: 0.5rem 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+}
+
+.age-display.valid {
   background: rgba(129, 199, 132, 0.1);
-  border-radius: 6px;
-  font-size: 0.8125rem;
   color: var(--color-success);
 }
 
-.location-confirmed .material-icons-outlined {
-  font-size: 1rem;
+.age-display.invalid {
+  background: rgba(229, 115, 115, 0.1);
+  color: var(--color-error);
+}
+
+.age-display .material-icons-outlined {
+  font-size: 1.125rem;
+}
+
+/* Birthday Datepicker */
+.birthday-wrapper {
+  margin-top: 0.5rem;
+}
+
+.birthday-wrapper .input-field {
+  padding-right: 3rem;
+  cursor: pointer;
+}
+
+.datepicker-toggle {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.datepicker-toggle:hover {
+  color: var(--color-accent);
+  background: rgba(201, 169, 98, 0.1);
+}
+
+.datepicker-toggle .material-icons-outlined {
+  font-size: 1.25rem;
 }
 
 /* Autocomplete Wrapper */

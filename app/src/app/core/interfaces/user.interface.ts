@@ -27,7 +27,7 @@ export interface UserProfile {
  */
 export interface OnboardingProfile {
   // Step 1: Eligibility
-  isAdult: boolean;
+  birthDate: string; // ISO date string (YYYY-MM-DD)
   city: string;
   country: string;
   location?: GeoLocation;

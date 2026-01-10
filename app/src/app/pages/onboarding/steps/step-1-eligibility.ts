@@ -7,9 +7,15 @@ import {
   OnDestroy,
   ElementRef,
   viewChild,
+  PLATFORM_ID,
 } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { provideNativeDateAdapter } from '@angular/material/core';
 import { OnboardingService } from '../onboarding.service';
 import { PlacesService, PlaceSuggestion } from '../../../core/services/places.service';
 import { GeoLocation } from '../../../core/interfaces';
@@ -21,11 +27,19 @@ type LocationStatus = 'idle' | 'detecting' | 'success' | 'error' | 'manual';
   templateUrl: './step-1-eligibility.html',
   styleUrls: ['./step-shared.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, TranslateModule],
+  imports: [
+    FormsModule,
+    TranslateModule,
+    MatDatepickerModule,
+    MatFormFieldModule,
+    MatInputModule,
+  ],
+  providers: [provideNativeDateAdapter()],
 })
 export class Step1EligibilityComponent implements OnInit, OnDestroy {
   protected readonly onboarding = inject(OnboardingService);
   private readonly placesService = inject(PlacesService);
+  private readonly platformId = inject(PLATFORM_ID);
 
   // Signals for UI state
   protected readonly locationStatus = signal<LocationStatus>('idle');
@@ -35,6 +49,9 @@ export class Step1EligibilityComponent implements OnInit, OnDestroy {
   protected readonly showSuggestions = signal(false);
   protected readonly isSearching = signal(false);
   protected readonly highlightedIndex = signal(-1);
+  
+  // Birthday signal to avoid creating new Date objects on every change detection
+  protected readonly birthDateValue = signal<Date | null>(null);
 
   // Reference to autocomplete input
   private readonly inputRef = viewChild<ElementRef<HTMLInputElement>>('cityInput');
@@ -46,37 +63,78 @@ export class Step1EligibilityComponent implements OnInit, OnDestroy {
   private clickOutsideHandler = (e: MouseEvent) => this.onClickOutside(e);
 
   ngOnInit(): void {
-    document.addEventListener('click', this.clickOutsideHandler);
+    // Only run browser-specific code on the client
+    if (isPlatformBrowser(this.platformId)) {
+      document.addEventListener('click', this.clickOutsideHandler);
+    }
+
+    // Initialize birthDate from stored data
+    const data = this.onboarding.data();
+    if (data.birthDate) {
+      this.birthDateValue.set(new Date(data.birthDate));
+    }
 
     // Check if we already have location data
-    const data = this.onboarding.data();
     if (data.location && data.city) {
       // Format existing location for display
       this.cityInputValue.set(data.city);
       this.locationStatus.set('success');
-    } else {
-      // Try to auto-detect location
+    } else if (isPlatformBrowser(this.platformId)) {
+      // Try to auto-detect location (only in browser)
       this.requestGeolocation();
     }
   }
 
   ngOnDestroy(): void {
-    document.removeEventListener('click', this.clickOutsideHandler);
+    if (isPlatformBrowser(this.platformId)) {
+      document.removeEventListener('click', this.clickOutsideHandler);
+    }
     if (this.searchDebounceTimer) {
       clearTimeout(this.searchDebounceTimer);
     }
   }
 
-  protected get isAdult(): boolean | null {
-    return this.onboarding.data().isAdult;
+  /**
+   * Handle birthdate changes from the datepicker
+   */
+  protected onBirthDateChange(value: Date | null): void {
+    this.birthDateValue.set(value);
+    if (value) {
+      // Convert to ISO string (YYYY-MM-DD)
+      const isoString = value.toISOString().split('T')[0];
+      this.onboarding.updateData({ birthDate: isoString });
+    } else {
+      this.onboarding.updateData({ birthDate: null });
+    }
   }
 
-  protected set isAdult(value: boolean | null) {
-    this.onboarding.updateData({ isAdult: value });
+  protected get userAge(): number | null {
+    const birthDate = this.onboarding.data().birthDate;
+    if (!birthDate) return null;
+    return this.onboarding.calculateAge(birthDate);
+  }
+
+  protected get isAdult(): boolean {
+    const age = this.userAge;
+    return age !== null && age >= 18;
   }
 
   protected get hasLocation(): boolean {
     return this.onboarding.data().location !== null;
+  }
+
+  // Calculate max date (must be at least 18 years old)
+  protected get maxBirthDate(): Date {
+    const date = new Date();
+    date.setFullYear(date.getFullYear() - 18);
+    return date;
+  }
+
+  // Calculate min date (reasonable minimum - 100 years ago)
+  protected get minBirthDate(): Date {
+    const date = new Date();
+    date.setFullYear(date.getFullYear() - 100);
+    return date;
   }
 
   /**

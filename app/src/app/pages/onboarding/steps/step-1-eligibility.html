@@ -4,47 +4,41 @@
 </div>
 
 <div class="question-group">
-  <span class="question-label">{{ 'ONBOARDING.STEP_1.AGE_QUESTION' | translate }}</span>
+  <span class="question-label">{{ 'ONBOARDING.STEP_1.BIRTHDAY_QUESTION' | translate }}</span>
+  <span class="question-hint">{{ 'ONBOARDING.STEP_1.BIRTHDAY_HINT' | translate }}</span>
   
-  <div class="options-list">
-    <div class="option-item">
-      <input 
-        type="radio" 
-        id="age-yes" 
-        name="isAdult" 
-        class="option-input"
-        [value]="true"
-        [(ngModel)]="isAdult">
-      <label for="age-yes" class="option-label">
-        <span class="option-indicator"></span>
-        <span class="option-text">{{ 'ONBOARDING.STEP_1.AGE_YES' | translate }}</span>
-      </label>
-    </div>
-    
-    <div class="option-item">
-      <input 
-        type="radio" 
-        id="age-no" 
-        name="isAdult" 
-        class="option-input"
-        [value]="false"
-        [(ngModel)]="isAdult">
-      <label for="age-no" class="option-label">
-        <span class="option-indicator"></span>
-        <span class="option-text">{{ 'ONBOARDING.STEP_1.AGE_NO' | translate }}</span>
-      </label>
-    </div>
+  <div class="input-wrapper birthday-wrapper">
+    <input 
+      type="text"
+      class="input-field"
+      [matDatepicker]="picker"
+      [min]="minBirthDate"
+      [max]="maxBirthDate"
+      [value]="birthDateValue()"
+      (dateChange)="onBirthDateChange($event.value)"
+      (click)="picker.open()"
+      (focus)="picker.open()"
+      [placeholder]="'ONBOARDING.STEP_1.BIRTHDAY_LABEL' | translate"
+      readonly>
+    <button type="button" class="datepicker-toggle" (click)="picker.open()">
+      <span class="material-icons-outlined">calendar_today</span>
+    </button>
+    <mat-datepicker #picker [startAt]="maxBirthDate" startView="multi-year"></mat-datepicker>
   </div>
 
-  @if (isAdult === false) {
-    <div class="error-message">
-      <span class="material-icons-outlined">error_outline</span>
-      <span>{{ 'ONBOARDING.STEP_1.AGE_REQUIRED' | translate }}</span>
+  @if (userAge !== null) {
+    <div class="age-display" [class.valid]="isAdult" [class.invalid]="!isAdult">
+      <span class="material-icons-outlined">{{ isAdult ? 'check_circle' : 'error_outline' }}</span>
+      @if (isAdult) {
+        <span>{{ 'ONBOARDING.STEP_1.AGE_VERIFIED' | translate: { age: userAge } }}</span>
+      } @else {
+        <span>{{ 'ONBOARDING.STEP_1.AGE_REQUIRED' | translate }}</span>
+      }
     </div>
   }
 </div>
 
-@if (isAdult === true) {
+@if (isAdult) {
   <div class="question-group">
     <span class="question-label">{{ 'ONBOARDING.STEP_1.LOCATION_QUESTION' | translate }}</span>
     

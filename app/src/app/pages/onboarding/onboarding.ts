@@ -69,7 +69,7 @@ export class OnboardingComponent {
       // Map onboarding data to profile structure
       // Note: Don't include undefined values - Firestore doesn't support them
       const onboardingProfile: OnboardingProfile = {
-        isAdult: data.isAdult === true,
+        birthDate: data.birthDate || '',
         city: data.city,
         country: data.country,
         genderIdentity: data.genderIdentity,

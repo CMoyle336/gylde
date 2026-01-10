@@ -144,6 +144,11 @@
   color: var(--color-text-muted);
 }
 
+.form-group input:hover:not(:focus) {
+  border-color: var(--color-accent);
+  background: #3d3350;
+}
+
 .form-group input:focus {
   outline: none;
   border-color: var(--color-accent);

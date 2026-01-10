@@ -136,9 +136,8 @@ export class DiscoveryService {
   ): DiscoverableProfile {
     const onboarding = profile.onboarding!;
     
-    // Calculate age from a default birth year (in real app, would need birthdate)
-    // For now, use a random age between 25-45 for demo
-    const age = Math.floor(Math.random() * 20) + 25;
+    // Calculate age from birthDate
+    const age = this.calculateAge(onboarding.birthDate);
 
     // Calculate distance if both locations are available
     let distance: number | undefined;
@@ -195,5 +194,24 @@ export class DiscoveryService {
 
   private toRad(deg: number): number {
     return deg * (Math.PI / 180);
+  }
+
+  /**
+   * Calculate age from a birth date string (ISO format)
+   */
+  private calculateAge(birthDate: string | undefined): number {
+    if (!birthDate) return 0;
+    
+    const birth = new Date(birthDate);
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    
+    // Adjust age if birthday hasn't occurred yet this year
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    
+    return age;
   }
 }

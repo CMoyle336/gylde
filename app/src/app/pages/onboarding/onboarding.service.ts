@@ -2,7 +2,7 @@ import { Injectable, signal, computed } from '@angular/core';
 import { OnboardingData } from './onboarding.interface';
 
 const INITIAL_DATA: OnboardingData = {
-  isAdult: null,
+  birthDate: null,
   city: '',
   country: '',
   location: null,
@@ -40,9 +40,11 @@ export class OnboardingService {
 
     switch (step) {
       case 1:
+        // User must be 18+ and have location set
         // City contains the full location string (e.g., "Ypsilanti, Michigan, USA")
         // Location must have coordinates for distance matching
-        return data.isAdult === true && data.city.trim() !== '' && data.location !== null;
+        const isAdult = data.birthDate ? this.calculateAge(data.birthDate) >= 18 : false;
+        return isAdult && data.city.trim() !== '' && data.location !== null;
       case 2:
         return data.genderIdentity !== '' && data.interestedIn.length > 0;
       case 3:
@@ -87,5 +89,21 @@ export class OnboardingService {
   reset(): void {
     this._currentStep.set(1);
     this._data.set({ ...INITIAL_DATA });
+  }
+
+  /**
+   * Calculate age from birth date string
+   */
+  calculateAge(birthDate: string): number {
+    const today = new Date();
+    const birth = new Date(birthDate);
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    
+    return age;
   }
 }

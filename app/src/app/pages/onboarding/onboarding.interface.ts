@@ -11,7 +11,7 @@ import { GeoLocation } from '../../core/interfaces/geo.interface';
  */
 export interface OnboardingData {
   // Step 1: Eligibility
-  isAdult: boolean | null;
+  birthDate: string | null; // ISO date string (YYYY-MM-DD)
   city: string;
   country: string;
   location: GeoLocation | null;
