@@ -16,8 +16,8 @@
   --color-text-muted: #6b6777;
   --color-border: rgba(255, 255, 255, 0.08);
   
-  --font-display: 'Cormorant Garamond', Georgia, serif;
-  --font-body: 'DM Sans', system-ui, sans-serif;
+  --font-display: 'Outfit', system-ui, sans-serif;
+  --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
   
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
