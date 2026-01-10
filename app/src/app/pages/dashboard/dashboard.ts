@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal, OnInit, computed } from '@angular/core';
 import { Router } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { FormsModule } from '@angular/forms';
@@ -22,6 +22,10 @@ export class DashboardComponent implements OnInit {
   protected readonly activeNav = signal<string>('discover');
   protected readonly profileCompletion = signal(75);
   protected readonly showDistanceFilter = signal(false);
+  
+  // Current user info
+  protected readonly currentUser = this.authService.user;
+  protected readonly userPhotoURL = computed(() => this.currentUser()?.photoURL ?? null);
 
   // Distance filter options
   protected readonly distanceOptions = [10, 25, 50, 100, 250, null]; // null = unlimited

@@ -52,8 +52,12 @@
         </div>
 
         <!-- User Avatar -->
-        <button type="button" class="user-avatar" aria-label="View your profile">
-          <span class="material-icons-outlined">person</span>
+        <button type="button" class="user-avatar" aria-label="View your profile" (click)="setActiveNav('profile')">
+          @if (userPhotoURL()) {
+            <img [src]="userPhotoURL()" alt="Your profile photo" class="avatar-image">
+          } @else {
+            <span class="material-icons-outlined">person</span>
+          }
         </button>
       </div>
     </header>

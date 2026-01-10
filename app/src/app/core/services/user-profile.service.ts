@@ -48,12 +48,22 @@ export class UserProfileService {
       throw new Error('User not authenticated');
     }
 
+    // Set the first photo as the profile photo
+    const profilePhotoURL = onboardingData.photos.length > 0 
+      ? onboardingData.photos[0] 
+      : user.photoURL;
+
+    // Update Firebase Auth profile with the photo
+    if (profilePhotoURL && profilePhotoURL !== user.photoURL) {
+      await this.authService.updateUserPhoto(profilePhotoURL);
+    }
+
     // Use setDocument with merge to handle case where profile doesn't exist yet
     const profileData = {
       uid: user.uid,
       email: user.email,
       displayName: user.displayName,
-      photoURL: user.photoURL,
+      photoURL: profilePhotoURL,
       onboarding: onboardingData,
       onboardingCompleted: true,
       updatedAt: new Date(),
@@ -68,16 +78,16 @@ export class UserProfileService {
     await this.firestoreService.setDocument('users', user.uid, profileData, true);
 
     // Update local profile
-      this._profile.set({
+    this._profile.set({
       uid: user.uid,
       email: user.email,
       displayName: user.displayName,
-      photoURL: user.photoURL,
+      photoURL: profilePhotoURL,
       createdAt: existingProfile?.createdAt ?? new Date(),
       updatedAt: new Date(),
       onboardingCompleted: true,
-        onboarding: onboardingData,
-      });
+      onboarding: onboardingData,
+    });
   }
 
   async updateProfile(updates: Partial<UserProfile>): Promise<void> {

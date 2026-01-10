@@ -41,6 +41,10 @@
     <div class="photo-slot primary">
       @if (photoPreviews().length > 0) {
         <img [src]="photoPreviews()[0].preview" alt="Primary photo" class="photo-preview">
+        <div class="photo-badge primary-badge">
+          <span class="material-icons-outlined">star</span>
+          {{ 'ONBOARDING.STEP_7.PROFILE_PHOTO' | translate }}
+        </div>
         <button 
           type="button" 
           class="photo-remove" 
@@ -72,6 +76,15 @@
     @for (photo of photoPreviews().slice(1); track $index) {
       <div class="photo-slot">
         <img [src]="photo.preview" alt="Photo {{ $index + 2 }}" class="photo-preview">
+        <button 
+          type="button" 
+          class="photo-set-primary"
+          [disabled]="uploading()"
+          (click)="setAsPrimary($index + 1)"
+          aria-label="Set as profile photo"
+          title="Set as profile photo">
+          <span class="material-icons-outlined">star_outline</span>
+        </button>
         <button 
           type="button" 
           class="photo-remove" 

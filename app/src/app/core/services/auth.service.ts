@@ -24,6 +24,10 @@ export class AuthService {
   private readonly _user = signal<AuthUser | null>(null);
   private readonly _loading = signal(true);
   private readonly _error = signal<string | null>(null);
+  
+  // Promise that resolves when auth state is first determined
+  private authReadyPromise: Promise<void>;
+  private authReadyResolve!: () => void;
 
   readonly user = this._user.asReadonly();
   readonly loading = this._loading.asReadonly();
@@ -31,7 +35,17 @@ export class AuthService {
   readonly isAuthenticated = computed(() => this._user() !== null);
 
   constructor() {
+    this.authReadyPromise = new Promise((resolve) => {
+      this.authReadyResolve = resolve;
+    });
     this.initAuthListener();
+  }
+
+  /**
+   * Wait for auth state to be initialized (use in guards)
+   */
+  waitForAuthReady(): Promise<void> {
+    return this.authReadyPromise;
   }
 
   private initAuthListener(): void {
@@ -42,6 +56,7 @@ export class AuthService {
         this._user.set(null);
       }
       this._loading.set(false);
+      this.authReadyResolve();
     });
   }
 
@@ -123,6 +138,17 @@ export class AuthService {
       this._error.set(this.getErrorMessage(error));
       throw error;
     }
+  }
+
+  async updateUserPhoto(photoURL: string): Promise<void> {
+    const currentUser = this.auth.currentUser;
+    if (!currentUser) {
+      throw new Error('No authenticated user');
+    }
+
+    await updateProfile(currentUser, { photoURL });
+    // Update local user signal
+    this._user.set(this.mapUser(currentUser));
   }
 
   clearError(): void {

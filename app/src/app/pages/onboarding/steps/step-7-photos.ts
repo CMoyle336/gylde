@@ -95,6 +95,26 @@ export class Step7PhotosComponent {
     });
   }
 
+  /**
+   * Set a photo as the primary/profile photo by moving it to index 0
+   */
+  protected setAsPrimary(index: number): void {
+    if (index === 0) return; // Already primary
+    
+    const currentPreviews = [...this.photoPreviews()];
+    const currentUrls = [...this.onboarding.data().photos];
+    
+    // Move selected photo to the front
+    const [selectedPreview] = currentPreviews.splice(index, 1);
+    const [selectedUrl] = currentUrls.splice(index, 1);
+    
+    currentPreviews.unshift(selectedPreview);
+    currentUrls.unshift(selectedUrl);
+    
+    this.photoPreviews.set(currentPreviews);
+    this.onboarding.updateData({ photos: currentUrls });
+  }
+
   private isValidImage(file: File): boolean {
     const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
     const maxSize = 10 * 1024 * 1024; // 10MB

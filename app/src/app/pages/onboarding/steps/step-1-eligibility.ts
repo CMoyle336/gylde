@@ -187,7 +187,7 @@ export class Step1EligibilityComponent implements OnInit, OnDestroy {
       this.suggestions.set([]);
     } finally {
       this.isSearching.set(false);
-    }
+  }
   }
 
   /**
