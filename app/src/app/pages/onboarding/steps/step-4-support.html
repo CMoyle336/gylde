@@ -1,0 +1,26 @@
+<div class="step-header">
+  <h1 class="step-title">{{ 'ONBOARDING.STEP_4.TITLE' | translate }}</h1>
+  <p class="step-subtitle">{{ 'ONBOARDING.STEP_4.SUBTITLE' | translate }}</p>
+</div>
+
+<div class="question-group">
+  <span class="question-label">{{ 'ONBOARDING.STEP_4.SUPPORT_QUESTION' | translate }}</span>
+  <span class="question-hint">{{ 'ONBOARDING.STEP_4.SUPPORT_HINT' | translate }}</span>
+  
+  <div class="options-list">
+    @for (option of supportOptions; track option.value) {
+      <div class="option-item">
+        <input 
+          type="checkbox" 
+          [id]="'support-' + option.value" 
+          class="option-input"
+          [checked]="isSelected(option.value)"
+          (change)="toggle(option.value)">
+        <label [for]="'support-' + option.value" class="option-label">
+          <span class="option-indicator"></span>
+          <span class="option-text">{{ 'ONBOARDING.STEP_4.' + option.labelKey | translate }}</span>
+        </label>
+      </div>
+    }
+  </div>
+</div>

@@ -1,0 +1,462 @@
+---
+context: true
+priority: high
+scope: project
+---
+
+You are an expert in TypeScript, Angular, and scalable web application development. You write functional, maintainable, performant, and accessible code following Angular and TypeScript best practices.
+
+## TypeScript Best Practices
+
+- Use strict type checking
+- Prefer type inference when the type is obvious
+- Avoid the `any` type; use `unknown` when type is uncertain
+
+## Angular Best Practices
+
+- Always use standalone components over NgModules
+- Must NOT set `standalone: true` inside Angular decorators. It's the default in Angular v20+.
+- Use signals for state management
+- Implement lazy loading for feature routes
+- Do NOT use the `@HostBinding` and `@HostListener` decorators. Put host bindings inside the `host` object of the `@Component` or `@Directive` decorator instead
+- Use `NgOptimizedImage` for all static images.
+  - `NgOptimizedImage` does not work for inline base64 images.
+
+## Accessibility Requirements
+
+- It MUST pass all AXE checks.
+- It MUST follow all WCAG AA minimums, including focus management, color contrast, and ARIA attributes.
+
+### Components
+
+- Keep components small and focused on a single responsibility
+- Use `input()` and `output()` functions instead of decorators
+- Use `computed()` for derived state
+- Set `changeDetection: ChangeDetectionStrategy.OnPush` in `@Component` decorator
+- Prefer inline templates for small components
+- Prefer Reactive forms instead of Template-driven ones
+- Do NOT use `ngClass`, use `class` bindings instead
+- Do NOT use `ngStyle`, use `style` bindings instead
+- When using external templates/styles, use paths relative to the component TS file.
+
+## State Management
+
+- Use signals for local component state
+- Use `computed()` for derived state
+- Keep state transformations pure and predictable
+- Do NOT use `mutate` on signals, use `update` or `set` instead
+
+## Templates
+
+- Keep templates simple and avoid complex logic
+- Use native control flow (`@if`, `@for`, `@switch`) instead of `*ngIf`, `*ngFor`, `*ngSwitch`
+- Use the async pipe to handle observables
+- Do not assume globals like (`new Date()`) are available.
+- Do not write arrow functions in templates (they are not supported).
+
+## Services
+
+- Design services around a single responsibility
+- Use the `providedIn: 'root'` option for singleton services
+- Use the `inject()` function instead of constructor injection
+
+## Internationalization (ngx-translate)
+
+All user-facing text MUST use ngx-translate for internationalization.
+
+### Setup
+- Translation files are located in `public/i18n/{lang}.json`
+- The app is configured with `provideTranslateService` and `provideTranslateHttpLoader` in `app.config.ts`
+- Default/fallback language is English (`en`)
+
+### Usage in Components
+- Import `TranslatePipe` from `@ngx-translate/core` and add it to the component's `imports` array
+- Use the translate pipe in templates: `{{ 'KEY.PATH' | translate }}`
+- For programmatic access, inject `TranslateService`
+
+### Translation Keys
+- Use SCREAMING_SNAKE_CASE for keys
+- Organize keys hierarchically by feature/page (e.g., `HOME.HERO.TITLE`)
+- Keep keys descriptive and semantic (e.g., `BUTTON` not `BTN`)
+
+### Key Structure Convention
+```
+{
+  "PAGE_NAME": {
+    "SECTION": {
+      "ELEMENT": "Translation text"
+    }
+  }
+}
+```
+
+### Data with Translatable Text
+When components have data arrays with user-facing text (e.g., features, steps, stats):
+- Store translation keys instead of hardcoded strings
+- Use property names like `titleKey`, `descriptionKey`, `labelKey`
+- Apply the translate pipe in templates: `{{ item.titleKey | translate }}`
+
+### Do NOT
+- Hardcode user-facing strings in templates or components
+- Use string interpolation for full sentences (use translation parameters instead)
+- Forget to add translations to ALL supported language files when adding new keys
+
+### Adding New Languages
+1. Create a new file in `public/i18n/{lang}.json`
+2. Copy the structure from `en.json`
+3. Translate all values
+
+# Cursor Rules for Sugar-Adjacent Dating Platform
+
+## Project Context
+This project is a legally compliant dating platform focused on "supported" or "intentional" relationships.
+It is NOT a sex work platform, escort service, or adult content marketplace.
+
+The platform must avoid facilitating prostitution, escorting, or transactional sexual services.
+All features, copy, and architecture should reinforce that this is a dating platform.
+
+## HARD LEGAL CONSTRAINTS (NON-NEGOTIABLE)
+
+### Prohibited Concepts
+Cursor must NOT generate or suggest:
+- Explicit sex-for-money exchanges
+- Pay-per-meet (PPM) models
+- Rates, pricing, or conditional financial offers
+- Escorting, prostitution, or sexual services language
+- Booking systems for people
+- On-demand meetups tied to payment
+- Escrow or allowance payment systems
+- Tips or gifts tied to intimacy or meetings
+- Sexual performance reviews or ratings
+
+If a requested feature resembles these, Cursor should warn and propose a safer alternative.
+
+---
+
+### Payments
+- The platform may charge USERS membership fees or platform services only.
+- The platform must NOT process user-to-user payments.
+- No allowances, no per-meet payments, no tipping for individuals.
+
+Monetization should focus on:
+- Subscriptions
+- Visibility boosts
+- Verification tiers
+- Concierge or matchmaking services
+
+---
+
+### Content Rules
+Allowed:
+- Dating profiles
+- Lifestyle and glamour photos (PG-13)
+- Flirting and romantic expression
+- Discussion of generosity or support in abstract terms
+
+Disallowed:
+- Nudity or explicit sexual content
+- Pornographic descriptions
+- Fetish-specific content
+- Sexual service advertising
+
+---
+
+## LANGUAGE & POSITIONING RULES
+
+### Approved Framing
+Use language such as:
+- "Dating"
+- "Relationships"
+- "Intentional connections"
+- "Supported relationships"
+- "Generosity"
+- "Lifestyle alignment"
+- "Mentorship"
+- "Mutual respect"
+
+Avoid or strictly limit:
+- "Sugar daddy / sugar baby" (may be referenced carefully but not centered)
+- "Allowance"
+- "Arrangement"
+- "Mutually beneficial" (context-dependent)
+
+Never use:
+- "Pay for sex"
+- "Services"
+- "Compensation"
+- "Rates"
+- "PPM"
+
+Cursor should prefer euphemistic but honest language that signals intent without explicit transactions.
+
+---
+
+## FEATURE DESIGN GUIDELINES
+
+### Intent Signaling (Encouraged)
+Cursor MAY suggest:
+- Toggles for “open to providing support” / “open to receiving support”
+- Profile prompts about lifestyle expectations
+- Values-based matching
+- Relationship goal selection
+
+These must:
+- Avoid numbers
+- Avoid conditions
+- Avoid sexual expectations
+
+---
+
+### Messaging & Moderation
+- Private messaging is allowed.
+- The platform must include reporting tools.
+- Cursor may suggest automated flagging of prohibited terms.
+- Cursor should assume good-faith moderation and enforcement.
+
+Cursor should NEVER suggest reading all private messages, but may suggest reactive moderation.
+
+---
+
+## SAFETY & COMPLIANCE
+
+### Age & Consent
+- 18+ only
+- Identity verification tiers encouraged
+- Zero tolerance for coercion or trafficking
+
+### Platform Stance
+Cursor should assume:
+- Strong Terms of Service
+- Clear community guidelines
+- Active enforcement and bans for violations
+
+Cursor should default to solutions that demonstrate good-faith compliance.
+
+---
+
+## TECHNICAL PREFERENCES
+
+### App Strategy
+- Default to web-first
+- Assume app store compliance is a future concern
+- Avoid features that would cause App Store or payment processor rejection
+
+---
+
+## WHEN IN DOUBT
+If a feature, copy choice, or flow could plausibly be interpreted as facilitating prostitution:
+1. Cursor should flag the risk
+2. Explain why it is risky
+3. Propose a safer alternative
+
+The goal is long-term survivability, not maximum edginess.
+
+---
+
+## OVERALL GOAL
+Build a clear, honest, legally defensible dating platform that serves users seeking supported relationships
+WITHOUT crossing into explicit sexual commerce or facilitation.
+
+Cursor should optimize for:
+- Legal safety
+- Payment processor tolerance
+- User trust
+- Clear intent signaling
+- Sustainable growth
+
+
+## FIREBASE GUIDELINES
+
+### Firebase Services
+Use Firebase for:
+- Authentication (Firebase Auth)
+- Firestore (primary database)
+- Cloud Functions (server-side logic)
+- Storage (profile images only)
+
+Avoid:
+- Using Firebase as a payment processor
+- Storing sensitive personal or financial data in Firestore
+- Storing explicit sexual content in Storage
+
+---
+
+### Authentication
+- Use Firebase Auth for all users.
+- Require verified email at minimum.
+- Support optional higher-trust verification tiers (e.g., ID verification flags stored separately).
+- Never store plaintext passwords or sensitive identity documents in Firestore.
+
+Cursor should assume:
+- `auth.uid` is the source of truth for user identity.
+- All user-facing data is scoped to authenticated users.
+
+---
+
+### Firestore Data Modeling
+- Prefer normalized collections over deeply nested documents.
+- Separate **public profile data** from **private user data**.
+- Use clear access boundaries (e.g., `/profiles/{uid}` vs `/private/{uid}`).
+
+Avoid:
+- Storing message content in public collections
+- Embedding moderation flags in user-visible documents
+
+---
+
+### Firestore Security Rules (CRITICAL)
+Cursor must:
+- Always suggest Firestore security rules with any new collection.
+- Enforce read/write rules based on `request.auth.uid`.
+- Prevent users from writing:
+  - Explicit pricing
+  - Sexual services language
+  - Payment instructions
+
+Cursor should assume:
+- All Firestore rules are deny-by-default.
+- Validation logic exists in rules or Cloud Functions.
+
+---
+
+### Cloud Functions
+Use Cloud Functions for:
+- Moderation workflows
+- Message flagging
+- Account enforcement (bans, suspensions)
+- Trust / safety logic
+- Derived data (counts, matches, recommendations)
+
+Avoid:
+- Heavy business logic in the client
+- Trusting client-side validation alone
+
+Cursor should default to:
+- Functions as gatekeepers for sensitive writes
+- Idempotent, auditable functions
+
+---
+
+### Messaging
+- Store messages in private collections with strict rules.
+- Cursor may suggest keyword scanning or metadata flags.
+- Do not suggest reading all messages by default.
+- Reporting must trigger server-side review workflows.
+
+---
+
+### Data Retention & Deletion
+- Support user-initiated account deletion.
+- Cascade deletes for messages and private data.
+- Cursor should prefer time-based cleanup jobs for old logs and flags.
+
+---
+
+## TAILWIND CSS GUIDELINES
+
+### Tailwind Usage
+Use Tailwind for:
+- Layout
+- Spacing
+- Typography
+- Responsive behavior
+
+Avoid:
+- Inline styles
+- Overly complex utility chains
+- Duplicating Angular Material styling primitives
+
+Cursor should:
+- Prefer semantic utility groupings
+- Use Tailwind config tokens for colors and spacing
+- Encourage consistent design tokens
+
+---
+
+### Content Safety & Presentation
+- UI should feel like a premium dating app, not an adult site.
+- Avoid dark patterns, explicit imagery, or sexually suggestive UI cues.
+- Cursor should prefer neutral, elegant, and professional styling.
+
+---
+
+### Responsive Design
+- Mobile-first layouts
+- Graceful degradation for smaller screens
+- Avoid gesture patterns associated with adult platforms
+
+---
+
+## ANGULAR MATERIAL GUIDELINES
+
+### Role of Angular Material
+Use Angular Material for:
+- Forms
+- Dialogs
+- Menus
+- Tabs
+- Modals
+- Inputs
+- Accessibility
+
+Avoid:
+- Overriding Material styles excessively
+- Mixing multiple component libraries
+- Recreating Material components manually
+
+Cursor should:
+- Prefer Material components for user input and navigation
+- Use Material theming integrated with Tailwind tokens where possible
+
+---
+
+### Accessibility
+- All forms must be accessible (ARIA-compliant)
+- Labels are mandatory
+- Error states must be explicit and helpful
+
+Cursor should:
+- Default to accessible components
+- Avoid hidden or ambiguous UI flows
+
+---
+
+### Forms & Validation
+- Use Reactive Forms
+- Validate on both client and server
+- Cursor should never rely solely on UI validation for enforcement
+
+---
+
+## CROSS-CUTTING CONCERNS
+
+### Moderation-Aware UI
+Cursor should:
+- Design UI that supports moderation
+- Allow admins to view flagged content
+- Include soft warnings for prohibited language before submission
+
+---
+
+### Logging & Auditing
+- Log moderation-relevant events via Cloud Functions
+- Avoid logging message content unless flagged
+- Cursor should assume logs may be reviewed for compliance
+
+---
+
+### App Store & Platform Safety
+Cursor should:
+- Avoid UI patterns or copy that would trigger app store rejection
+- Prefer web-safe patterns
+- Flag features likely to cause compliance issues
+
+---
+
+## WHEN GENERATING CODE
+Cursor must:
+- Include security rules with Firestore examples
+- Include minimal but clear comments explaining compliance-sensitive logic
+- Favor clarity and defensibility over cleverness
+
+The goal is a clean, secure, and legally survivable platform.

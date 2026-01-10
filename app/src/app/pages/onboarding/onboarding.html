@@ -1,0 +1,100 @@
+<div class="onboarding">
+  <div class="onboarding-backdrop"></div>
+  
+  <!-- Header -->
+  <header class="onboarding-header">
+    <a href="/" class="logo">Gylde</a>
+    <span class="progress-text">
+      {{ 'ONBOARDING.PROGRESS' | translate: { current: onboarding.currentStep(), total: onboarding.totalSteps } }}
+    </span>
+  </header>
+
+  <!-- Progress Bar -->
+  <div class="progress-bar" role="progressbar" 
+       [attr.aria-valuenow]="onboarding.progress()" 
+       aria-valuemin="0" 
+       aria-valuemax="100">
+    <div class="progress-fill" [style.width.%]="onboarding.progress()"></div>
+  </div>
+
+  <!-- Step Content -->
+  <main class="onboarding-content">
+    <div class="step-container">
+      @switch (onboarding.currentStep()) {
+        @case (1) {
+          <app-step-1-eligibility />
+        }
+        @case (2) {
+          <app-step-2-identity />
+        }
+        @case (3) {
+          <app-step-3-intent />
+        }
+        @case (4) {
+          <app-step-4-support />
+        }
+        @case (5) {
+          <app-step-5-values />
+        }
+        @case (6) {
+          <app-step-6-prompts />
+        }
+        @case (7) {
+          <app-step-7-photos />
+        }
+        @case (8) {
+          <app-step-8-verification />
+        }
+      }
+    </div>
+  </main>
+
+  <!-- Error Message -->
+  @if (saveError()) {
+    <div class="save-error" role="alert">
+      <span class="material-icons-outlined">error_outline</span>
+      {{ saveError() }}
+    </div>
+  }
+
+  <!-- Footer Navigation -->
+  <footer class="onboarding-footer">
+    <button 
+      type="button" 
+      class="btn-back" 
+      [disabled]="saving()"
+      (click)="onBack()">
+      <span class="material-icons-outlined">arrow_back</span>
+      {{ 'ONBOARDING.BACK' | translate }}
+    </button>
+
+    <div class="footer-actions">
+      @if (onboarding.currentStep() === 4 || onboarding.currentStep() === 8) {
+        <button 
+          type="button" 
+          class="btn-skip" 
+          [disabled]="saving()"
+          (click)="onSkip()">
+          {{ 'ONBOARDING.SKIP' | translate }}
+        </button>
+      }
+
+      <button 
+        type="button" 
+        class="btn-next" 
+        [disabled]="!onboarding.canProceed() || saving()"
+        (click)="onNext()">
+        @if (saving()) {
+          <span class="spinner"></span>
+          {{ 'ONBOARDING.SAVING' | translate }}
+        } @else if (onboarding.currentStep() === onboarding.totalSteps) {
+          {{ 'ONBOARDING.FINISH' | translate }}
+          <span class="material-icons-outlined">arrow_forward</span>
+        } @else {
+          {{ 'ONBOARDING.NEXT' | translate }}
+          <span class="material-icons-outlined">arrow_forward</span>
+        }
+      </button>
+    </div>
+  </footer>
+</div>

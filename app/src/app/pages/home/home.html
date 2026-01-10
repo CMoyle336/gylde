@@ -1,0 +1,251 @@
+<!-- Header Navigation -->
+<header class="site-header">
+  <div class="header-container">
+    <a href="/" class="header-logo">Gylde</a>
+    
+    <nav class="header-nav" aria-label="Main navigation">
+      <a href="#features" class="nav-link">{{ 'HOME.NAV.FEATURES' | translate }}</a>
+      <a href="#how-it-works" class="nav-link">{{ 'HOME.NAV.HOW_IT_WORKS' | translate }}</a>
+      
+      @if (isAuthenticated()) {
+        <button type="button" class="nav-link" (click)="goToDashboard()">
+          {{ 'HOME.NAV.DASHBOARD' | translate }}
+        </button>
+        <button type="button" class="btn-secondary-sm" (click)="logout()">
+          {{ 'HOME.NAV.LOGOUT' | translate }}
+        </button>
+      } @else {
+        <button type="button" class="nav-link" (click)="openAuthModal('login')">
+          {{ 'HOME.NAV.SIGN_IN' | translate }}
+        </button>
+        <button type="button" class="btn-primary-sm" (click)="openAuthModal('signup')">
+          {{ 'HOME.NAV.GET_STARTED' | translate }}
+        </button>
+      }
+    </nav>
+
+    <!-- Mobile Menu Button -->
+    <button type="button" class="mobile-menu-btn" aria-label="Open menu">
+      <span class="material-icons-outlined">menu</span>
+    </button>
+  </div>
+</header>
+
+<main class="home">
+  <!-- Hero Section -->
+  <section class="hero" aria-labelledby="hero-heading">
+    <div class="hero-backdrop"></div>
+    <div class="hero-glow"></div>
+    
+    <div class="hero-content">
+      <span class="hero-tagline" aria-hidden="true">Dating for Intentional, Supported Relationships</span>
+      <h1 id="hero-heading" class="hero-title">
+        Find Your <span class="text-accent">Gylde</span>
+      </h1>
+      <p class="hero-description">
+        Not casual dating. Not guesswork. A structured space where 
+        clarity meets connection and relationships are built with intention.
+      </p>
+      
+      <div class="hero-cta">
+        <button class="btn-primary" type="button" (click)="beginJourney()">
+          Begin Your Journey
+        </button>
+        <a class="btn-secondary" href="#features">
+          Learn More
+        </a>
+      </div>
+
+      <div class="hero-stats" role="list" aria-label="Platform statistics">
+        @for (stat of stats(); track stat.label) {
+          <div class="stat-item" role="listitem">
+            <span class="stat-value">{{ stat.value }}</span>
+            <span class="stat-label">{{ stat.label }}</span>
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="hero-visual" aria-hidden="true">
+      <div class="floating-card card-1">
+        <div class="card-avatar"></div>
+        <div class="card-info">
+          <span class="card-name">Verified Member</span>
+          <span class="card-detail">New York, NY</span>
+        </div>
+      </div>
+      <div class="floating-card card-2">
+        <div class="card-avatar"></div>
+        <div class="card-info">
+          <span class="card-name">Premium Member</span>
+          <span class="card-detail">Los Angeles, CA</span>
+        </div>
+      </div>
+      <div class="floating-card card-3">
+        <span class="material-icons-outlined">favorite</span>
+        <span>It's a match!</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section id="features" class="features" aria-labelledby="features-heading">
+    <div class="features-container">
+      <div class="features-header">
+        <span class="section-label">Why Gylde</span>
+        <h2 id="features-heading" class="section-title">
+          Clarity, Not Guesswork
+        </h2>
+        <p class="section-description">
+          Our members join because they want structure around what matters most—lifestyle, 
+          ambition, generosity, and intention.
+        </p>
+      </div>
+
+      <ul class="features-grid" role="list">
+        @for (feature of features(); track feature.title) {
+          <li class="feature-card" role="listitem">
+            <div class="feature-icon-wrapper">
+              <span class="material-icons-outlined feature-icon">{{ feature.icon }}</span>
+            </div>
+            <h3 class="feature-title">{{ feature.title }}</h3>
+            <p class="feature-description">{{ feature.description }}</p>
+          </li>
+        }
+      </ul>
+    </div>
+  </section>
+
+  <!-- How It Works Section -->
+  <section class="how-it-works" aria-labelledby="how-heading">
+    <div class="how-container">
+      <div class="how-header">
+        <span class="section-label">The Journey</span>
+        <h2 id="how-heading" class="section-title">
+          Three Steps to Connection
+        </h2>
+      </div>
+
+      <ol class="steps-list" role="list">
+        @for (step of steps(); track step.number; let i = $index) {
+          <li class="step-item" role="listitem">
+            <div class="step-number" aria-hidden="true">{{ step.number }}</div>
+            <div class="step-content">
+              <h3 class="step-title">{{ step.title }}</h3>
+              <p class="step-description">{{ step.description }}</p>
+            </div>
+            @if (i < steps().length - 1) {
+              <div class="step-connector" aria-hidden="true"></div>
+            }
+          </li>
+        }
+      </ol>
+    </div>
+  </section>
+
+  <!-- Values Section -->
+  <section class="values" aria-labelledby="values-heading">
+    <div class="values-container">
+      <div class="values-content">
+        <span class="section-label">Our Promise</span>
+        <h2 id="values-heading" class="section-title">
+          Structure That Works
+        </h2>
+        <p class="values-description">
+          We built Gylde because dating should not require decoding mixed signals. 
+          Our platform gives you the structure to be clear about what you want—and 
+          find others who want the same.
+        </p>
+
+        <ul class="values-list" role="list">
+          @for (value of values(); track value) {
+            <li class="value-item" role="listitem">
+              <span class="material-icons-outlined value-check">check_circle</span>
+              <span>{{ value }}</span>
+            </li>
+          }
+        </ul>
+      </div>
+      
+      <div class="values-visual" aria-hidden="true">
+        <div class="values-card">
+          <div class="values-card-inner">
+            <span class="material-icons-outlined">handshake</span>
+            <span>Intentional Connections</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="cta" aria-labelledby="cta-heading">
+    <div class="cta-container">
+      <div class="cta-glow" aria-hidden="true"></div>
+      <h2 id="cta-heading" class="cta-title">
+        We Provide the <span class="text-accent">Structure</span>
+      </h2>
+      <p class="cta-description">
+        You define the connection. Join a community built on clarity, 
+        intention, and mutual respect.
+      </p>
+      <button class="btn-primary btn-large" type="button" (click)="beginJourney()">
+        Create Your Profile
+      </button>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer" role="contentinfo">
+    <div class="footer-container">
+      <div class="footer-brand">
+        <span class="footer-logo">Gylde</span>
+        <p class="footer-tagline">We provide the structure. You define the connection.</p>
+      </div>
+
+      <nav class="footer-nav" aria-label="Footer navigation">
+        <div class="footer-column">
+          <h4 class="footer-heading">Platform</h4>
+          <ul class="footer-links">
+            <li><a href="/about">About Us</a></li>
+            <li><a href="/how-it-works">How It Works</a></li>
+            <li><a href="/membership">Membership</a></li>
+            <li><a href="/success-stories">Success Stories</a></li>
+          </ul>
+        </div>
+        <div class="footer-column">
+          <h4 class="footer-heading">Support</h4>
+          <ul class="footer-links">
+            <li><a href="/help">Help Center</a></li>
+            <li><a href="/safety">Safety Tips</a></li>
+            <li><a href="/guidelines">Community Guidelines</a></li>
+            <li><a href="/contact">Contact Us</a></li>
+          </ul>
+        </div>
+        <div class="footer-column">
+          <h4 class="footer-heading">Legal</h4>
+          <ul class="footer-links">
+            <li><a href="/privacy">Privacy Policy</a></li>
+            <li><a href="/terms">Terms of Service</a></li>
+            <li><a href="/cookies">Cookie Policy</a></li>
+          </ul>
+        </div>
+      </nav>
+
+      <div class="footer-bottom">
+        <p>&copy; {{ currentYear() }} Gylde. All rights reserved.</p>
+        <p class="footer-disclaimer">
+          Gylde is a dating platform. We do not facilitate or condone any form of illegal activity.
+        </p>
+      </div>
+    </div>
+  </footer>
+</main>
+
+<!-- Auth Modal -->
+<app-auth-modal
+  [isOpen]="authModalOpen()"
+  [initialMode]="authModalMode()"
+  (closed)="closeAuthModal()"
+  (authenticated)="onAuthenticated($event)"
+/>

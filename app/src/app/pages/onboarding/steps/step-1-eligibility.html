@@ -1,0 +1,76 @@
+<div class="step-header">
+  <h1 class="step-title">{{ 'ONBOARDING.STEP_1.TITLE' | translate }}</h1>
+  <p class="step-subtitle">{{ 'ONBOARDING.STEP_1.SUBTITLE' | translate }}</p>
+</div>
+
+<div class="question-group">
+  <span class="question-label">{{ 'ONBOARDING.STEP_1.AGE_QUESTION' | translate }}</span>
+  
+  <div class="options-list">
+    <div class="option-item">
+      <input 
+        type="radio" 
+        id="age-yes" 
+        name="isAdult" 
+        class="option-input"
+        [value]="true"
+        [(ngModel)]="isAdult">
+      <label for="age-yes" class="option-label">
+        <span class="option-indicator"></span>
+        <span class="option-text">{{ 'ONBOARDING.STEP_1.AGE_YES' | translate }}</span>
+      </label>
+    </div>
+    
+    <div class="option-item">
+      <input 
+        type="radio" 
+        id="age-no" 
+        name="isAdult" 
+        class="option-input"
+        [value]="false"
+        [(ngModel)]="isAdult">
+      <label for="age-no" class="option-label">
+        <span class="option-indicator"></span>
+        <span class="option-text">{{ 'ONBOARDING.STEP_1.AGE_NO' | translate }}</span>
+      </label>
+    </div>
+  </div>
+
+  @if (isAdult === false) {
+    <div class="error-message">
+      <span class="material-icons-outlined">error_outline</span>
+      <span>{{ 'ONBOARDING.STEP_1.AGE_REQUIRED' | translate }}</span>
+    </div>
+  }
+</div>
+
+@if (isAdult === true) {
+  <div class="question-group">
+    <span class="question-label">{{ 'ONBOARDING.STEP_1.LOCATION_QUESTION' | translate }}</span>
+    
+    <div class="input-row">
+      <div>
+        <label for="city" class="visually-hidden">{{ 'ONBOARDING.STEP_1.CITY_LABEL' | translate }}</label>
+        <input 
+          type="text" 
+          id="city"
+          class="input-field"
+          [placeholder]="'ONBOARDING.STEP_1.CITY_PLACEHOLDER' | translate"
+          [(ngModel)]="city">
+      </div>
+      
+      <div>
+        <label for="country" class="visually-hidden">{{ 'ONBOARDING.STEP_1.COUNTRY_LABEL' | translate }}</label>
+        <select 
+          id="country"
+          class="select-field"
+          [(ngModel)]="country">
+          <option value="" disabled>{{ 'ONBOARDING.STEP_1.COUNTRY_PLACEHOLDER' | translate }}</option>
+          @for (c of countries; track c.code) {
+            <option [value]="c.code">{{ c.name }}</option>
+          }
+        </select>
+      </div>
+    </div>
+  </div>
+}

@@ -1,0 +1,159 @@
+<div class="step-header">
+  <h1 class="step-title">{{ 'ONBOARDING.STEP_2.TITLE' | translate }}</h1>
+  <p class="step-subtitle">{{ 'ONBOARDING.STEP_2.SUBTITLE' | translate }}</p>
+</div>
+
+<div class="question-group">
+  <span class="question-label">{{ 'ONBOARDING.STEP_2.IDENTITY_QUESTION' | translate }}</span>
+  
+  <div class="options-list">
+    <div class="option-item">
+      <input 
+        type="radio" 
+        id="gender-man" 
+        name="genderIdentity" 
+        class="option-input"
+        value="man"
+        [(ngModel)]="genderIdentity">
+      <label for="gender-man" class="option-label">
+        <span class="option-indicator"></span>
+        <span class="option-text">{{ 'ONBOARDING.STEP_2.IDENTITY_MAN' | translate }}</span>
+      </label>
+    </div>
+    
+    <div class="option-item">
+      <input 
+        type="radio" 
+        id="gender-woman" 
+        name="genderIdentity" 
+        class="option-input"
+        value="woman"
+        [(ngModel)]="genderIdentity">
+      <label for="gender-woman" class="option-label">
+        <span class="option-indicator"></span>
+        <span class="option-text">{{ 'ONBOARDING.STEP_2.IDENTITY_WOMAN' | translate }}</span>
+      </label>
+    </div>
+    
+    <div class="option-item">
+      <input 
+        type="radio" 
+        id="gender-nonbinary" 
+        name="genderIdentity" 
+        class="option-input"
+        value="nonbinary"
+        [(ngModel)]="genderIdentity">
+      <label for="gender-nonbinary" class="option-label">
+        <span class="option-indicator"></span>
+        <span class="option-text">{{ 'ONBOARDING.STEP_2.IDENTITY_NONBINARY' | translate }}</span>
+      </label>
+    </div>
+    
+    <div class="option-item">
+      <input 
+        type="radio" 
+        id="gender-self" 
+        name="genderIdentity" 
+        class="option-input"
+        value="self-describe"
+        [(ngModel)]="genderIdentity">
+      <label for="gender-self" class="option-label">
+        <span class="option-indicator"></span>
+        <span class="option-text">{{ 'ONBOARDING.STEP_2.IDENTITY_SELF_DESCRIBE' | translate }}</span>
+      </label>
+    </div>
+  </div>
+
+  @if (showCustomGender()) {
+    <div style="margin-top: 1rem;">
+      <label for="gender-custom" class="visually-hidden">
+        {{ 'ONBOARDING.STEP_2.IDENTITY_CUSTOM_LABEL' | translate }}
+      </label>
+      <input 
+        type="text" 
+        id="gender-custom"
+        class="input-field"
+        [placeholder]="'ONBOARDING.STEP_2.IDENTITY_CUSTOM_LABEL' | translate"
+        [(ngModel)]="genderCustom">
+    </div>
+  }
+</div>
+
+<div class="question-group">
+  <span class="question-label">{{ 'ONBOARDING.STEP_2.INTERESTED_QUESTION' | translate }}</span>
+  <span class="question-hint">{{ 'ONBOARDING.STEP_2.INTERESTED_HINT' | translate }}</span>
+  
+  <div class="options-list">
+    <div class="option-item">
+      <input 
+        type="checkbox" 
+        id="interested-men" 
+        class="option-input"
+        [checked]="isInterestedIn('men')"
+        (change)="toggleInterestedIn('men')">
+      <label for="interested-men" class="option-label">
+        <span class="option-indicator"></span>
+        <span class="option-text">{{ 'ONBOARDING.STEP_2.INTERESTED_MEN' | translate }}</span>
+      </label>
+    </div>
+    
+    <div class="option-item">
+      <input 
+        type="checkbox" 
+        id="interested-women" 
+        class="option-input"
+        [checked]="isInterestedIn('women')"
+        (change)="toggleInterestedIn('women')">
+      <label for="interested-women" class="option-label">
+        <span class="option-indicator"></span>
+        <span class="option-text">{{ 'ONBOARDING.STEP_2.INTERESTED_WOMEN' | translate }}</span>
+      </label>
+    </div>
+    
+    <div class="option-item">
+      <input 
+        type="checkbox" 
+        id="interested-nonbinary" 
+        class="option-input"
+        [checked]="isInterestedIn('nonbinary')"
+        (change)="toggleInterestedIn('nonbinary')">
+      <label for="interested-nonbinary" class="option-label">
+        <span class="option-indicator"></span>
+        <span class="option-text">{{ 'ONBOARDING.STEP_2.INTERESTED_NONBINARY' | translate }}</span>
+      </label>
+    </div>
+  </div>
+</div>
+
+<div class="question-group">
+  <span class="question-label">{{ 'ONBOARDING.STEP_2.AGE_RANGE_QUESTION' | translate }}</span>
+  
+  <div class="range-container">
+    <div class="range-labels">
+      <span class="range-value">{{ ageRangeMin }}</span>
+      <span class="range-value">{{ ageRangeMax }}</span>
+    </div>
+    <div class="input-row">
+      <div>
+        <label for="age-min" class="visually-hidden">{{ 'ONBOARDING.STEP_2.AGE_RANGE_MIN' | translate }}</label>
+        <input 
+          type="range" 
+          id="age-min"
+          class="range-slider"
+          min="18"
+          max="80"
+          [(ngModel)]="ageRangeMin">
+      </div>
+      <div>
+        <label for="age-max" class="visually-hidden">{{ 'ONBOARDING.STEP_2.AGE_RANGE_MAX' | translate }}</label>
+        <input 
+          type="range" 
+          id="age-max"
+          class="range-slider"
+          min="18"
+          max="80"
+          [(ngModel)]="ageRangeMax">
+      </div>
+    </div>
+  </div>
+</div>

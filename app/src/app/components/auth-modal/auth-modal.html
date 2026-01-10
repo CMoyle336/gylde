@@ -1,0 +1,182 @@
+@if (isOpen()) {
+  <div 
+    class="modal-backdrop" 
+    role="dialog" 
+    aria-modal="true"
+    [attr.aria-labelledby]="'auth-modal-title'"
+    (click)="onBackdropClick($event)"
+    (keydown)="onKeydown($event)">
+    
+    <div class="modal-container">
+      <button 
+        type="button" 
+        class="modal-close" 
+        (click)="onClose()"
+        aria-label="Close modal">
+        <span class="material-icons-outlined">close</span>
+      </button>
+
+      <div class="modal-header">
+        <h2 id="auth-modal-title" class="modal-title">
+          @switch (mode()) {
+            @case ('login') { {{ 'AUTH.LOGIN.TITLE' | translate }} }
+            @case ('signup') { {{ 'AUTH.SIGNUP.TITLE' | translate }} }
+            @case ('reset') { {{ 'AUTH.RESET.TITLE' | translate }} }
+          }
+        </h2>
+        <p class="modal-subtitle">
+          @switch (mode()) {
+            @case ('login') { {{ 'AUTH.LOGIN.SUBTITLE' | translate }} }
+            @case ('signup') { {{ 'AUTH.SIGNUP.SUBTITLE' | translate }} }
+            @case ('reset') { {{ 'AUTH.RESET.SUBTITLE' | translate }} }
+          }
+        </p>
+      </div>
+
+      @if (resetSent()) {
+        <div class="reset-success">
+          <span class="material-icons-outlined">check_circle</span>
+          <p>{{ 'AUTH.RESET.SUCCESS' | translate }}</p>
+          <button type="button" class="btn-secondary" (click)="setMode('login')">
+            {{ 'AUTH.RESET.BACK_TO_LOGIN' | translate }}
+          </button>
+        </div>
+      } @else {
+        <form class="auth-form" (ngSubmit)="onSubmit()">
+          @if (authError() || localError()) {
+            <div class="error-message" role="alert">
+              <span class="material-icons-outlined">error</span>
+              {{ authError() || localError() }}
+            </div>
+          }
+
+          @if (mode() === 'signup') {
+            <div class="form-group">
+              <label for="displayName">{{ 'AUTH.FIELDS.NAME' | translate }}</label>
+              <input
+                type="text"
+                id="displayName"
+                [ngModel]="displayName()"
+                (ngModelChange)="displayName.set($event)"
+                name="displayName"
+                [placeholder]="'AUTH.FIELDS.NAME_PLACEHOLDER' | translate"
+                autocomplete="name"
+              />
+            </div>
+          }
+
+          <div class="form-group">
+            <label for="email">{{ 'AUTH.FIELDS.EMAIL' | translate }}</label>
+            <input
+              type="email"
+              id="email"
+              [ngModel]="email()"
+              (ngModelChange)="email.set($event)"
+              name="email"
+              [placeholder]="'AUTH.FIELDS.EMAIL_PLACEHOLDER' | translate"
+              autocomplete="email"
+              required
+            />
+          </div>
+
+          @if (mode() !== 'reset') {
+            <div class="form-group">
+              <label for="password">{{ 'AUTH.FIELDS.PASSWORD' | translate }}</label>
+              <input
+                type="password"
+                id="password"
+                [ngModel]="password()"
+                (ngModelChange)="password.set($event)"
+                name="password"
+                [placeholder]="'AUTH.FIELDS.PASSWORD_PLACEHOLDER' | translate"
+                [autocomplete]="mode() === 'signup' ? 'new-password' : 'current-password'"
+                required
+              />
+            </div>
+          }
+
+          @if (mode() === 'signup') {
+            <div class="form-group">
+              <label for="confirmPassword">{{ 'AUTH.FIELDS.CONFIRM_PASSWORD' | translate }}</label>
+              <input
+                type="password"
+                id="confirmPassword"
+                [ngModel]="confirmPassword()"
+                (ngModelChange)="confirmPassword.set($event)"
+                name="confirmPassword"
+                [placeholder]="'AUTH.FIELDS.CONFIRM_PASSWORD_PLACEHOLDER' | translate"
+                autocomplete="new-password"
+                required
+              />
+            </div>
+          }
+
+          @if (mode() === 'login') {
+            <button 
+              type="button" 
+              class="forgot-password-link"
+              (click)="setMode('reset')">
+              {{ 'AUTH.LOGIN.FORGOT_PASSWORD' | translate }}
+            </button>
+          }
+
+          <button 
+            type="submit" 
+            class="btn-primary submit-btn"
+            [disabled]="submitting()">
+            @if (submitting()) {
+              <span class="spinner"></span>
+            }
+            @switch (mode()) {
+              @case ('login') { {{ 'AUTH.LOGIN.SUBMIT' | translate }} }
+              @case ('signup') { {{ 'AUTH.SIGNUP.SUBMIT' | translate }} }
+              @case ('reset') { {{ 'AUTH.RESET.SUBMIT' | translate }} }
+            }
+          </button>
+        </form>
+
+        @if (mode() !== 'reset') {
+          <div class="divider">
+            <span>{{ 'AUTH.OR' | translate }}</span>
+          </div>
+
+          <button 
+            type="button" 
+            class="google-btn"
+            (click)="onGoogleSignIn()"
+            [disabled]="submitting()">
+            <svg viewBox="0 0 24 24" class="google-icon" aria-hidden="true">
+              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+            </svg>
+            {{ 'AUTH.GOOGLE' | translate }}
+          </button>
+        }
+
+        <div class="auth-switch">
+          @switch (mode()) {
+            @case ('login') {
+              {{ 'AUTH.LOGIN.NO_ACCOUNT' | translate }}
+              <button type="button" (click)="setMode('signup')">
+                {{ 'AUTH.LOGIN.SIGNUP_LINK' | translate }}
+              </button>
+            }
+            @case ('signup') {
+              {{ 'AUTH.SIGNUP.HAS_ACCOUNT' | translate }}
+              <button type="button" (click)="setMode('login')">
+                {{ 'AUTH.SIGNUP.LOGIN_LINK' | translate }}
+              </button>
+            }
+            @case ('reset') {
+              <button type="button" (click)="setMode('login')">
+                {{ 'AUTH.RESET.BACK_TO_LOGIN' | translate }}
+              </button>
+            }
+          }
+        </div>
+      }
+    </div>
+  </div>
+}

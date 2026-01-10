@@ -1,0 +1,38 @@
+<div class="step-header">
+  <h1 class="step-title">{{ 'ONBOARDING.STEP_6.TITLE' | translate }}</h1>
+  <p class="step-subtitle">{{ 'ONBOARDING.STEP_6.SUBTITLE' | translate }}</p>
+</div>
+
+<div class="question-group">
+  <label for="ideal-relationship" class="question-label">
+    {{ 'ONBOARDING.STEP_6.IDEAL_QUESTION' | translate }}
+  </label>
+  <span class="question-hint">{{ 'ONBOARDING.STEP_6.IDEAL_HINT' | translate }}</span>
+  
+  <textarea 
+    id="ideal-relationship"
+    class="textarea-field"
+    [placeholder]="'ONBOARDING.STEP_6.IDEAL_PLACEHOLDER' | translate"
+    [(ngModel)]="idealRelationship"
+    rows="5"></textarea>
+  <span class="char-count" [class.warning]="idealNearLimit()">
+    {{ 'ONBOARDING.STEP_6.CHAR_COUNT' | translate: { count: idealCharCount(), max: maxIdealChars } }}
+  </span>
+</div>
+
+<div class="question-group">
+  <label for="support-meaning" class="question-label">
+    {{ 'ONBOARDING.STEP_6.SUPPORT_QUESTION' | translate }}
+  </label>
+  <span class="question-hint">{{ 'ONBOARDING.STEP_6.SUPPORT_HINT' | translate }}</span>
+  
+  <textarea 
+    id="support-meaning"
+    class="textarea-field"
+    [placeholder]="'ONBOARDING.STEP_6.SUPPORT_PLACEHOLDER' | translate"
+    [(ngModel)]="supportMeaning"
+    rows="4"></textarea>
+  <span class="char-count" [class.warning]="supportNearLimit()">
+    {{ 'ONBOARDING.STEP_6.CHAR_COUNT' | translate: { count: supportCharCount(), max: maxSupportChars } }}
+  </span>
+</div>

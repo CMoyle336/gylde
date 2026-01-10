@@ -1,0 +1,236 @@
+<div class="dashboard">
+  <!-- Sidebar Navigation -->
+  <aside class="sidebar" role="navigation" aria-label="Main navigation">
+    <div class="sidebar-header">
+      <a href="/" class="logo">Gylde</a>
+    </div>
+
+    <nav class="sidebar-nav">
+      @for (item of navItems; track item.id) {
+        <button 
+          type="button"
+          class="nav-item"
+          [class.active]="activeNav() === item.id"
+          (click)="setActiveNav(item.id)"
+          [attr.aria-current]="activeNav() === item.id ? 'page' : null">
+          <span class="material-icons-outlined nav-icon">{{ item.icon }}</span>
+          <span class="nav-label">{{ 'DASHBOARD.NAV.' + item.labelKey | translate }}</span>
+          @if (item.badge) {
+            <span class="nav-badge">{{ item.badge }}</span>
+          }
+        </button>
+      }
+    </nav>
+
+    <div class="sidebar-footer">
+      <button type="button" class="logout-btn" (click)="onLogout()">
+        <span class="material-icons-outlined">logout</span>
+        <span>{{ 'DASHBOARD.LOGOUT' | translate }}</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Header -->
+    <header class="content-header">
+      <div class="header-left">
+        <h1 class="page-title">{{ 'DASHBOARD.WELCOME' | translate }}</h1>
+        <p class="page-subtitle">{{ 'DASHBOARD.WELCOME_SUB' | translate }}</p>
+      </div>
+
+      <div class="header-right">
+        <!-- Profile Completion -->
+        <div class="profile-completion">
+          <div class="completion-info">
+            <span class="completion-label">{{ 'DASHBOARD.PROFILE_COMPLETE' | translate }}</span>
+            <span class="completion-value">{{ profileCompletion() }}%</span>
+          </div>
+          <div class="completion-bar">
+            <div class="completion-fill" [style.width.%]="profileCompletion()"></div>
+          </div>
+        </div>
+
+        <!-- User Avatar -->
+        <button type="button" class="user-avatar" aria-label="View your profile">
+          <span class="material-icons-outlined">person</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Content Area -->
+    <div class="content-body">
+      @switch (activeNav()) {
+        @case ('discover') {
+          <!-- Discover Section -->
+          <section class="discover-section" aria-labelledby="discover-heading">
+            <div class="section-header">
+              <h2 id="discover-heading" class="section-title">
+                {{ 'DASHBOARD.DISCOVER_TITLE' | translate }}
+              </h2>
+              <p class="section-subtitle">{{ 'DASHBOARD.DISCOVER_SUB' | translate }}</p>
+            </div>
+
+            <!-- Filter Bar -->
+            <div class="filter-bar">
+              <button type="button" class="filter-btn active">
+                <span class="material-icons-outlined">tune</span>
+                {{ 'DASHBOARD.FILTERS.ALL' | translate }}
+              </button>
+              <button type="button" class="filter-btn">
+                {{ 'DASHBOARD.FILTERS.VERIFIED' | translate }}
+              </button>
+              <button type="button" class="filter-btn">
+                {{ 'DASHBOARD.FILTERS.ONLINE' | translate }}
+              </button>
+              <button type="button" class="filter-btn">
+                {{ 'DASHBOARD.FILTERS.NEW' | translate }}
+              </button>
+            </div>
+
+            <!-- Profile Grid -->
+            <div class="profile-grid">
+              @for (profile of featuredProfiles(); track profile.id) {
+                <article class="profile-card">
+                  <div class="card-photo">
+                    <div class="photo-placeholder">
+                      <span class="material-icons-outlined">person</span>
+                    </div>
+                    @if (profile.verified) {
+                      <span class="verified-badge" title="Verified profile">
+                        <span class="material-icons-outlined">verified</span>
+                      </span>
+                    }
+                  </div>
+
+                  <div class="card-content">
+                    <div class="card-header">
+                      <h3 class="card-name">{{ profile.name }}, {{ profile.age }}</h3>
+                      <span class="card-location">
+                        <span class="material-icons-outlined">location_on</span>
+                        {{ profile.location }}
+                      </span>
+                    </div>
+
+                    <p class="card-tagline">{{ profile.tagline }}</p>
+
+                    <div class="card-tags">
+                      @for (type of profile.connectionTypes.slice(0, 2); track type) {
+                        <span class="tag">{{ type }}</span>
+                      }
+                    </div>
+
+                    <div class="card-actions">
+                      <button 
+                        type="button" 
+                        class="action-btn pass"
+                        (click)="onPassProfile(profile.id)"
+                        aria-label="Pass on {{ profile.name }}">
+                        <span class="material-icons-outlined">close</span>
+                      </button>
+                      <button 
+                        type="button" 
+                        class="action-btn view"
+                        (click)="onViewProfile(profile.id)"
+                        aria-label="View {{ profile.name }}'s profile">
+                        <span class="material-icons-outlined">visibility</span>
+                      </button>
+                      <button 
+                        type="button" 
+                        class="action-btn like"
+                        (click)="onLikeProfile(profile.id)"
+                        aria-label="Like {{ profile.name }}">
+                        <span class="material-icons-outlined">favorite</span>
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              }
+            </div>
+          </section>
+        }
+
+        @case ('matches') {
+          <section class="placeholder-section">
+            <span class="material-icons-outlined placeholder-icon">favorite</span>
+            <h2>{{ 'DASHBOARD.MATCHES_TITLE' | translate }}</h2>
+            <p>{{ 'DASHBOARD.MATCHES_EMPTY' | translate }}</p>
+          </section>
+        }
+
+        @case ('messages') {
+          <section class="placeholder-section">
+            <span class="material-icons-outlined placeholder-icon">chat_bubble</span>
+            <h2>{{ 'DASHBOARD.MESSAGES_TITLE' | translate }}</h2>
+            <p>{{ 'DASHBOARD.MESSAGES_EMPTY' | translate }}</p>
+          </section>
+        }
+
+        @case ('profile') {
+          <section class="placeholder-section">
+            <span class="material-icons-outlined placeholder-icon">person</span>
+            <h2>{{ 'DASHBOARD.PROFILE_TITLE' | translate }}</h2>
+            <p>{{ 'DASHBOARD.PROFILE_SUB' | translate }}</p>
+          </section>
+        }
+
+        @case ('settings') {
+          <section class="placeholder-section">
+            <span class="material-icons-outlined placeholder-icon">settings</span>
+            <h2>{{ 'DASHBOARD.SETTINGS_TITLE' | translate }}</h2>
+            <p>{{ 'DASHBOARD.SETTINGS_SUB' | translate }}</p>
+          </section>
+        }
+      }
+    </div>
+  </main>
+
+  <!-- Activity Sidebar (Desktop) -->
+  <aside class="activity-sidebar" aria-label="Recent activity">
+    <h3 class="activity-title">{{ 'DASHBOARD.ACTIVITY_TITLE' | translate }}</h3>
+    
+    <ul class="activity-list">
+      @for (activity of recentActivity(); track activity.name) {
+        <li class="activity-item">
+          <div class="activity-avatar">
+            <span class="material-icons-outlined">
+              @switch (activity.type) {
+                @case ('match') { favorite }
+                @case ('message') { chat }
+                @case ('like') { thumb_up }
+              }
+            </span>
+          </div>
+          <div class="activity-content">
+            <span class="activity-text">
+              @switch (activity.type) {
+                @case ('match') { {{ 'DASHBOARD.ACTIVITY.MATCH' | translate: { name: activity.name } }} }
+                @case ('message') { {{ 'DASHBOARD.ACTIVITY.MESSAGE' | translate: { name: activity.name } }} }
+                @case ('like') { {{ 'DASHBOARD.ACTIVITY.LIKE' | translate: { name: activity.name } }} }
+              }
+            </span>
+            <span class="activity-time">{{ activity.time }}</span>
+          </div>
+        </li>
+      }
+    </ul>
+
+    <div class="quick-stats">
+      <h4 class="stats-title">{{ 'DASHBOARD.STATS_TITLE' | translate }}</h4>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <span class="stat-value">12</span>
+          <span class="stat-label">{{ 'DASHBOARD.STATS.VIEWS' | translate }}</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value">5</span>
+          <span class="stat-label">{{ 'DASHBOARD.STATS.LIKES' | translate }}</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value">3</span>
+          <span class="stat-label">{{ 'DASHBOARD.STATS.MATCHES' | translate }}</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+</div>

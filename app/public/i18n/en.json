@@ -1,0 +1,323 @@
+{
+  "HOME": {
+    "NAV": {
+      "FEATURES": "Features",
+      "HOW_IT_WORKS": "How It Works",
+      "SIGN_IN": "Sign In",
+      "GET_STARTED": "Get Started",
+      "DASHBOARD": "Dashboard",
+      "LOGOUT": "Log Out"
+    },
+    "HERO": {
+      "TAGLINE": "Dating for Intentional, Supported Relationships",
+      "TITLE": "Find Your",
+      "TITLE_ACCENT": "Gylde",
+      "DESCRIPTION": "Not casual dating. Not guesswork. A structured space where clarity meets connection and relationships are built with intention.",
+      "CTA_PRIMARY": "Begin Your Journey",
+      "CTA_SECONDARY": "Learn More",
+      "VERIFIED_MEMBER": "Verified Member",
+      "PREMIUM_MEMBER": "Premium Member",
+      "ITS_A_MATCH": "It's a match!"
+    },
+    "STATS": {
+      "ACTIVE_MEMBERS": "Active Members",
+      "CONNECTIONS_MADE": "Connections Made",
+      "SATISFACTION_RATE": "Satisfaction Rate"
+    },
+    "FEATURES": {
+      "LABEL": "Why Gylde",
+      "TITLE": "Clarity, Not Guesswork",
+      "DESCRIPTION": "Our members join because they want structure around what matters most—lifestyle, ambition, generosity, and intention.",
+      "LIFESTYLE": {
+        "TITLE": "Lifestyle Expectations",
+        "DESCRIPTION": "Be upfront about how you live and what you expect. No ambiguity—just aligned lifestyles from the start."
+      },
+      "AMBITION": {
+        "TITLE": "Ambition & Growth",
+        "DESCRIPTION": "Connect with members who value personal development, career goals, and building toward something greater."
+      },
+      "GENEROSITY": {
+        "TITLE": "Generosity & Support",
+        "DESCRIPTION": "A space for those open to giving and receiving support. Clear about intentions, respectful in approach."
+      },
+      "INTENTION": {
+        "TITLE": "Built with Intention",
+        "DESCRIPTION": "Every relationship here starts with purpose. No games, no uncertainty—just genuine, intentional connections."
+      },
+      "VERIFIED": {
+        "TITLE": "Verified Members",
+        "DESCRIPTION": "Every profile is verified. Know that the person you are connecting with is real, serious, and authentic."
+      },
+      "PRIVACY": {
+        "TITLE": "Privacy & Discretion",
+        "DESCRIPTION": "Your privacy matters. Share on your terms with robust controls designed for your peace of mind."
+      }
+    },
+    "HOW_IT_WORKS": {
+      "LABEL": "The Journey",
+      "TITLE": "Three Steps to Connection",
+      "STEP_1": {
+        "TITLE": "Define What You Want",
+        "DESCRIPTION": "Our structured profile guides you through lifestyle, ambitions, and relationship expectations. No guessing—just clarity."
+      },
+      "STEP_2": {
+        "TITLE": "Find Aligned Matches",
+        "DESCRIPTION": "Browse verified members who share your intentions. Filter by what matters: lifestyle, goals, and openness to support."
+      },
+      "STEP_3": {
+        "TITLE": "Connect with Purpose",
+        "DESCRIPTION": "Start conversations knowing you are both on the same page. Build relationships grounded in mutual respect and clear intentions."
+      }
+    },
+    "VALUES": {
+      "LABEL": "Our Promise",
+      "TITLE": "Structure That Works",
+      "DESCRIPTION": "We built Gylde because dating should not require decoding mixed signals. Our platform gives you the structure to be clear about what you want—and find others who want the same.",
+      "INTENTIONAL_CONNECTIONS": "Intentional Connections",
+      "LIST": {
+        "CLEAR_EXPECTATIONS": "Clear expectations from the first message",
+        "VERIFIED_IDENTITY": "Verified identity for every member",
+        "ZERO_TOLERANCE": "Zero tolerance for dishonesty or games",
+        "STRUCTURED_PROFILES": "Structured profiles that surface what matters",
+        "MUTUAL_RESPECT": "A community built on mutual respect"
+      }
+    },
+    "CTA": {
+      "TITLE": "We Provide the",
+      "TITLE_ACCENT": "Structure",
+      "DESCRIPTION": "You define the connection. Join a community built on clarity, intention, and mutual respect.",
+      "BUTTON": "Create Your Profile"
+    },
+    "FOOTER": {
+      "TAGLINE": "We provide the structure. You define the connection.",
+      "PLATFORM": {
+        "TITLE": "Platform",
+        "ABOUT": "About Us",
+        "HOW_IT_WORKS": "How It Works",
+        "MEMBERSHIP": "Membership",
+        "SUCCESS_STORIES": "Success Stories"
+      },
+      "SUPPORT": {
+        "TITLE": "Support",
+        "HELP": "Help Center",
+        "SAFETY": "Safety Tips",
+        "GUIDELINES": "Community Guidelines",
+        "CONTACT": "Contact Us"
+      },
+      "LEGAL": {
+        "TITLE": "Legal",
+        "PRIVACY": "Privacy Policy",
+        "TERMS": "Terms of Service",
+        "COOKIES": "Cookie Policy"
+      },
+      "COPYRIGHT": "Gylde. All rights reserved.",
+      "DISCLAIMER": "Gylde is a dating platform. We do not facilitate or condone any form of illegal activity."
+    }
+  },
+  "ONBOARDING": {
+    "PROGRESS": "Step {{current}} of {{total}}",
+    "NEXT": "Continue",
+    "BACK": "Back",
+    "SKIP": "Skip for now",
+    "FINISH": "Complete Profile",
+    "SAVING": "Saving...",
+    "REQUIRED": "Required",
+    "STEP_1": {
+      "TITLE": "Let's Get Started",
+      "SUBTITLE": "First, a few basics to ensure Gylde is right for you.",
+      "AGE_QUESTION": "Are you at least 18 years old?",
+      "AGE_YES": "Yes, I am 18 or older",
+      "AGE_NO": "No, I am under 18",
+      "AGE_REQUIRED": "You must be at least 18 years old to join Gylde.",
+      "LOCATION_QUESTION": "Where are you located?",
+      "CITY_LABEL": "City",
+      "CITY_PLACEHOLDER": "Enter your city",
+      "COUNTRY_LABEL": "Country",
+      "COUNTRY_PLACEHOLDER": "Select your country"
+    },
+    "STEP_2": {
+      "TITLE": "About You",
+      "SUBTITLE": "Help us understand who you are and who you're looking to meet.",
+      "IDENTITY_QUESTION": "How do you identify?",
+      "IDENTITY_MAN": "Man",
+      "IDENTITY_WOMAN": "Woman",
+      "IDENTITY_NONBINARY": "Non-binary",
+      "IDENTITY_SELF_DESCRIBE": "Prefer to self-describe",
+      "IDENTITY_CUSTOM_LABEL": "How would you describe yourself?",
+      "INTERESTED_QUESTION": "Who are you interested in dating?",
+      "INTERESTED_HINT": "Select all that apply",
+      "INTERESTED_MEN": "Men",
+      "INTERESTED_WOMEN": "Women",
+      "INTERESTED_NONBINARY": "Non-binary people",
+      "AGE_RANGE_QUESTION": "What age range are you interested in?",
+      "AGE_RANGE_MIN": "Min age",
+      "AGE_RANGE_MAX": "Max age"
+    },
+    "STEP_3": {
+      "TITLE": "Your Intentions",
+      "SUBTITLE": "What kind of connections are you open to? This helps us match you with like-minded members.",
+      "CONNECTIONS_QUESTION": "What kind of connections are you open to?",
+      "CONNECTIONS_HINT": "Select all that apply",
+      "INTENTIONAL_DATING": "Intentional dating",
+      "INTENTIONAL_DATING_DESC": "Dating with purpose and clear communication",
+      "LONG_TERM": "Long-term relationships",
+      "LONG_TERM_DESC": "Building something lasting and meaningful",
+      "MENTORSHIP": "Mentorship-oriented connections",
+      "MENTORSHIP_DESC": "Learning and growing together",
+      "LIFESTYLE_ALIGNED": "Lifestyle-aligned relationships",
+      "LIFESTYLE_ALIGNED_DESC": "Shared values and compatible lifestyles",
+      "EXPLORING": "Exploring with intention",
+      "EXPLORING_DESC": "Open to possibilities, but with purpose"
+    },
+    "STEP_4": {
+      "TITLE": "Support Orientation",
+      "SUBTITLE": "Relationships involve different dynamics. This helps us understand what feels right for you.",
+      "SUPPORT_QUESTION": "In a relationship, which best describes you?",
+      "SUPPORT_HINT": "Select all that apply. This is optional.",
+      "PROVIDING": "Open to providing support",
+      "RECEIVING": "Open to receiving support",
+      "EITHER": "Open to either, depending on the connection",
+      "PRIVATE": "Prefer to keep this private"
+    },
+    "STEP_5": {
+      "TITLE": "Values & Lifestyle",
+      "SUBTITLE": "What matters most to you? This helps us find truly compatible matches.",
+      "VALUES_QUESTION": "Which values matter most to you in a relationship?",
+      "VALUES_HINT": "Select up to 3",
+      "VALUE_AMBITION": "Ambition",
+      "VALUE_GENEROSITY": "Generosity",
+      "VALUE_INDEPENDENCE": "Independence",
+      "VALUE_EMOTIONAL_MATURITY": "Emotional maturity",
+      "VALUE_GROWTH": "Growth and learning",
+      "VALUE_STABILITY": "Stability",
+      "VALUE_ADVENTURE": "Adventure",
+      "LIFESTYLE_QUESTION": "How would you describe your current lifestyle?",
+      "LIFESTYLE_VERY_FLEXIBLE": "Very flexible",
+      "LIFESTYLE_SOMEWHAT_FLEXIBLE": "Somewhat flexible",
+      "LIFESTYLE_STRUCTURED": "Structured",
+      "LIFESTYLE_HIGHLY_DEMANDING": "Highly demanding"
+    },
+    "STEP_6": {
+      "TITLE": "In Your Own Words",
+      "SUBTITLE": "Help others understand what you're looking for. Be authentic—it leads to better connections.",
+      "IDEAL_QUESTION": "What does an ideal relationship look like to you?",
+      "IDEAL_PLACEHOLDER": "Describe the relationship you're hoping to build...",
+      "IDEAL_HINT": "Be specific about what matters to you. This will appear on your profile.",
+      "SUPPORT_QUESTION": "What does feeling supported in a relationship mean to you?",
+      "SUPPORT_PLACEHOLDER": "Share what support means to you...",
+      "SUPPORT_HINT": "Optional, but helps matches understand your perspective.",
+      "CHAR_COUNT": "{{count}} / {{max}} characters"
+    },
+    "STEP_7": {
+      "TITLE": "Add Your Photos",
+      "SUBTITLE": "Show the real you. Profiles with authentic photos get significantly more meaningful matches.",
+      "PHOTO_REQUIREMENTS": "Photo requirements",
+      "PHOTO_REQ_1": "At least one recent photo",
+      "PHOTO_REQ_2": "Clear face visible",
+      "PHOTO_REQ_3": "No nudity or explicit content",
+      "PHOTO_REQ_4": "Lifestyle or portrait photos encouraged",
+      "PRIMARY_PHOTO": "Primary photo",
+      "ADDITIONAL_PHOTOS": "Additional photos",
+      "ADD_PHOTO": "Add photo",
+      "UPLOAD_HINT": "Drag and drop or click to upload",
+      "SUPPORTED_FORMATS": "JPG, PNG up to 10MB"
+    },
+    "STEP_8": {
+      "TITLE": "Build Trust",
+      "SUBTITLE": "Verified profiles get more matches and build trust faster. You can always do this later.",
+      "VERIFY_QUESTION": "Would you like to verify your profile?",
+      "IDENTITY_VERIFY": "Identity verification",
+      "IDENTITY_VERIFY_DESC": "Confirm your identity with a government ID",
+      "PHOTO_VERIFY": "Photo verification",
+      "PHOTO_VERIFY_DESC": "Take a quick selfie to confirm you match your photos",
+      "SKIP_FOR_NOW": "I'll do this later",
+      "BENEFITS_TITLE": "Benefits of verification",
+      "BENEFIT_1": "Verified badge on your profile",
+      "BENEFIT_2": "Higher visibility in search results",
+      "BENEFIT_3": "More trust from potential matches",
+      "BENEFIT_4": "Access to verified-only features"
+    },
+    "COMPLETE": {
+      "TITLE": "Welcome to Gylde",
+      "SUBTITLE": "Your profile is ready. Start exploring intentional connections.",
+      "CTA": "Start Exploring"
+    }
+  },
+  "DASHBOARD": {
+    "NAV": {
+      "DISCOVER": "Discover",
+      "MATCHES": "Matches",
+      "MESSAGES": "Messages",
+      "PROFILE": "Profile",
+      "SETTINGS": "Settings"
+    },
+    "LOGOUT": "Log Out",
+    "WELCOME": "Welcome Back",
+    "WELCOME_SUB": "Your next meaningful connection awaits.",
+    "PROFILE_COMPLETE": "Profile complete",
+    "DISCOVER_TITLE": "Discover Members",
+    "DISCOVER_SUB": "Browse verified profiles aligned with your intentions.",
+    "FILTERS": {
+      "ALL": "All",
+      "VERIFIED": "Verified",
+      "ONLINE": "Online Now",
+      "NEW": "New Members"
+    },
+    "MATCHES_TITLE": "Your Matches",
+    "MATCHES_EMPTY": "When you match with someone, they'll appear here.",
+    "MESSAGES_TITLE": "Messages",
+    "MESSAGES_EMPTY": "Start a conversation with one of your matches.",
+    "PROFILE_TITLE": "Your Profile",
+    "PROFILE_SUB": "Manage your profile and preferences.",
+    "SETTINGS_TITLE": "Settings",
+    "SETTINGS_SUB": "Manage your account and preferences.",
+    "ACTIVITY_TITLE": "Recent Activity",
+    "ACTIVITY": {
+      "MATCH": "You matched with {{name}}",
+      "MESSAGE": "{{name}} sent you a message",
+      "LIKE": "{{name}} liked your profile"
+    },
+    "STATS_TITLE": "This Week",
+    "STATS": {
+      "VIEWS": "Profile Views",
+      "LIKES": "Likes",
+      "MATCHES": "Matches"
+    }
+  },
+  "AUTH": {
+    "LOGIN": {
+      "TITLE": "Welcome Back",
+      "SUBTITLE": "Sign in to continue your journey.",
+      "SUBMIT": "Sign In",
+      "FORGOT_PASSWORD": "Forgot password?",
+      "NO_ACCOUNT": "Don't have an account?",
+      "SIGNUP_LINK": "Create one"
+    },
+    "SIGNUP": {
+      "TITLE": "Join Gylde",
+      "SUBTITLE": "Create your account and start connecting.",
+      "SUBMIT": "Create Account",
+      "HAS_ACCOUNT": "Already have an account?",
+      "LOGIN_LINK": "Sign in"
+    },
+    "RESET": {
+      "TITLE": "Reset Password",
+      "SUBTITLE": "Enter your email and we'll send you a reset link.",
+      "SUBMIT": "Send Reset Link",
+      "SUCCESS": "Check your email for a password reset link.",
+      "BACK_TO_LOGIN": "Back to sign in"
+    },
+    "FIELDS": {
+      "NAME": "Display Name",
+      "NAME_PLACEHOLDER": "How should we call you?",
+      "EMAIL": "Email",
+      "EMAIL_PLACEHOLDER": "you@example.com",
+      "PASSWORD": "Password",
+      "PASSWORD_PLACEHOLDER": "At least 6 characters",
+      "CONFIRM_PASSWORD": "Confirm Password",
+      "CONFIRM_PASSWORD_PLACEHOLDER": "Enter password again"
+    },
+    "OR": "or",
+    "GOOGLE": "Continue with Google"
+  }
+}

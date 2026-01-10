@@ -1,0 +1,109 @@
+{
+  "HOME": {
+    "HERO": {
+      "TAGLINE": "Dating für bewusste, unterstützte Beziehungen",
+      "TITLE": "Finde dein",
+      "TITLE_ACCENT": "Gylde",
+      "DESCRIPTION": "Kein lockeres Dating. Kein Rätselraten. Ein strukturierter Raum, in dem Klarheit auf Verbindung trifft und Beziehungen mit Absicht aufgebaut werden.",
+      "CTA_PRIMARY": "Starte deine Reise",
+      "CTA_SECONDARY": "Mehr erfahren",
+      "VERIFIED_MEMBER": "Verifiziertes Mitglied",
+      "PREMIUM_MEMBER": "Premium-Mitglied",
+      "ITS_A_MATCH": "Es ist ein Match!"
+    },
+    "STATS": {
+      "ACTIVE_MEMBERS": "Aktive Mitglieder",
+      "CONNECTIONS_MADE": "Verbindungen hergestellt",
+      "SATISFACTION_RATE": "Zufriedenheitsrate"
+    },
+    "FEATURES": {
+      "LABEL": "Warum Gylde",
+      "TITLE": "Klarheit, kein Rätselraten",
+      "DESCRIPTION": "Unsere Mitglieder treten bei, weil sie Struktur bei dem wollen, was am wichtigsten ist – Lebensstil, Ehrgeiz, Großzügigkeit und Absicht.",
+      "LIFESTYLE": {
+        "TITLE": "Lifestyle-Erwartungen",
+        "DESCRIPTION": "Sei offen darüber, wie du lebst und was du erwartest. Keine Mehrdeutigkeit – nur abgestimmte Lebensstile von Anfang an."
+      },
+      "AMBITION": {
+        "TITLE": "Ehrgeiz & Wachstum",
+        "DESCRIPTION": "Verbinde dich mit Mitgliedern, die persönliche Entwicklung, Karriereziele und das Streben nach Größerem schätzen."
+      },
+      "GENEROSITY": {
+        "TITLE": "Großzügigkeit & Unterstützung",
+        "DESCRIPTION": "Ein Raum für diejenigen, die offen für Geben und Empfangen von Unterstützung sind. Klar in den Absichten, respektvoll im Umgang."
+      },
+      "INTENTION": {
+        "TITLE": "Mit Absicht gebaut",
+        "DESCRIPTION": "Jede Beziehung hier beginnt mit einem Ziel. Keine Spielchen, keine Unsicherheit – nur echte, absichtliche Verbindungen."
+      },
+      "VERIFIED": {
+        "TITLE": "Verifizierte Mitglieder",
+        "DESCRIPTION": "Jedes Profil ist verifiziert. Wisse, dass die Person, mit der du dich verbindest, echt, ernst und authentisch ist."
+      },
+      "PRIVACY": {
+        "TITLE": "Privatsphäre & Diskretion",
+        "DESCRIPTION": "Deine Privatsphäre ist wichtig. Teile nach deinen Bedingungen mit robusten Kontrollen für deinen Seelenfrieden."
+      }
+    },
+    "HOW_IT_WORKS": {
+      "LABEL": "Die Reise",
+      "TITLE": "Drei Schritte zur Verbindung",
+      "STEP_1": {
+        "TITLE": "Definiere, was du willst",
+        "DESCRIPTION": "Unser strukturiertes Profil führt dich durch Lebensstil, Ambitionen und Beziehungserwartungen. Kein Raten – nur Klarheit."
+      },
+      "STEP_2": {
+        "TITLE": "Finde passende Matches",
+        "DESCRIPTION": "Durchsuche verifizierte Mitglieder, die deine Absichten teilen. Filtere nach dem, was zählt: Lebensstil, Ziele und Offenheit für Unterstützung."
+      },
+      "STEP_3": {
+        "TITLE": "Verbinde dich mit Zweck",
+        "DESCRIPTION": "Beginne Gespräche mit dem Wissen, dass ihr beide auf derselben Seite seid. Baue Beziehungen auf, die auf gegenseitigem Respekt und klaren Absichten beruhen."
+      }
+    },
+    "VALUES": {
+      "LABEL": "Unser Versprechen",
+      "TITLE": "Struktur, die funktioniert",
+      "DESCRIPTION": "Wir haben Gylde gebaut, weil Dating nicht das Entschlüsseln gemischter Signale erfordern sollte. Unsere Plattform gibt dir die Struktur, um klar zu sagen, was du willst – und andere zu finden, die dasselbe wollen.",
+      "INTENTIONAL_CONNECTIONS": "Absichtliche Verbindungen",
+      "LIST": {
+        "CLEAR_EXPECTATIONS": "Klare Erwartungen von der ersten Nachricht an",
+        "VERIFIED_IDENTITY": "Verifizierte Identität für jedes Mitglied",
+        "ZERO_TOLERANCE": "Null Toleranz für Unehrlichkeit oder Spielchen",
+        "STRUCTURED_PROFILES": "Strukturierte Profile, die das Wesentliche zeigen",
+        "MUTUAL_RESPECT": "Eine Gemeinschaft, die auf gegenseitigem Respekt aufgebaut ist"
+      }
+    },
+    "CTA": {
+      "TITLE": "Wir bieten die",
+      "TITLE_ACCENT": "Struktur",
+      "DESCRIPTION": "Du definierst die Verbindung. Tritt einer Gemeinschaft bei, die auf Klarheit, Absicht und gegenseitigem Respekt aufgebaut ist.",
+      "BUTTON": "Erstelle dein Profil"
+    },
+    "FOOTER": {
+      "TAGLINE": "Wir bieten die Struktur. Du definierst die Verbindung.",
+      "PLATFORM": {
+        "TITLE": "Plattform",
+        "ABOUT": "Über uns",
+        "HOW_IT_WORKS": "So funktioniert's",
+        "MEMBERSHIP": "Mitgliedschaft",
+        "SUCCESS_STORIES": "Erfolgsgeschichten"
+      },
+      "SUPPORT": {
+        "TITLE": "Support",
+        "HELP": "Hilfecenter",
+        "SAFETY": "Sicherheitstipps",
+        "GUIDELINES": "Community-Richtlinien",
+        "CONTACT": "Kontakt"
+      },
+      "LEGAL": {
+        "TITLE": "Rechtliches",
+        "PRIVACY": "Datenschutzrichtlinie",
+        "TERMS": "Nutzungsbedingungen",
+        "COOKIES": "Cookie-Richtlinie"
+      },
+      "COPYRIGHT": "Gylde. Alle Rechte vorbehalten.",
+      "DISCLAIMER": "Gylde ist eine Dating-Plattform. Wir unterstützen oder dulden keine Form illegaler Aktivitäten."
+    }
+  }
+}

@@ -1,0 +1,29 @@
+<div class="step-header">
+  <h1 class="step-title">{{ 'ONBOARDING.STEP_3.TITLE' | translate }}</h1>
+  <p class="step-subtitle">{{ 'ONBOARDING.STEP_3.SUBTITLE' | translate }}</p>
+</div>
+
+<div class="question-group">
+  <span class="question-label">{{ 'ONBOARDING.STEP_3.CONNECTIONS_QUESTION' | translate }}</span>
+  <span class="question-hint">{{ 'ONBOARDING.STEP_3.CONNECTIONS_HINT' | translate }}</span>
+  
+  <div class="options-list">
+    @for (option of connectionOptions; track option.value) {
+      <div class="option-item">
+        <input 
+          type="checkbox" 
+          [id]="'connection-' + option.value" 
+          class="option-input"
+          [checked]="isSelected(option.value)"
+          (change)="toggle(option.value)">
+        <label [for]="'connection-' + option.value" class="option-label">
+          <span class="option-indicator"></span>
+          <span class="option-content">
+            <span class="option-text">{{ 'ONBOARDING.STEP_3.' + option.labelKey | translate }}</span>
+            <span class="option-description">{{ 'ONBOARDING.STEP_3.' + option.descKey | translate }}</span>
+          </span>
+        </label>
+      </div>
+    }
+  </div>
+</div>
