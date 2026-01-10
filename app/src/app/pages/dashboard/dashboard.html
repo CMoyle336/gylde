@@ -249,18 +249,38 @@
 
   <!-- Activity Sidebar (Desktop) -->
   <aside class="activity-sidebar" aria-label="Recent activity">
-    <h3 class="activity-title">{{ 'DASHBOARD.ACTIVITY_TITLE' | translate }}</h3>
+    <div class="activity-header">
+      <h3 class="activity-title">{{ 'DASHBOARD.ACTIVITY_TITLE' | translate }}</h3>
+      @if (unreadActivityCount() > 0) {
+        <span class="activity-badge">{{ unreadActivityCount() }}</span>
+      }
+    </div>
     
     <ul class="activity-list">
-      @for (activity of recentActivity(); track activity.name) {
-        <li class="activity-item">
+      @for (activity of recentActivity(); track activity.id) {
+        <li class="activity-item" [class.unread]="!activity.read">
           <div class="activity-avatar">
-            <span class="material-icons-outlined">
-              @switch (activity.type) {
-                @case ('match') { favorite }
-                @case ('message') { chat }
-                @case ('like') { thumb_up }
-              }
+            @if (activity.photo) {
+              <img [src]="activity.photo" [alt]="activity.name" class="activity-avatar-img">
+            } @else {
+              <span class="material-icons-outlined">
+                @switch (activity.type) {
+                  @case ('match') { favorite }
+                  @case ('message') { chat }
+                  @case ('like') { thumb_up }
+                  @case ('view') { visibility }
+                }
+              </span>
+            }
+            <span class="activity-type-icon" [class]="'type-' + activity.type">
+              <span class="material-icons-outlined">
+                @switch (activity.type) {
+                  @case ('match') { favorite }
+                  @case ('message') { chat }
+                  @case ('like') { thumb_up }
+                  @case ('view') { visibility }
+                }
+              </span>
             </span>
           </div>
           <div class="activity-content">
@@ -269,10 +289,16 @@
                 @case ('match') { {{ 'DASHBOARD.ACTIVITY.MATCH' | translate: { name: activity.name } }} }
                 @case ('message') { {{ 'DASHBOARD.ACTIVITY.MESSAGE' | translate: { name: activity.name } }} }
                 @case ('like') { {{ 'DASHBOARD.ACTIVITY.LIKE' | translate: { name: activity.name } }} }
+                @case ('view') { {{ 'DASHBOARD.ACTIVITY.VIEW' | translate: { name: activity.name } }} }
               }
             </span>
-            <span class="activity-time">{{ activity.time }}</span>
+            <span class="activity-time">{{ activity.timeAgo }}</span>
           </div>
+        </li>
+      } @empty {
+        <li class="activity-empty">
+          <span class="material-icons-outlined">notifications_none</span>
+          <span>No recent activity</span>
         </li>
       }
     </ul>

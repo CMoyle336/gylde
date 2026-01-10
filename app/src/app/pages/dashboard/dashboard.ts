@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal, OnInit, computed } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal, OnInit, OnDestroy, computed } from '@angular/core';
 import { Router } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { FormsModule } from '@angular/forms';
@@ -6,6 +6,7 @@ import { SlicePipe } from '@angular/common';
 import { DiscoveryService } from '../../core/services/discovery.service';
 import { AuthService } from '../../core/services/auth.service';
 import { LikeService } from '../../core/services/like.service';
+import { ActivityService } from '../../core/services/activity.service';
 import { DiscoverableProfile } from '../../core/interfaces';
 
 @Component({
@@ -15,11 +16,12 @@ import { DiscoverableProfile } from '../../core/interfaces';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [TranslateModule, FormsModule, SlicePipe],
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly discoveryService = inject(DiscoveryService);
   private readonly authService = inject(AuthService);
   private readonly likeService = inject(LikeService);
+  private readonly activityService = inject(ActivityService);
 
   protected readonly activeNav = signal<string>('discover');
   protected readonly profileCompletion = signal(75);
@@ -49,15 +51,18 @@ export class DashboardComponent implements OnInit {
   protected readonly loading = this.discoveryService.loading;
   protected readonly filters = this.discoveryService.filters;
 
-  protected readonly recentActivity = signal([
-    { type: 'match', name: 'Sarah', time: '2 hours ago' },
-    { type: 'message', name: 'Chris', time: '5 hours ago' },
-    { type: 'like', name: 'Emma', time: '1 day ago' },
-  ]);
+  // Real-time activity feed
+  protected readonly recentActivity = this.activityService.activities;
+  protected readonly unreadActivityCount = this.activityService.unreadCount;
 
   ngOnInit(): void {
     this.loadProfiles();
     this.likeService.loadLikes();
+    this.activityService.subscribeToActivities();
+  }
+
+  ngOnDestroy(): void {
+    this.activityService.unsubscribeFromActivities();
   }
 
   protected async loadProfiles(): Promise<void> {

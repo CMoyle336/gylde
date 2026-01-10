@@ -73,11 +73,11 @@ export class LikeService {
         return newSet;
       });
 
-      // Check for mutual like (match)
-      const isMutual = await this.checkMutualLike(toUserId, currentUser.uid);
-      if (isMutual) {
-        await this.createMatch(currentUser.uid, toUserId);
-      }
+      // Note: Activity creation and match detection are handled by Firebase Cloud Functions
+      // The function triggers on like document creation and handles:
+      // - Creating like activity for the recipient
+      // - Detecting mutual likes (matches)
+      // - Creating match activities for both users
 
       return true;
     } catch (error) {
@@ -121,41 +121,6 @@ export class LikeService {
       return this.unlikeUser(userId);
     } else {
       return this.likeUser(userId);
-    }
-  }
-
-  /**
-   * Check if the other user has also liked the current user (mutual like = match)
-   */
-  private async checkMutualLike(otherUserId: string, currentUserId: string): Promise<boolean> {
-    try {
-      const otherUserLike = await this.firestoreService.getDocument<Like>(
-        `users/${otherUserId}/likes`,
-        currentUserId
-      );
-      return otherUserLike !== null;
-    } catch {
-      return false;
-    }
-  }
-
-  /**
-   * Create a match when both users have liked each other
-   */
-  private async createMatch(userId1: string, userId2: string): Promise<void> {
-    const matchId = [userId1, userId2].sort().join('_');
-    
-    const match = {
-      users: [userId1, userId2],
-      createdAt: new Date(),
-    };
-
-    try {
-      await this.firestoreService.setDocument('matches', matchId, match);
-      console.log('Match created!', matchId);
-      // TODO: Send notification to both users
-    } catch (error) {
-      console.error('Failed to create match:', error);
     }
   }
 }

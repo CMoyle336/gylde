@@ -762,7 +762,29 @@
   border-bottom: none;
 }
 
+.activity-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.activity-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  background: #e91e63;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: white;
+}
+
 .activity-avatar {
+  position: relative;
   width: 40px;
   height: 40px;
   display: flex;
@@ -774,8 +796,56 @@
   flex-shrink: 0;
 }
 
+.activity-avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
 .activity-avatar .material-icons-outlined {
   font-size: 1.25rem;
+}
+
+.activity-type-icon {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg-secondary);
+  border-radius: 50%;
+  border: 2px solid var(--color-bg-secondary);
+}
+
+.activity-type-icon .material-icons-outlined {
+  font-size: 0.75rem;
+}
+
+.activity-type-icon.type-like {
+  color: #e91e63;
+}
+
+.activity-type-icon.type-match {
+  color: var(--color-accent);
+}
+
+.activity-type-icon.type-message {
+  color: #2196f3;
+}
+
+.activity-type-icon.type-view {
+  color: var(--color-text-muted);
+}
+
+.activity-item.unread {
+  background: rgba(201, 169, 98, 0.05);
+  border-left: 2px solid var(--color-accent);
+  margin-left: -1rem;
+  padding-left: calc(1rem - 2px);
 }
 
 .activity-content {
@@ -793,6 +863,21 @@
 .activity-time {
   font-size: 0.8125rem;
   color: var(--color-text-muted);
+}
+
+.activity-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 2rem 1rem;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.activity-empty .material-icons-outlined {
+  font-size: 2rem;
+  opacity: 0.5;
 }
 
 /* Quick Stats */

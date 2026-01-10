@@ -8,10 +8,16 @@
     "outDir": "lib",
     "sourceMap": true,
     "strict": true,
-    "target": "es2017"
+    "target": "es2017",
+    "baseUrl": ".",
+    "paths": {
+      "@gylde/shared": ["../shared/types/index"],
+      "@gylde/shared/*": ["../shared/types/*"]
+    }
   },
   "compileOnSave": true,
   "include": [
-    "src"
+    "src",
+    "../shared/types"
   ]
 }
