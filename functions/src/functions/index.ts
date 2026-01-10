@@ -2,7 +2,7 @@
  * Cloud Functions barrel export
  * Add new function modules here as they are created
  */
-export * from "./likes";
+export * from "./favorites";
 
 // Future function modules:
 // export * from "./matches";

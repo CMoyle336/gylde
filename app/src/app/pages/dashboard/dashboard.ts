@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { SlicePipe } from '@angular/common';
 import { DiscoveryService } from '../../core/services/discovery.service';
 import { AuthService } from '../../core/services/auth.service';
-import { LikeService } from '../../core/services/like.service';
+import { FavoriteService } from '../../core/services/favorite.service';
 import { ActivityService } from '../../core/services/activity.service';
 import { DiscoverableProfile } from '../../core/interfaces';
 
@@ -20,7 +20,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly discoveryService = inject(DiscoveryService);
   private readonly authService = inject(AuthService);
-  private readonly likeService = inject(LikeService);
+  private readonly favoriteService = inject(FavoriteService);
   private readonly activityService = inject(ActivityService);
 
   protected readonly activeNav = signal<string>('discover');
@@ -31,8 +31,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   protected readonly currentUser = this.authService.user;
   protected readonly userPhotoURL = computed(() => this.currentUser()?.photoURL ?? null);
   
-  // Like state
-  protected readonly likedUserIds = this.likeService.likedUserIds;
+  // Favorite state
+  protected readonly favoritedUserIds = this.favoriteService.favoritedUserIds;
 
   // Distance filter options
   protected readonly distanceOptions = [10, 25, 50, 100, 250, null]; // null = unlimited
@@ -57,7 +57,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadProfiles();
-    this.likeService.loadLikes();
+    this.favoriteService.loadFavorites();
     this.activityService.subscribeToActivities();
   }
 
@@ -69,8 +69,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
     await this.discoveryService.loadProfiles();
   }
   
-  protected isLiked(userId: string): boolean {
-    return this.likedUserIds().has(userId);
+  protected isFavorited(userId: string): boolean {
+    return this.favoritedUserIds().has(userId);
   }
 
   protected setActiveNav(id: string): void {
@@ -102,8 +102,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
     // TODO: Navigate to profile detail
   }
 
-  protected async onLikeProfile(profile: DiscoverableProfile): Promise<void> {
-    await this.likeService.toggleLike(profile.uid);
+  protected async onFavoriteProfile(profile: DiscoverableProfile): Promise<void> {
+    await this.favoriteService.toggleFavorite(profile.uid);
   }
 
   protected onPassProfile(profile: DiscoverableProfile): void {

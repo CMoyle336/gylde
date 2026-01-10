@@ -1,0 +1,17 @@
+{
+  "name": "gylde-scripts",
+  "version": "1.0.0",
+  "description": "Development scripts for Gylde",
+  "type": "module",
+  "scripts": {
+    "seed": "npx tsx seed.ts",
+    "seed:clear": "npx tsx seed.ts --clear"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.0.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.7.0",
+    "typescript": "^5.7.0"
+  }
+}

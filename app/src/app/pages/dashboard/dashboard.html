@@ -197,11 +197,11 @@
                         </button>
                         <button 
                           type="button" 
-                          class="action-btn like"
-                          [class.liked]="isLiked(profile.uid)"
-                          (click)="onLikeProfile(profile)"
-                          [attr.aria-label]="isLiked(profile.uid) ? 'Unlike ' + profile.displayName : 'Like ' + profile.displayName">
-                          <span class="material-icons-outlined">{{ isLiked(profile.uid) ? 'favorite' : 'favorite_border' }}</span>
+                          class="action-btn favorite"
+                          [class.favorited]="isFavorited(profile.uid)"
+                          (click)="onFavoriteProfile(profile)"
+                          [attr.aria-label]="isFavorited(profile.uid) ? 'Unfavorite ' + profile.displayName : 'Favorite ' + profile.displayName">
+                          <span class="material-icons-outlined">{{ isFavorited(profile.uid) ? 'favorite' : 'favorite_border' }}</span>
                         </button>
                       </div>
                     </div>
@@ -267,7 +267,7 @@
                 @switch (activity.type) {
                   @case ('match') { favorite }
                   @case ('message') { chat }
-                  @case ('like') { thumb_up }
+                  @case ('favorite') { star }
                   @case ('view') { visibility }
                 }
               </span>
@@ -277,7 +277,7 @@
                 @switch (activity.type) {
                   @case ('match') { favorite }
                   @case ('message') { chat }
-                  @case ('like') { thumb_up }
+                  @case ('favorite') { star }
                   @case ('view') { visibility }
                 }
               </span>
@@ -288,7 +288,7 @@
               @switch (activity.type) {
                 @case ('match') { {{ 'DASHBOARD.ACTIVITY.MATCH' | translate: { name: activity.name } }} }
                 @case ('message') { {{ 'DASHBOARD.ACTIVITY.MESSAGE' | translate: { name: activity.name } }} }
-                @case ('like') { {{ 'DASHBOARD.ACTIVITY.LIKE' | translate: { name: activity.name } }} }
+                @case ('favorite') { {{ 'DASHBOARD.ACTIVITY.FAVORITE' | translate: { name: activity.name } }} }
                 @case ('view') { {{ 'DASHBOARD.ACTIVITY.VIEW' | translate: { name: activity.name } }} }
               }
             </span>
@@ -312,7 +312,7 @@
         </div>
         <div class="stat-item">
           <span class="stat-value">5</span>
-          <span class="stat-label">{{ 'DASHBOARD.STATS.LIKES' | translate }}</span>
+          <span class="stat-label">{{ 'DASHBOARD.STATS.FAVORITES' | translate }}</span>
         </div>
         <div class="stat-item">
           <span class="stat-value">3</span>

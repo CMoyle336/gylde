@@ -92,7 +92,7 @@ export class ActivityService implements OnDestroy {
   }
 
   // Note: Activity creation is handled by Firebase Cloud Functions
-  // The functions trigger on like/match document creation and create activities server-side
+  // The functions trigger on favorite/match document creation and create activities server-side
 
   /**
    * Mark an activity as read
@@ -142,8 +142,8 @@ export class ActivityService implements OnDestroy {
 
   private getActivityMessage(activity: Activity): string {
     switch (activity.type) {
-      case 'like':
-        return `💕 ${activity.fromUserName} liked you!`;
+      case 'favorite':
+        return `⭐ ${activity.fromUserName} favorited you!`;
       case 'match':
         return `🎉 You matched with ${activity.fromUserName}!`;
       case 'message':

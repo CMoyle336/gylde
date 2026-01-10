@@ -73,8 +73,8 @@ a {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
-.mat-mdc-snack-bar-container.activity-toast-like {
-  border-left: 3px solid #e91e63;
+.mat-mdc-snack-bar-container.activity-toast-favorite {
+  border-left: 3px solid #ffc107;
 }
 
 .mat-mdc-snack-bar-container.activity-toast-match {

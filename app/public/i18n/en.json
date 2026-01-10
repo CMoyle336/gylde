@@ -283,13 +283,13 @@
     "ACTIVITY": {
       "MATCH": "You matched with {{name}}",
       "MESSAGE": "{{name}} sent you a message",
-      "LIKE": "{{name}} liked your profile",
+      "FAVORITE": "{{name}} favorited your profile",
       "VIEW": "{{name}} viewed your profile"
     },
     "STATS_TITLE": "This Week",
     "STATS": {
       "VIEWS": "Profile Views",
-      "LIKES": "Likes",
+      "FAVORITES": "Favorites",
       "MATCHES": "Matches"
     }
   },

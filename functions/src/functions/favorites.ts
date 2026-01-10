@@ -1,5 +1,5 @@
 /**
- * Like-related Cloud Functions
+ * Favorite-related Cloud Functions
  */
 import { onDocumentCreated, onDocumentDeleted } from "firebase-functions/v2/firestore";
 import { FieldValue } from "firebase-admin/firestore";
@@ -9,11 +9,11 @@ import { UserDisplayInfo } from "../types";
 import * as logger from "firebase-functions/logger";
 
 /**
- * Triggered when a user likes another user.
+ * Triggered when a user favorites another user.
  * Creates an activity record for the recipient.
  */
-export const onLikeCreated = onDocumentCreated(
-  "users/{userId}/likes/{likedUserId}",
+export const onFavoriteCreated = onDocumentCreated(
+  "users/{userId}/favorites/{favoritedUserId}",
   async (event) => {
     const snapshot = event.data;
     if (!snapshot) {
@@ -22,62 +22,62 @@ export const onLikeCreated = onDocumentCreated(
     }
 
     const fromUserId = event.params.userId;
-    const toUserId = event.params.likedUserId;
+    const toUserId = event.params.favoritedUserId;
 
-    logger.info(`User ${fromUserId} liked user ${toUserId}`);
+    logger.info(`User ${fromUserId} favorited user ${toUserId}`);
 
     try {
-      // Get the liker's display info
+      // Get the user's display info
       const fromUser = await UserService.getDisplayInfo(fromUserId);
 
-      // Create activity for the liked user
+      // Create activity for the favorited user
       await ActivityService.createActivity(
         toUserId,
-        "like",
+        "favorite",
         fromUserId,
         fromUser.displayName || "Someone",
         fromUser.photoURL || null
       );
 
-      // Check for mutual like (match)
-      const mutualLikeDoc = await db
+      // Check for mutual favorite (match)
+      const mutualFavoriteDoc = await db
         .collection("users")
         .doc(toUserId)
-        .collection("likes")
+        .collection("favorites")
         .doc(fromUserId)
         .get();
 
-      if (mutualLikeDoc.exists) {
+      if (mutualFavoriteDoc.exists) {
         await handleMatch(fromUserId, toUserId, fromUser);
       }
     } catch (error) {
-      logger.error("Error creating like activity:", error);
+      logger.error("Error creating favorite activity:", error);
     }
   }
 );
 
 /**
- * Triggered when a user unlikes another user.
+ * Triggered when a user unfavorites another user.
  * Deletes the corresponding activity record.
  */
-export const onLikeDeleted = onDocumentDeleted(
-  "users/{userId}/likes/{likedUserId}",
+export const onFavoriteDeleted = onDocumentDeleted(
+  "users/{userId}/favorites/{favoritedUserId}",
   async (event) => {
     const fromUserId = event.params.userId;
-    const toUserId = event.params.likedUserId;
+    const toUserId = event.params.favoritedUserId;
 
-    logger.info(`User ${fromUserId} unliked user ${toUserId}`);
+    logger.info(`User ${fromUserId} unfavorited user ${toUserId}`);
 
     try {
-      await ActivityService.deleteActivities(toUserId, "like", fromUserId);
+      await ActivityService.deleteActivities(toUserId, "favorite", fromUserId);
     } catch (error) {
-      logger.error("Error deleting like activity:", error);
+      logger.error("Error deleting favorite activity:", error);
     }
   }
 );
 
 /**
- * Handle match creation when mutual likes are detected
+ * Handle match creation when mutual favorites are detected
  */
 async function handleMatch(
   fromUserId: string,

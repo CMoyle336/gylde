@@ -2,7 +2,7 @@
  * Activity types - shared between client and server
  */
 
-export type ActivityType = 'like' | 'match' | 'message' | 'view';
+export type ActivityType = 'favorite' | 'match' | 'message' | 'view';
 
 /**
  * Base activity record stored in Firestore

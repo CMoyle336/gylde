@@ -661,24 +661,24 @@
   background: rgba(201, 169, 98, 0.1);
 }
 
-.action-btn.like {
+.action-btn.favorite {
   color: var(--color-text-muted);
   border-color: var(--color-border);
 }
 
-.action-btn.like:hover {
+.action-btn.favorite:hover {
   color: var(--color-accent);
   border-color: var(--color-accent);
   background: rgba(201, 169, 98, 0.1);
 }
 
-.action-btn.like.liked {
+.action-btn.favorite.favorited {
   color: #e91e63;
   border-color: #e91e63;
   background: rgba(233, 30, 99, 0.15);
 }
 
-.action-btn.like.liked:hover {
+.action-btn.favorite.favorited:hover {
   background: rgba(233, 30, 99, 0.25);
 }
 
