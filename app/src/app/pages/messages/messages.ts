@@ -7,12 +7,25 @@ import {
   OnDestroy,
   effect,
   ViewChild,
+  ElementRef,
+  HostListener,
 } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CdkScrollable, ScrollingModule } from '@angular/cdk/scrolling';
 import { MessageService } from '../../core/services/message.service';
 import { ConversationDisplay } from '../../core/interfaces';
+
+interface ImagePreview {
+  file: File;
+  url: string;
+}
+
+interface GalleryState {
+  isOpen: boolean;
+  images: string[];
+  currentIndex: number;
+}
 
 @Component({
   selector: 'app-messages',
@@ -27,8 +40,15 @@ export class MessagesComponent implements OnInit, OnDestroy {
   private readonly messageService = inject(MessageService);
 
   @ViewChild(CdkScrollable) scrollable!: CdkScrollable;
+  @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
 
   protected readonly messageInput = signal('');
+  protected readonly selectedImages = signal<ImagePreview[]>([]);
+  protected readonly gallery = signal<GalleryState>({
+    isOpen: false,
+    images: [],
+    currentIndex: 0,
+  });
   private isNearBottom = true;
   private previousMessageCount = 0;
   private conversationIdFromRoute: string | null = null;
@@ -104,25 +124,173 @@ export class MessagesComponent implements OnInit, OnDestroy {
     this.router.navigate(['/messages'], { replaceUrl: true });
   }
 
-  protected async sendMessage(): Promise<void> {
+  /**
+   * Send message with optional text and/or images
+   */
+  protected async send(): Promise<void> {
     const content = this.messageInput().trim();
-    if (!content) return;
+    const images = this.selectedImages();
+    
+    // Must have text or images
+    if (!content && images.length === 0) return;
 
+    // Capture files BEFORE clearing
+    const files = images.map(img => img.file);
+
+    // Clear inputs immediately for responsiveness
     this.messageInput.set('');
-    this.isNearBottom = true; // User sent message, so scroll to see it
-    await this.messageService.sendMessage(content);
+    this.clearImages();
+    this.isNearBottom = true;
+
+    await this.messageService.sendMessage(content, files);
+  }
+
+  /**
+   * Check if send button should be enabled
+   */
+  protected canSend(): boolean {
+    return this.messageInput().trim().length > 0 || this.selectedImages().length > 0;
   }
 
   protected onKeyDown(event: KeyboardEvent): void {
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
-      this.sendMessage();
+      this.send();
     }
   }
 
   protected onInput(): void {
     // Notify that the user is typing
     this.messageService.setTyping(true);
+  }
+
+  /**
+   * Open file picker for images
+   */
+  protected openImagePicker(): void {
+    this.fileInput?.nativeElement?.click();
+  }
+
+  /**
+   * Handle file selection from input
+   */
+  protected onFilesSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files?.length) return;
+
+    const newImages: ImagePreview[] = [];
+    const existingImages = this.selectedImages();
+
+    // Limit to 10 images total
+    const remaining = 10 - existingImages.length;
+    const filesToAdd = Array.from(input.files).slice(0, remaining);
+
+    for (const file of filesToAdd) {
+      // Only accept images
+      if (!file.type.startsWith('image/')) continue;
+      
+      // Create preview URL
+      const url = URL.createObjectURL(file);
+      newImages.push({ file, url });
+    }
+
+    this.selectedImages.set([...existingImages, ...newImages]);
+    
+    // Reset input so same file can be selected again
+    input.value = '';
+  }
+
+  /**
+   * Remove an image from selection
+   */
+  protected removeImage(index: number): void {
+    const images = this.selectedImages();
+    const removed = images[index];
+    
+    // Revoke the object URL to free memory
+    URL.revokeObjectURL(removed.url);
+    
+    this.selectedImages.set(images.filter((_, i) => i !== index));
+  }
+
+  /**
+   * Clear all selected images
+   */
+  protected clearImages(): void {
+    const images = this.selectedImages();
+    images.forEach(img => URL.revokeObjectURL(img.url));
+    this.selectedImages.set([]);
+  }
+
+  // ============================================
+  // IMAGE GALLERY
+  // ============================================
+
+  /**
+   * Open the image gallery at a specific image
+   */
+  protected openGallery(images: string[], startIndex: number, event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.gallery.set({
+      isOpen: true,
+      images,
+      currentIndex: startIndex,
+    });
+  }
+
+  /**
+   * Close the image gallery
+   */
+  protected closeGallery(): void {
+    this.gallery.update(g => ({ ...g, isOpen: false }));
+  }
+
+  /**
+   * Navigate to the previous image
+   */
+  protected prevImage(): void {
+    this.gallery.update(g => ({
+      ...g,
+      currentIndex: g.currentIndex > 0 ? g.currentIndex - 1 : g.images.length - 1,
+    }));
+  }
+
+  /**
+   * Navigate to the next image
+   */
+  protected nextImage(): void {
+    this.gallery.update(g => ({
+      ...g,
+      currentIndex: g.currentIndex < g.images.length - 1 ? g.currentIndex + 1 : 0,
+    }));
+  }
+
+  /**
+   * Go to a specific image by index
+   */
+  protected goToImage(index: number): void {
+    this.gallery.update(g => ({ ...g, currentIndex: index }));
+  }
+
+  /**
+   * Handle keyboard navigation for gallery
+   */
+  @HostListener('document:keydown', ['$event'])
+  handleKeydown(event: KeyboardEvent): void {
+    if (!this.gallery().isOpen) return;
+
+    switch (event.key) {
+      case 'Escape':
+        this.closeGallery();
+        break;
+      case 'ArrowLeft':
+        this.prevImage();
+        break;
+      case 'ArrowRight':
+        this.nextImage();
+        break;
+    }
   }
 
   protected formatTime(date: Date | null): string {

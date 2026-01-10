@@ -11,6 +11,7 @@ export interface Message {
   createdAt: Date | FieldValue;
   read: boolean;
   type: 'text' | 'image' | 'system';
+  imageUrls?: string[]; // For image messages
 }
 
 /**
@@ -66,4 +67,5 @@ export interface MessageDisplay {
   createdAt: Date;
   read: boolean;
   type: 'text' | 'image' | 'system';
+  imageUrls?: string[]; // For image messages
 }

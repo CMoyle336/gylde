@@ -16,6 +16,7 @@ import {
   writeBatch,
 } from '@angular/fire/firestore';
 import { AuthService } from './auth.service';
+import { StorageService } from './storage.service';
 import {
   Message,
   Conversation,
@@ -28,6 +29,7 @@ import {
 })
 export class MessageService {
   private readonly firestore = inject(Firestore);
+  private readonly storageService = inject(StorageService);
   private readonly authService = inject(AuthService);
 
   private readonly _conversations = signal<ConversationDisplay[]>([]);
@@ -271,6 +273,7 @@ export class MessageService {
             createdAt: this.toDate(data.createdAt),
             read: data.read,
             type: data.type,
+            imageUrls: data.imageUrls,
           };
         });
 
@@ -299,12 +302,15 @@ export class MessageService {
 
   /**
    * Send a message in the active conversation
+   * Supports text only, images only, or both text and images
    */
-  async sendMessage(content: string): Promise<void> {
+  async sendMessage(content: string, files: File[] = []): Promise<void> {
     const currentUser = this.authService.user();
     const activeConversation = this._activeConversation();
+    const hasText = content.trim().length > 0;
+    const hasImages = files.length > 0;
 
-    if (!currentUser || !activeConversation || !content.trim()) return;
+    if (!currentUser || !activeConversation || (!hasText && !hasImages)) return;
 
     this._sending.set(true);
 
@@ -312,6 +318,16 @@ export class MessageService {
     this.clearTypingStatus();
 
     try {
+      // Upload images if any
+      let imageUrls: string[] = [];
+      if (hasImages) {
+        const uploadPromises = files.map((file, index) => {
+          const path = `conversations/${activeConversation.id}/images/${Date.now()}_${index}_${file.name}`;
+          return this.storageService.uploadFile(path, file);
+        });
+        imageUrls = await Promise.all(uploadPromises);
+      }
+
       const messagesRef = collection(
         this.firestore,
         'conversations',
@@ -319,15 +335,34 @@ export class MessageService {
         'messages'
       );
 
-      // Add the message
-      await addDoc(messagesRef, {
+      // Determine message type and content
+      const messageType = hasImages ? 'image' : 'text';
+      const messageContent = hasText ? content.trim() : 
+        (files.length === 1 ? 'Sent an image' : `Sent ${files.length} images`);
+
+      // Build message data
+      const messageData: Record<string, unknown> = {
         conversationId: activeConversation.id,
         senderId: currentUser.uid,
-        content: content.trim(),
+        content: messageContent,
         createdAt: serverTimestamp(),
         read: false,
-        type: 'text',
-      });
+        type: messageType,
+      };
+
+      if (hasImages) {
+        messageData['imageUrls'] = imageUrls;
+      }
+
+      await addDoc(messagesRef, messageData);
+
+      // Determine preview for conversation list
+      let lastMessagePreview = messageContent;
+      if (hasImages && !hasText) {
+        lastMessagePreview = files.length === 1 ? '📷 Image' : `📷 ${files.length} images`;
+      } else if (hasImages && hasText) {
+        lastMessagePreview = `📷 ${messageContent}`;
+      }
 
       // Update conversation's last message and unread count
       const conversationRef = doc(
@@ -338,7 +373,7 @@ export class MessageService {
 
       await updateDoc(conversationRef, {
         lastMessage: {
-          content: content.trim(),
+          content: lastMessagePreview,
           senderId: currentUser.uid,
           createdAt: serverTimestamp(),
         },

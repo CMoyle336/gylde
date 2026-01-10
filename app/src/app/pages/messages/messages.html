@@ -72,11 +72,28 @@
         } @else {
           <div class="messages-list">
             @for (message of messages(); track message.id) {
-              <div class="message" [class.own]="message.isOwn">
-                <div class="bubble">
-                  <p>{{ message.content }}</p>
-                  <time>{{ formatMessageTime(message.createdAt) }}</time>
-                </div>
+              <div class="message" [class.own]="message.isOwn" [class.image-message]="message.type === 'image'">
+                @if (message.type === 'image' && message.imageUrls?.length) {
+                  <div class="image-bubble">
+                    <!-- Show text content if present (not a placeholder) -->
+                    @if (message.content && !message.content.startsWith('Sent ')) {
+                      <p class="image-caption">{{ message.content }}</p>
+                    }
+                    <div class="image-grid" [class.single]="message.imageUrls!.length === 1" [class.grid-2]="message.imageUrls!.length === 2" [class.grid-many]="message.imageUrls!.length > 2">
+                      @for (imageUrl of message.imageUrls; track imageUrl; let idx = $index) {
+                        <button type="button" class="image-item" (click)="openGallery(message.imageUrls!, idx, $event)">
+                          <img [src]="imageUrl" alt="Shared image" loading="lazy">
+                        </button>
+                      }
+                    </div>
+                    <time>{{ formatMessageTime(message.createdAt) }}</time>
+                  </div>
+                } @else {
+                  <div class="bubble">
+                    <p>{{ message.content }}</p>
+                    <time>{{ formatMessageTime(message.createdAt) }}</time>
+                  </div>
+                }
               </div>
             }
             
@@ -94,26 +111,70 @@
         }
       </div>
 
-      <!-- Input -->
-      <footer class="chat-input">
-        <input
-          type="text"
-          placeholder="Type a message..."
-          [value]="messageInput()"
-          (input)="messageInput.set($any($event.target).value); onInput()"
-          (keydown)="onKeyDown($event)"
-          [disabled]="sending()">
-        <button 
-          type="button"
-          class="send-btn"
-          [disabled]="!messageInput().trim() || sending()"
-          (click)="sendMessage()">
-          @if (sending()) {
-            <div class="spinner"></div>
-          } @else {
-            <span class="material-icons-outlined">send</span>
-          }
-        </button>
+      <!-- Input Area -->
+      <footer class="chat-input-area">
+        <!-- Image Previews (inline with input) -->
+        @if (selectedImages().length > 0) {
+          <div class="image-preview-row">
+            <div class="image-previews">
+              @for (image of selectedImages(); track image.url; let i = $index) {
+                <div class="preview-item">
+                  <img [src]="image.url" alt="Selected image">
+                  <button type="button" class="remove-preview" (click)="removeImage(i)" aria-label="Remove image">
+                    <span class="material-icons-outlined">close</span>
+                  </button>
+                </div>
+              }
+            </div>
+            @if (selectedImages().length > 1) {
+              <button type="button" class="clear-all-btn" (click)="clearImages()">
+                <span class="material-icons-outlined">close</span>
+                Clear all
+              </button>
+            }
+          </div>
+        }
+
+        <!-- Input Row -->
+        <div class="chat-input">
+          <!-- Hidden file input -->
+          <input 
+            #fileInput
+            type="file" 
+            accept="image/*" 
+            multiple 
+            hidden 
+            (change)="onFilesSelected($event)">
+          
+          <!-- Image upload button -->
+          <button 
+            type="button" 
+            class="attach-btn"
+            (click)="openImagePicker()"
+            [disabled]="sending()"
+            aria-label="Attach images">
+            <span class="material-icons-outlined">image</span>
+          </button>
+
+          <input
+            type="text"
+            placeholder="Type a message..."
+            [value]="messageInput()"
+            (input)="messageInput.set($any($event.target).value); onInput()"
+            (keydown)="onKeyDown($event)"
+            [disabled]="sending()">
+          <button 
+            type="button"
+            class="send-btn"
+            [disabled]="!canSend() || sending()"
+            (click)="send()">
+            @if (sending()) {
+              <div class="spinner"></div>
+            } @else {
+              <span class="material-icons-outlined">send</span>
+            }
+          </button>
+        </div>
       </footer>
     } @else {
       <!-- No chat selected (desktop only) -->
@@ -125,3 +186,56 @@
     }
   </main>
 </div>
+
+<!-- Image Gallery Lightbox -->
+@if (gallery().isOpen) {
+  <div class="gallery-overlay" (click)="closeGallery()">
+    <div class="gallery-container" (click)="$event.stopPropagation()">
+      <!-- Close Button -->
+      <button type="button" class="gallery-close" (click)="closeGallery()" aria-label="Close gallery">
+        <span class="material-icons-outlined">close</span>
+      </button>
+
+      <!-- Navigation: Previous -->
+      @if (gallery().images.length > 1) {
+        <button type="button" class="gallery-nav prev" (click)="prevImage()" aria-label="Previous image">
+          <span class="material-icons-outlined">chevron_left</span>
+        </button>
+      }
+
+      <!-- Main Image -->
+      <div class="gallery-image-wrapper">
+        <img [src]="gallery().images[gallery().currentIndex]" alt="Image" class="gallery-image">
+      </div>
+
+      <!-- Navigation: Next -->
+      @if (gallery().images.length > 1) {
+        <button type="button" class="gallery-nav next" (click)="nextImage()" aria-label="Next image">
+          <span class="material-icons-outlined">chevron_right</span>
+        </button>
+      }
+
+      <!-- Image Counter -->
+      @if (gallery().images.length > 1) {
+        <div class="gallery-counter">
+          {{ gallery().currentIndex + 1 }} / {{ gallery().images.length }}
+        </div>
+      }
+
+      <!-- Thumbnail Strip -->
+      @if (gallery().images.length > 1) {
+        <div class="gallery-thumbnails">
+          @for (img of gallery().images; track img; let i = $index) {
+            <button 
+              type="button" 
+              class="thumbnail" 
+              [class.active]="i === gallery().currentIndex"
+              (click)="goToImage(i)">
+              <img [src]="img" alt="Thumbnail">
+            </button>
+          }
+        </div>
+      }
+    </div>
+  </div>
+}
