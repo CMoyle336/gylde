@@ -198,9 +198,10 @@
                         <button 
                           type="button" 
                           class="action-btn like"
+                          [class.liked]="isLiked(profile.uid)"
                           (click)="onLikeProfile(profile)"
-                          aria-label="Like {{ profile.displayName }}">
-                          <span class="material-icons-outlined">favorite</span>
+                          [attr.aria-label]="isLiked(profile.uid) ? 'Unlike ' + profile.displayName : 'Like ' + profile.displayName">
+                          <span class="material-icons-outlined">{{ isLiked(profile.uid) ? 'favorite' : 'favorite_border' }}</span>
                         </button>
                       </div>
                     </div>

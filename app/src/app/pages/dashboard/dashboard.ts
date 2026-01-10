@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { SlicePipe } from '@angular/common';
 import { DiscoveryService } from '../../core/services/discovery.service';
 import { AuthService } from '../../core/services/auth.service';
+import { LikeService } from '../../core/services/like.service';
 import { DiscoverableProfile } from '../../core/interfaces';
 
 @Component({
@@ -18,6 +19,7 @@ export class DashboardComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly discoveryService = inject(DiscoveryService);
   private readonly authService = inject(AuthService);
+  private readonly likeService = inject(LikeService);
 
   protected readonly activeNav = signal<string>('discover');
   protected readonly profileCompletion = signal(75);
@@ -26,6 +28,9 @@ export class DashboardComponent implements OnInit {
   // Current user info
   protected readonly currentUser = this.authService.user;
   protected readonly userPhotoURL = computed(() => this.currentUser()?.photoURL ?? null);
+  
+  // Like state
+  protected readonly likedUserIds = this.likeService.likedUserIds;
 
   // Distance filter options
   protected readonly distanceOptions = [10, 25, 50, 100, 250, null]; // null = unlimited
@@ -52,10 +57,15 @@ export class DashboardComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadProfiles();
+    this.likeService.loadLikes();
   }
 
   protected async loadProfiles(): Promise<void> {
     await this.discoveryService.loadProfiles();
+  }
+  
+  protected isLiked(userId: string): boolean {
+    return this.likedUserIds().has(userId);
   }
 
   protected setActiveNav(id: string): void {
@@ -87,9 +97,8 @@ export class DashboardComponent implements OnInit {
     // TODO: Navigate to profile detail
   }
 
-  protected onLikeProfile(profile: DiscoverableProfile): void {
-    console.log('Like profile:', profile.uid);
-    // TODO: Implement like functionality
+  protected async onLikeProfile(profile: DiscoverableProfile): Promise<void> {
+    await this.likeService.toggleLike(profile.uid);
   }
 
   protected onPassProfile(profile: DiscoverableProfile): void {
