@@ -204,6 +204,7 @@ export class MatchesService {
 
   /**
    * Load full user profiles from user IDs
+   * Uses parallel fetching to avoid N+1 query problem
    */
   private async loadUserProfiles(
     userIds: string[],
@@ -211,66 +212,67 @@ export class MatchesService {
   ): Promise<MatchProfile[]> {
     if (userIds.length === 0) return [];
 
+    // Fetch all user documents in parallel
+    const userRefs = userIds.map(userId => doc(this.firestore, 'users', userId));
+    const snapshots = await Promise.all(
+      userRefs.map(ref => getDoc(ref).catch(() => null))
+    );
+
     const profiles: MatchProfile[] = [];
 
-    // Load each user's profile
-    for (const userId of userIds) {
-      try {
-        const userRef = doc(this.firestore, 'users', userId);
-        const userSnap = await getDoc(userRef);
+    for (let i = 0; i < snapshots.length; i++) {
+      const userSnap = snapshots[i];
+      const userId = userIds[i];
 
-        if (!userSnap.exists()) continue;
+      if (!userSnap?.exists()) continue;
 
-        const data = userSnap.data() as UserProfile;
+      const data = userSnap.data() as UserProfile;
 
-        // Skip hidden profiles
-        if (data.settings?.privacy?.profileVisible === false) continue;
+      // Skip hidden profiles
+      if (data.settings?.privacy?.profileVisible === false) continue;
 
-        // Calculate age
-        let age: number | null = null;
-        if (data.onboarding?.birthDate) {
-          const birth = new Date(data.onboarding.birthDate);
-          const today = new Date();
-          age = today.getFullYear() - birth.getFullYear();
-          const monthDiff = today.getMonth() - birth.getMonth();
-          if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-            age--;
-          }
+      // Calculate age
+      let age: number | null = null;
+      if (data.onboarding?.birthDate) {
+        const birth = new Date(data.onboarding.birthDate);
+        const today = new Date();
+        age = today.getFullYear() - birth.getFullYear();
+        const monthDiff = today.getMonth() - birth.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+          age--;
         }
-
-        // Check online status
-        let isOnline = false;
-        let lastActiveAt: Date | null = null;
-        if (data.lastActiveAt) {
-          lastActiveAt = (data.lastActiveAt as { toDate?: () => Date })?.toDate?.() 
-            || new Date(data.lastActiveAt as string);
-          const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-          isOnline = data.settings?.privacy?.showOnlineStatus !== false && lastActiveAt > fiveMinutesAgo;
-        }
-
-        const showOnlineStatus = data.settings?.privacy?.showOnlineStatus !== false;
-        const showLastActive = data.settings?.privacy?.showLastActive !== false;
-
-        profiles.push({
-          uid: userId,
-          displayName: data.displayName || 'Unknown',
-          photoURL: data.onboarding?.photos?.[0] || data.photoURL || null,
-          photos: data.onboarding?.photos || [],
-          age,
-          city: data.onboarding?.city || null,
-          country: data.onboarding?.country || null,
-          isVerified: data.isVerified || false,
-          isOnline: showOnlineStatus ? isOnline : false,
-          showOnlineStatus,
-          showLastActive,
-          lastActiveAt: showLastActive ? lastActiveAt : null,
-          interactionDate: interactionDates.get(userId) || new Date(),
-          connectionTypes: data.onboarding?.connectionTypes || [],
-          idealRelationship: data.onboarding?.idealRelationship || '',
-        });
-      } catch (error) {
-        console.error(`Error loading profile ${userId}:`, error);
       }
+
+      // Check online status
+      let isOnline = false;
+      let lastActiveAt: Date | null = null;
+      if (data.lastActiveAt) {
+        lastActiveAt = (data.lastActiveAt as { toDate?: () => Date })?.toDate?.() 
+          || new Date(data.lastActiveAt as string);
+        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+        isOnline = data.settings?.privacy?.showOnlineStatus !== false && lastActiveAt > fiveMinutesAgo;
+      }
+
+      const showOnlineStatus = data.settings?.privacy?.showOnlineStatus !== false;
+      const showLastActive = data.settings?.privacy?.showLastActive !== false;
+
+      profiles.push({
+        uid: userId,
+        displayName: data.displayName || 'Unknown',
+        photoURL: data.onboarding?.photos?.[0] || data.photoURL || null,
+        photos: data.onboarding?.photos || [],
+        age,
+        city: data.onboarding?.city || null,
+        country: data.onboarding?.country || null,
+        isVerified: data.isVerified || false,
+        isOnline: showOnlineStatus ? isOnline : false,
+        showOnlineStatus,
+        showLastActive,
+        lastActiveAt: showLastActive ? lastActiveAt : null,
+        interactionDate: interactionDates.get(userId) || new Date(),
+        connectionTypes: data.onboarding?.connectionTypes || [],
+        idealRelationship: data.onboarding?.idealRelationship || '',
+      });
     }
 
     return profiles;
