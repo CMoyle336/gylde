@@ -1,0 +1,97 @@
+<article class="profile-card" (click)="onView()">
+  <div class="card-photo">
+    @if (photoUrl) {
+      <img [src]="photoUrl" [alt]="profile().displayName || 'Profile'" class="profile-image">
+    } @else {
+      <div class="photo-placeholder">
+        <mat-icon>person</mat-icon>
+      </div>
+    }
+    
+    <!-- Verified Badge -->
+    @if (isVerified) {
+      <span class="verified-badge" title="Verified profile">
+        <mat-icon>verified</mat-icon>
+      </span>
+    }
+    
+    <!-- Activity Status Badge -->
+    @if (profile().isOnline) {
+      <span class="activity-badge online">
+        <span class="activity-dot"></span>
+        Online
+      </span>
+    } @else if (profile().showLastActive !== false && profile().lastActiveAt) {
+      <span class="activity-badge">
+        <span class="activity-dot"></span>
+        {{ formatLastActive(profile().lastActiveAt) }}
+      </span>
+    }
+
+    <!-- Interaction Time (for matches page) -->
+    @if (showInteractionTime() && profile().interactionDate) {
+      <span class="interaction-time">
+        {{ formatLastActive(profile().interactionDate) }}
+      </span>
+    }
+  </div>
+
+  <div class="card-content">
+    <div class="card-header">
+      <h3 class="card-name">
+        {{ profile().displayName || 'Anonymous' }}
+        @if (profile().age) {
+          <span class="card-age">, {{ profile().age }}</span>
+        }
+      </h3>
+      @if (profile().city) {
+        <span class="card-location">
+          <mat-icon>location_on</mat-icon>
+          {{ profile().city }}{{ profile().country ? ', ' + profile().country : '' }}
+        </span>
+      }
+    </div>
+
+    @if (profile().idealRelationship) {
+      <p class="card-tagline">
+        {{ profile().idealRelationship!.slice(0, 100) }}{{ profile().idealRelationship!.length > 100 ? '...' : '' }}
+      </p>
+    }
+
+    @if (profile().connectionTypes?.length) {
+      <div class="card-tags">
+        @for (type of profile().connectionTypes!.slice(0, 2); track type) {
+          <span class="tag">{{ formatConnectionType(type) }}</span>
+        }
+      </div>
+    }
+
+    <div class="card-actions">
+      <button 
+        type="button" 
+        mat-icon-button
+        class="action-btn message"
+        (click)="onMessage(); $event.stopPropagation()"
+        [matTooltip]="'Message ' + (profile().displayName || 'user')">
+        <mat-icon>chat_bubble_outline</mat-icon>
+      </button>
+      <button 
+        type="button" 
+        mat-icon-button
+        class="action-btn view"
+        (click)="onView(); $event.stopPropagation()"
+        matTooltip="View profile">
+        <mat-icon>visibility</mat-icon>
+      </button>
+      <button 
+        type="button" 
+        mat-icon-button
+        class="action-btn favorite"
+        [class.favorited]="isFavorited()"
+        (click)="onFavorite(); $event.stopPropagation()"
+        [matTooltip]="isFavorited() ? 'Remove from favorites' : 'Add to favorites'">
+        <mat-icon>{{ isFavorited() ? 'favorite' : 'favorite_border' }}</mat-icon>
+      </button>
+    </div>
+  </div>
+</article>

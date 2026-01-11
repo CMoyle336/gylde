@@ -2,7 +2,29 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { DiscoverableProfile } from '../../../../core/interfaces';
+
+/**
+ * Common profile data interface for the profile card component.
+ * This is a minimal interface that both DiscoverableProfile and MatchProfile can satisfy.
+ */
+export interface ProfileCardData {
+  uid: string;
+  displayName: string | null;
+  age?: number | null;
+  city?: string | null;
+  country?: string | null;
+  photos?: string[];
+  photoURL?: string | null; // Fallback for single photo
+  verified?: boolean;
+  isVerified?: boolean; // Alternative property name
+  isOnline?: boolean;
+  showOnlineStatus?: boolean;
+  showLastActive?: boolean;
+  lastActiveAt?: Date | null;
+  connectionTypes?: string[];
+  idealRelationship?: string;
+  interactionDate?: Date; // For matches page - when the interaction happened
+}
 
 @Component({
   selector: 'app-profile-card',
@@ -13,17 +35,24 @@ import { DiscoverableProfile } from '../../../../core/interfaces';
 })
 export class ProfileCardComponent {
   // Inputs
-  readonly profile = input.required<DiscoverableProfile>();
+  readonly profile = input.required<ProfileCardData>();
   readonly isFavorited = input<boolean>(false);
+  readonly showInteractionTime = input<boolean>(false); // Show when the interaction happened
 
   // Outputs
-  readonly messageClick = output<DiscoverableProfile>();
-  readonly viewClick = output<DiscoverableProfile>();
-  readonly favoriteClick = output<DiscoverableProfile>();
+  readonly messageClick = output<ProfileCardData>();
+  readonly viewClick = output<ProfileCardData>();
+  readonly favoriteClick = output<ProfileCardData>();
 
   protected get photoUrl(): string | null {
-    const photos = this.profile().photos;
-    return photos?.length > 0 ? photos[0] : null;
+    const p = this.profile();
+    if (p.photos?.length) return p.photos[0];
+    return p.photoURL || null;
+  }
+
+  protected get isVerified(): boolean {
+    const p = this.profile();
+    return p.verified || p.isVerified || false;
   }
 
   protected onMessage(): void {
@@ -49,15 +78,15 @@ export class ProfileCardComponent {
     return labels[type] || type;
   }
 
-  protected formatLastActive(date: Date | undefined): string {
+  protected formatLastActive(date: Date | null | undefined): string {
     if (!date) return '';
     const now = new Date();
     const diff = now.getTime() - date.getTime();
-    
+
     const minutes = Math.floor(diff / (1000 * 60));
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    
+
     if (minutes < 1) return 'just now';
     if (minutes < 60) return `${minutes}m ago`;
     if (hours < 24) return `${hours}h ago`;

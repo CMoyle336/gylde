@@ -11,9 +11,9 @@ import { DiscoveryService } from '../../core/services/discovery.service';
 import { FavoriteService } from '../../core/services/favorite.service';
 import { MessageService } from '../../core/services/message.service';
 import { DiscoverableProfile, DiscoveryFilters, DiscoverySort, SavedView } from '../../core/interfaces';
+import { ProfileCardComponent, ProfileCardData } from '../../components/profile-card';
+import { ProfileCardSkeletonComponent } from '../../components/profile-card-skeleton';
 import {
-  ProfileCardComponent,
-  ProfileCardSkeletonComponent,
   DiscoverFiltersComponent,
   SaveViewDialogComponent,
   ManageViewsDialogComponent,
@@ -174,18 +174,19 @@ export class DiscoverComponent implements OnInit {
     return this.favoritedUserIds().has(userId);
   }
 
-  protected onViewProfile(profile: DiscoverableProfile): void {
+  protected onViewProfile(profile: ProfileCardData): void {
     this.router.navigate(['/user', profile.uid]);
   }
 
-  protected async onFavoriteProfile(profile: DiscoverableProfile): Promise<void> {
+  protected async onFavoriteProfile(profile: ProfileCardData): Promise<void> {
     await this.favoriteService.toggleFavorite(profile.uid);
   }
 
-  protected async onMessageProfile(profile: DiscoverableProfile): Promise<void> {
+  protected async onMessageProfile(profile: ProfileCardData): Promise<void> {
+    const photoURL = profile.photos?.[0] || profile.photoURL || null;
     const conversationId = await this.messageService.startConversation(
       profile.uid,
-      { displayName: profile.displayName, photoURL: profile.photos[0] || null }
+      { displayName: profile.displayName, photoURL }
     );
     
     if (conversationId) {
@@ -193,8 +194,8 @@ export class DiscoverComponent implements OnInit {
         id: conversationId,
         otherUser: {
           uid: profile.uid,
-          displayName: profile.displayName,
-          photoURL: profile.photos[0] || null,
+          displayName: profile.displayName || 'Unknown',
+          photoURL,
         },
         lastMessage: null,
         lastMessageTime: null,

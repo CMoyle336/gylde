@@ -1,0 +1,75 @@
+<div class="matches-page">
+  <!-- Tabs -->
+  <div class="matches-tabs">
+    <button
+      type="button"
+      class="tab-btn"
+      [class.active]="activeTab() === 'favorited-me'"
+      (click)="setTab('favorited-me')">
+      <span class="material-icons-outlined">favorite</span>
+      <span class="tab-label">Favorited Me</span>
+    </button>
+    <button
+      type="button"
+      class="tab-btn"
+      [class.active]="activeTab() === 'viewed-me'"
+      (click)="setTab('viewed-me')">
+      <span class="material-icons-outlined">visibility</span>
+      <span class="tab-label">Viewed Me</span>
+    </button>
+    <button
+      type="button"
+      class="tab-btn"
+      [class.active]="activeTab() === 'my-favorites'"
+      (click)="setTab('my-favorites')">
+      <span class="material-icons-outlined">star</span>
+      <span class="tab-label">My Favorites</span>
+    </button>
+    <button
+      type="button"
+      class="tab-btn"
+      [class.active]="activeTab() === 'my-views'"
+      (click)="setTab('my-views')">
+      <span class="material-icons-outlined">history</span>
+      <span class="tab-label">Recently Viewed</span>
+    </button>
+  </div>
+
+  <!-- Content -->
+  <div class="matches-content">
+    @if (loading()) {
+      <!-- Loading Skeleton -->
+      <div class="profile-grid">
+        @for (i of skeletonCards; track i) {
+          <app-profile-card-skeleton />
+        }
+      </div>
+    } @else if (isEmpty()) {
+      <!-- Empty State -->
+      <div class="empty-state">
+        <span class="material-icons-outlined empty-icon">{{ getEmptyIcon() }}</span>
+        <p class="empty-message">{{ getEmptyMessage() }}</p>
+        @if (activeTab() === 'my-favorites' || activeTab() === 'my-views') {
+          <button mat-flat-button color="primary" routerLink="/discover">
+            <mat-icon>explore</mat-icon>
+            Explore Profiles
+          </button>
+        }
+      </div>
+    } @else {
+      <!-- Profile Grid using shared ProfileCardComponent -->
+      <div class="profile-grid">
+        @for (profile of profiles(); track profile.uid) {
+          <app-profile-card
+            [profile]="profile"
+            [isFavorited]="isFavorited(profile.uid)"
+            [showInteractionTime]="true"
+            (messageClick)="onMessage($event)"
+            (viewClick)="onViewProfile($event)"
+            (favoriteClick)="onFavorite($event)"
+          />
+        }
+      </div>
+    }
+  </div>
+</div>

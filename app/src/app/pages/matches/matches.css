@@ -1,0 +1,123 @@
+:host {
+  --color-bg-primary: #0d0b0e;
+  --color-bg-secondary: #1a1720;
+  --color-bg-elevated: #252030;
+  --color-bg-hover: #2d2838;
+  --color-text-primary: #f5f3f0;
+  --color-text-muted: #6b6777;
+  --color-accent: #d4af37;
+  --color-accent-hover: #e5c358;
+  --color-border: rgba(255, 255, 255, 0.08);
+
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  color: var(--color-text-primary);
+}
+
+.matches-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  width: 100%;
+}
+
+/* Tabs */
+.matches-tabs {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: var(--color-bg-elevated);
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  overflow-x: auto;
+}
+
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: var(--color-text-muted);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.tab-btn:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+}
+
+.tab-btn.active {
+  background: var(--color-accent);
+  color: #0d0b0e;
+}
+
+.tab-btn .material-icons-outlined {
+  font-size: 1.25rem;
+}
+
+@media (max-width: 640px) {
+  .tab-btn {
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.75rem;
+  }
+
+  .tab-btn .material-icons-outlined {
+    font-size: 1.5rem;
+  }
+
+  .tab-label {
+    font-size: 0.6875rem;
+  }
+}
+
+/* Content */
+.matches-content {
+  flex: 1;
+}
+
+/* Profile Grid */
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.25rem;
+}
+
+@media (max-width: 640px) {
+  .profile-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 1rem;
+  }
+}
+
+/* Empty State */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 4rem 2rem;
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.empty-icon {
+  font-size: 4rem;
+  opacity: 0.3;
+}
+
+.empty-message {
+  font-size: 1rem;
+  max-width: 300px;
+  margin: 0;
+}

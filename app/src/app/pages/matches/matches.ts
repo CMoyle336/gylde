@@ -1,59 +1,109 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { TranslateModule } from '@ngx-translate/core';
+import { MatchesService, MatchTab } from '../../core/services/matches.service';
+import { FavoriteService } from '../../core/services/favorite.service';
+import { MessageService } from '../../core/services/message.service';
+import { ProfileCardComponent, ProfileCardData } from '../../components/profile-card';
+import { ProfileCardSkeletonComponent } from '../../components/profile-card-skeleton';
 
 @Component({
   selector: 'app-matches',
-  template: `
-    <section class="placeholder-section">
-      <span class="material-icons-outlined placeholder-icon">favorite</span>
-      <h2>{{ 'DASHBOARD.MATCHES_TITLE' | translate }}</h2>
-      <p>{{ 'DASHBOARD.MATCHES_EMPTY' | translate }}</p>
-    </section>
-  `,
-  styles: [`
-    :host {
-      --color-text-primary: #f5f3f0;
-      --color-text-muted: #6b6777;
-      --font-display: 'Outfit', system-ui, sans-serif;
-      
-      display: flex;
-      flex: 1;
-      color: var(--color-text-primary);
-    }
-
-    .placeholder-section {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 1rem;
-      text-align: center;
-      color: var(--color-text-muted);
-      min-height: 50vh;
-      padding: 2rem;
-    }
-
-    .placeholder-icon {
-      font-size: 4rem;
-      opacity: 0.3;
-    }
-
-    h2 {
-      font-family: var(--font-display);
-      font-size: 1.5rem;
-      font-weight: 500;
-      color: var(--color-text-primary);
-      margin: 0;
-    }
-
-    p {
-      font-size: 0.9375rem;
-      margin: 0;
-      max-width: 320px;
-    }
-  `],
+  templateUrl: './matches.html',
+  styleUrl: './matches.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [TranslateModule],
+  imports: [
+    RouterLink,
+    MatButtonModule,
+    MatIconModule,
+    TranslateModule,
+    ProfileCardComponent,
+    ProfileCardSkeletonComponent,
+  ],
 })
-export class MatchesComponent {}
+export class MatchesComponent implements OnInit {
+  private readonly router = inject(Router);
+  private readonly matchesService = inject(MatchesService);
+  private readonly favoriteService = inject(FavoriteService);
+  private readonly messageService = inject(MessageService);
+
+  protected readonly loading = this.matchesService.loading;
+  protected readonly activeTab = this.matchesService.activeTab;
+  protected readonly profiles = this.matchesService.profiles;
+  protected readonly isEmpty = this.matchesService.isEmpty;
+  protected readonly favoritedUserIds = this.favoriteService.favoritedUserIds;
+
+  // Skeleton count for loading state
+  protected readonly skeletonCards = Array.from({ length: 6 }, (_, i) => i);
+
+  ngOnInit(): void {
+    this.matchesService.loadProfiles();
+    this.favoriteService.loadFavorites();
+  }
+
+  protected setTab(tab: MatchTab): void {
+    this.matchesService.setTab(tab);
+  }
+
+  protected onViewProfile(profile: ProfileCardData): void {
+    this.router.navigate(['/user', profile.uid]);
+  }
+
+  protected async onMessage(profile: ProfileCardData): Promise<void> {
+    const photoURL = profile.photos?.[0] || profile.photoURL || null;
+    const conversationId = await this.messageService.startConversation(
+      profile.uid,
+      { displayName: profile.displayName, photoURL }
+    );
+
+    if (conversationId) {
+      this.messageService.openConversation({
+        id: conversationId,
+        otherUser: {
+          uid: profile.uid,
+          displayName: profile.displayName || 'Unknown',
+          photoURL,
+        },
+        lastMessage: null,
+        lastMessageTime: null,
+        unreadCount: 0,
+        isArchived: false,
+      });
+      this.router.navigate(['/messages', conversationId]);
+    }
+  }
+
+  protected async onFavorite(profile: ProfileCardData): Promise<void> {
+    await this.favoriteService.toggleFavorite(profile.uid);
+  }
+
+  protected isFavorited(userId: string): boolean {
+    return this.favoritedUserIds().has(userId);
+  }
+
+  protected getEmptyMessage(): string {
+    switch (this.activeTab()) {
+      case 'favorited-me':
+        return 'No one has favorited you yet. Keep your profile active!';
+      case 'viewed-me':
+        return 'No one has viewed your profile yet.';
+      case 'my-favorites':
+        return "You haven't favorited anyone yet. Explore profiles to find your match!";
+      case 'my-views':
+        return "You haven't viewed any profiles yet.";
+    }
+  }
+
+  protected getEmptyIcon(): string {
+    switch (this.activeTab()) {
+      case 'favorited-me':
+      case 'my-favorites':
+        return 'favorite';
+      case 'viewed-me':
+      case 'my-views':
+        return 'visibility';
+    }
+  }
+}
