@@ -145,4 +145,23 @@ export class UserProfileService {
   clearProfile(): void {
     this._profile.set(null);
   }
+
+  /**
+   * Get the current user's profile, loading it if not already loaded.
+   */
+  async getCurrentUserProfile(): Promise<UserProfile | null> {
+    // Return cached profile if available
+    const cachedProfile = this._profile();
+    if (cachedProfile) {
+      return cachedProfile;
+    }
+
+    // Load profile if user is authenticated
+    const user = this.authService.user();
+    if (user) {
+      return this.loadUserProfile(user.uid);
+    }
+
+    return null;
+  }
 }

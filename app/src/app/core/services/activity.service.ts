@@ -1,15 +1,29 @@
 import { Injectable, inject, signal, OnDestroy, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { 
+  Firestore, 
+  collection, 
+  query, 
+  where, 
+  orderBy, 
+  limit, 
+  getDocs, 
+  addDoc, 
+  updateDoc,
+  doc,
+  serverTimestamp,
+  Unsubscribe 
+} from '@angular/fire/firestore';
 import { FirestoreService } from './firestore.service';
 import { AuthService } from './auth.service';
 import { Activity, ActivityDisplay } from '../interfaces';
-import { Unsubscribe } from '@angular/fire/firestore';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ActivityService implements OnDestroy {
+  private readonly firestore = inject(Firestore);
   private readonly firestoreService = inject(FirestoreService);
   private readonly authService = inject(AuthService);
   private readonly snackBar = inject(MatSnackBar);
@@ -122,6 +136,130 @@ export class ActivityService implements OnDestroy {
     const activities = this._activities();
     for (const activity of activities.filter(a => !a.read)) {
       await this.markAsRead(activity.id);
+    }
+  }
+
+  /**
+   * Record a profile view. Creates a view activity for the viewed user
+   * and records the view in the profileViews collection for querying.
+   */
+  async recordProfileView(
+    viewedUserId: string,
+    viewedUserName: string,
+    viewedUserPhoto: string | null
+  ): Promise<void> {
+    const currentUser = this.authService.user();
+    if (!currentUser || currentUser.uid === viewedUserId) return;
+
+    try {
+      // Check if we already have a view record within the last hour (to avoid spam)
+      const viewsRef = collection(this.firestore, 'profileViews');
+      const recentViewQuery = query(
+        viewsRef,
+        where('viewerId', '==', currentUser.uid),
+        where('viewedUserId', '==', viewedUserId),
+        orderBy('viewedAt', 'desc'),
+        limit(1)
+      );
+      
+      const recentSnapshot = await getDocs(recentViewQuery);
+      if (!recentSnapshot.empty) {
+        const lastView = recentSnapshot.docs[0].data();
+        const lastViewTime = lastView['viewedAt']?.toDate?.() || new Date(0);
+        const hourAgo = new Date(Date.now() - 60 * 60 * 1000);
+        
+        if (lastViewTime > hourAgo) {
+          // Update the existing view timestamp instead of creating new record
+          await updateDoc(recentSnapshot.docs[0].ref, {
+            viewedAt: serverTimestamp(),
+          });
+          return;
+        }
+      }
+
+      // Record the profile view
+      await addDoc(viewsRef, {
+        viewerId: currentUser.uid,
+        viewerName: currentUser.displayName || 'Someone',
+        viewerPhoto: currentUser.photoURL,
+        viewedUserId: viewedUserId,
+        viewedAt: serverTimestamp(),
+      });
+
+      // Create activity for the viewed user (so they know someone viewed them)
+      const activitiesRef = collection(this.firestore, `users/${viewedUserId}/activities`);
+      
+      // Check if there's already a recent view activity from this user
+      const activityQuery = query(
+        activitiesRef,
+        where('fromUserId', '==', currentUser.uid),
+        where('type', '==', 'view'),
+        orderBy('createdAt', 'desc'),
+        limit(1)
+      );
+      
+      const activitySnapshot = await getDocs(activityQuery);
+      if (!activitySnapshot.empty) {
+        const lastActivity = activitySnapshot.docs[0].data();
+        const lastActivityTime = lastActivity['createdAt']?.toDate?.() || new Date(0);
+        const hourAgo = new Date(Date.now() - 60 * 60 * 1000);
+        
+        if (lastActivityTime > hourAgo) {
+          // Update existing activity
+          await updateDoc(activitySnapshot.docs[0].ref, {
+            createdAt: serverTimestamp(),
+            read: false,
+          });
+          return;
+        }
+      }
+
+      // Create new view activity
+      await addDoc(activitiesRef, {
+        type: 'view',
+        fromUserId: currentUser.uid,
+        fromUserName: currentUser.displayName || 'Someone',
+        fromUserPhoto: currentUser.photoURL,
+        toUserId: viewedUserId,
+        read: false,
+        createdAt: serverTimestamp(),
+      });
+    } catch (error) {
+      console.error('Error recording profile view:', error);
+    }
+  }
+
+  /**
+   * Get when a specific user last viewed the current user's profile.
+   * Returns null if they've never viewed or if an error occurs.
+   */
+  async getLastViewedBy(userId: string): Promise<Date | null> {
+    const currentUser = this.authService.user();
+    if (!currentUser || currentUser.uid === userId) return null;
+
+    try {
+      const viewsRef = collection(this.firestore, 'profileViews');
+      const q = query(
+        viewsRef,
+        where('viewerId', '==', userId),
+        where('viewedUserId', '==', currentUser.uid),
+        orderBy('viewedAt', 'desc'),
+        limit(1)
+      );
+
+      const snapshot = await getDocs(q);
+      if (snapshot.empty) return null;
+
+      const data = snapshot.docs[0].data();
+      const viewedAt = data['viewedAt'];
+      
+      if (!viewedAt) return null;
+      
+      // Handle Firestore Timestamp
+      return viewedAt.toDate ? viewedAt.toDate() : new Date(viewedAt);
+    } catch (error) {
+      console.error('Error getting last viewed by:', error);
+      return null;
     }
   }
 

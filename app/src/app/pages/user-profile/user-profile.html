@@ -9,8 +9,10 @@
     </div>
   } @else if (profile(); as profile) {
     <div class="profile-content">
-      <!-- Photo Gallery -->
-      <section class="photo-section">
+      <!-- Left Column: Photos + Stats -->
+      <div class="left-column">
+        <!-- Photo Gallery -->
+        <section class="photo-section">
         <div class="main-photo">
           @if (profilePhoto()) {
             <img [src]="profilePhoto()" [alt]="profile.displayName || 'Profile photo'">
@@ -41,26 +43,7 @@
             </div>
           }
 
-          <!-- Verified Badge -->
-          @if (profile.isVerified) {
-            <div class="verified-badge">
-              <mat-icon>verified</mat-icon>
-              Verified
-            </div>
-          }
-
-          <!-- Online Status -->
-          @if (isOnline()) {
-            <div class="online-badge">
-              <span class="online-dot"></span>
-              Online
-            </div>
-          } @else if (getLastActive()) {
-            <div class="last-active-badge">
-              {{ getLastActive() }}
-            </div>
-          }
-        </div>
+          </div>
 
         <!-- Thumbnail Strip -->
         @if ((profile.onboarding?.photos?.length || 0) > 1) {
@@ -76,6 +59,51 @@
           </div>
         }
       </section>
+
+      <!-- Profile Stats (separate section for mobile reordering) -->
+      <section class="stats-section">
+        <div class="profile-stats">
+          @if (lastViewedMe()) {
+            <div class="stat-item highlight">
+              <mat-icon>visibility</mat-icon>
+              <div class="stat-content">
+                <span class="stat-label">Viewed your profile</span>
+                <span class="stat-value">{{ formatLastViewedMe() }}</span>
+              </div>
+            </div>
+          }
+          <div class="stat-item">
+            <mat-icon>schedule</mat-icon>
+            <div class="stat-content">
+              <span class="stat-label">Last active</span>
+              <span class="stat-value" [class.online]="isOnline()">
+                @if (isOnline()) {
+                  Online now
+                } @else if (getLastActive()) {
+                  {{ getLastActive() }}
+                } @else {
+                  Unknown
+                }
+              </span>
+            </div>
+          </div>
+          <div class="stat-item">
+            <mat-icon>cake</mat-icon>
+            <div class="stat-content">
+              <span class="stat-label">Member since</span>
+              <span class="stat-value">{{ formatProfileAge() }}</span>
+            </div>
+          </div>
+          <div class="stat-item" [class.verified]="profile.isVerified">
+            <mat-icon>{{ profile.isVerified ? 'verified' : 'shield' }}</mat-icon>
+            <div class="stat-content">
+              <span class="stat-label">Verification</span>
+              <span class="stat-value">{{ profile.isVerified ? 'Verified' : 'Not verified' }}</span>
+            </div>
+          </div>
+        </div>
+      </section>
+      </div>
 
       <!-- Profile Info -->
       <section class="info-section">
@@ -129,63 +157,7 @@
           </div>
         </div>
 
-        <!-- Quick Info Tags -->
-        <div class="quick-info">
-          @if (formatGender(profile.onboarding?.genderIdentity)) {
-            <span class="info-tag">
-              <mat-icon>person</mat-icon>
-              {{ formatGender(profile.onboarding?.genderIdentity) }}
-            </span>
-          }
-          @if (formatLifestyle(profile.onboarding?.lifestyle)) {
-            <span class="info-tag">
-              <mat-icon>home</mat-icon>
-              {{ formatLifestyle(profile.onboarding?.lifestyle) }}
-            </span>
-          }
-          @if (profile.onboarding?.occupation; as occupation) {
-            <span class="info-tag">
-              <mat-icon>work</mat-icon>
-              {{ occupation }}
-            </span>
-          }
-          @if (profile.onboarding?.education; as education) {
-            <span class="info-tag">
-              <mat-icon>school</mat-icon>
-              {{ education }}
-            </span>
-          }
-        </div>
-
-        <!-- Looking For -->
-        <div class="profile-block">
-          <h3>Looking For</h3>
-          @if (profile.onboarding?.connectionTypes?.length) {
-            <div class="tag-list">
-              @for (type of profile.onboarding?.connectionTypes || []; track type) {
-                <span class="tag accent">{{ formatConnectionTypes([type]) }}</span>
-              }
-            </div>
-          } @else {
-            <p class="empty-placeholder">Not specified</p>
-          }
-        </div>
-
-        <!-- Values (moved up) -->
-        <div class="profile-block">
-          <h3>My Values</h3>
-          @if (profile.onboarding?.values?.length) {
-            <div class="tag-list">
-              @for (value of profile.onboarding?.values || []; track value) {
-                <span class="tag">{{ value }}</span>
-              }
-            </div>
-          } @else {
-            <p class="empty-placeholder">Not specified</p>
-          }
-        </div>
-
-        <!-- About / Ideal Relationship -->
+        <!-- About Me -->
         <div class="profile-block">
           <h3>About Me</h3>
           @if (profile.onboarding?.idealRelationship) {
@@ -205,6 +177,34 @@
           }
         </div>
 
+        <!-- Looking For -->
+        <div class="profile-block">
+          <h3>Looking For</h3>
+          @if (profile.onboarding?.connectionTypes?.length) {
+            <div class="tag-list">
+              @for (type of profile.onboarding?.connectionTypes || []; track type) {
+                <span class="tag accent">{{ formatConnectionTypes([type]) }}</span>
+              }
+            </div>
+          } @else {
+            <p class="empty-placeholder">Not specified</p>
+          }
+        </div>
+
+        <!-- My Values -->
+        <div class="profile-block">
+          <h3>My Values</h3>
+          @if (profile.onboarding?.values?.length) {
+            <div class="tag-list">
+              @for (value of profile.onboarding?.values || []; track value) {
+                <span class="tag">{{ value }}</span>
+              }
+            </div>
+          } @else {
+            <p class="empty-placeholder">Not specified</p>
+          }
+        </div>
+
         <!-- Lifestyle -->
         <div class="profile-block">
           <h3>Lifestyle</h3>
@@ -219,6 +219,12 @@
         <div class="profile-block details-grid">
           <h3>Details</h3>
           <div class="details">
+            <div class="detail-item">
+              <span class="detail-label">Gender</span>
+              <span class="detail-value" [class.empty]="!profile.onboarding?.genderIdentity">
+                {{ formatGender(profile.onboarding?.genderIdentity) || 'Not specified' }}
+              </span>
+            </div>
             <div class="detail-item">
               <span class="detail-label">Height</span>
               <span class="detail-value" [class.empty]="!profile.onboarding?.height">

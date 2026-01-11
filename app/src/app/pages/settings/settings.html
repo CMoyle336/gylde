@@ -1,7 +1,7 @@
 <div class="settings-page">
   <header class="settings-header">
-    <h1>Settings</h1>
-    <p>Manage your account, privacy, and preferences</p>
+    <h1>{{ 'SETTINGS.TITLE' | translate }}</h1>
+    <p>{{ 'SETTINGS.SUBTITLE' | translate }}</p>
   </header>
 
   <div class="settings-content">
@@ -10,16 +10,16 @@
       <div class="section-header">
         <mat-icon>visibility</mat-icon>
         <div>
-          <h2>Activity Settings</h2>
-          <p>Control what activities are shared with other users</p>
+          <h2>{{ 'SETTINGS.ACTIVITY.TITLE' | translate }}</h2>
+          <p>{{ 'SETTINGS.ACTIVITY.SUBTITLE' | translate }}</p>
         </div>
       </div>
 
       <div class="settings-group">
         <div class="setting-item">
           <div class="setting-info">
-            <span class="setting-label">Profile view notifications</span>
-            <span class="setting-description">Others see when you view their profile</span>
+            <span class="setting-label">{{ 'SETTINGS.ACTIVITY.VIEW_NOTIFICATIONS' | translate }}</span>
+            <span class="setting-description">{{ 'SETTINGS.ACTIVITY.VIEW_NOTIFICATIONS_DESC' | translate }}</span>
           </div>
           <mat-slide-toggle
             [checked]="settings().activity?.createOnView ?? true"
@@ -29,8 +29,8 @@
 
         <div class="setting-item">
           <div class="setting-info">
-            <span class="setting-label">Favorite notifications</span>
-            <span class="setting-description">Others see when you favorite their profile</span>
+            <span class="setting-label">{{ 'SETTINGS.ACTIVITY.FAVORITE_NOTIFICATIONS' | translate }}</span>
+            <span class="setting-description">{{ 'SETTINGS.ACTIVITY.FAVORITE_NOTIFICATIONS_DESC' | translate }}</span>
           </div>
           <mat-slide-toggle
             [checked]="settings().activity?.createOnFavorite ?? true"
@@ -40,8 +40,8 @@
 
         <div class="setting-item">
           <div class="setting-info">
-            <span class="setting-label">Message notifications</span>
-            <span class="setting-description">Others see activity when you message them</span>
+            <span class="setting-label">{{ 'SETTINGS.ACTIVITY.MESSAGE_NOTIFICATIONS' | translate }}</span>
+            <span class="setting-description">{{ 'SETTINGS.ACTIVITY.MESSAGE_NOTIFICATIONS_DESC' | translate }}</span>
           </div>
           <mat-slide-toggle
             [checked]="settings().activity?.createOnMessage ?? true"
@@ -56,16 +56,16 @@
       <div class="section-header">
         <mat-icon>lock</mat-icon>
         <div>
-          <h2>Privacy</h2>
-          <p>Control who can see your information</p>
+          <h2>{{ 'SETTINGS.PRIVACY.TITLE' | translate }}</h2>
+          <p>{{ 'SETTINGS.PRIVACY.SUBTITLE' | translate }}</p>
         </div>
       </div>
 
       <div class="settings-group">
         <div class="setting-item">
           <div class="setting-info">
-            <span class="setting-label">Show online status</span>
-            <span class="setting-description">Let others see when you're online</span>
+            <span class="setting-label">{{ 'SETTINGS.PRIVACY.ONLINE_STATUS' | translate }}</span>
+            <span class="setting-description">{{ 'SETTINGS.PRIVACY.ONLINE_STATUS_DESC' | translate }}</span>
           </div>
           <mat-slide-toggle
             [checked]="settings().privacy?.showOnlineStatus ?? true"
@@ -75,8 +75,8 @@
 
         <div class="setting-item">
           <div class="setting-info">
-            <span class="setting-label">Show last active</span>
-            <span class="setting-description">Display when you were last active</span>
+            <span class="setting-label">{{ 'SETTINGS.PRIVACY.LAST_ACTIVE' | translate }}</span>
+            <span class="setting-description">{{ 'SETTINGS.PRIVACY.LAST_ACTIVE_DESC' | translate }}</span>
           </div>
           <mat-slide-toggle
             [checked]="settings().privacy?.showLastActive ?? true"
@@ -86,8 +86,8 @@
 
         <div class="setting-item">
           <div class="setting-info">
-            <span class="setting-label">Profile visibility</span>
-            <span class="setting-description">Make your profile visible in discovery</span>
+            <span class="setting-label">{{ 'SETTINGS.PRIVACY.PROFILE_VISIBILITY' | translate }}</span>
+            <span class="setting-description">{{ 'SETTINGS.PRIVACY.PROFILE_VISIBILITY_DESC' | translate }}</span>
           </div>
           <mat-slide-toggle
             [checked]="settings().privacy?.profileVisible ?? true"
@@ -97,8 +97,8 @@
 
         <div class="setting-item">
           <div class="setting-info">
-            <span class="setting-label">Show distance</span>
-            <span class="setting-description">Let others see how far away you are</span>
+            <span class="setting-label">{{ 'SETTINGS.PRIVACY.SHOW_DISTANCE' | translate }}</span>
+            <span class="setting-description">{{ 'SETTINGS.PRIVACY.SHOW_DISTANCE_DESC' | translate }}</span>
           </div>
           <mat-slide-toggle
             [checked]="settings().privacy?.showDistance ?? true"
@@ -113,16 +113,16 @@
       <div class="section-header">
         <mat-icon>notifications</mat-icon>
         <div>
-          <h2>Notifications</h2>
-          <p>Manage how you receive updates</p>
+          <h2>{{ 'SETTINGS.NOTIFICATIONS.TITLE' | translate }}</h2>
+          <p>{{ 'SETTINGS.NOTIFICATIONS.SUBTITLE' | translate }}</p>
         </div>
       </div>
 
       <div class="settings-group">
         <div class="setting-item">
           <div class="setting-info">
-            <span class="setting-label">Email for matches</span>
-            <span class="setting-description">Get notified when you match with someone</span>
+            <span class="setting-label">{{ 'SETTINGS.NOTIFICATIONS.EMAIL_MATCHES' | translate }}</span>
+            <span class="setting-description">{{ 'SETTINGS.NOTIFICATIONS.EMAIL_MATCHES_DESC' | translate }}</span>
           </div>
           <mat-slide-toggle
             [checked]="settings().notifications?.emailMatches ?? true"
@@ -132,8 +132,8 @@
 
         <div class="setting-item">
           <div class="setting-info">
-            <span class="setting-label">Email for messages</span>
-            <span class="setting-description">Get notified when you receive a message</span>
+            <span class="setting-label">{{ 'SETTINGS.NOTIFICATIONS.EMAIL_MESSAGES' | translate }}</span>
+            <span class="setting-description">{{ 'SETTINGS.NOTIFICATIONS.EMAIL_MESSAGES_DESC' | translate }}</span>
           </div>
           <mat-slide-toggle
             [checked]="settings().notifications?.emailMessages ?? true"
@@ -143,8 +143,8 @@
 
         <div class="setting-item">
           <div class="setting-info">
-            <span class="setting-label">Email for favorites</span>
-            <span class="setting-description">Get notified when someone favorites you</span>
+            <span class="setting-label">{{ 'SETTINGS.NOTIFICATIONS.EMAIL_FAVORITES' | translate }}</span>
+            <span class="setting-description">{{ 'SETTINGS.NOTIFICATIONS.EMAIL_FAVORITES_DESC' | translate }}</span>
           </div>
           <mat-slide-toggle
             [checked]="settings().notifications?.emailFavorites ?? true"
@@ -154,8 +154,8 @@
 
         <div class="setting-item">
           <div class="setting-info">
-            <span class="setting-label">Push notifications</span>
-            <span class="setting-description">Receive push notifications on your device</span>
+            <span class="setting-label">{{ 'SETTINGS.NOTIFICATIONS.PUSH' | translate }}</span>
+            <span class="setting-description">{{ 'SETTINGS.NOTIFICATIONS.PUSH_DESC' | translate }}</span>
           </div>
           <mat-slide-toggle
             [checked]="settings().notifications?.pushEnabled ?? false"
@@ -170,22 +170,23 @@
       <div class="section-header">
         <mat-icon>tune</mat-icon>
         <div>
-          <h2>Preferences</h2>
-          <p>Customize your experience</p>
+          <h2>{{ 'SETTINGS.PREFERENCES.TITLE' | translate }}</h2>
+          <p>{{ 'SETTINGS.PREFERENCES.SUBTITLE' | translate }}</p>
         </div>
       </div>
 
       <div class="settings-group">
         <div class="setting-item">
           <div class="setting-info">
-            <span class="setting-label">Language</span>
-            <span class="setting-description">Choose your preferred language</span>
+            <span class="setting-label">{{ 'SETTINGS.PREFERENCES.LANGUAGE' | translate }}</span>
+            <span class="setting-description">{{ 'SETTINGS.PREFERENCES.LANGUAGE_DESC' | translate }}</span>
           </div>
           <mat-form-field appearance="outline" class="setting-select">
             <mat-select
               [value]="settings().preferences?.language ?? 'en'"
               (selectionChange)="updateSetting('preferences', 'language', $event.value)">
               <mat-option value="en">English</mat-option>
+              <mat-option value="nl">Nederlands</mat-option>
               <mat-option value="de">Deutsch</mat-option>
             </mat-select>
           </mat-form-field>
@@ -193,16 +194,16 @@
 
         <div class="setting-item">
           <div class="setting-info">
-            <span class="setting-label">Theme</span>
-            <span class="setting-description">Choose your preferred theme</span>
+            <span class="setting-label">{{ 'SETTINGS.PREFERENCES.THEME' | translate }}</span>
+            <span class="setting-description">{{ 'SETTINGS.PREFERENCES.THEME_DESC' | translate }}</span>
           </div>
           <mat-form-field appearance="outline" class="setting-select">
             <mat-select
               [value]="settings().preferences?.theme ?? 'dark'"
               (selectionChange)="updateSetting('preferences', 'theme', $event.value)">
-              <mat-option value="light">Light</mat-option>
-              <mat-option value="dark">Dark</mat-option>
-              <mat-option value="system">System</mat-option>
+              <mat-option value="light">{{ 'SETTINGS.PREFERENCES.THEME_LIGHT' | translate }}</mat-option>
+              <mat-option value="dark">{{ 'SETTINGS.PREFERENCES.THEME_DARK' | translate }}</mat-option>
+              <mat-option value="system">{{ 'SETTINGS.PREFERENCES.THEME_SYSTEM' | translate }}</mat-option>
             </mat-select>
           </mat-form-field>
         </div>
@@ -214,15 +215,15 @@
       <div class="section-header">
         <mat-icon>person</mat-icon>
         <div>
-          <h2>Account</h2>
-          <p>Manage your account settings</p>
+          <h2>{{ 'SETTINGS.ACCOUNT.TITLE' | translate }}</h2>
+          <p>{{ 'SETTINGS.ACCOUNT.SUBTITLE' | translate }}</p>
         </div>
       </div>
 
       <div class="settings-group">
         <div class="setting-item clickable" (click)="openChangeEmail()">
           <div class="setting-info">
-            <span class="setting-label">Email address</span>
+            <span class="setting-label">{{ 'SETTINGS.ACCOUNT.EMAIL' | translate }}</span>
             <span class="setting-description">{{ userEmail() || 'Not set' }}</span>
           </div>
           <mat-icon class="chevron">chevron_right</mat-icon>
@@ -230,8 +231,8 @@
 
         <div class="setting-item clickable" (click)="openResetPassword()">
           <div class="setting-info">
-            <span class="setting-label">Password</span>
-            <span class="setting-description">Change your password</span>
+            <span class="setting-label">{{ 'SETTINGS.ACCOUNT.PASSWORD' | translate }}</span>
+            <span class="setting-description">{{ 'SETTINGS.ACCOUNT.PASSWORD_DESC' | translate }}</span>
           </div>
           <mat-icon class="chevron">chevron_right</mat-icon>
         </div>
@@ -243,8 +244,8 @@
       <div class="section-header">
         <mat-icon>warning</mat-icon>
         <div>
-          <h2>Danger Zone</h2>
-          <p>Irreversible account actions</p>
+          <h2>{{ 'SETTINGS.DANGER.TITLE' | translate }}</h2>
+          <p>{{ 'SETTINGS.DANGER.SUBTITLE' | translate }}</p>
         </div>
       </div>
 
@@ -252,32 +253,32 @@
         @if (isAccountDisabled()) {
           <div class="setting-item">
             <div class="setting-info">
-              <span class="setting-label">Account disabled</span>
-              <span class="setting-description">Your account is currently hidden from other users</span>
+              <span class="setting-label">{{ 'SETTINGS.DANGER.DISABLED' | translate }}</span>
+              <span class="setting-description">{{ 'SETTINGS.DANGER.DISABLED_DESC' | translate }}</span>
             </div>
             <button mat-stroked-button color="primary" (click)="enableAccount()">
-              Enable Account
+              {{ 'SETTINGS.DANGER.ENABLE' | translate }}
             </button>
           </div>
         } @else {
           <div class="setting-item">
             <div class="setting-info">
-              <span class="setting-label">Disable account</span>
-              <span class="setting-description">Temporarily hide your profile from other users</span>
+              <span class="setting-label">{{ 'SETTINGS.DANGER.DISABLE' | translate }}</span>
+              <span class="setting-description">{{ 'SETTINGS.DANGER.DISABLE_DESC' | translate }}</span>
             </div>
             <button mat-stroked-button color="warn" (click)="disableAccount()">
-              Disable
+              {{ 'SETTINGS.DANGER.DISABLE' | translate }}
             </button>
           </div>
         }
 
         <div class="setting-item">
           <div class="setting-info">
-            <span class="setting-label">Delete account</span>
-            <span class="setting-description">Permanently delete your account and all data</span>
+            <span class="setting-label">{{ 'SETTINGS.DANGER.DELETE' | translate }}</span>
+            <span class="setting-description">{{ 'SETTINGS.DANGER.DELETE_DESC' | translate }}</span>
           </div>
           <button mat-stroked-button color="warn" (click)="openDeleteAccount()">
-            Delete Account
+            {{ 'SETTINGS.DANGER.DELETE' | translate }}
           </button>
         </div>
       </div>
@@ -288,7 +289,7 @@
   @if (saving()) {
     <div class="saving-indicator">
       <mat-spinner diameter="20"></mat-spinner>
-      <span>Saving...</span>
+      <span>{{ 'SETTINGS.SAVING' | translate }}</span>
     </div>
   }
 </div>
@@ -297,17 +298,17 @@
 @if (showChangeEmailDialog()) {
   <div class="dialog-overlay" (click)="closeDialogs()">
     <div class="dialog" (click)="$event.stopPropagation()">
-      <h3>Change Email Address</h3>
-      <p>Enter your new email address. You'll need to verify it before the change takes effect.</p>
+      <h3>{{ 'SETTINGS.DIALOGS.CHANGE_EMAIL_TITLE' | translate }}</h3>
+      <p>{{ 'SETTINGS.DIALOGS.CHANGE_EMAIL_DESC' | translate }}</p>
       
       <mat-form-field appearance="outline" class="full-width">
-        <mat-label>New email address</mat-label>
+        <mat-label>{{ 'SETTINGS.DIALOGS.NEW_EMAIL' | translate }}</mat-label>
         <input matInput type="email" [(ngModel)]="newEmail" placeholder="you@example.com">
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="full-width">
-        <mat-label>Current password</mat-label>
-        <input matInput type="password" [(ngModel)]="currentPassword" placeholder="Enter your password">
+        <mat-label>{{ 'SETTINGS.DIALOGS.CURRENT_PASSWORD' | translate }}</mat-label>
+        <input matInput type="password" [(ngModel)]="currentPassword">
       </mat-form-field>
 
       @if (dialogError()) {
@@ -315,12 +316,12 @@
       }
 
       <div class="dialog-actions">
-        <button mat-button (click)="closeDialogs()">Cancel</button>
+        <button mat-button (click)="closeDialogs()">{{ 'SETTINGS.DIALOGS.CANCEL' | translate }}</button>
         <button mat-flat-button color="primary" (click)="changeEmail()" [disabled]="dialogLoading()">
           @if (dialogLoading()) {
             <mat-spinner diameter="20"></mat-spinner>
           } @else {
-            Change Email
+            {{ 'SETTINGS.DIALOGS.CHANGE_EMAIL' | translate }}
           }
         </button>
       </div>
@@ -332,8 +333,8 @@
 @if (showResetPasswordDialog()) {
   <div class="dialog-overlay" (click)="closeDialogs()">
     <div class="dialog" (click)="$event.stopPropagation()">
-      <h3>Reset Password</h3>
-      <p>We'll send a password reset link to your email address.</p>
+      <h3>{{ 'SETTINGS.DIALOGS.RESET_PASSWORD_TITLE' | translate }}</h3>
+      <p>{{ 'SETTINGS.DIALOGS.RESET_PASSWORD_DESC' | translate }}</p>
       
       <p class="email-display">{{ userEmail() }}</p>
 
@@ -346,12 +347,12 @@
       }
 
       <div class="dialog-actions">
-        <button mat-button (click)="closeDialogs()">Cancel</button>
+        <button mat-button (click)="closeDialogs()">{{ 'SETTINGS.DIALOGS.CANCEL' | translate }}</button>
         <button mat-flat-button color="primary" (click)="sendPasswordReset()" [disabled]="dialogLoading() || dialogSuccess()">
           @if (dialogLoading()) {
             <mat-spinner diameter="20"></mat-spinner>
           } @else {
-            Send Reset Link
+            {{ 'SETTINGS.DIALOGS.SEND_RESET' | translate }}
           }
         </button>
       </div>
@@ -363,22 +364,22 @@
 @if (showDeleteAccountDialog()) {
   <div class="dialog-overlay" (click)="closeDialogs()">
     <div class="dialog delete-dialog" (click)="$event.stopPropagation()">
-      <h3>Delete Account</h3>
-      <p>This action is permanent and cannot be undone. All your data, matches, and conversations will be deleted.</p>
+      <h3>{{ 'SETTINGS.DIALOGS.DELETE_TITLE' | translate }}</h3>
+      <p>{{ 'SETTINGS.DIALOGS.DELETE_DESC' | translate }}</p>
       
       <div class="warning-box">
         <mat-icon>warning</mat-icon>
-        <span>Type <strong>DELETE</strong> to confirm</span>
+        <span>{{ 'SETTINGS.DIALOGS.DELETE_CONFIRM' | translate }}</span>
       </div>
 
       <mat-form-field appearance="outline" class="full-width">
         <mat-label>Confirmation</mat-label>
-        <input matInput [(ngModel)]="deleteConfirmation" placeholder="Type DELETE">
+        <input matInput [(ngModel)]="deleteConfirmation" placeholder="DELETE">
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="full-width">
-        <mat-label>Current password</mat-label>
-        <input matInput type="password" [(ngModel)]="currentPassword" placeholder="Enter your password">
+        <mat-label>{{ 'SETTINGS.DIALOGS.CURRENT_PASSWORD' | translate }}</mat-label>
+        <input matInput type="password" [(ngModel)]="currentPassword">
       </mat-form-field>
 
       @if (dialogError()) {
@@ -386,13 +387,13 @@
       }
 
       <div class="dialog-actions">
-        <button mat-button (click)="closeDialogs()">Cancel</button>
+        <button mat-button (click)="closeDialogs()">{{ 'SETTINGS.DIALOGS.CANCEL' | translate }}</button>
         <button mat-flat-button color="warn" (click)="deleteAccount()" 
                 [disabled]="dialogLoading() || deleteConfirmation !== 'DELETE'">
           @if (dialogLoading()) {
             <mat-spinner diameter="20"></mat-spinner>
           } @else {
-            Delete My Account
+            {{ 'SETTINGS.DIALOGS.DELETE_BUTTON' | translate }}
           }
         </button>
       </div>

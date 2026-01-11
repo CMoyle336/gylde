@@ -10,6 +10,7 @@ import { UserProfile } from '../../core/interfaces';
 import { FavoriteService } from '../../core/services/favorite.service';
 import { MessageService } from '../../core/services/message.service';
 import { AuthService } from '../../core/services/auth.service';
+import { ActivityService } from '../../core/services/activity.service';
 import { ProfileSkeletonComponent } from './components';
 
 @Component({
@@ -33,11 +34,13 @@ export class UserProfileComponent implements OnInit, OnDestroy {
   private readonly favoriteService = inject(FavoriteService);
   private readonly messageService = inject(MessageService);
   private readonly authService = inject(AuthService);
+  private readonly activityService = inject(ActivityService);
 
   protected readonly profile = signal<UserProfile | null>(null);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly selectedPhotoIndex = signal(0);
+  protected readonly lastViewedMe = signal<Date | null>(null);
 
   private readonly favoritedUserIds = this.favoriteService.favoritedUserIds;
   
@@ -96,6 +99,17 @@ export class UserProfileComponent implements OnInit, OnDestroy {
       }
 
       this.profile.set(userData);
+
+      // Record the profile view (creates activity for viewed user)
+      await this.activityService.recordProfileView(
+        userId,
+        userData.displayName || 'Unknown',
+        userData.photoURL || null
+      );
+
+      // Get when this user last viewed the current user
+      const lastViewed = await this.activityService.getLastViewedBy(userId);
+      this.lastViewedMe.set(lastViewed);
     } catch (err) {
       console.error('Error loading profile:', err);
       this.error.set('Failed to load profile');
@@ -237,5 +251,47 @@ export class UserProfileComponent implements OnInit, OnDestroy {
     if (days === 1) return 'Yesterday';
     if (days < 7) return `${days}d ago`;
     return `${Math.floor(days / 7)}w ago`;
+  }
+
+  protected formatLastViewedMe(): string {
+    const date = this.lastViewedMe();
+    if (!date) return '';
+    
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    
+    const minutes = Math.floor(diff / (1000 * 60));
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    
+    if (minutes < 1) return 'Just now';
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    if (days === 1) return 'Yesterday';
+    if (days < 7) return `${days}d ago`;
+    if (days < 30) return `${Math.floor(days / 7)}w ago`;
+    return date.toLocaleDateString();
+  }
+
+  protected formatProfileAge(): string {
+    const p = this.profile();
+    if (!p?.createdAt) return 'Unknown';
+    
+    const createdAt = (p.createdAt as { toDate?: () => Date })?.toDate?.() 
+      || new Date(p.createdAt as string);
+    
+    const now = new Date();
+    const diff = now.getTime() - createdAt.getTime();
+    
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const months = Math.floor(days / 30);
+    const years = Math.floor(days / 365);
+    
+    if (days < 1) return 'Today';
+    if (days === 1) return 'Yesterday';
+    if (days < 7) return `${days} days ago`;
+    if (days < 30) return `${Math.floor(days / 7)} weeks ago`;
+    if (months < 12) return `${months} month${months > 1 ? 's' : ''} ago`;
+    return `${years} year${years > 1 ? 's' : ''} ago`;
   }
 }

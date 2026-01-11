@@ -34,6 +34,20 @@ service cloud.firestore {
       allow create: if request.auth != null && request.auth.uid == request.resource.data.deletedBy;
     }
     
+    // Profile views - track when users view other users' profiles
+    match /profileViews/{viewId} {
+      // Users can read views where they are the viewer or viewed user
+      allow read: if request.auth != null 
+        && (request.auth.uid == resource.data.viewerId 
+            || request.auth.uid == resource.data.viewedUserId);
+      // Users can create views where they are the viewer
+      allow create: if request.auth != null 
+        && request.auth.uid == request.resource.data.viewerId;
+      // Users can update their own views (to update timestamp)
+      allow update: if request.auth != null 
+        && request.auth.uid == resource.data.viewerId;
+    }
+    
     // Conversations collection
     match /conversations/{conversationId} {
       // Only participants can read/write conversations

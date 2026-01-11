@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal, OnInit, OnDestroy, computed, PLATFORM_ID, HostListener } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { SlicePipe } from '@angular/common';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatMenuModule } from '@angular/material/menu';
@@ -38,6 +38,7 @@ export class ShellComponent implements OnInit, OnDestroy {
   private readonly favoriteService = inject(FavoriteService);
   private readonly activityService = inject(ActivityService);
   private readonly messageService = inject(MessageService);
+  private readonly translateService = inject(TranslateService);
   private readonly platformId = inject(PLATFORM_ID);
 
   // Message state
@@ -74,6 +75,21 @@ export class ShellComponent implements OnInit, OnDestroy {
     
     // Track user activity
     this.userProfileService.updateLastActive();
+    
+    // Load user's language preference
+    this.loadUserLanguage();
+  }
+
+  private async loadUserLanguage(): Promise<void> {
+    try {
+      const profile = await this.userProfileService.getCurrentUserProfile();
+      const language = profile?.settings?.preferences?.language;
+      if (language && language !== this.translateService.currentLang) {
+        this.translateService.use(language);
+      }
+    } catch (error) {
+      console.error('Error loading user language:', error);
+    }
   }
 
   @HostListener('window:resize')
