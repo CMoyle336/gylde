@@ -79,6 +79,12 @@ html {
   ));
 }
 
+// Outlined form field background (not available as a token)
+.mat-mdc-form-field.mat-form-field-appearance-outline .mat-mdc-text-field-wrapper {
+  background-color: #252030;
+  border-radius: 4px;
+}
+
 // Datepicker specific overrides
 html {
   @include mat.datepicker-overrides((

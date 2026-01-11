@@ -279,10 +279,11 @@
     "PROFILE_SUB": "Manage your profile and preferences.",
     "SETTINGS_TITLE": "Settings",
     "SETTINGS_SUB": "Manage your account and preferences.",
+    "SETTINGS_EMPTY": "Settings page coming soon.",
     "ACTIVITY_TITLE": "Recent Activity",
     "ACTIVITY": {
       "MATCH": "You matched with {{name}}",
-      "MESSAGE": "{{name}} sent you a message",
+      "MESSAGE": "{{name}} messaged you",
       "FAVORITE": "{{name}} favorited your profile",
       "VIEW": "{{name}} viewed your profile"
     },
@@ -291,6 +292,90 @@
       "VIEWS": "Profile Views",
       "FAVORITES": "Favorites",
       "MATCHES": "Matches"
+    }
+  },
+  "SETTINGS": {
+    "TITLE": "Settings",
+    "SUBTITLE": "Manage your account, privacy, and preferences",
+    "ACTIVITY": {
+      "TITLE": "Activity Settings",
+      "SUBTITLE": "Control what activities are shared with other users",
+      "VIEW_NOTIFICATIONS": "Profile view notifications",
+      "VIEW_NOTIFICATIONS_DESC": "Others see when you view their profile",
+      "FAVORITE_NOTIFICATIONS": "Favorite notifications",
+      "FAVORITE_NOTIFICATIONS_DESC": "Others see when you favorite their profile",
+      "MESSAGE_NOTIFICATIONS": "Message notifications",
+      "MESSAGE_NOTIFICATIONS_DESC": "Others see activity when you message them"
+    },
+    "PRIVACY": {
+      "TITLE": "Privacy",
+      "SUBTITLE": "Control who can see your information",
+      "ONLINE_STATUS": "Show online status",
+      "ONLINE_STATUS_DESC": "Let others see when you're online",
+      "LAST_ACTIVE": "Show last active",
+      "LAST_ACTIVE_DESC": "Display when you were last active",
+      "PROFILE_VISIBILITY": "Profile visibility",
+      "PROFILE_VISIBILITY_DESC": "Make your profile visible in discovery",
+      "SHOW_DISTANCE": "Show distance",
+      "SHOW_DISTANCE_DESC": "Let others see how far away you are"
+    },
+    "NOTIFICATIONS": {
+      "TITLE": "Notifications",
+      "SUBTITLE": "Manage how you receive updates",
+      "EMAIL_MATCHES": "Email for matches",
+      "EMAIL_MATCHES_DESC": "Get notified when you match with someone",
+      "EMAIL_MESSAGES": "Email for messages",
+      "EMAIL_MESSAGES_DESC": "Get notified when you receive a message",
+      "EMAIL_FAVORITES": "Email for favorites",
+      "EMAIL_FAVORITES_DESC": "Get notified when someone favorites you",
+      "PUSH": "Push notifications",
+      "PUSH_DESC": "Receive push notifications on your device"
+    },
+    "PREFERENCES": {
+      "TITLE": "Preferences",
+      "SUBTITLE": "Customize your experience",
+      "LANGUAGE": "Language",
+      "LANGUAGE_DESC": "Choose your preferred language",
+      "THEME": "Theme",
+      "THEME_DESC": "Choose your preferred theme",
+      "THEME_LIGHT": "Light",
+      "THEME_DARK": "Dark",
+      "THEME_SYSTEM": "System"
+    },
+    "ACCOUNT": {
+      "TITLE": "Account",
+      "SUBTITLE": "Manage your account settings",
+      "EMAIL": "Email address",
+      "PASSWORD": "Password",
+      "PASSWORD_DESC": "Change your password"
+    },
+    "DANGER": {
+      "TITLE": "Danger Zone",
+      "SUBTITLE": "Irreversible account actions",
+      "DISABLE": "Disable account",
+      "DISABLE_DESC": "Temporarily hide your profile from other users",
+      "DISABLED": "Account disabled",
+      "DISABLED_DESC": "Your account is currently hidden from other users",
+      "ENABLE": "Enable Account",
+      "DELETE": "Delete account",
+      "DELETE_DESC": "Permanently delete your account and all data"
+    },
+    "SAVING": "Saving...",
+    "DIALOGS": {
+      "CHANGE_EMAIL_TITLE": "Change Email Address",
+      "CHANGE_EMAIL_DESC": "Enter your new email address. You'll need to verify it before the change takes effect.",
+      "NEW_EMAIL": "New email address",
+      "CURRENT_PASSWORD": "Current password",
+      "RESET_PASSWORD_TITLE": "Reset Password",
+      "RESET_PASSWORD_DESC": "We'll send a password reset link to your email address.",
+      "RESET_PASSWORD_SUCCESS": "Password reset email sent! Check your inbox.",
+      "DELETE_TITLE": "Delete Account",
+      "DELETE_DESC": "This action is permanent and cannot be undone. All your data, matches, and conversations will be deleted.",
+      "DELETE_CONFIRM": "Type DELETE to confirm",
+      "CANCEL": "Cancel",
+      "CHANGE_EMAIL": "Change Email",
+      "SEND_RESET": "Send Reset Link",
+      "DELETE_BUTTON": "Delete My Account"
     }
   },
   "AUTH": {

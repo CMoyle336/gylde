@@ -48,11 +48,11 @@
 
       <!-- Material Menu -->
       <mat-menu #profileMenu="matMenu" class="profile-menu">
-        <a mat-menu-item routerLink="/profile">
+        <a mat-menu-item routerLink="/profile" (click)="onNavItemClick()">
           <span class="material-icons-outlined">person</span>
           <span>View Profile</span>
         </a>
-        <a mat-menu-item routerLink="/settings">
+        <a mat-menu-item routerLink="/settings" (click)="onNavItemClick()">
           <span class="material-icons-outlined">settings</span>
           <span>Settings</span>
         </a>
@@ -180,7 +180,7 @@
           <span class="material-icons-outlined">{{ sidenavOpen() ? 'close' : 'menu' }}</span>
         </button>
         <span class="mobile-logo">Gylde</span>
-        <button type="button" class="mobile-profile-btn" routerLink="/profile">
+        <button type="button" class="mobile-profile-btn" routerLink="/profile" (click)="onNavItemClick()">
           @if (userPhotoURL()) {
             <img [src]="userPhotoURL()" alt="Profile" class="mobile-avatar">
           } @else {

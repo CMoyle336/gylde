@@ -1,0 +1,348 @@
+/* ============================================
+   PROFILE PAGE STYLES
+   ============================================ */
+
+:host {
+  --color-bg-primary: #0d0b0e;
+  --color-bg-secondary: #1a1720;
+  --color-bg-elevated: #252030;
+  --color-bg-hover: #2d2838;
+  --color-accent: #c9a962;
+  --color-accent-light: #e8d5a3;
+  --color-text-primary: #f5f3f0;
+  --color-text-secondary: #a8a4b0;
+  --color-text-muted: #6b6777;
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-error: #e57373;
+  --color-success: #81c784;
+  
+  --font-display: 'Outfit', system-ui, sans-serif;
+  --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
+
+  display: block;
+  height: 100%;
+  overflow-y: auto;
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+}
+
+.profile-page {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+/* ============================================
+   HEADER
+   ============================================ */
+
+.profile-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.profile-header h1 {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+/* ============================================
+   MATERIAL BUTTON OVERRIDES
+   ============================================ */
+
+.profile-header button[mat-stroked-button] {
+  border-color: var(--color-border);
+  color: var(--color-text-primary);
+}
+
+.profile-header button[mat-stroked-button]:hover {
+  background: var(--color-bg-elevated);
+  border-color: var(--color-accent);
+}
+
+.profile-header button[mat-flat-button] {
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-light));
+  color: #1a1720;
+}
+
+.profile-header button[mat-flat-button] mat-spinner {
+  display: inline-block;
+  margin-right: 0.5rem;
+}
+
+/* ============================================
+   PHOTOS SECTION
+   ============================================ */
+
+.photos-section {
+  margin-bottom: 2.5rem;
+}
+
+.photos-section h2,
+.info-section h2 {
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem;
+  color: var(--color-text-primary);
+}
+
+.section-hint {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  margin: 0 0 1rem;
+}
+
+.photos-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.photo-item {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--color-bg-elevated);
+}
+
+.photo-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo-item.is-profile {
+  box-shadow: 0 0 0 2px var(--color-accent);
+}
+
+.photo-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, transparent 50%);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.photo-item:hover .photo-overlay {
+  opacity: 1;
+}
+
+.photo-overlay button[mat-icon-button] {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(4px);
+  color: #fff;
+}
+
+.photo-overlay button[mat-icon-button]:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.photo-overlay button[mat-icon-button].active {
+  background: var(--color-accent);
+  color: #1a1720;
+}
+
+.photo-overlay button.remove-btn:hover {
+  background: var(--color-error);
+}
+
+.profile-badge {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  background: var(--color-accent);
+  color: #1a1720;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-radius: 4px;
+}
+
+.add-photo-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  aspect-ratio: 3 / 4;
+  border-radius: 12px;
+  background: var(--color-bg-elevated);
+  border: 2px dashed var(--color-border);
+  color: var(--color-text-muted);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.add-photo-btn:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  background: rgba(201, 169, 98, 0.05);
+}
+
+.add-photo-btn mat-icon {
+  font-size: 2rem;
+  width: 2rem;
+  height: 2rem;
+}
+
+/* ============================================
+   INFO SECTIONS
+   ============================================ */
+
+.info-section {
+  margin-bottom: 2rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.info-section:last-child {
+  border-bottom: none;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+}
+
+.info-grid.full-width {
+  grid-template-columns: 1fr;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.field-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text-muted);
+}
+
+.info-value {
+  font-size: 0.9375rem;
+  color: var(--color-text-primary);
+}
+
+.info-value.multiline {
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+/* ============================================
+   FORM FIELD LAYOUT
+   ============================================ */
+
+.info-item mat-form-field {
+  width: 100%;
+}
+
+.full-width-field {
+  width: 100%;
+}
+
+.age-field {
+  width: 100px;
+}
+
+.range-inputs {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.range-separator {
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  margin-top: -1.25rem; /* Align with input field, accounting for mat-label space */
+}
+
+/* Chip group for multi-select buttons */
+.chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.chip-group button.selected {
+  background: rgba(201, 169, 98, 0.15);
+  border-color: var(--color-accent);
+  color: var(--color-accent-light);
+}
+
+/* ============================================
+   LOADING STATE
+   ============================================ */
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  min-height: 50vh;
+  color: var(--color-text-muted);
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+  .profile-page {
+    padding: 1rem;
+  }
+
+  .profile-header h1 {
+    font-size: 1.375rem;
+  }
+
+  .photos-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+
+  .info-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .header-actions {
+    gap: 0.5rem;
+  }
+
+  .range-inputs {
+    flex-wrap: wrap;
+  }
+
+  .age-field {
+    width: 80px;
+  }
+}

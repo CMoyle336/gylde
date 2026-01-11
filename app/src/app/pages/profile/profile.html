@@ -1,0 +1,394 @@
+<div class="profile-page">
+  <!-- Header -->
+  <header class="profile-header">
+    <h1>My Profile</h1>
+    @if (!isEditing()) {
+      <button mat-stroked-button (click)="startEditing()">
+        <mat-icon>edit</mat-icon>
+        Edit Profile
+      </button>
+    } @else {
+      <div class="header-actions">
+        <button mat-button (click)="cancelEditing()">Cancel</button>
+        <button mat-flat-button color="primary" (click)="saveProfile()" [disabled]="saving()">
+          @if (saving()) {
+            <mat-spinner diameter="18"></mat-spinner>
+          } @else {
+            <mat-icon>check</mat-icon>
+          }
+          Save
+        </button>
+      </div>
+    }
+  </header>
+
+  @if (profile(); as profile) {
+    <div class="profile-content">
+      <!-- Photos Section -->
+      <section class="photos-section">
+        <h2>Photos</h2>
+        <p class="section-hint">Click the star to set as profile photo.</p>
+        
+        <div class="photos-grid">
+          @for (photo of editablePhotos(); track photo; let i = $index) {
+            <div class="photo-item" [class.is-profile]="photo === profilePhotoUrl()">
+              <img [src]="photo" alt="Profile photo {{ i + 1 }}">
+              <div class="photo-overlay">
+                <button mat-icon-button 
+                        [class.active]="photo === profilePhotoUrl()"
+                        (click)="setAsProfilePhoto(photo)"
+                        matTooltip="Set as profile photo">
+                  <mat-icon>{{ photo === profilePhotoUrl() ? 'star' : 'star_outline' }}</mat-icon>
+                </button>
+                <button mat-icon-button 
+                        class="remove-btn"
+                        (click)="removePhoto(i)"
+                        matTooltip="Remove photo">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+              @if (photo === profilePhotoUrl()) {
+                <div class="profile-badge">Profile</div>
+              }
+            </div>
+          }
+          
+          <!-- Add photo button -->
+          @if (editablePhotos().length < 6) {
+            <button type="button" class="add-photo-btn" (click)="openPhotoPicker()">
+              <mat-icon>add_photo_alternate</mat-icon>
+              <span>Add Photo</span>
+            </button>
+          }
+        </div>
+        <input #photoInput type="file" accept="image/*" multiple hidden (change)="onPhotosSelected($event)">
+      </section>
+
+      <!-- Basic Info Section -->
+      <section class="info-section">
+        <h2>Basic Info</h2>
+        
+        <div class="info-grid">
+          <div class="info-item">
+            <label class="field-label">Display Name</label>
+            <span class="info-value">{{ profile.displayName || 'Not set' }}</span>
+          </div>
+
+          <div class="info-item">
+            <label class="field-label">Location</label>
+            <span class="info-value">
+              @if (profile.onboarding; as onboarding) {
+                @if (onboarding.city) {
+                  {{ onboarding.city }}, {{ onboarding.country }}
+                } @else {
+                  Not set
+                }
+              } @else {
+                Not set
+              }
+            </span>
+          </div>
+
+          <div class="info-item">
+            <label class="field-label">Birthday</label>
+            <span class="info-value">
+              @if (profile.onboarding?.birthDate; as birthDate) {
+                {{ formatBirthDate(birthDate) }} ({{ calculateAge(birthDate) }} years old)
+              } @else {
+                Not set
+              }
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Dating Preferences Section -->
+      <section class="info-section">
+        <h2>Dating Preferences</h2>
+        
+        <div class="info-grid">
+          <div class="info-item">
+            <label class="field-label">I identify as</label>
+            @if (isEditing()) {
+              <mat-form-field appearance="outline">
+                <mat-select [(ngModel)]="editForm.genderIdentity">
+                  <mat-option value="woman">Woman</mat-option>
+                  <mat-option value="man">Man</mat-option>
+                  <mat-option value="nonbinary">Non-binary</mat-option>
+                  <mat-option value="self-describe">Other</mat-option>
+                </mat-select>
+              </mat-form-field>
+            } @else {
+              <span class="info-value">{{ formatGender(profile.onboarding?.genderIdentity) }}</span>
+            }
+          </div>
+
+          <div class="info-item">
+            <label class="field-label">Interested in</label>
+            @if (isEditing()) {
+              <div class="chip-group">
+                @for (option of genderOptions; track option.value) {
+                  <button type="button"
+                          mat-stroked-button
+                          [class.selected]="editForm.interestedIn.includes(option.value)"
+                          (click)="toggleInterest(option.value)">
+                    {{ option.label }}
+                  </button>
+                }
+              </div>
+            } @else {
+              <span class="info-value">{{ formatInterests(profile.onboarding?.interestedIn) }}</span>
+            }
+          </div>
+
+          <div class="info-item">
+            <label class="field-label">Age Range</label>
+            @if (isEditing()) {
+              <div class="range-inputs">
+                <mat-form-field appearance="outline" class="age-field">
+                  <mat-label>Min</mat-label>
+                  <input matInput type="number" [(ngModel)]="editForm.ageRangeMin" min="18" max="99">
+                </mat-form-field>
+                <span class="range-separator">to</span>
+                <mat-form-field appearance="outline" class="age-field">
+                  <mat-label>Max</mat-label>
+                  <input matInput type="number" [(ngModel)]="editForm.ageRangeMax" min="18" max="99">
+                </mat-form-field>
+              </div>
+            } @else {
+              <span class="info-value">
+                @if (profile.onboarding; as onboarding) {
+                  @if (onboarding.ageRangeMin) {
+                    {{ onboarding.ageRangeMin }} - {{ onboarding.ageRangeMax }}
+                  } @else {
+                    Not set
+                  }
+                } @else {
+                  Not set
+                }
+              </span>
+            }
+          </div>
+        </div>
+      </section>
+
+      <!-- About Me Section -->
+      <section class="info-section">
+        <h2>About Me</h2>
+        
+        <div class="info-grid full-width">
+          <div class="info-item">
+            <label class="field-label">Looking for</label>
+            @if (isEditing()) {
+              <div class="chip-group">
+                @for (option of connectionTypeOptions; track option.value) {
+                  <button type="button"
+                          mat-stroked-button
+                          [class.selected]="editForm.connectionTypes.includes(option.value)"
+                          (click)="toggleConnectionType(option.value)">
+                    {{ option.label }}
+                  </button>
+                }
+              </div>
+            } @else {
+              <span class="info-value">{{ formatConnectionTypes(profile.onboarding?.connectionTypes) }}</span>
+            }
+          </div>
+
+          <div class="info-item">
+            <label class="field-label">My ideal relationship</label>
+            @if (isEditing()) {
+              <mat-form-field appearance="outline" class="full-width-field">
+                <textarea matInput 
+                          [(ngModel)]="editForm.idealRelationship" 
+                          placeholder="Describe your ideal relationship..."
+                          rows="3"></textarea>
+              </mat-form-field>
+            } @else {
+              <span class="info-value multiline">{{ profile.onboarding?.idealRelationship || 'Not set' }}</span>
+            }
+          </div>
+
+          <div class="info-item">
+            <label class="field-label">What support means to me</label>
+            @if (isEditing()) {
+              <mat-form-field appearance="outline" class="full-width-field">
+                <textarea matInput 
+                          [(ngModel)]="editForm.supportMeaning" 
+                          placeholder="What does support mean to you?"
+                          rows="3"></textarea>
+              </mat-form-field>
+            } @else {
+              <span class="info-value multiline">{{ profile.onboarding?.supportMeaning || 'Not set' }}</span>
+            }
+          </div>
+        </div>
+      </section>
+
+      <!-- Personal Details Section -->
+      <section class="info-section">
+        <h2>Personal Details</h2>
+        
+        <div class="info-grid">
+          <div class="info-item">
+            <label class="field-label">Height</label>
+            @if (isEditing()) {
+              <mat-form-field appearance="outline">
+                <input matInput [(ngModel)]="editForm.height" placeholder="e.g., 5'10&quot; or 178 cm">
+              </mat-form-field>
+            } @else {
+              <span class="info-value">{{ profile.onboarding?.height || 'Not set' }}</span>
+            }
+          </div>
+
+          <div class="info-item">
+            <label class="field-label">Weight</label>
+            @if (isEditing()) {
+              <mat-form-field appearance="outline">
+                <input matInput [(ngModel)]="editForm.weight" placeholder="e.g., 170 lbs or 77 kg">
+              </mat-form-field>
+            } @else {
+              <span class="info-value">{{ profile.onboarding?.weight || 'Not set' }}</span>
+            }
+          </div>
+
+          <div class="info-item">
+            <label class="field-label">Ethnicity</label>
+            @if (isEditing()) {
+              <mat-form-field appearance="outline">
+                <mat-select [(ngModel)]="editForm.ethnicity" placeholder="Select...">
+                  <mat-option value="">Not specified</mat-option>
+                  @for (option of ethnicityOptions; track option) {
+                    <mat-option [value]="option">{{ option }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            } @else {
+              <span class="info-value">{{ profile.onboarding?.ethnicity || 'Not set' }}</span>
+            }
+          </div>
+
+          <div class="info-item">
+            <label class="field-label">Relationship Status</label>
+            @if (isEditing()) {
+              <mat-form-field appearance="outline">
+                <mat-select [(ngModel)]="editForm.relationshipStatus" placeholder="Select...">
+                  <mat-option value="">Not specified</mat-option>
+                  @for (option of relationshipStatusOptions; track option) {
+                    <mat-option [value]="option">{{ option }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            } @else {
+              <span class="info-value">{{ profile.onboarding?.relationshipStatus || 'Not set' }}</span>
+            }
+          </div>
+
+          <div class="info-item">
+            <label class="field-label">Children</label>
+            @if (isEditing()) {
+              <mat-form-field appearance="outline">
+                <mat-select [(ngModel)]="editForm.children" placeholder="Select...">
+                  <mat-option value="">Not specified</mat-option>
+                  @for (option of childrenOptions; track option) {
+                    <mat-option [value]="option">{{ option }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            } @else {
+              <span class="info-value">{{ profile.onboarding?.children || 'Not set' }}</span>
+            }
+          </div>
+
+          <div class="info-item">
+            <label class="field-label">Smoking</label>
+            @if (isEditing()) {
+              <mat-form-field appearance="outline">
+                <mat-select [(ngModel)]="editForm.smoker" placeholder="Select...">
+                  <mat-option value="">Not specified</mat-option>
+                  @for (option of smokerOptions; track option) {
+                    <mat-option [value]="option">{{ option }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            } @else {
+              <span class="info-value">{{ profile.onboarding?.smoker || 'Not set' }}</span>
+            }
+          </div>
+
+          <div class="info-item">
+            <label class="field-label">Drinking</label>
+            @if (isEditing()) {
+              <mat-form-field appearance="outline">
+                <mat-select [(ngModel)]="editForm.drinker" placeholder="Select...">
+                  <mat-option value="">Not specified</mat-option>
+                  @for (option of drinkerOptions; track option) {
+                    <mat-option [value]="option">{{ option }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            } @else {
+              <span class="info-value">{{ profile.onboarding?.drinker || 'Not set' }}</span>
+            }
+          </div>
+
+          <div class="info-item">
+            <label class="field-label">Education</label>
+            @if (isEditing()) {
+              <mat-form-field appearance="outline">
+                <mat-select [(ngModel)]="editForm.education" placeholder="Select...">
+                  <mat-option value="">Not specified</mat-option>
+                  @for (option of educationOptions; track option) {
+                    <mat-option [value]="option">{{ option }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            } @else {
+              <span class="info-value">{{ profile.onboarding?.education || 'Not set' }}</span>
+            }
+          </div>
+
+          <div class="info-item">
+            <label class="field-label">Occupation</label>
+            @if (isEditing()) {
+              <mat-form-field appearance="outline">
+                <input matInput [(ngModel)]="editForm.occupation" placeholder="What do you do?">
+              </mat-form-field>
+            } @else {
+              <span class="info-value">{{ profile.onboarding?.occupation || 'Not set' }}</span>
+            }
+          </div>
+        </div>
+      </section>
+
+      <!-- Values Section -->
+      <section class="info-section">
+        <h2>Values & Lifestyle</h2>
+        
+        <div class="info-grid">
+          <div class="info-item">
+            <label class="field-label">My values</label>
+            <mat-chip-set aria-label="Values">
+              @for (value of profile.onboarding?.values || []; track value) {
+                <mat-chip>{{ value }}</mat-chip>
+              }
+              @empty {
+                <span class="info-value">Not set</span>
+              }
+            </mat-chip-set>
+          </div>
+
+          <div class="info-item">
+            <label class="field-label">Lifestyle</label>
+            <span class="info-value">{{ profile.onboarding?.lifestyle || 'Not set' }}</span>
+          </div>
+        </div>
+      </section>
+    </div>
+  } @else {
+    <div class="loading-state">
+      <mat-spinner diameter="40"></mat-spinner>
+      <p>Loading profile...</p>
+    </div>
+  }
+</div>

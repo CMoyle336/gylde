@@ -1,0 +1,401 @@
+<div class="settings-page">
+  <header class="settings-header">
+    <h1>Settings</h1>
+    <p>Manage your account, privacy, and preferences</p>
+  </header>
+
+  <div class="settings-content">
+    <!-- Activity Settings -->
+    <section class="settings-section">
+      <div class="section-header">
+        <mat-icon>visibility</mat-icon>
+        <div>
+          <h2>Activity Settings</h2>
+          <p>Control what activities are shared with other users</p>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <div class="setting-item">
+          <div class="setting-info">
+            <span class="setting-label">Profile view notifications</span>
+            <span class="setting-description">Others see when you view their profile</span>
+          </div>
+          <mat-slide-toggle
+            [checked]="settings().activity?.createOnView ?? true"
+            (change)="updateSetting('activity', 'createOnView', $event.checked)">
+          </mat-slide-toggle>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <span class="setting-label">Favorite notifications</span>
+            <span class="setting-description">Others see when you favorite their profile</span>
+          </div>
+          <mat-slide-toggle
+            [checked]="settings().activity?.createOnFavorite ?? true"
+            (change)="updateSetting('activity', 'createOnFavorite', $event.checked)">
+          </mat-slide-toggle>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <span class="setting-label">Message notifications</span>
+            <span class="setting-description">Others see activity when you message them</span>
+          </div>
+          <mat-slide-toggle
+            [checked]="settings().activity?.createOnMessage ?? true"
+            (change)="updateSetting('activity', 'createOnMessage', $event.checked)">
+          </mat-slide-toggle>
+        </div>
+      </div>
+    </section>
+
+    <!-- Privacy Settings -->
+    <section class="settings-section">
+      <div class="section-header">
+        <mat-icon>lock</mat-icon>
+        <div>
+          <h2>Privacy</h2>
+          <p>Control who can see your information</p>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <div class="setting-item">
+          <div class="setting-info">
+            <span class="setting-label">Show online status</span>
+            <span class="setting-description">Let others see when you're online</span>
+          </div>
+          <mat-slide-toggle
+            [checked]="settings().privacy?.showOnlineStatus ?? true"
+            (change)="updateSetting('privacy', 'showOnlineStatus', $event.checked)">
+          </mat-slide-toggle>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <span class="setting-label">Show last active</span>
+            <span class="setting-description">Display when you were last active</span>
+          </div>
+          <mat-slide-toggle
+            [checked]="settings().privacy?.showLastActive ?? true"
+            (change)="updateSetting('privacy', 'showLastActive', $event.checked)">
+          </mat-slide-toggle>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <span class="setting-label">Profile visibility</span>
+            <span class="setting-description">Make your profile visible in discovery</span>
+          </div>
+          <mat-slide-toggle
+            [checked]="settings().privacy?.profileVisible ?? true"
+            (change)="updateSetting('privacy', 'profileVisible', $event.checked)">
+          </mat-slide-toggle>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <span class="setting-label">Show distance</span>
+            <span class="setting-description">Let others see how far away you are</span>
+          </div>
+          <mat-slide-toggle
+            [checked]="settings().privacy?.showDistance ?? true"
+            (change)="updateSetting('privacy', 'showDistance', $event.checked)">
+          </mat-slide-toggle>
+        </div>
+      </div>
+    </section>
+
+    <!-- Notification Settings -->
+    <section class="settings-section">
+      <div class="section-header">
+        <mat-icon>notifications</mat-icon>
+        <div>
+          <h2>Notifications</h2>
+          <p>Manage how you receive updates</p>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <div class="setting-item">
+          <div class="setting-info">
+            <span class="setting-label">Email for matches</span>
+            <span class="setting-description">Get notified when you match with someone</span>
+          </div>
+          <mat-slide-toggle
+            [checked]="settings().notifications?.emailMatches ?? true"
+            (change)="updateSetting('notifications', 'emailMatches', $event.checked)">
+          </mat-slide-toggle>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <span class="setting-label">Email for messages</span>
+            <span class="setting-description">Get notified when you receive a message</span>
+          </div>
+          <mat-slide-toggle
+            [checked]="settings().notifications?.emailMessages ?? true"
+            (change)="updateSetting('notifications', 'emailMessages', $event.checked)">
+          </mat-slide-toggle>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <span class="setting-label">Email for favorites</span>
+            <span class="setting-description">Get notified when someone favorites you</span>
+          </div>
+          <mat-slide-toggle
+            [checked]="settings().notifications?.emailFavorites ?? true"
+            (change)="updateSetting('notifications', 'emailFavorites', $event.checked)">
+          </mat-slide-toggle>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <span class="setting-label">Push notifications</span>
+            <span class="setting-description">Receive push notifications on your device</span>
+          </div>
+          <mat-slide-toggle
+            [checked]="settings().notifications?.pushEnabled ?? false"
+            (change)="updateSetting('notifications', 'pushEnabled', $event.checked)">
+          </mat-slide-toggle>
+        </div>
+      </div>
+    </section>
+
+    <!-- Preferences -->
+    <section class="settings-section">
+      <div class="section-header">
+        <mat-icon>tune</mat-icon>
+        <div>
+          <h2>Preferences</h2>
+          <p>Customize your experience</p>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <div class="setting-item">
+          <div class="setting-info">
+            <span class="setting-label">Language</span>
+            <span class="setting-description">Choose your preferred language</span>
+          </div>
+          <mat-form-field appearance="outline" class="setting-select">
+            <mat-select
+              [value]="settings().preferences?.language ?? 'en'"
+              (selectionChange)="updateSetting('preferences', 'language', $event.value)">
+              <mat-option value="en">English</mat-option>
+              <mat-option value="de">Deutsch</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <span class="setting-label">Theme</span>
+            <span class="setting-description">Choose your preferred theme</span>
+          </div>
+          <mat-form-field appearance="outline" class="setting-select">
+            <mat-select
+              [value]="settings().preferences?.theme ?? 'dark'"
+              (selectionChange)="updateSetting('preferences', 'theme', $event.value)">
+              <mat-option value="light">Light</mat-option>
+              <mat-option value="dark">Dark</mat-option>
+              <mat-option value="system">System</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </div>
+    </section>
+
+    <!-- Account Settings -->
+    <section class="settings-section">
+      <div class="section-header">
+        <mat-icon>person</mat-icon>
+        <div>
+          <h2>Account</h2>
+          <p>Manage your account settings</p>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <div class="setting-item clickable" (click)="openChangeEmail()">
+          <div class="setting-info">
+            <span class="setting-label">Email address</span>
+            <span class="setting-description">{{ userEmail() || 'Not set' }}</span>
+          </div>
+          <mat-icon class="chevron">chevron_right</mat-icon>
+        </div>
+
+        <div class="setting-item clickable" (click)="openResetPassword()">
+          <div class="setting-info">
+            <span class="setting-label">Password</span>
+            <span class="setting-description">Change your password</span>
+          </div>
+          <mat-icon class="chevron">chevron_right</mat-icon>
+        </div>
+      </div>
+    </section>
+
+    <!-- Danger Zone -->
+    <section class="settings-section danger-zone">
+      <div class="section-header">
+        <mat-icon>warning</mat-icon>
+        <div>
+          <h2>Danger Zone</h2>
+          <p>Irreversible account actions</p>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        @if (isAccountDisabled()) {
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-label">Account disabled</span>
+              <span class="setting-description">Your account is currently hidden from other users</span>
+            </div>
+            <button mat-stroked-button color="primary" (click)="enableAccount()">
+              Enable Account
+            </button>
+          </div>
+        } @else {
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-label">Disable account</span>
+              <span class="setting-description">Temporarily hide your profile from other users</span>
+            </div>
+            <button mat-stroked-button color="warn" (click)="disableAccount()">
+              Disable
+            </button>
+          </div>
+        }
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <span class="setting-label">Delete account</span>
+            <span class="setting-description">Permanently delete your account and all data</span>
+          </div>
+          <button mat-stroked-button color="warn" (click)="openDeleteAccount()">
+            Delete Account
+          </button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Saving indicator -->
+  @if (saving()) {
+    <div class="saving-indicator">
+      <mat-spinner diameter="20"></mat-spinner>
+      <span>Saving...</span>
+    </div>
+  }
+</div>
+
+<!-- Change Email Dialog -->
+@if (showChangeEmailDialog()) {
+  <div class="dialog-overlay" (click)="closeDialogs()">
+    <div class="dialog" (click)="$event.stopPropagation()">
+      <h3>Change Email Address</h3>
+      <p>Enter your new email address. You'll need to verify it before the change takes effect.</p>
+      
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>New email address</mat-label>
+        <input matInput type="email" [(ngModel)]="newEmail" placeholder="you@example.com">
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Current password</mat-label>
+        <input matInput type="password" [(ngModel)]="currentPassword" placeholder="Enter your password">
+      </mat-form-field>
+
+      @if (dialogError()) {
+        <p class="error-message">{{ dialogError() }}</p>
+      }
+
+      <div class="dialog-actions">
+        <button mat-button (click)="closeDialogs()">Cancel</button>
+        <button mat-flat-button color="primary" (click)="changeEmail()" [disabled]="dialogLoading()">
+          @if (dialogLoading()) {
+            <mat-spinner diameter="20"></mat-spinner>
+          } @else {
+            Change Email
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Reset Password Dialog -->
+@if (showResetPasswordDialog()) {
+  <div class="dialog-overlay" (click)="closeDialogs()">
+    <div class="dialog" (click)="$event.stopPropagation()">
+      <h3>Reset Password</h3>
+      <p>We'll send a password reset link to your email address.</p>
+      
+      <p class="email-display">{{ userEmail() }}</p>
+
+      @if (dialogError()) {
+        <p class="error-message">{{ dialogError() }}</p>
+      }
+
+      @if (dialogSuccess()) {
+        <p class="success-message">{{ dialogSuccess() }}</p>
+      }
+
+      <div class="dialog-actions">
+        <button mat-button (click)="closeDialogs()">Cancel</button>
+        <button mat-flat-button color="primary" (click)="sendPasswordReset()" [disabled]="dialogLoading() || dialogSuccess()">
+          @if (dialogLoading()) {
+            <mat-spinner diameter="20"></mat-spinner>
+          } @else {
+            Send Reset Link
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Delete Account Dialog -->
+@if (showDeleteAccountDialog()) {
+  <div class="dialog-overlay" (click)="closeDialogs()">
+    <div class="dialog delete-dialog" (click)="$event.stopPropagation()">
+      <h3>Delete Account</h3>
+      <p>This action is permanent and cannot be undone. All your data, matches, and conversations will be deleted.</p>
+      
+      <div class="warning-box">
+        <mat-icon>warning</mat-icon>
+        <span>Type <strong>DELETE</strong> to confirm</span>
+      </div>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Confirmation</mat-label>
+        <input matInput [(ngModel)]="deleteConfirmation" placeholder="Type DELETE">
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Current password</mat-label>
+        <input matInput type="password" [(ngModel)]="currentPassword" placeholder="Enter your password">
+      </mat-form-field>
+
+      @if (dialogError()) {
+        <p class="error-message">{{ dialogError() }}</p>
+      }
+
+      <div class="dialog-actions">
+        <button mat-button (click)="closeDialogs()">Cancel</button>
+        <button mat-flat-button color="warn" (click)="deleteAccount()" 
+                [disabled]="dialogLoading() || deleteConfirmation !== 'DELETE'">
+          @if (dialogLoading()) {
+            <mat-spinner diameter="20"></mat-spinner>
+          } @else {
+            Delete My Account
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}

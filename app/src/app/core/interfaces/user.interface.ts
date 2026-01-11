@@ -19,6 +19,51 @@ export interface UserProfile {
 
   // Onboarding data (populated after onboarding)
   onboarding?: OnboardingProfile;
+
+  // User settings (populated via settings page)
+  settings?: UserSettings;
+}
+
+/**
+ * User settings for privacy, notifications, and preferences
+ */
+export interface UserSettings {
+  // Activity settings - what creates activity for others
+  activity?: {
+    createOnView?: boolean; // Create activity when you view someone's profile
+    createOnFavorite?: boolean; // Create activity when you favorite someone
+    createOnMessage?: boolean; // Create activity when you message someone
+  };
+
+  // Privacy settings
+  privacy?: {
+    showOnlineStatus?: boolean; // Show online/last active status to others
+    showLastActive?: boolean; // Show last active timestamp
+    profileVisible?: boolean; // Make profile visible in discovery
+    showDistance?: boolean; // Show distance from other users
+  };
+
+  // Notification settings
+  notifications?: {
+    emailMatches?: boolean; // Email when you get a match
+    emailMessages?: boolean; // Email when you get a message
+    emailFavorites?: boolean; // Email when someone favorites you
+    pushEnabled?: boolean; // Enable push notifications
+  };
+
+  // Preferences
+  preferences?: {
+    language?: string; // Preferred language code
+    theme?: 'light' | 'dark' | 'system'; // App theme
+  };
+
+  // Account status
+  account?: {
+    disabled?: boolean; // Account is temporarily disabled
+    disabledAt?: unknown; // When account was disabled
+    scheduledForDeletion?: boolean; // Account scheduled for deletion
+    deletionScheduledAt?: unknown; // When deletion was scheduled
+  };
 }
 
 /**
@@ -67,4 +112,15 @@ export interface OnboardingProfile {
 
   // Step 8: Verification
   verificationOptions: string[];
+
+  // Optional secondary profile info (added via profile page)
+  height?: string; // e.g., "5'10" or "178 cm"
+  weight?: string; // e.g., "170 lbs" or "77 kg"
+  ethnicity?: string;
+  relationshipStatus?: string;
+  children?: string;
+  smoker?: string;
+  drinker?: string;
+  education?: string;
+  occupation?: string;
 }
