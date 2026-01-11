@@ -25,10 +25,44 @@
     </nav>
 
     <!-- Mobile Menu Button -->
-    <button type="button" class="mobile-menu-btn" aria-label="Open menu">
-      <span class="material-icons-outlined">menu</span>
+    <button 
+      type="button" 
+      class="mobile-menu-btn" 
+      aria-label="Open menu"
+      (click)="toggleMobileMenu()">
+      <span class="material-icons-outlined">{{ mobileMenuOpen() ? 'close' : 'menu' }}</span>
     </button>
   </div>
+
+  <!-- Mobile Menu Overlay -->
+  @if (mobileMenuOpen()) {
+    <div class="mobile-menu-overlay" (click)="closeMobileMenu()">
+      <nav class="mobile-menu" (click)="$event.stopPropagation()">
+        <a href="#features" class="mobile-nav-link" (click)="closeMobileMenu()">
+          {{ 'HOME.NAV.FEATURES' | translate }}
+        </a>
+        <a href="#how-it-works" class="mobile-nav-link" (click)="closeMobileMenu()">
+          {{ 'HOME.NAV.HOW_IT_WORKS' | translate }}
+        </a>
+        
+        @if (isAuthenticated()) {
+          <button type="button" class="mobile-nav-link" (click)="goToDashboard(); closeMobileMenu()">
+            {{ 'HOME.NAV.DASHBOARD' | translate }}
+          </button>
+          <button type="button" class="btn-secondary mobile-btn" (click)="logout(); closeMobileMenu()">
+            {{ 'HOME.NAV.LOGOUT' | translate }}
+          </button>
+        } @else {
+          <button type="button" class="mobile-nav-link" (click)="openAuthModal('login'); closeMobileMenu()">
+            {{ 'HOME.NAV.SIGN_IN' | translate }}
+          </button>
+          <button type="button" class="btn-primary mobile-btn" (click)="openAuthModal('signup'); closeMobileMenu()">
+            {{ 'HOME.NAV.GET_STARTED' | translate }}
+          </button>
+        }
+      </nav>
+    </div>
+  }
 </header>
 
 <main class="home">

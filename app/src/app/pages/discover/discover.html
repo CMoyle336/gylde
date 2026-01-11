@@ -90,218 +90,31 @@
 
   <!-- Filters Panel (Collapsible) -->
   @if (showFilters()) {
-    <div class="filters-panel" [animate.enter]="'filter-enter'" [animate.leave]="'filter-leave'">
-      <div class="filters-grid">
-        <!-- Distance -->
-        <div class="filter-group">
-          <label class="filter-label">Distance</label>
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-select [value]="filters().maxDistance" (selectionChange)="updateFilter('maxDistance', $event.value)">
-              @for (option of distanceOptions; track option.value) {
-                <mat-option [value]="option.value">{{ option.label }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-        </div>
-
-        <!-- Verified Only -->
-        <div class="filter-group">
-          <label class="filter-label">Verification</label>
-          <mat-slide-toggle
-            [checked]="filters().verifiedOnly"
-            (change)="updateFilter('verifiedOnly', $event.checked)">
-            Verified profiles only
-          </mat-slide-toggle>
-        </div>
-
-        <!-- Activity -->
-        <div class="filter-group">
-          <label class="filter-label">Activity</label>
-          <div class="toggle-group">
-            <mat-slide-toggle
-              [checked]="filters().onlineNow"
-              (change)="updateFilter('onlineNow', $event.checked)">
-              Online now
-            </mat-slide-toggle>
-            <mat-slide-toggle
-              [checked]="filters().activeRecently"
-              (change)="updateFilter('activeRecently', $event.checked)">
-              Active in 24h
-            </mat-slide-toggle>
-          </div>
-        </div>
-
-        <!-- Looking For -->
-        <div class="filter-group wide">
-          <label class="filter-label">Looking For</label>
-          <div class="chip-select">
-            @for (option of connectionTypeOptions; track option.value) {
-              <button 
-                type="button"
-                class="filter-chip"
-                [class.selected]="isFilterSelected('connectionTypes', option.value)"
-                (click)="toggleArrayFilter('connectionTypes', option.value)">
-                {{ option.label }}
-              </button>
-            }
-          </div>
-        </div>
-
-        <!-- Values -->
-        <div class="filter-group wide">
-          <label class="filter-label">Values</label>
-          <div class="chip-select">
-            @for (option of valuesOptions; track option.value) {
-              <button 
-                type="button"
-                class="filter-chip"
-                [class.selected]="isFilterSelected('values', option.value)"
-                (click)="toggleArrayFilter('values', option.value)">
-                {{ option.label }}
-              </button>
-            }
-          </div>
-        </div>
-
-        <!-- Lifestyle -->
-        <div class="filter-group">
-          <label class="filter-label">Lifestyle</label>
-          <div class="chip-select">
-            @for (option of lifestyleOptions; track option.value) {
-              <button 
-                type="button"
-                class="filter-chip"
-                [class.selected]="isFilterSelected('lifestyle', option.value)"
-                (click)="toggleArrayFilter('lifestyle', option.value)">
-                {{ option.label }}
-              </button>
-            }
-          </div>
-        </div>
-
-        <!-- Show More Filters Toggle -->
-        <button type="button" class="show-more-btn" (click)="toggleAdvancedFilters()">
-          <mat-icon>{{ showAdvancedFilters() ? 'expand_less' : 'expand_more' }}</mat-icon>
-          {{ showAdvancedFilters() ? 'Less filters' : 'More filters' }}
-        </button>
-
-        <!-- Advanced Filters -->
-        @if (showAdvancedFilters()) {
-          <!-- Ethnicity -->
-          <div class="filter-group">
-            <label class="filter-label">Ethnicity</label>
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-select multiple [value]="filters().ethnicity" (selectionChange)="updateFilter('ethnicity', $event.value)">
-                @for (option of ethnicityOptions; track option) {
-                  <mat-option [value]="option">{{ option }}</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-          </div>
-
-          <!-- Relationship Status -->
-          <div class="filter-group">
-            <label class="filter-label">Relationship Status</label>
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-select multiple [value]="filters().relationshipStatus" (selectionChange)="updateFilter('relationshipStatus', $event.value)">
-                @for (option of relationshipStatusOptions; track option) {
-                  <mat-option [value]="option">{{ option }}</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-          </div>
-
-          <!-- Children -->
-          <div class="filter-group">
-            <label class="filter-label">Children</label>
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-select multiple [value]="filters().children" (selectionChange)="updateFilter('children', $event.value)">
-                @for (option of childrenOptions; track option) {
-                  <mat-option [value]="option">{{ option }}</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-          </div>
-
-          <!-- Smoker -->
-          <div class="filter-group">
-            <label class="filter-label">Smoking</label>
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-select multiple [value]="filters().smoker" (selectionChange)="updateFilter('smoker', $event.value)">
-                @for (option of smokerOptions; track option) {
-                  <mat-option [value]="option">{{ option }}</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-          </div>
-
-          <!-- Drinker -->
-          <div class="filter-group">
-            <label class="filter-label">Drinking</label>
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-select multiple [value]="filters().drinker" (selectionChange)="updateFilter('drinker', $event.value)">
-                @for (option of drinkerOptions; track option) {
-                  <mat-option [value]="option">{{ option }}</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-          </div>
-
-          <!-- Education -->
-          <div class="filter-group">
-            <label class="filter-label">Education</label>
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-select multiple [value]="filters().education" (selectionChange)="updateFilter('education', $event.value)">
-                @for (option of educationOptions; track option) {
-                  <mat-option [value]="option">{{ option }}</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-          </div>
-        }
-      </div>
-
-      <!-- Filter Actions -->
-      <div class="filter-actions">
-        <button mat-button (click)="resetFilters()">
-          <mat-icon>refresh</mat-icon>
-          Reset All
-        </button>
-        <button mat-flat-button color="primary" (click)="applyFilters()">
-          <mat-icon>search</mat-icon>
-          Apply Filters
-        </button>
-      </div>
-    </div>
+    <app-discover-filters
+      [filters]="filters()"
+      [connectionTypeOptions]="connectionTypeOptions"
+      [lifestyleOptions]="lifestyleOptions"
+      [valuesOptions]="valuesOptions"
+      [ethnicityOptions]="ethnicityOptions"
+      [relationshipStatusOptions]="relationshipStatusOptions"
+      [childrenOptions]="childrenOptions"
+      [smokerOptions]="smokerOptions"
+      [drinkerOptions]="drinkerOptions"
+      [educationOptions]="educationOptions"
+      [distanceOptions]="distanceOptions"
+      (filterChange)="onFilterChange($event)"
+      (reset)="resetFilters()"
+      (apply)="applyFilters()"
+      [animate.enter]="'filter-enter'"
+      [animate.leave]="'filter-leave'" />
   }
 
   <!-- Loading State -->
   @if (loading() && profiles().length === 0) {
     <!-- Skeleton Loading State -->
     <div class="profile-grid">
-      @for (i of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]; track i) {
-        <article class="profile-card skeleton">
-          <div class="card-photo">
-            <div class="skeleton-image"></div>
-          </div>
-          <div class="card-content">
-            <div class="card-header">
-              <div class="skeleton-text skeleton-name"></div>
-              <div class="skeleton-text skeleton-location"></div>
-            </div>
-            <div class="skeleton-text skeleton-tagline"></div>
-            <div class="skeleton-text skeleton-tagline-2"></div>
-            <div class="card-tags">
-              <div class="skeleton-tag"></div>
-              <div class="skeleton-tag"></div>
-            </div>
-            <div class="card-actions">
-              <div class="skeleton-button"></div>
-              <div class="skeleton-button"></div>
-              <div class="skeleton-button"></div>
-            </div>
-          </div>
-        </article>
+      @for (i of skeletonCards; track i) {
+        <app-profile-card-skeleton />
       }
     </div>
   } @else if (profiles().length === 0) {
@@ -319,82 +132,12 @@
     <!-- Profile Grid -->
     <div class="profile-grid">
       @for (profile of profiles(); track profile.uid) {
-        <article class="profile-card">
-          <div class="card-photo">
-            @if (getProfilePhoto(profile)) {
-              <img [src]="getProfilePhoto(profile)" [alt]="profile.displayName" class="profile-image">
-            } @else {
-              <div class="photo-placeholder">
-                <mat-icon>person</mat-icon>
-              </div>
-            }
-            @if (profile.verified) {
-              <span class="verified-badge" title="Verified profile">
-                <mat-icon>verified</mat-icon>
-              </span>
-            }
-            <!-- Activity Status Badge -->
-            @if (profile.isOnline) {
-              <!-- Show online status if they allow it and are currently online -->
-              <span class="activity-badge online">
-                <span class="activity-dot"></span>
-                Online
-              </span>
-            } @else if (profile.showLastActive && profile.lastActiveAt) {
-              <!-- Show last active if they allow it and are not online -->
-              <span class="activity-badge">
-                <span class="activity-dot"></span>
-                {{ formatLastActive(profile.lastActiveAt) }}
-              </span>
-            }
-          </div>
-
-          <div class="card-content">
-            <div class="card-header">
-              <h3 class="card-name">{{ profile.displayName || 'Anonymous' }}, {{ profile.age }}</h3>
-              <span class="card-location">
-                <mat-icon>location_on</mat-icon>
-                {{ profile.city }}
-              </span>
-            </div>
-
-            <p class="card-tagline">{{ profile.idealRelationship.slice(0, 100) }}{{ profile.idealRelationship.length > 100 ? '...' : '' }}</p>
-
-            <div class="card-tags">
-              @for (type of profile.connectionTypes.slice(0, 2); track type) {
-                <span class="tag">{{ formatConnectionType(type) }}</span>
-              }
-            </div>
-
-            <div class="card-actions">
-              <button 
-                type="button" 
-                mat-icon-button
-                class="action-btn message"
-                (click)="onMessageProfile(profile)"
-                [matTooltip]="'Message ' + profile.displayName">
-                <mat-icon>chat_bubble_outline</mat-icon>
-              </button>
-              <button 
-                type="button" 
-                mat-icon-button
-                class="action-btn view"
-                (click)="onViewProfile(profile)"
-                [matTooltip]="'View profile'">
-                <mat-icon>visibility</mat-icon>
-              </button>
-              <button 
-                type="button" 
-                mat-icon-button
-                class="action-btn favorite"
-                [class.favorited]="isFavorited(profile.uid)"
-                (click)="onFavoriteProfile(profile)"
-                [matTooltip]="isFavorited(profile.uid) ? 'Remove from favorites' : 'Add to favorites'">
-                <mat-icon>{{ isFavorited(profile.uid) ? 'favorite' : 'favorite_border' }}</mat-icon>
-              </button>
-            </div>
-          </div>
-        </article>
+        <app-profile-card
+          [profile]="profile"
+          [isFavorited]="isFavorited(profile.uid)"
+          (messageClick)="onMessageProfile($event)"
+          (viewClick)="onViewProfile($event)"
+          (favoriteClick)="onFavoriteProfile($event)" />
       }
     </div>
 
@@ -414,85 +157,15 @@
 </section>
 
 <!-- Save View Dialog -->
-@if (showSaveViewDialog()) {
-  <div class="dialog-overlay" (click)="closeSaveViewDialog()">
-    <div class="dialog" (click)="$event.stopPropagation()">
-      <h3>Save Current View</h3>
-      <p>Give your filter settings a name so you can quickly apply them later.</p>
-      
-      <mat-form-field appearance="outline" class="full-width">
-        <mat-label>View name</mat-label>
-        <input matInput [(ngModel)]="newViewName" placeholder="e.g., Local Women">
-      </mat-form-field>
-
-      <mat-slide-toggle [(ngModel)]="newViewIsDefault">
-        Set as default view
-      </mat-slide-toggle>
-
-      <div class="dialog-actions">
-        <button mat-button (click)="closeSaveViewDialog()">Cancel</button>
-        <button mat-flat-button color="primary" (click)="saveView()" [disabled]="!newViewName">
-          Save View
-        </button>
-      </div>
-    </div>
-  </div>
-}
+<app-save-view-dialog
+  [isOpen]="showSaveViewDialog()"
+  (save)="onSaveView($event)"
+  (close)="closeSaveViewDialog()" />
 
 <!-- Manage Views Dialog -->
-@if (showManageViewsDialog()) {
-  <div class="dialog-overlay" (click)="closeManageViewsDialog()">
-    <div class="dialog manage-views-dialog" (click)="$event.stopPropagation()">
-      <div class="dialog-header">
-        <div class="dialog-header-icon">
-          <mat-icon>bookmark</mat-icon>
-        </div>
-        <div class="dialog-header-text">
-          <h3>Saved Views</h3>
-          <p>Manage your saved filter configurations</p>
-        </div>
-        <button mat-icon-button class="dialog-close-btn" (click)="closeManageViewsDialog()">
-          <mat-icon>close</mat-icon>
-        </button>
-      </div>
-      
-      <div class="views-list">
-        @for (view of savedViews(); track view.id) {
-          <div class="view-item" [class.is-default]="view.isDefault">
-            <div class="view-info">
-              <div class="view-icon" [class.default]="view.isDefault">
-                <mat-icon>{{ view.isDefault ? 'star' : 'bookmark_border' }}</mat-icon>
-              </div>
-              <div class="view-details">
-                <span class="view-name">{{ view.name }}</span>
-                @if (view.isDefault) {
-                  <span class="view-badge">Default</span>
-                }
-              </div>
-            </div>
-            <div class="view-actions">
-              @if (!view.isDefault) {
-                <button mat-icon-button class="default-btn" (click)="setDefaultView(view.id)" matTooltip="Set as default">
-                  <mat-icon>star_outline</mat-icon>
-                </button>
-              }
-              <button mat-icon-button class="delete-btn" (click)="deleteView(view.id)" matTooltip="Delete view">
-                <mat-icon>delete_outline</mat-icon>
-              </button>
-            </div>
-          </div>
-        } @empty {
-          <div class="empty-views">
-            <mat-icon>bookmarks</mat-icon>
-            <p>No saved views yet</p>
-            <span>Save your current filters to quickly apply them later</span>
-          </div>
-        }
-      </div>
-
-      <div class="dialog-footer">
-        <button mat-stroked-button (click)="closeManageViewsDialog()">Done</button>
-      </div>
-    </div>
-  </div>
-}
+<app-manage-views-dialog
+  [isOpen]="showManageViewsDialog()"
+  [views]="savedViews()"
+  (setDefault)="setDefaultView($event)"
+  (deleteView)="deleteView($event)"
+  (close)="closeManageViewsDialog()" />

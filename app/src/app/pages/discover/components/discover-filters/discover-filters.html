@@ -1,0 +1,183 @@
+<div class="filters-panel">
+  <div class="filters-grid">
+    <!-- Distance -->
+    <div class="filter-group">
+      <label class="filter-label">Distance</label>
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-select [value]="filters().maxDistance" (selectionChange)="updateFilter('maxDistance', $event.value)">
+          @for (option of distanceOptions(); track option.value) {
+            <mat-option [value]="option.value">{{ option.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <!-- Verified Only -->
+    <div class="filter-group">
+      <label class="filter-label">Verification</label>
+      <mat-slide-toggle
+        [checked]="filters().verifiedOnly"
+        (change)="updateFilter('verifiedOnly', $event.checked)">
+        Verified profiles only
+      </mat-slide-toggle>
+    </div>
+
+    <!-- Activity -->
+    <div class="filter-group">
+      <label class="filter-label">Activity</label>
+      <div class="toggle-group">
+        <mat-slide-toggle
+          [checked]="filters().onlineNow"
+          (change)="updateFilter('onlineNow', $event.checked)">
+          Online now
+        </mat-slide-toggle>
+        <mat-slide-toggle
+          [checked]="filters().activeRecently"
+          (change)="updateFilter('activeRecently', $event.checked)">
+          Active in 24h
+        </mat-slide-toggle>
+      </div>
+    </div>
+
+    <!-- Looking For -->
+    <div class="filter-group wide">
+      <label class="filter-label">Looking For</label>
+      <div class="chip-select">
+        @for (option of connectionTypeOptions(); track option.value) {
+          <button 
+            type="button"
+            class="filter-chip"
+            [class.selected]="isFilterSelected('connectionTypes', option.value)"
+            (click)="toggleArrayFilter('connectionTypes', option.value)">
+            {{ option.label }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Values -->
+    <div class="filter-group wide">
+      <label class="filter-label">Values</label>
+      <div class="chip-select">
+        @for (option of valuesOptions(); track option.value) {
+          <button 
+            type="button"
+            class="filter-chip"
+            [class.selected]="isFilterSelected('values', option.value)"
+            (click)="toggleArrayFilter('values', option.value)">
+            {{ option.label }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Lifestyle -->
+    <div class="filter-group">
+      <label class="filter-label">Lifestyle</label>
+      <div class="chip-select">
+        @for (option of lifestyleOptions(); track option.value) {
+          <button 
+            type="button"
+            class="filter-chip"
+            [class.selected]="isFilterSelected('lifestyle', option.value)"
+            (click)="toggleArrayFilter('lifestyle', option.value)">
+            {{ option.label }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Show More Filters Toggle -->
+    <button type="button" class="show-more-btn" (click)="toggleAdvancedFilters()">
+      <mat-icon>{{ showAdvancedFilters() ? 'expand_less' : 'expand_more' }}</mat-icon>
+      {{ showAdvancedFilters() ? 'Less filters' : 'More filters' }}
+    </button>
+
+    <!-- Advanced Filters -->
+    @if (showAdvancedFilters()) {
+      <!-- Ethnicity -->
+      <div class="filter-group">
+        <label class="filter-label">Ethnicity</label>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-select multiple [value]="filters().ethnicity" (selectionChange)="updateFilter('ethnicity', $event.value)">
+            @for (option of ethnicityOptions(); track option) {
+              <mat-option [value]="option">{{ option }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <!-- Relationship Status -->
+      <div class="filter-group">
+        <label class="filter-label">Relationship Status</label>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-select multiple [value]="filters().relationshipStatus" (selectionChange)="updateFilter('relationshipStatus', $event.value)">
+            @for (option of relationshipStatusOptions(); track option) {
+              <mat-option [value]="option">{{ option }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <!-- Children -->
+      <div class="filter-group">
+        <label class="filter-label">Children</label>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-select multiple [value]="filters().children" (selectionChange)="updateFilter('children', $event.value)">
+            @for (option of childrenOptions(); track option) {
+              <mat-option [value]="option">{{ option }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <!-- Smoker -->
+      <div class="filter-group">
+        <label class="filter-label">Smoking</label>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-select multiple [value]="filters().smoker" (selectionChange)="updateFilter('smoker', $event.value)">
+            @for (option of smokerOptions(); track option) {
+              <mat-option [value]="option">{{ option }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <!-- Drinker -->
+      <div class="filter-group">
+        <label class="filter-label">Drinking</label>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-select multiple [value]="filters().drinker" (selectionChange)="updateFilter('drinker', $event.value)">
+            @for (option of drinkerOptions(); track option) {
+              <mat-option [value]="option">{{ option }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <!-- Education -->
+      <div class="filter-group">
+        <label class="filter-label">Education</label>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-select multiple [value]="filters().education" (selectionChange)="updateFilter('education', $event.value)">
+            @for (option of educationOptions(); track option) {
+              <mat-option [value]="option">{{ option }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+    }
+  </div>
+
+  <!-- Filter Actions -->
+  <div class="filter-actions">
+    <button mat-button (click)="onReset()">
+      <mat-icon>refresh</mat-icon>
+      Reset All
+    </button>
+    <button mat-flat-button color="primary" (click)="onApply()">
+      <mat-icon>search</mat-icon>
+      Apply Filters
+    </button>
+  </div>
+</div>

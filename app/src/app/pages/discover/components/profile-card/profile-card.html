@@ -1,0 +1,74 @@
+<article class="profile-card">
+  <div class="card-photo">
+    @if (photoUrl) {
+      <img [src]="photoUrl" [alt]="profile().displayName" class="profile-image">
+    } @else {
+      <div class="photo-placeholder">
+        <mat-icon>person</mat-icon>
+      </div>
+    }
+    @if (profile().verified) {
+      <span class="verified-badge" title="Verified profile">
+        <mat-icon>verified</mat-icon>
+      </span>
+    }
+    <!-- Activity Status Badge -->
+    @if (profile().isOnline) {
+      <span class="activity-badge online">
+        <span class="activity-dot"></span>
+        Online
+      </span>
+    } @else if (profile().showLastActive && profile().lastActiveAt) {
+      <span class="activity-badge">
+        <span class="activity-dot"></span>
+        {{ formatLastActive(profile().lastActiveAt) }}
+      </span>
+    }
+  </div>
+
+  <div class="card-content">
+    <div class="card-header">
+      <h3 class="card-name">{{ profile().displayName || 'Anonymous' }}, {{ profile().age }}</h3>
+      <span class="card-location">
+        <mat-icon>location_on</mat-icon>
+        {{ profile().city }}
+      </span>
+    </div>
+
+    <p class="card-tagline">{{ profile().idealRelationship.slice(0, 100) }}{{ profile().idealRelationship.length > 100 ? '...' : '' }}</p>
+
+    <div class="card-tags">
+      @for (type of profile().connectionTypes.slice(0, 2); track type) {
+        <span class="tag">{{ formatConnectionType(type) }}</span>
+      }
+    </div>
+
+    <div class="card-actions">
+      <button 
+        type="button" 
+        mat-icon-button
+        class="action-btn message"
+        (click)="onMessage()"
+        [matTooltip]="'Message ' + profile().displayName">
+        <mat-icon>chat_bubble_outline</mat-icon>
+      </button>
+      <button 
+        type="button" 
+        mat-icon-button
+        class="action-btn view"
+        (click)="onView()"
+        matTooltip="View profile">
+        <mat-icon>visibility</mat-icon>
+      </button>
+      <button 
+        type="button" 
+        mat-icon-button
+        class="action-btn favorite"
+        [class.favorited]="isFavorited()"
+        (click)="onFavorite()"
+        [matTooltip]="isFavorited() ? 'Remove from favorites' : 'Add to favorites'">
+        <mat-icon>{{ isFavorited() ? 'favorite' : 'favorite_border' }}</mat-icon>
+      </button>
+    </div>
+  </div>
+</article>

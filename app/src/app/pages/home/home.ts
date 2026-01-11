@@ -20,6 +20,15 @@ export class HomeComponent {
   protected readonly user = this.authService.user;
   protected readonly authModalOpen = signal(false);
   protected readonly authModalMode = signal<'login' | 'signup'>('login');
+  protected readonly mobileMenuOpen = signal(false);
+
+  protected toggleMobileMenu(): void {
+    this.mobileMenuOpen.update(v => !v);
+  }
+
+  protected closeMobileMenu(): void {
+    this.mobileMenuOpen.set(false);
+  }
 
   protected openAuthModal(mode: 'login' | 'signup'): void {
     this.authModalMode.set(mode);

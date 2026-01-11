@@ -1,0 +1,24 @@
+@if (isOpen()) {
+  <div class="dialog-overlay" (click)="onOverlayClick()">
+    <div class="dialog" (click)="stopPropagation($event)">
+      <h3>Save Current View</h3>
+      <p>Give your filter settings a name so you can quickly apply them later.</p>
+      
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>View name</mat-label>
+        <input matInput [(ngModel)]="viewName" placeholder="e.g., Local Women">
+      </mat-form-field>
+
+      <mat-slide-toggle [(ngModel)]="isDefault">
+        Set as default view
+      </mat-slide-toggle>
+
+      <div class="dialog-actions">
+        <button mat-button (click)="onClose()">Cancel</button>
+        <button mat-flat-button color="primary" (click)="onSave()" [disabled]="!viewName.trim()">
+          Save View
+        </button>
+      </div>
+    </div>
+  </div>
+}
