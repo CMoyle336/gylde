@@ -115,6 +115,33 @@ html {
   ));
 }
 
+// Slide toggle overrides
+html {
+  @include mat.slide-toggle-overrides((
+    // Selected (on) state
+    selected-handle-color: #c9a962,
+    selected-track-color: rgba(201, 169, 98, 0.5),
+    selected-icon-color: #0d0b0e,
+    selected-hover-handle-color: #e8d5a3,
+    selected-hover-track-color: rgba(201, 169, 98, 0.6),
+    selected-focus-handle-color: #e8d5a3,
+    selected-focus-track-color: rgba(201, 169, 98, 0.6),
+    selected-pressed-handle-color: #c9a962,
+    selected-pressed-track-color: rgba(201, 169, 98, 0.5),
+    
+    // Unselected (off) state
+    unselected-handle-color: #6b6777,
+    unselected-track-color: rgba(107, 103, 119, 0.3),
+    unselected-icon-color: #0d0b0e,
+    unselected-hover-handle-color: #a8a4b0,
+    unselected-hover-track-color: rgba(107, 103, 119, 0.4),
+    unselected-focus-handle-color: #a8a4b0,
+    unselected-focus-track-color: rgba(107, 103, 119, 0.4),
+    unselected-pressed-handle-color: #6b6777,
+    unselected-pressed-track-color: rgba(107, 103, 119, 0.3),
+  ));
+}
+
 body {
   // Use dark surface colors
   background-color: #0d0b0e;

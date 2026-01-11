@@ -10,6 +10,13 @@ export interface SeedUser {
   photoURL: string | null;
   onboardingCompleted: boolean;
   lastActiveAt?: Date; // When user was last active
+  settings?: {
+    privacy?: {
+      showOnlineStatus?: boolean;
+      showLastActive?: boolean;
+      profileVisible?: boolean;
+    };
+  };
   onboarding: {
     birthDate: string;
     city: string;
@@ -51,6 +58,13 @@ export const sampleUsers: SeedUser[] = [
     displayName: 'Emma Wilson',
     photoURL: samplePhotos[0],
     onboardingCompleted: true,
+    // Testing privacy settings - this user hides their activity status
+    settings: {
+      privacy: {
+        showOnlineStatus: false,
+        showLastActive: false,
+      },
+    },
     onboarding: {
       birthDate: '1995-03-15',
       city: 'Ann Arbor',

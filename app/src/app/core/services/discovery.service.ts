@@ -1,241 +1,443 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
-import { FirestoreService } from './firestore.service';
+import { Functions, httpsCallable } from '@angular/fire/functions';
 import { UserProfileService } from './user-profile.service';
 import { AuthService } from './auth.service';
-import { DiscoverableProfile, DiscoveryFilters, UserProfile, GeoLocation } from '../interfaces';
+import {
+  DiscoverableProfile,
+  DiscoveryFilters,
+  DiscoverySort,
+  SavedView,
+  SearchRequest,
+  SearchResponse,
+  GeoLocation,
+} from '../interfaces';
 
 const DEFAULT_FILTERS: DiscoveryFilters = {
-  maxDistance: 50, // Default 50 miles
-  verifiedOnly: false,
-  genderFilter: [],
   minAge: 18,
   maxAge: 99,
+  genderIdentity: [],
+  maxDistance: null,
+  verifiedOnly: false,
+  connectionTypes: [],
+  supportOrientation: [],
+  lifestyle: [],
+  values: [],
+  ethnicity: [],
+  relationshipStatus: [],
+  children: [],
+  smoker: [],
+  drinker: [],
+  education: [],
+  onlineNow: false,
+  activeRecently: false,
+};
+
+const DEFAULT_SORT: DiscoverySort = {
+  field: 'lastActive',
+  direction: 'desc',
 };
 
 @Injectable({
   providedIn: 'root',
 })
 export class DiscoveryService {
-  private readonly firestoreService = inject(FirestoreService);
+  private readonly functions = inject(Functions);
   private readonly userProfileService = inject(UserProfileService);
   private readonly authService = inject(AuthService);
 
+  // State signals
   private readonly _profiles = signal<DiscoverableProfile[]>([]);
   private readonly _loading = signal(false);
   private readonly _filters = signal<DiscoveryFilters>({ ...DEFAULT_FILTERS });
+  private readonly _sort = signal<DiscoverySort>({ ...DEFAULT_SORT });
+  private readonly _savedViews = signal<SavedView[]>([]);
+  private readonly _activeView = signal<SavedView | null>(null);
+  private readonly _nextCursor = signal<string | undefined>(undefined);
+  private readonly _totalEstimate = signal<number | undefined>(undefined);
+  private readonly _hasMore = signal(true);
 
+  // Public readonly signals
   readonly profiles = this._profiles.asReadonly();
   readonly loading = this._loading.asReadonly();
   readonly filters = this._filters.asReadonly();
+  readonly sort = this._sort.asReadonly();
+  readonly savedViews = this._savedViews.asReadonly();
+  readonly activeView = this._activeView.asReadonly();
+  readonly hasMore = this._hasMore.asReadonly();
+  readonly totalEstimate = this._totalEstimate.asReadonly();
 
-  // Filtered and sorted profiles
-  readonly filteredProfiles = computed(() => {
-    const profiles = this._profiles();
+  // Computed: check if any filters are active (excludes profile-based filters)
+  readonly hasActiveFilters = computed(() => {
     const filters = this._filters();
-    const currentUserProfile = this.userProfileService.profile();
-    const currentLocation = currentUserProfile?.onboarding?.location;
 
-    let filtered = profiles;
-
-    // Filter by verified
-    if (filters.verifiedOnly) {
-      filtered = filtered.filter(p => p.verified);
-    }
-
-    // Filter by gender
-    if (filters.genderFilter.length > 0) {
-      filtered = filtered.filter(p => filters.genderFilter.includes(p.genderIdentity));
-    }
-
-    // Filter by age
-    filtered = filtered.filter(p => p.age >= filters.minAge && p.age <= filters.maxAge);
-
-    // Filter by distance (only if we have location data)
-    if (filters.maxDistance !== null && currentLocation) {
-      filtered = filtered.filter(p => {
-        if (!p.distance) return true; // Include profiles without location
-        return p.distance <= filters.maxDistance!;
-      });
-    }
-
-    // Sort by recent activity first, then by distance
-    return filtered.sort((a, b) => {
-      // Primary sort: last active (most recent first)
-      if (a.lastActiveAt && b.lastActiveAt) {
-        const timeDiff = b.lastActiveAt.getTime() - a.lastActiveAt.getTime();
-        if (timeDiff !== 0) return timeDiff;
-      } else if (a.lastActiveAt) {
-        return -1; // Active users come first
-      } else if (b.lastActiveAt) {
-        return 1;
-      }
-
-      // Secondary sort: distance (if both have distance data)
-      if (a.distance !== undefined && b.distance !== undefined) {
-        return a.distance - b.distance;
-      }
-      if (a.distance !== undefined) return -1;
-      if (b.distance !== undefined) return 1;
-      return 0;
-    });
+    // Note: minAge, maxAge, and genderIdentity are derived from profile, not counted
+    return (
+      filters.maxDistance !== null ||
+      filters.verifiedOnly ||
+      filters.connectionTypes.length > 0 ||
+      filters.supportOrientation.length > 0 ||
+      filters.lifestyle.length > 0 ||
+      filters.values.length > 0 ||
+      filters.ethnicity.length > 0 ||
+      filters.relationshipStatus.length > 0 ||
+      filters.children.length > 0 ||
+      filters.smoker.length > 0 ||
+      filters.drinker.length > 0 ||
+      filters.education.length > 0 ||
+      filters.onlineNow ||
+      filters.activeRecently
+    );
   });
 
-  async loadProfiles(): Promise<void> {
+  // Computed: active filter count (excludes profile-based filters like age/gender)
+  readonly activeFilterCount = computed(() => {
+    const filters = this._filters();
+    let count = 0;
+
+    // Note: minAge, maxAge, and genderIdentity are derived from profile, not counted
+    if (filters.maxDistance !== null) count++;
+    if (filters.verifiedOnly) count++;
+    if (filters.connectionTypes.length > 0) count++;
+    if (filters.supportOrientation.length > 0) count++;
+    if (filters.lifestyle.length > 0) count++;
+    if (filters.values.length > 0) count++;
+    if (filters.ethnicity.length > 0) count++;
+    if (filters.relationshipStatus.length > 0) count++;
+    if (filters.children.length > 0) count++;
+    if (filters.smoker.length > 0) count++;
+    if (filters.drinker.length > 0) count++;
+    if (filters.education.length > 0) count++;
+    if (filters.onlineNow) count++;
+    if (filters.activeRecently) count++;
+
+    return count;
+  });
+
+  /**
+   * Search profiles using the Cloud Function
+   */
+  async searchProfiles(loadMore = false): Promise<void> {
     const currentUser = this.authService.user();
     if (!currentUser) return;
 
-    this._loading.set(true);
+    // Only show loading state if we don't have cached results
+    // This prevents the flash when returning to the discover page
+    const hasExistingProfiles = this._profiles().length > 0;
+    
+    if (!loadMore) {
+      if (!hasExistingProfiles) {
+        this._loading.set(true);
+      }
+      this._nextCursor.set(undefined);
+    }
 
     try {
-      // Load current user's profile to get their preferences and location
-      let currentProfile = this.userProfileService.profile();
-      if (!currentProfile) {
-        currentProfile = await this.userProfileService.loadUserProfile(currentUser.uid);
-      }
+      // Get current user's profile for location and preferences
+      const currentProfile = this.userProfileService.profile();
+      const location = currentProfile?.onboarding?.location;
 
-      const currentLocation = currentProfile?.onboarding?.location;
-      const interestedIn = currentProfile?.onboarding?.interestedIn || [];
+      // Get user's dating preferences from their profile
+      const userAgeRangeMin = currentProfile?.onboarding?.ageRangeMin ?? 18;
+      const userAgeRangeMax = currentProfile?.onboarding?.ageRangeMax ?? 99;
+      const userInterestedIn = currentProfile?.onboarding?.interestedIn ?? [];
 
-      // Fetch all completed profiles
-      const allProfiles = await this.firestoreService.getCollection<UserProfile>(
-        'users',
-        [this.firestoreService.whereEqual('onboardingCompleted', true)]
+      // Map "interested in" preferences to gender identity values
+      // User profile stores: 'men', 'women', 'nonbinary'
+      // Profile genderIdentity stores: 'man', 'woman', 'nonbinary'
+      const genderFilter = userInterestedIn.map((interest: string) => {
+        if (interest === 'men') return 'man';
+        if (interest === 'women') return 'woman';
+        return interest;
+      });
+
+      // Build search request with profile-based filters merged in
+      const userFilters = this._filters();
+      const request: SearchRequest = {
+        filters: {
+          ...userFilters,
+          minAge: userAgeRangeMin,
+          maxAge: userAgeRangeMax,
+          genderIdentity: genderFilter,
+        },
+        sort: this._sort(),
+        pagination: {
+          limit: 20,
+          cursor: loadMore ? this._nextCursor() : undefined,
+        },
+        location,
+      };
+
+      // Call Cloud Function
+      const searchFn = httpsCallable<SearchRequest, SearchResponse>(
+        this.functions,
+        'searchProfiles'
       );
 
-      // Filter out current user and map to discoverable profiles
-      const discoverableProfiles: DiscoverableProfile[] = allProfiles
-        .filter(p => p.uid !== currentUser.uid)
-        .filter(p => p.onboarding) // Must have onboarding data
-        .filter(p => {
-          // Filter by user's interested in preferences
-          if (interestedIn.length === 0) return true;
-          const profileGender = p.onboarding!.genderIdentity;
-          return interestedIn.some(interest => {
-            if (interest === 'men' && profileGender === 'man') return true;
-            if (interest === 'women' && profileGender === 'woman') return true;
-            if (interest === 'nonbinary' && profileGender === 'nonbinary') return true;
-            return false;
-          });
-        })
-        .map(p => this.mapToDiscoverableProfile(p, currentLocation));
+      const result = await searchFn(request);
+      const response = result.data;
 
-      this._profiles.set(discoverableProfiles);
+      // Map response to DiscoverableProfile format
+      const newProfiles: DiscoverableProfile[] = response.profiles.map(p => ({
+        ...p,
+        lastActiveAt: p.lastActiveAt ? new Date(p.lastActiveAt) : undefined,
+      }));
+
+      if (loadMore) {
+        this._profiles.update(current => [...current, ...newProfiles]);
+      } else {
+        this._profiles.set(newProfiles);
+      }
+
+      this._nextCursor.set(response.nextCursor);
+      this._totalEstimate.set(response.totalEstimate);
+      this._hasMore.set(!!response.nextCursor);
     } catch (error) {
-      console.error('Failed to load profiles:', error);
-      this._profiles.set([]);
+      console.error('Failed to search profiles:', error);
+      // Only clear profiles on error if this was a fresh search with no existing data
+      if (!loadMore && !hasExistingProfiles) {
+        this._profiles.set([]);
+      }
     } finally {
       this._loading.set(false);
     }
   }
 
+  /**
+   * Load more profiles (pagination)
+   */
+  async loadMore(): Promise<void> {
+    if (this._loading() || !this._hasMore()) return;
+    await this.searchProfiles(true);
+  }
+
+  /**
+   * Update filters and re-search
+   */
   updateFilters(updates: Partial<DiscoveryFilters>): void {
     this._filters.update(current => ({ ...current, ...updates }));
+    this._activeView.set(null); // Clear active view when filters change
   }
 
+  /**
+   * Update sort and re-search
+   */
+  updateSort(sort: DiscoverySort): void {
+    this._sort.set(sort);
+    this._activeView.set(null);
+  }
+
+  /**
+   * Reset filters to defaults
+   */
   resetFilters(): void {
     this._filters.set({ ...DEFAULT_FILTERS });
+    this._activeView.set(null);
   }
 
-  setMaxDistance(distance: number | null): void {
-    this._filters.update(f => ({ ...f, maxDistance: distance }));
+  /**
+   * Reset sort to default
+   */
+  resetSort(): void {
+    this._sort.set({ ...DEFAULT_SORT });
   }
 
-  private mapToDiscoverableProfile(
-    profile: UserProfile,
-    currentLocation?: GeoLocation
-  ): DiscoverableProfile {
-    const onboarding = profile.onboarding!;
-    
-    // Calculate age from birthDate
-    const age = this.calculateAge(onboarding.birthDate);
+  /**
+   * Apply a saved view
+   */
+  applyView(view: SavedView): void {
+    this._filters.set({
+      ...DEFAULT_FILTERS,
+      ...view.filters,
+    });
+    this._sort.set(view.sort);
+    this._activeView.set(view);
+  }
 
-    // Calculate distance if both locations are available
-    let distance: number | undefined;
-    if (currentLocation && onboarding.location) {
-      distance = this.calculateDistance(
-        currentLocation.latitude,
-        currentLocation.longitude,
-        onboarding.location.latitude,
-        onboarding.location.longitude
+  /**
+   * Save current filters/sort as a view
+   */
+  async saveView(name: string, isDefault = false): Promise<string | null> {
+    const currentUser = this.authService.user();
+    if (!currentUser) return null;
+
+    try {
+      const saveFn = httpsCallable<
+        { name: string; filters: DiscoveryFilters; sort: DiscoverySort; isDefault: boolean },
+        { id: string }
+      >(this.functions, 'saveSearchView');
+
+      const result = await saveFn({
+        name,
+        filters: this._filters(),
+        sort: this._sort(),
+        isDefault,
+      });
+
+      // Reload saved views
+      await this.loadSavedViews();
+
+      return result.data.id;
+    } catch (error) {
+      console.error('Failed to save view:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Load user's saved views
+   */
+  async loadSavedViews(): Promise<void> {
+    const currentUser = this.authService.user();
+    if (!currentUser) return;
+
+    try {
+      const getFn = httpsCallable<void, SavedView[]>(
+        this.functions,
+        'getSavedViews'
       );
-    }
 
-    // Parse lastActiveAt if available
-    let lastActiveAt: Date | undefined;
-    if (profile.lastActiveAt) {
-      // Handle Firestore Timestamp or Date
-      if (typeof (profile.lastActiveAt as { toDate?: () => Date }).toDate === 'function') {
-        lastActiveAt = (profile.lastActiveAt as { toDate: () => Date }).toDate();
-      } else if (profile.lastActiveAt instanceof Date) {
-        lastActiveAt = profile.lastActiveAt;
-      } else if (typeof profile.lastActiveAt === 'string') {
-        lastActiveAt = new Date(profile.lastActiveAt);
+      const result = await getFn();
+      this._savedViews.set(result.data);
+
+      // Apply default view if exists and no active view
+      const defaultView = result.data.find(v => v.isDefault);
+      if (defaultView && !this._activeView()) {
+        this.applyView(defaultView);
       }
+    } catch (error) {
+      console.error('Failed to load saved views:', error);
     }
-
-    return {
-      uid: profile.uid,
-      displayName: profile.displayName,
-      age,
-      city: onboarding.city,
-      country: onboarding.country,
-      location: onboarding.location,
-      distance,
-      lastActiveAt,
-      genderIdentity: onboarding.genderIdentity,
-      lifestyle: onboarding.lifestyle,
-      connectionTypes: onboarding.connectionTypes,
-      idealRelationship: onboarding.idealRelationship,
-      photos: onboarding.photos,
-      verified: onboarding.verificationOptions?.includes('identity') || false,
-      values: onboarding.values,
-      supportOrientation: onboarding.supportOrientation,
-    };
   }
 
   /**
-   * Calculate distance between two coordinates using the Haversine formula
-   * Returns distance in miles
+   * Delete a saved view
    */
-  private calculateDistance(
-    lat1: number,
-    lon1: number,
-    lat2: number,
-    lon2: number
-  ): number {
-    const R = 3959; // Earth's radius in miles
-    const dLat = this.toRad(lat2 - lat1);
-    const dLon = this.toRad(lon2 - lon1);
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(this.toRad(lat1)) *
-        Math.cos(this.toRad(lat2)) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return Math.round(R * c);
-  }
+  async deleteView(viewId: string): Promise<void> {
+    const currentUser = this.authService.user();
+    if (!currentUser) return;
 
-  private toRad(deg: number): number {
-    return deg * (Math.PI / 180);
+    try {
+      const deleteFn = httpsCallable<{ viewId: string }, void>(
+        this.functions,
+        'deleteSearchView'
+      );
+
+      await deleteFn({ viewId });
+
+      // Update local state
+      this._savedViews.update(views => views.filter(v => v.id !== viewId));
+
+      // Clear active view if it was deleted
+      if (this._activeView()?.id === viewId) {
+        this._activeView.set(null);
+      }
+    } catch (error) {
+      console.error('Failed to delete view:', error);
+    }
   }
 
   /**
-   * Calculate age from a birth date string (ISO format)
+   * Set a view as the default
    */
-  private calculateAge(birthDate: string | undefined): number {
-    if (!birthDate) return 0;
-    
-    const birth = new Date(birthDate);
-    const today = new Date();
-    let age = today.getFullYear() - birth.getFullYear();
-    const monthDiff = today.getMonth() - birth.getMonth();
-    
-    // Adjust age if birthday hasn't occurred yet this year
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-      age--;
+  async setDefaultView(viewId: string): Promise<void> {
+    const currentUser = this.authService.user();
+    if (!currentUser) return;
+
+    try {
+      const setDefaultFn = httpsCallable<{ viewId: string }, void>(
+        this.functions,
+        'setDefaultView'
+      );
+
+      await setDefaultFn({ viewId });
+
+      // Update local state
+      this._savedViews.update(views =>
+        views.map(v => ({
+          ...v,
+          isDefault: v.id === viewId,
+        }))
+      );
+    } catch (error) {
+      console.error('Failed to set default view:', error);
     }
-    
-    return age;
   }
+
+  // ==================
+  // Filter option lists
+  // ==================
+
+  readonly genderOptions = [
+    { value: 'man', label: 'Men' },
+    { value: 'woman', label: 'Women' },
+    { value: 'nonbinary', label: 'Non-binary' },
+  ];
+
+  readonly connectionTypeOptions = [
+    { value: 'intentional-dating', label: 'Intentional Dating' },
+    { value: 'long-term', label: 'Long-term Relationship' },
+    { value: 'mentorship', label: 'Mentorship' },
+    { value: 'lifestyle-aligned', label: 'Lifestyle Aligned' },
+    { value: 'exploring', label: 'Exploring' },
+  ];
+
+  readonly lifestyleOptions = [
+    { value: 'very-flexible', label: 'Very Flexible' },
+    { value: 'somewhat-flexible', label: 'Somewhat Flexible' },
+    { value: 'structured', label: 'Structured' },
+    { value: 'highly-demanding', label: 'Highly Demanding' },
+  ];
+
+  readonly valuesOptions = [
+    { value: 'ambition', label: 'Ambition' },
+    { value: 'generosity', label: 'Generosity' },
+    { value: 'independence', label: 'Independence' },
+    { value: 'emotional-maturity', label: 'Emotional Maturity' },
+    { value: 'growth', label: 'Growth & Learning' },
+    { value: 'stability', label: 'Stability' },
+    { value: 'adventure', label: 'Adventure' },
+  ];
+
+  readonly ethnicityOptions = [
+    'Asian', 'Black/African', 'Hispanic/Latino', 'Middle Eastern',
+    'Native American', 'Pacific Islander', 'White/Caucasian', 'Mixed', 'Other',
+  ];
+
+  readonly relationshipStatusOptions = [
+    'Single', 'Divorced', 'Separated', 'Widowed', 'In a relationship', 'Married',
+  ];
+
+  readonly childrenOptions = [
+    'No children', 'Have children', 'Want children', "Don't want children", 'Open to children',
+  ];
+
+  readonly smokerOptions = [
+    'Never', 'Occasionally', 'Socially', 'Regularly', 'Trying to quit',
+  ];
+
+  readonly drinkerOptions = [
+    'Never', 'Occasionally', 'Socially', 'Regularly',
+  ];
+
+  readonly educationOptions = [
+    'High school', 'Some college', 'Associate degree', "Bachelor's degree",
+    "Master's degree", 'Doctorate', 'Trade school',
+  ];
+
+  readonly distanceOptions = [
+    { value: 10, label: 'Within 10 mi' },
+    { value: 25, label: 'Within 25 mi' },
+    { value: 50, label: 'Within 50 mi' },
+    { value: 100, label: 'Within 100 mi' },
+    { value: 250, label: 'Within 250 mi' },
+    { value: null, label: 'Any distance' },
+  ];
+
+  readonly sortOptions: { value: DiscoverySort; label: string }[] = [
+    { value: { field: 'lastActive', direction: 'desc' }, label: 'Recently Active' },
+    { value: { field: 'distance', direction: 'asc' }, label: 'Nearest' },
+    { value: { field: 'newest', direction: 'desc' }, label: 'Newest Profiles' },
+    { value: { field: 'age', direction: 'asc' }, label: 'Age (Youngest)' },
+    { value: { field: 'age', direction: 'desc' }, label: 'Age (Oldest)' },
+  ];
 }

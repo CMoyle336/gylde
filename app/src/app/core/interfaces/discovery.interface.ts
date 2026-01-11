@@ -15,7 +15,10 @@ export interface DiscoverableProfile {
   country: string;
   location?: GeoLocation;
   distance?: number; // in miles
-  lastActiveAt?: Date; // Last activity timestamp for sorting
+  lastActiveAt?: Date; // Last activity timestamp (only if user allows)
+  isOnline?: boolean; // True if active in last 15 minutes (only if showOnlineStatus is true)
+  showOnlineStatus: boolean; // Whether user allows their online status to be shown
+  showLastActive: boolean; // Whether user allows their last active timestamp to be shown
   genderIdentity: string;
   lifestyle: string;
   connectionTypes: string[];
@@ -24,15 +27,99 @@ export interface DiscoverableProfile {
   verified: boolean;
   values: string[];
   supportOrientation: string[];
+  // Secondary profile fields
+  ethnicity?: string;
+  relationshipStatus?: string;
+  children?: string;
+  smoker?: string;
+  drinker?: string;
+  education?: string;
+  occupation?: string;
 }
 
 /**
- * Filters for discovery search
+ * Enhanced filters for discovery search
  */
 export interface DiscoveryFilters {
-  maxDistance: number | null; // in miles, null = no limit
+  // Basic filters
+  minAge: number;
+  maxAge: number;
+  genderIdentity: string[];
+  maxDistance: number | null;
   verifiedOnly: boolean;
-  genderFilter: string[]; // empty = all
+
+  // Connection preferences
+  connectionTypes: string[];
+  supportOrientation: string[];
+
+  // Lifestyle & Values
+  lifestyle: string[];
+  values: string[];
+
+  // Secondary profile fields
+  ethnicity: string[];
+  relationshipStatus: string[];
+  children: string[];
+  smoker: string[];
+  drinker: string[];
+  education: string[];
+
+  // Activity filters
+  onlineNow: boolean;
+  activeRecently: boolean;
+}
+
+/**
+ * Sorting options for discovery
+ */
+export interface DiscoverySort {
+  field: 'distance' | 'lastActive' | 'newest' | 'age';
+  direction: 'asc' | 'desc';
+}
+
+/**
+ * Saved search view
+ */
+export interface SavedView {
+  id: string;
+  name: string;
+  filters: Partial<DiscoveryFilters>;
+  sort: DiscoverySort;
+  isDefault: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+/**
+ * Search request parameters
+ */
+export interface SearchRequest {
+  filters?: Partial<DiscoveryFilters>;
+  sort?: DiscoverySort;
+  pagination?: {
+    limit?: number;
+    cursor?: string;
+  };
+  location?: GeoLocation;
+}
+
+/**
+ * Search response from server
+ */
+export interface SearchResponse {
+  profiles: DiscoverableProfile[];
+  nextCursor?: string;
+  totalEstimate?: number;
+}
+
+/**
+ * Legacy filter type for backwards compatibility
+ * @deprecated Use DiscoveryFilters instead
+ */
+export type LegacyDiscoveryFilters = {
+  maxDistance: number | null;
+  verifiedOnly: boolean;
+  genderFilter: string[];
   minAge: number;
   maxAge: number;
 }

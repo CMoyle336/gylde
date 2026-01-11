@@ -95,6 +95,50 @@ async function seedAuthUsers(auth: ReturnType<typeof getAuth>) {
   console.log(`\n✅ Auth users ready`);
 }
 
+/**
+ * Generate a geohash for a lat/lng coordinate
+ */
+function encodeGeohash(latitude: number, longitude: number, precision: number = 9): string {
+  const base32 = "0123456789bcdefghjkmnpqrstuvwxyz";
+  let latRange = { min: -90, max: 90 };
+  let lngRange = { min: -180, max: 180 };
+  let hash = "";
+  let isLng = true;
+  let bit = 0;
+  let ch = 0;
+
+  while (hash.length < precision) {
+    if (isLng) {
+      const mid = (lngRange.min + lngRange.max) / 2;
+      if (longitude >= mid) {
+        ch |= 1 << (4 - bit);
+        lngRange.min = mid;
+      } else {
+        lngRange.max = mid;
+      }
+    } else {
+      const mid = (latRange.min + latRange.max) / 2;
+      if (latitude >= mid) {
+        ch |= 1 << (4 - bit);
+        latRange.min = mid;
+      } else {
+        latRange.max = mid;
+      }
+    }
+
+    isLng = !isLng;
+    bit++;
+
+    if (bit === 5) {
+      hash += base32[ch];
+      bit = 0;
+      ch = 0;
+    }
+  }
+
+  return hash;
+}
+
 async function seedFirestoreUsers(db: FirebaseFirestore.Firestore) {
   const batch = db.batch();
   
@@ -106,6 +150,26 @@ async function seedFirestoreUsers(db: FirebaseFirestore.Firestore) {
     const sevenDaysAgo = now - (7 * 24 * 60 * 60 * 1000);
     const randomLastActive = new Date(sevenDaysAgo + Math.random() * (now - sevenDaysAgo));
     
+    // Check if this user has privacy settings that hide activity
+    const settings = (user as any).settings;
+    const showOnlineStatus = settings?.privacy?.showOnlineStatus !== false;
+    const showLastActive = settings?.privacy?.showLastActive !== false;
+    const canShowActivity = showOnlineStatus || showLastActive;
+    const profileVisible = settings?.privacy?.profileVisible !== false;
+    const isDisabled = settings?.account?.disabled === true;
+    const isScheduledForDeletion = settings?.account?.scheduledForDeletion === true;
+    
+    // Denormalized fields for efficient Firestore queries
+    const isSearchable = profileVisible && !isDisabled && !isScheduledForDeletion && user.onboardingCompleted;
+    const isVerified = user.onboarding.verificationOptions?.includes('identity') || false;
+    const sortableLastActive = canShowActivity ? randomLastActive : null;
+    
+    // Geohash for location-based queries
+    const location = user.onboarding.location;
+    const geohash = location?.latitude && location?.longitude
+      ? encodeGeohash(location.latitude, location.longitude, 9)
+      : null;
+    
     batch.set(userRef, {
       uid: user.uid,
       email: user.email,
@@ -114,12 +178,21 @@ async function seedFirestoreUsers(db: FirebaseFirestore.Firestore) {
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
       lastActiveAt: randomLastActive,
+      // Denormalized fields for efficient queries
+      sortableLastActive,
+      isSearchable,
+      isVerified,
+      geohash,
       onboardingCompleted: user.onboardingCompleted,
       onboarding: user.onboarding,
+      // Include settings if present
+      ...(settings && { settings }),
     });
     
     const activeAgo = getTimeAgo(randomLastActive);
-    console.log(`  ✓ ${user.displayName} (${user.onboarding.city}) - active ${activeAgo}`);
+    const privacyInfo = canShowActivity ? '' : ' (hidden)';
+    const verifiedInfo = isVerified ? ' ✓verified' : '';
+    console.log(`  ✓ ${user.displayName} (${user.onboarding.city}) - active ${activeAgo}${privacyInfo}${verifiedInfo}`);
   }
   
   await batch.commit();

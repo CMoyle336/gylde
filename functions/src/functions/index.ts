@@ -4,7 +4,8 @@
  */
 export * from "./favorites";
 export * from "./messages";
+export * from "./discovery";
+export * from "./users";
 
 // Future function modules:
 // export * from "./matches";
-// export * from "./users";

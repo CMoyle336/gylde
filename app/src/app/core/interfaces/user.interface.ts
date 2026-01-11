@@ -15,6 +15,14 @@ export interface UserProfile {
   createdAt: unknown;
   updatedAt: unknown;
   lastActiveAt?: unknown; // Timestamp of last user activity
+  
+  // Denormalized fields for efficient Firestore queries
+  // These are maintained by Cloud Function triggers
+  sortableLastActive?: unknown | null; // null if user hides activity, otherwise same as lastActiveAt
+  isSearchable?: boolean; // true if profile is visible and account is active
+  isVerified?: boolean; // true if identity verification completed
+  geohash?: string | null; // encoded location for distance-based queries
+  
   onboardingCompleted: boolean;
 
   // Onboarding data (populated after onboarding)
