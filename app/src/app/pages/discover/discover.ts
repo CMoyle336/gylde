@@ -199,6 +199,7 @@ export class DiscoverComponent implements OnInit {
         lastMessage: null,
         lastMessageTime: null,
         unreadCount: 0,
+        isArchived: false,
       });
       
       this.router.navigate(['/messages', conversationId]);

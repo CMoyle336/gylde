@@ -27,7 +27,7 @@ export interface Message {
  */
 export interface Conversation {
   id: string;
-  participants: string[]; // Array of user UIDs
+  participants: string[]; // Array of user UIDs (always 2 for 1:1)
   participantInfo: {
     [uid: string]: {
       displayName: string | null;
@@ -47,6 +47,7 @@ export interface Conversation {
   typing?: {
     [uid: string]: boolean;
   };
+  archivedBy?: string[]; // User IDs who have archived this conversation
 }
 
 /**
@@ -62,7 +63,7 @@ export interface ConversationDisplay {
   lastMessage: string | null;
   lastMessageTime: Date | null;
   unreadCount: number;
-  isOnline?: boolean;
+  isArchived: boolean;
 }
 
 /**
@@ -77,6 +78,10 @@ export interface MessageDisplay {
   type: 'text' | 'image' | 'system';
   imageUrls?: string[]; // For image messages
   isDeletedForAll?: boolean; // Show "message was deleted" placeholder
+  // Sender info for displaying avatar/name in chat
+  senderId: string;
+  senderName: string | null;
+  senderPhoto: string | null;
   // Temporary/timed image fields
   imageTimer?: number; // Duration in seconds
   imageViewedAt?: Date | null; // When current user first viewed (null if not yet)

@@ -16,6 +16,7 @@ import {
   writeBatch,
   arrayUnion,
   deleteField,
+  getDoc,
 } from '@angular/fire/firestore';
 import { AuthService } from './auth.service';
 import { StorageService } from './storage.service';
@@ -25,6 +26,9 @@ import {
   ConversationDisplay,
   MessageDisplay,
 } from '../interfaces';
+import { UserProfile } from '../interfaces/user.interface';
+
+export type ConversationFilter = 'all' | 'unread' | 'archived';
 
 @Injectable({
   providedIn: 'root',
@@ -40,10 +44,13 @@ export class MessageService {
   private readonly _loading = signal(false);
   private readonly _sending = signal(false);
   private readonly _isOtherUserTyping = signal(false);
+  private readonly _conversationFilter = signal<ConversationFilter>('all');
+  private readonly _otherUserStatus = signal<{ isOnline: boolean; lastActiveAt: Date | null } | null>(null);
 
   private conversationsUnsubscribe: Unsubscribe | null = null;
   private messagesUnsubscribe: Unsubscribe | null = null;
   private typingUnsubscribe: Unsubscribe | null = null;
+  private userStatusUnsubscribe: Unsubscribe | null = null;
   private typingTimeout: ReturnType<typeof setTimeout> | null = null;
   private lastTypingUpdate = 0;
 
@@ -53,10 +60,39 @@ export class MessageService {
   readonly loading = this._loading.asReadonly();
   readonly sending = this._sending.asReadonly();
   readonly isOtherUserTyping = this._isOtherUserTyping.asReadonly();
+  readonly conversationFilter = this._conversationFilter.asReadonly();
+  readonly otherUserStatus = this._otherUserStatus.asReadonly();
+
+  // Filtered conversations based on current filter
+  readonly filteredConversations = computed(() => {
+    const convos = this._conversations();
+    const filter = this._conversationFilter();
+    
+    switch (filter) {
+      case 'unread':
+        return convos.filter(c => c.unreadCount > 0 && !c.isArchived);
+      case 'archived':
+        return convos.filter(c => c.isArchived);
+      default: // 'all'
+        return convos.filter(c => !c.isArchived);
+    }
+  });
+
+  // Count of archived conversations for badge
+  readonly archivedCount = computed(() => {
+    return this._conversations().filter(c => c.isArchived).length;
+  });
 
   readonly totalUnreadCount = computed(() => {
     return this._conversations().reduce((sum, conv) => sum + conv.unreadCount, 0);
   });
+
+  /**
+   * Set the conversation filter
+   */
+  setConversationFilter(filter: ConversationFilter): void {
+    this._conversationFilter.set(filter);
+  }
 
   /**
    * Subscribe to real-time conversation updates for the current user
@@ -77,8 +113,9 @@ export class MessageService {
     this.conversationsUnsubscribe = onSnapshot(
       q,
       (snapshot) => {
-        const conversations: ConversationDisplay[] = snapshot.docs.map((doc) => {
-          const data = doc.data() as Conversation;
+        const conversations: ConversationDisplay[] = snapshot.docs.map((docSnapshot) => {
+          const data = docSnapshot.data() as Conversation;
+          
           const otherUserId = data.participants.find((id) => id !== currentUser.uid) || '';
           const otherUserInfo = data.participantInfo[otherUserId] || {
             displayName: 'Unknown User',
@@ -86,7 +123,7 @@ export class MessageService {
           };
 
           return {
-            id: doc.id,
+            id: docSnapshot.id,
             otherUser: {
               uid: otherUserId,
               displayName: otherUserInfo.displayName,
@@ -97,6 +134,7 @@ export class MessageService {
               ? this.toDate(data.lastMessage.createdAt)
               : null,
             unreadCount: data.unreadCount?.[currentUser.uid] || 0,
+            isArchived: data.archivedBy?.includes(currentUser.uid) || false,
           };
         });
 
@@ -127,8 +165,15 @@ export class MessageService {
     this._activeConversation.set(conversation);
     this._messages.set([]);
     this._isOtherUserTyping.set(false);
+    this._otherUserStatus.set(null);
     this.subscribeToMessages(conversation.id);
     this.subscribeToTypingStatus(conversation.id);
+    
+    // Subscribe to other user's online status
+    if (conversation.otherUser?.uid) {
+      this.subscribeToUserStatus(conversation.otherUser.uid);
+    }
+    
     this.markConversationAsRead(conversation.id);
   }
 
@@ -139,10 +184,62 @@ export class MessageService {
     // Clear our typing status before closing
     this.clearTypingStatus();
     this.unsubscribeFromTyping();
+    this.unsubscribeFromUserStatus();
     this._activeConversation.set(null);
     this._messages.set([]);
     this._isOtherUserTyping.set(false);
+    this._otherUserStatus.set(null);
     this.unsubscribeFromMessages();
+  }
+
+  /**
+   * Subscribe to a user's online status
+   */
+  private subscribeToUserStatus(userId: string): void {
+    this.unsubscribeFromUserStatus();
+
+    const userRef = doc(this.firestore, 'users', userId);
+    
+    this.userStatusUnsubscribe = onSnapshot(userRef, (snapshot) => {
+      if (!snapshot.exists()) {
+        this._otherUserStatus.set(null);
+        return;
+      }
+
+      const userData = snapshot.data() as UserProfile;
+      const privacy = userData.settings?.privacy;
+      
+      // Respect privacy settings
+      const showOnlineStatus = privacy?.showOnlineStatus !== false;
+      const showLastActive = privacy?.showLastActive !== false;
+      
+      let isOnline = false;
+      let lastActiveAt: Date | null = null;
+      
+      if (showOnlineStatus && userData.lastActiveAt) {
+        const lastActive = this.toDate(userData.lastActiveAt);
+        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+        isOnline = lastActive > fiveMinutesAgo;
+        
+        if (showLastActive) {
+          lastActiveAt = lastActive;
+        }
+      } else if (showLastActive && userData.lastActiveAt) {
+        lastActiveAt = this.toDate(userData.lastActiveAt);
+      }
+      
+      this._otherUserStatus.set({ isOnline, lastActiveAt });
+    });
+  }
+
+  /**
+   * Unsubscribe from user status updates
+   */
+  private unsubscribeFromUserStatus(): void {
+    if (this.userStatusUnsubscribe) {
+      this.userStatusUnsubscribe();
+      this.userStatusUnsubscribe = null;
+    }
   }
 
   /**
@@ -267,6 +364,7 @@ export class MessageService {
       q,
       (snapshot) => {
         const messages: MessageDisplay[] = [];
+        const activeConvo = this._activeConversation();
         
         for (const docSnapshot of snapshot.docs) {
           const data = docSnapshot.data() as Message;
@@ -274,6 +372,19 @@ export class MessageService {
           // Skip messages deleted for this user (but not deletedForAll)
           if (data.deletedFor?.includes(currentUser.uid) && !data.deletedForAll) {
             continue;
+          }
+
+          // Get sender info from conversation
+          let senderName: string | null = null;
+          let senderPhoto: string | null = null;
+          
+          if (data.senderId === currentUser.uid) {
+            // It's the current user
+            senderName = currentUser.displayName;
+            senderPhoto = currentUser.photoURL;
+          } else if (activeConvo) {
+            senderName = activeConvo.otherUser?.displayName || 'Unknown';
+            senderPhoto = activeConvo.otherUser?.photoURL || null;
           }
 
           // Calculate timed image status for current user (as recipient)
@@ -312,6 +423,9 @@ export class MessageService {
             type: data.deletedForAll ? 'system' : data.type,
             imageUrls: data.deletedForAll ? undefined : data.imageUrls,
             isDeletedForAll: data.deletedForAll,
+            senderId: data.senderId,
+            senderName,
+            senderPhoto,
             imageTimer: data.imageTimer,
             imageViewedAt,
             isImageExpired,
@@ -679,12 +793,76 @@ export class MessageService {
   }
 
   /**
+   * Archive a conversation for the current user
+   */
+  async archiveConversation(conversationId: string): Promise<void> {
+    const currentUser = this.authService.user();
+    if (!currentUser) return;
+
+    try {
+      const conversationRef = doc(this.firestore, 'conversations', conversationId);
+      await updateDoc(conversationRef, {
+        archivedBy: arrayUnion(currentUser.uid),
+      });
+    } catch (error) {
+      console.error('Error archiving conversation:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Unarchive a conversation for the current user
+   */
+  async unarchiveConversation(conversationId: string): Promise<void> {
+    const currentUser = this.authService.user();
+    if (!currentUser) return;
+
+    try {
+      const conversationRef = doc(this.firestore, 'conversations', conversationId);
+      // Need to get current archivedBy array and remove user
+      const snapshot = await getDoc(conversationRef);
+      if (snapshot.exists()) {
+        const data = snapshot.data() as Conversation;
+        const updatedArchivedBy = (data.archivedBy || []).filter(uid => uid !== currentUser.uid);
+        await updateDoc(conversationRef, {
+          archivedBy: updatedArchivedBy,
+        });
+      }
+    } catch (error) {
+      console.error('Error unarchiving conversation:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Format last active time for display
+   */
+  formatLastActive(date: Date | null): string {
+    if (!date) return '';
+    
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    
+    const minutes = Math.floor(diff / (1000 * 60));
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    
+    if (minutes < 1) return 'just now';
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    if (days === 1) return 'yesterday';
+    if (days < 7) return `${days}d ago`;
+    return `${Math.floor(days / 7)}w ago`;
+  }
+
+  /**
    * Clean up all subscriptions
    */
   cleanup(): void {
     this.unsubscribeFromConversations();
     this.unsubscribeFromMessages();
     this.unsubscribeFromTyping();
+    this.unsubscribeFromUserStatus();
     if (this.typingTimeout) {
       clearTimeout(this.typingTimeout);
       this.typingTimeout = null;

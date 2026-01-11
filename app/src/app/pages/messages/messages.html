@@ -1,42 +1,87 @@
 <div class="messages-layout">
   <!-- Conversation List -->
   <aside class="conversation-list" [class.hidden-on-mobile]="activeConversation()">
-    @if (loading()) {
-      <div class="loading-state">
-        <div class="loading-spinner"></div>
-        <span>Loading...</span>
-      </div>
-    } @else if (conversations().length === 0) {
-      <div class="empty-state">
-        <span class="material-icons-outlined">chat_bubble_outline</span>
-        <p>No conversations yet</p>
-      </div>
-    } @else {
-      @for (conversation of conversations(); track conversation.id) {
+    <!-- List Header with Tabs -->
+    <div class="list-header">
+      <h2>Chats</h2>
+      <div class="filter-tabs">
         <button 
-          type="button"
-          class="conversation-item"
-          [class.active]="activeConversation()?.id === conversation.id"
-          [class.unread]="conversation.unreadCount > 0"
-          (click)="openConversation(conversation)">
-          <div class="conversation-avatar">
-            @if (conversation.otherUser.photoURL) {
-              <img [src]="conversation.otherUser.photoURL" [alt]="conversation.otherUser.displayName || 'User'" class="avatar-image">
-            } @else {
-              <span class="material-icons-outlined avatar-placeholder">person</span>
-            }
-            @if (conversation.unreadCount > 0) {
-              <span class="unread-indicator"></span>
-            }
-          </div>
-          <div class="conversation-info">
-            <span class="conversation-name">{{ conversation.otherUser.displayName || 'Unknown' }}</span>
-            <span class="conversation-preview">{{ conversation.lastMessage || 'New chat' }}</span>
-          </div>
-          <span class="conversation-time">{{ formatTime(conversation.lastMessageTime) }}</span>
+          type="button" 
+          class="filter-tab"
+          [class.active]="conversationFilter() === 'all'"
+          (click)="setFilter('all')">
+          All
         </button>
+        <button 
+          type="button" 
+          class="filter-tab"
+          [class.active]="conversationFilter() === 'unread'"
+          (click)="setFilter('unread')">
+          Unread
+          @if (totalUnreadCount() > 0) {
+            <span class="unread-badge">{{ totalUnreadCount() }}</span>
+          }
+        </button>
+        <button 
+          type="button" 
+          class="filter-tab"
+          [class.active]="conversationFilter() === 'archived'"
+          (click)="setFilter('archived')">
+          Archived
+          @if (archivedCount() > 0) {
+            <span class="archived-badge">{{ archivedCount() }}</span>
+          }
+        </button>
+      </div>
+    </div>
+
+    <!-- Conversation List -->
+    <div class="conversation-scroll">
+      @if (loading()) {
+        <div class="loading-state">
+          <div class="loading-spinner"></div>
+          <span>Loading...</span>
+        </div>
+      } @else if (conversations().length === 0) {
+        <div class="empty-state">
+          <span class="material-icons-outlined">{{ conversationFilter() === 'archived' ? 'inventory_2' : 'chat_bubble_outline' }}</span>
+          @if (conversationFilter() === 'unread') {
+            <p>No unread messages</p>
+            <button type="button" class="show-all-btn" (click)="setFilter('all')">Show all chats</button>
+          } @else if (conversationFilter() === 'archived') {
+            <p>No archived chats</p>
+            <button type="button" class="show-all-btn" (click)="setFilter('all')">Show all chats</button>
+          } @else {
+            <p>No conversations yet</p>
+          }
+        </div>
+      } @else {
+        @for (conversation of conversations(); track conversation.id) {
+          <button 
+            type="button"
+            class="conversation-item"
+            [class.active]="activeConversation()?.id === conversation.id"
+            [class.unread]="conversation.unreadCount > 0"
+            (click)="openConversation(conversation)">
+            <div class="conversation-avatar">
+              @if (conversation.otherUser.photoURL) {
+                <img [src]="conversation.otherUser.photoURL" [alt]="conversation.otherUser.displayName || 'User'" class="avatar-image">
+              } @else {
+                <span class="material-icons-outlined avatar-placeholder">person</span>
+              }
+              @if (conversation.unreadCount > 0) {
+                <span class="unread-indicator">{{ conversation.unreadCount > 9 ? '9+' : conversation.unreadCount }}</span>
+              }
+            </div>
+            <div class="conversation-info">
+              <span class="conversation-name">{{ conversation.otherUser.displayName || 'Unknown' }}</span>
+              <span class="conversation-preview">{{ conversation.lastMessage || 'New chat' }}</span>
+            </div>
+            <span class="conversation-time">{{ formatTime(conversation.lastMessageTime) }}</span>
+          </button>
+        }
       }
-    }
+    </div>
   </aside>
 
   <!-- Chat Area -->
@@ -48,18 +93,47 @@
           <span class="material-icons-outlined">arrow_back</span>
         </button>
         <div class="chat-user">
-          @if (activeConversation()!.otherUser.photoURL) {
-            <img [src]="activeConversation()!.otherUser.photoURL" class="chat-avatar" [alt]="activeConversation()!.otherUser.displayName">
-          } @else {
-            <div class="chat-avatar placeholder">
-              <span class="material-icons-outlined">person</span>
-            </div>
-          }
-          <span class="chat-user-name">{{ activeConversation()!.otherUser.displayName || 'Unknown' }}</span>
+          <div class="chat-avatar-wrapper">
+            @if (activeConversation()!.otherUser.photoURL) {
+              <img [src]="activeConversation()!.otherUser.photoURL" class="chat-avatar" [alt]="activeConversation()!.otherUser.displayName">
+            } @else {
+              <div class="chat-avatar placeholder">
+                <span class="material-icons-outlined">person</span>
+              </div>
+            }
+            @if (otherUserStatus()?.isOnline) {
+              <span class="online-dot"></span>
+            }
+          </div>
+          <div class="chat-user-info">
+            <span class="chat-user-name">{{ activeConversation()!.otherUser.displayName || 'Unknown' }}</span>
+            @if (getStatusText()) {
+              <span class="chat-user-status" [class.online]="otherUserStatus()?.isOnline">
+                {{ getStatusText() }}
+              </span>
+            }
+          </div>
         </div>
-        <button type="button" class="options-btn" aria-label="Options">
+        <button type="button" class="options-btn" [matMenuTriggerFor]="chatOptionsMenu" aria-label="Options">
           <span class="material-icons-outlined">more_vert</span>
         </button>
+        <mat-menu #chatOptionsMenu="matMenu">
+          <button mat-menu-item (click)="viewOtherUserProfile()">
+            <span class="material-icons-outlined">person</span>
+            <span>View profile</span>
+          </button>
+          @if (activeConversation()?.isArchived) {
+            <button mat-menu-item (click)="unarchiveActiveConversation()">
+              <span class="material-icons-outlined">unarchive</span>
+              <span>Unarchive chat</span>
+            </button>
+          } @else {
+            <button mat-menu-item (click)="archiveActiveConversation()">
+              <span class="material-icons-outlined">archive</span>
+              <span>Archive chat</span>
+            </button>
+          }
+        </mat-menu>
       </header>
 
       <!-- Messages -->
@@ -72,8 +146,22 @@
         } @else {
           <div class="messages-list">
             @for (message of messages(); track message.id; let isLast = $last) {
-              <div class="message" [class.own]="message.isOwn" [class.image-message]="message.type === 'image'" [class.deleted]="message.isDeletedForAll">
+              <div class="message" [class.own]="message.isOwn" [class.image-message]="message.type === 'image'" [class.deleted]="message.isDeletedForAll" [class.with-avatar]="!message.isOwn">
                 
+                <!-- Sender Avatar (for messages from others) -->
+                @if (!message.isOwn) {
+                  <div class="message-avatar">
+                    @if (message.senderPhoto) {
+                      <img [src]="message.senderPhoto" [alt]="message.senderName || 'User'" class="avatar-img">
+                    } @else {
+                      <div class="avatar-placeholder">
+                        <span class="material-icons-outlined">person</span>
+                      </div>
+                    }
+                  </div>
+                }
+
+                <div class="message-content">
                 <!-- Deleted for everyone placeholder -->
                 @if (message.isDeletedForAll) {
                   <div class="bubble deleted-bubble">
@@ -207,6 +295,7 @@
                     </mat-menu>
                   </div>
                 }
+                </div><!-- end message-content -->
               </div>
             }
             

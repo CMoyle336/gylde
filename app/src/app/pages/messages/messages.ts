@@ -15,7 +15,7 @@ import { FormsModule } from '@angular/forms';
 import { NgOptimizedImage } from '@angular/common';
 import { CdkScrollable, ScrollingModule } from '@angular/cdk/scrolling';
 import { MatMenuModule } from '@angular/material/menu';
-import { MessageService } from '../../core/services/message.service';
+import { MessageService, ConversationFilter } from '../../core/services/message.service';
 import { ConversationDisplay, MessageDisplay } from '../../core/interfaces';
 
 interface ImagePreview {
@@ -76,12 +76,17 @@ export class MessagesComponent implements OnInit, OnDestroy {
   ];
 
   // Expose service signals
-  protected readonly conversations = this.messageService.conversations;
+  protected readonly conversations = this.messageService.filteredConversations;
+  protected readonly allConversations = this.messageService.conversations;
   protected readonly activeConversation = this.messageService.activeConversation;
   protected readonly messages = this.messageService.messages;
   protected readonly loading = this.messageService.loading;
   protected readonly sending = this.messageService.sending;
   protected readonly isOtherUserTyping = this.messageService.isOtherUserTyping;
+  protected readonly conversationFilter = this.messageService.conversationFilter;
+  protected readonly otherUserStatus = this.messageService.otherUserStatus;
+  protected readonly totalUnreadCount = this.messageService.totalUnreadCount;
+  protected readonly archivedCount = this.messageService.archivedCount;
 
   constructor() {
     // Watch for conversations to load, then open the one from route if specified
@@ -301,6 +306,47 @@ export class MessagesComponent implements OnInit, OnDestroy {
     this.messageService.closeConversation();
     // Navigate back to messages list
     this.router.navigate(['/messages'], { replaceUrl: true });
+  }
+
+  protected setFilter(filter: ConversationFilter): void {
+    this.messageService.setConversationFilter(filter);
+  }
+
+  protected viewOtherUserProfile(): void {
+    const activeConvo = this.activeConversation();
+    if (!activeConvo?.otherUser?.uid) return;
+    
+    this.router.navigate(['/user', activeConvo.otherUser.uid]);
+  }
+
+  protected async archiveActiveConversation(): Promise<void> {
+    const activeConvo = this.activeConversation();
+    if (!activeConvo) return;
+    
+    await this.messageService.archiveConversation(activeConvo.id);
+    this.closeConversation();
+  }
+
+  protected async unarchiveActiveConversation(): Promise<void> {
+    const activeConvo = this.activeConversation();
+    if (!activeConvo) return;
+    
+    await this.messageService.unarchiveConversation(activeConvo.id);
+  }
+
+  protected getStatusText(): string {
+    const status = this.otherUserStatus();
+    if (!status) return '';
+    
+    if (status.isOnline) {
+      return 'Active now';
+    }
+    
+    if (status.lastActiveAt) {
+      return this.messageService.formatLastActive(status.lastActiveAt);
+    }
+    
+    return '';
   }
 
   /**
