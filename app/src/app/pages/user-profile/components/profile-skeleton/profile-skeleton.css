@@ -19,6 +19,7 @@
   grid-template-columns: 400px 1fr;
   gap: 2rem;
   padding-top: 1rem;
+  align-items: start;
 }
 
 @media (max-width: 900px) {
@@ -49,19 +50,35 @@
   }
 }
 
-/* Photo Section */
-.skeleton-photo-section {
+/* Left Column */
+.skeleton-left-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
   position: sticky;
   top: 1rem;
-  align-self: start;
 }
 
 @media (max-width: 900px) {
-  .skeleton-photo-section {
+  .skeleton-left-column {
     position: static;
+    display: contents;
+  }
+
+  .skeleton-photo-section {
+    order: 1;
+  }
+
+  .skeleton-info-section {
+    order: 2;
+  }
+
+  .skeleton-stats-section {
+    order: 3;
   }
 }
 
+/* Photo Section */
 .skeleton-main-photo {
   aspect-ratio: 3 / 4;
   border-radius: 20px;
@@ -79,6 +96,55 @@
   height: 80px;
   border-radius: 8px;
   background: var(--color-bg-elevated);
+}
+
+/* Stats Section */
+.skeleton-stats-card {
+  padding: 1rem;
+  background: var(--color-bg-elevated);
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.skeleton-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+}
+
+.skeleton-stat-item:not(:last-child) {
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 0.75rem;
+}
+
+.skeleton-stat-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.skeleton-stat-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  flex: 1;
+}
+
+.skeleton-stat-label {
+  width: 80px;
+  height: 0.625rem;
+  border-radius: 3px;
+}
+
+.skeleton-stat-value {
+  width: 100px;
+  height: 0.875rem;
+  border-radius: 4px;
 }
 
 /* Info Section */
@@ -129,20 +195,6 @@
   border-radius: 50%;
 }
 
-/* Quick Info */
-.skeleton-quick-info {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  margin-bottom: 2rem;
-}
-
-.skeleton-tag {
-  width: 100px;
-  height: 36px;
-  border-radius: 20px;
-}
-
 /* Profile Blocks */
 .skeleton-block {
   margin-bottom: 2rem;
@@ -159,6 +211,12 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+}
+
+.skeleton-tag {
+  width: 100px;
+  height: 36px;
+  border-radius: 20px;
 }
 
 .skeleton-tag-accent {
