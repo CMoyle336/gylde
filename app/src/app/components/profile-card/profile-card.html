@@ -8,13 +8,6 @@
       </div>
     }
     
-    <!-- Verified Badge -->
-    @if (isVerified) {
-      <span class="verified-badge" title="Verified profile">
-        <mat-icon>verified</mat-icon>
-      </span>
-    }
-    
     <!-- Activity Status Badge -->
     @if (profile().isOnline) {
       <span class="activity-badge online">
@@ -43,6 +36,9 @@
         @if (profile().age) {
           <span class="card-age">, {{ profile().age }}</span>
         }
+        @if (isVerified) {
+          <mat-icon class="verified-icon" title="Verified profile">verified</mat-icon>
+        }
       </h3>
       @if (profile().city) {
         <span class="card-location">
@@ -69,7 +65,6 @@
     <div class="card-actions">
       <button 
         type="button" 
-        mat-icon-button
         class="action-btn message"
         (click)="onMessage(); $event.stopPropagation()"
         [matTooltip]="'Message ' + (profile().displayName || 'user')">
@@ -77,7 +72,6 @@
       </button>
       <button 
         type="button" 
-        mat-icon-button
         class="action-btn view"
         (click)="onView(); $event.stopPropagation()"
         matTooltip="View profile">
@@ -85,7 +79,6 @@
       </button>
       <button 
         type="button" 
-        mat-icon-button
         class="action-btn favorite"
         [class.favorited]="isFavorited()"
         (click)="onFavorite(); $event.stopPropagation()"

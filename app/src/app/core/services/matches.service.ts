@@ -1,4 +1,5 @@
-import { Injectable, inject, signal, computed } from '@angular/core';
+import { Injectable, inject, signal, computed, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import {
   Firestore,
   collection,
@@ -35,29 +36,68 @@ export interface MatchProfile {
 
 export type MatchTab = 'favorited-me' | 'viewed-me' | 'my-favorites' | 'my-views';
 
+const STORAGE_KEY_PREFIX = 'matches_last_viewed_';
+
 @Injectable({
   providedIn: 'root',
 })
 export class MatchesService {
   private readonly firestore = inject(Firestore);
   private readonly authService = inject(AuthService);
+  private readonly platformId = inject(PLATFORM_ID);
 
   private readonly _loading = signal(false);
   private readonly _activeTab = signal<MatchTab>('favorited-me');
   private readonly _profiles = signal<MatchProfile[]>([]);
+  private readonly _favoritedMeCount = signal(0);
+  private readonly _viewedMeCount = signal(0);
 
   readonly loading = this._loading.asReadonly();
   readonly activeTab = this._activeTab.asReadonly();
   readonly profiles = this._profiles.asReadonly();
+  readonly favoritedMeCount = this._favoritedMeCount.asReadonly();
+  readonly viewedMeCount = this._viewedMeCount.asReadonly();
 
   readonly isEmpty = computed(() => !this._loading() && this._profiles().length === 0);
 
   /**
    * Set the active tab and load profiles for that tab
+   * Also resets the badge count for the viewed tab
    */
   async setTab(tab: MatchTab): Promise<void> {
     this._activeTab.set(tab);
+    
+    // Mark tab as viewed (reset badge)
+    if (tab === 'favorited-me') {
+      this.markTabAsViewed('favorited-me');
+      this._favoritedMeCount.set(0);
+    } else if (tab === 'viewed-me') {
+      this.markTabAsViewed('viewed-me');
+      this._viewedMeCount.set(0);
+    }
+    
     await this.loadProfiles();
+  }
+
+  /**
+   * Load badge counts for tabs (call this on init)
+   */
+  async loadBadgeCounts(): Promise<void> {
+    const currentUser = this.authService.user();
+    if (!currentUser) return;
+
+    try {
+      // Load counts in parallel
+      const [favoritedCount, viewedCount] = await Promise.all([
+        this.countNewFavoritedMe(currentUser.uid),
+        this.countNewViewedMe(currentUser.uid),
+      ]);
+
+      this._favoritedMeCount.set(favoritedCount);
+      this._viewedMeCount.set(viewedCount);
+    } catch (error) {
+      console.error('Error loading badge counts:', error);
+    }
   }
 
   /**
@@ -95,6 +135,62 @@ export class MatchesService {
     } finally {
       this._loading.set(false);
     }
+  }
+
+  /**
+   * Get the last time the user viewed a specific tab
+   */
+  private getLastViewedTime(tab: 'favorited-me' | 'viewed-me'): Date {
+    if (!isPlatformBrowser(this.platformId)) return new Date(0);
+    
+    const stored = localStorage.getItem(`${STORAGE_KEY_PREFIX}${tab}`);
+    return stored ? new Date(stored) : new Date(0);
+  }
+
+  /**
+   * Mark a tab as viewed (store current time)
+   */
+  private markTabAsViewed(tab: 'favorited-me' | 'viewed-me'): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    localStorage.setItem(`${STORAGE_KEY_PREFIX}${tab}`, new Date().toISOString());
+  }
+
+  /**
+   * Count new favorites since last viewed
+   */
+  private async countNewFavoritedMe(currentUserId: string): Promise<number> {
+    const lastViewed = this.getLastViewedTime('favorited-me');
+    
+    const favoritesRef = collectionGroup(this.firestore, 'favorites');
+    const q = query(
+      favoritesRef,
+      where('toUserId', '==', currentUserId),
+      where('createdAt', '>', lastViewed),
+      limit(100)
+    );
+
+    const snapshot = await getDocs(q);
+    return snapshot.size;
+  }
+
+  /**
+   * Count new views since last viewed
+   */
+  private async countNewViewedMe(currentUserId: string): Promise<number> {
+    const lastViewed = this.getLastViewedTime('viewed-me');
+    
+    const viewsRef = collection(this.firestore, 'profileViews');
+    const q = query(
+      viewsRef,
+      where('viewedUserId', '==', currentUserId),
+      where('viewedAt', '>', lastViewed),
+      limit(100)
+    );
+
+    const snapshot = await getDocs(q);
+    // Deduplicate by viewerId
+    const uniqueViewers = new Set(snapshot.docs.map(d => d.data()['viewerId']));
+    return uniqueViewers.size;
   }
 
   /**

@@ -63,20 +63,87 @@
   font-size: 1.25rem;
 }
 
+/* Tab Icon with Badge */
+.tab-icon-wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.tab-badge {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: #ef4444;
+  color: white;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.tab-btn.active .tab-badge {
+  background: #0d0b0e;
+  color: var(--color-accent);
+}
+
 @media (max-width: 640px) {
-  .tab-btn {
-    flex-direction: column;
+  .matches-tabs {
     gap: 0.25rem;
-    padding: 0.75rem 1rem;
+    padding: 0.25rem;
+  }
+
+  .tab-btn {
+    flex: 1;
+    flex-direction: column;
+    gap: 0.125rem;
+    padding: 0.5rem 0.25rem;
     font-size: 0.75rem;
+    min-width: 0;
   }
 
   .tab-btn .material-icons-outlined {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
   }
 
   .tab-label {
-    font-size: 0.6875rem;
+    font-size: 0.625rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .tab-badge {
+    top: -4px;
+    right: -6px;
+    min-width: 14px;
+    height: 14px;
+    font-size: 0.5625rem;
+    padding: 0 3px;
+  }
+}
+
+@media (max-width: 400px) {
+  .tab-btn {
+    padding: 0.5rem 0.25rem;
+  }
+
+  .tab-btn .material-icons-outlined {
+    font-size: 1.25rem;
+  }
+
+  .tab-label {
+    font-size: 0.5rem;
+    opacity: 0.7;
+    letter-spacing: -0.02em;
+  }
+
+  .tab-btn.active .tab-label {
+    opacity: 1;
   }
 }
 
@@ -94,8 +161,14 @@
 
 @media (max-width: 640px) {
   .profile-grid {
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
     gap: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .profile-grid {
+    grid-template-columns: 1fr;
   }
 }
 

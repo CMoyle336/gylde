@@ -9,7 +9,6 @@ import {
   SavedView,
   SearchRequest,
   SearchResponse,
-  GeoLocation,
 } from '../interfaces';
 
 const DEFAULT_FILTERS: DiscoveryFilters = {

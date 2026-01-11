@@ -107,13 +107,13 @@ export class DiscoverComponent implements OnInit {
 
   protected async applyFilters(): Promise<void> {
     this.showFilters.set(false);
-    await this.discoveryService.searchProfiles();
+    await this.discoveryService.searchProfiles(false, true); // Force refresh to show loading
   }
 
   // Sort management
   protected setSort(sort: DiscoverySort): void {
     this.discoveryService.updateSort(sort);
-    this.discoveryService.searchProfiles();
+    this.discoveryService.searchProfiles(false, true); // Force refresh to show loading
   }
 
   protected getSortLabel(): string {
@@ -132,7 +132,7 @@ export class DiscoverComponent implements OnInit {
   // View management
   protected applyView(view: SavedView): void {
     this.discoveryService.applyView(view);
-    this.discoveryService.searchProfiles();
+    this.discoveryService.searchProfiles(false, true); // Force refresh to show loading
   }
 
   protected openSaveViewDialog(): void {

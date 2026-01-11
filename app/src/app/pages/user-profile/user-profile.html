@@ -15,7 +15,7 @@
         <section class="photo-section">
         <div class="main-photo">
           @if (profilePhoto()) {
-            <img [ngSrc]="profilePhoto()!" [alt]="profile.displayName || 'Profile photo'" fill priority>
+            <img [src]="profilePhoto()" [alt]="profile.displayName || 'Profile photo'">
           } @else {
             <div class="photo-placeholder">
               <mat-icon>person</mat-icon>
@@ -53,7 +53,7 @@
                 class="thumbnail" 
                 [class.active]="i === selectedPhotoIndex()"
                 (click)="selectPhoto(i)">
-                <img [ngSrc]="photo" [alt]="'Photo ' + (i + 1)" width="60" height="80" loading="lazy">
+                <img [src]="photo" [alt]="'Photo ' + (i + 1)" loading="lazy">
               </button>
             }
           </div>
@@ -157,9 +157,9 @@
           </div>
         </div>
 
-        <!-- About Me -->
+        <!-- My Ideal Relationship -->
         <div class="profile-block">
-          <h3>About Me</h3>
+          <h3>My Ideal Relationship</h3>
           @if (profile.onboarding?.idealRelationship) {
             <p class="about-text">{{ profile.onboarding?.idealRelationship }}</p>
           } @else {

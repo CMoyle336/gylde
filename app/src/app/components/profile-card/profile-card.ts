@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
-import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
 /**
@@ -32,7 +31,7 @@ export interface ProfileCardData {
   templateUrl: './profile-card.html',
   styleUrl: './profile-card.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [NgOptimizedImage, MatIconModule, MatButtonModule, MatTooltipModule],
+  imports: [NgOptimizedImage, MatIconModule, MatTooltipModule],
 })
 export class ProfileCardComponent {
   // Inputs

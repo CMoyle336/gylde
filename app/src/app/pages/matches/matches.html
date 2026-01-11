@@ -6,7 +6,12 @@
       class="tab-btn"
       [class.active]="activeTab() === 'favorited-me'"
       (click)="setTab('favorited-me')">
-      <span class="material-icons-outlined">favorite</span>
+      <span class="tab-icon-wrapper">
+        <span class="material-icons-outlined">favorite</span>
+        @if (favoritedMeCount() > 0) {
+          <span class="tab-badge">{{ favoritedMeCount() > 99 ? '99+' : favoritedMeCount() }}</span>
+        }
+      </span>
       <span class="tab-label">Favorited Me</span>
     </button>
     <button
@@ -14,7 +19,12 @@
       class="tab-btn"
       [class.active]="activeTab() === 'viewed-me'"
       (click)="setTab('viewed-me')">
-      <span class="material-icons-outlined">visibility</span>
+      <span class="tab-icon-wrapper">
+        <span class="material-icons-outlined">visibility</span>
+        @if (viewedMeCount() > 0) {
+          <span class="tab-badge">{{ viewedMeCount() > 99 ? '99+' : viewedMeCount() }}</span>
+        }
+      </span>
       <span class="tab-label">Viewed Me</span>
     </button>
     <button

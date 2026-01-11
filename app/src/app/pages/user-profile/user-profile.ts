@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, inject, signal, OnInit, OnDestroy, computed } from '@angular/core';
-import { NgOptimizedImage } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -20,7 +19,6 @@ import { ProfileSkeletonComponent } from './components';
   styleUrl: './user-profile.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    NgOptimizedImage,
     MatButtonModule,
     MatIconModule,
     MatChipsModule,

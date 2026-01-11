@@ -34,11 +34,14 @@ export class MatchesComponent implements OnInit {
   protected readonly profiles = this.matchesService.profiles;
   protected readonly isEmpty = this.matchesService.isEmpty;
   protected readonly favoritedUserIds = this.favoriteService.favoritedUserIds;
+  protected readonly favoritedMeCount = this.matchesService.favoritedMeCount;
+  protected readonly viewedMeCount = this.matchesService.viewedMeCount;
 
   // Skeleton count for loading state
   protected readonly skeletonCards = Array.from({ length: 6 }, (_, i) => i);
 
   ngOnInit(): void {
+    this.matchesService.loadBadgeCounts();
     this.matchesService.loadProfiles();
     this.favoriteService.loadFavorites();
   }
