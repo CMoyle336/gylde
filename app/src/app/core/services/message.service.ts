@@ -619,10 +619,26 @@ export class MessageService {
     if (!currentUser) return;
 
     try {
+      // Update conversation unread count
       const conversationRef = doc(this.firestore, 'conversations', conversationId);
       await updateDoc(conversationRef, {
         [`unreadCount.${currentUser.uid}`]: 0,
       });
+
+      // Mark unread messages from other users as read
+      const messagesRef = collection(this.firestore, 'conversations', conversationId, 'messages');
+      const unreadQuery = query(
+        messagesRef,
+        where('read', '==', false),
+        where('senderId', '!=', currentUser.uid)
+      );
+      
+      const snapshot = await getDocs(unreadQuery);
+      const updatePromises = snapshot.docs.map(docSnapshot => 
+        updateDoc(docSnapshot.ref, { read: true })
+      );
+      
+      await Promise.all(updatePromises);
     } catch (error) {
       console.error('Error marking conversation as read:', error);
     }

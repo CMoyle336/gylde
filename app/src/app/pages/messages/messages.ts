@@ -46,6 +46,7 @@ export class MessagesComponent implements OnInit, OnDestroy {
 
   @ViewChild(CdkScrollable) scrollable!: CdkScrollable;
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
+  @ViewChild('messageInputEl') messageInputEl!: ElementRef<HTMLInputElement>;
 
   protected readonly messageInput = signal('');
   protected readonly selectedImages = signal<ImagePreview[]>([]);
@@ -57,8 +58,10 @@ export class MessagesComponent implements OnInit, OnDestroy {
   });
   protected readonly galleryCountdown = signal<number | null>(null); // Countdown for timed images in gallery
   protected readonly senderCountdowns = signal<Map<string, number>>(new Map()); // Live countdowns for sender's timed images
+  protected readonly recipientCountdowns = signal<Map<string, number>>(new Map()); // Live countdowns for recipient's viewed images
   private galleryCountdownInterval: ReturnType<typeof setInterval> | null = null;
   private senderCountdownInterval: ReturnType<typeof setInterval> | null = null;
+  private recipientCountdownInterval: ReturnType<typeof setInterval> | null = null;
   private isNearBottom = true;
   private previousMessageCount = 0;
   private conversationIdFromRoute: string | null = null;
@@ -103,8 +106,9 @@ export class MessagesComponent implements OnInit, OnDestroy {
         // Initial load (first batch of messages) - always scroll to bottom
         // Subsequent messages - only scroll if user is near bottom
         if (this.previousMessageCount === 0 || this.isNearBottom) {
-          // Use setTimeout to wait for DOM to render the new messages
+          // Scroll after DOM renders, with extra delay for aspect-ratio layout calculation
           setTimeout(() => this.scrollToBottom(), 0);
+          setTimeout(() => this.scrollToBottom(), 100);
         }
       }
       this.previousMessageCount = currentCount;
@@ -131,6 +135,20 @@ export class MessagesComponent implements OnInit, OnDestroy {
         this.stopSenderCountdowns();
       }
     });
+
+    // Watch for recipient's viewed timed images to track expiration
+    effect(() => {
+      const messages = this.messages();
+      const viewedTimedMessages = messages.filter(m => 
+        !m.isOwn && m.imageTimer && m.imageViewedAt && !m.isImageExpired
+      );
+      
+      if (viewedTimedMessages.length > 0) {
+        this.startRecipientCountdowns(viewedTimedMessages);
+      } else {
+        this.stopRecipientCountdowns();
+      }
+    });
   }
 
   ngOnInit(): void {
@@ -142,6 +160,7 @@ export class MessagesComponent implements OnInit, OnDestroy {
     // Close any open conversation when leaving messages
     this.messageService.closeConversation();
     this.stopSenderCountdowns();
+    this.stopRecipientCountdowns();
   }
 
   /**
@@ -202,6 +221,74 @@ export class MessagesComponent implements OnInit, OnDestroy {
     return this.senderCountdowns().get(messageId) ?? null;
   }
 
+  /**
+   * Start live countdown for recipient's viewed timed images
+   */
+  private startRecipientCountdowns(messages: MessageDisplay[]): void {
+    this.updateRecipientCountdowns(messages);
+    
+    if (!this.recipientCountdownInterval) {
+      this.recipientCountdownInterval = setInterval(() => {
+        const currentMessages = this.messages().filter(m => 
+          !m.isOwn && m.imageTimer && m.imageViewedAt && !m.isImageExpired
+        );
+        if (currentMessages.length > 0) {
+          this.updateRecipientCountdowns(currentMessages);
+        } else {
+          this.stopRecipientCountdowns();
+        }
+      }, 1000);
+    }
+  }
+
+  /**
+   * Update the countdown values for recipient's viewed images
+   */
+  private updateRecipientCountdowns(messages: MessageDisplay[]): void {
+    const countdowns = new Map<string, number>();
+    const now = Date.now();
+    
+    for (const msg of messages) {
+      if (msg.imageViewedAt && msg.imageTimer) {
+        const elapsed = (now - msg.imageViewedAt.getTime()) / 1000;
+        const remaining = Math.max(0, Math.ceil(msg.imageTimer - elapsed));
+        countdowns.set(msg.id, remaining);
+      }
+    }
+    
+    this.recipientCountdowns.set(countdowns);
+  }
+
+  /**
+   * Stop the recipient countdown interval
+   */
+  private stopRecipientCountdowns(): void {
+    if (this.recipientCountdownInterval) {
+      clearInterval(this.recipientCountdownInterval);
+      this.recipientCountdownInterval = null;
+    }
+    this.recipientCountdowns.set(new Map());
+  }
+
+  /**
+   * Get the recipient countdown for a specific message
+   */
+  protected getRecipientCountdown(messageId: string): number | null {
+    return this.recipientCountdowns().get(messageId) ?? null;
+  }
+
+  /**
+   * Check if a timed image has expired for the recipient (real-time)
+   */
+  protected isTimedImageExpired(message: MessageDisplay): boolean {
+    if (!message.imageTimer || message.isOwn) return false;
+    if (message.isImageExpired) return true;
+    
+    // Check real-time countdown
+    const countdown = this.recipientCountdowns().get(message.id);
+    return countdown !== undefined && countdown <= 0;
+  }
+
   protected openConversation(conversation: ConversationDisplay): void {
     this.previousMessageCount = 0; // Reset so initial load scrolls to bottom
     this.isNearBottom = true;
@@ -237,6 +324,11 @@ export class MessagesComponent implements OnInit, OnDestroy {
     this.isNearBottom = true;
 
     await this.messageService.sendMessage(content, files, timer ?? undefined);
+    
+    // Refocus the input for continued typing (use setTimeout to ensure DOM is ready)
+    setTimeout(() => {
+      this.messageInputEl?.nativeElement?.focus();
+    }, 0);
   }
 
   /**
@@ -246,10 +338,10 @@ export class MessagesComponent implements OnInit, OnDestroy {
     return this.messageInput().trim().length > 0 || this.selectedImages().length > 0;
   }
 
-  protected onKeyDown(event: KeyboardEvent): void {
+  protected async onKeyDown(event: KeyboardEvent): Promise<void> {
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
-      this.send();
+      await this.send();
     }
   }
 

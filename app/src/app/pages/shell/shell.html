@@ -136,9 +136,9 @@
                 <span class="activity-text">
                   @switch (activity.type) {
                     @case ('match') { Matched with {{ activity.name }} }
-                    @case ('message') { {{ activity.name }} messaged }
+                    @case ('message') { {{ activity.name }} messaged you }
                     @case ('favorite') { {{ activity.name }} favorited you }
-                    @case ('view') { {{ activity.name }} viewed }
+                    @case ('view') { {{ activity.name }} viewed your profile }
                   }
                 </span>
                 <span class="activity-time">{{ activity.timeAgo }}</span>

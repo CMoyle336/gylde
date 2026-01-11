@@ -90,8 +90,8 @@
                         <p class="image-caption">{{ message.content }}</p>
                       }
                       
-                      <!-- Expired timed image placeholder -->
-                      @if (message.isImageExpired && !message.isOwn) {
+                      <!-- Expired timed image placeholder (real-time check) -->
+                      @if (isTimedImageExpired(message)) {
                         <div class="expired-image-placeholder">
                           <span class="material-icons-outlined">timer_off</span>
                           <span>Image expired</span>
@@ -113,21 +113,23 @@
                         <div class="sender-timed-image">
                           <div class="image-grid single">
                             <button type="button" class="image-item" (click)="openGallery(message.imageUrls!, 0, $event, message)">
-                              <img [src]="message.imageUrls![0]" alt="Shared image" loading="lazy">
+                              <img [ngSrc]="message.imageUrls![0]" alt="Shared image" width="400" height="300" loading="lazy">
                               <!-- Status overlay -->
+                              @let countdown = getSenderCountdown(message.id);
+                              @let isExpiredNow = message.recipientViewExpired || (countdown !== null && countdown <= 0);
                               <div class="sender-status-overlay" 
                                    [class.waiting]="!message.recipientViewedAt"
-                                   [class.viewing]="message.isRecipientViewing"
-                                   [class.viewed]="message.recipientViewExpired">
+                                   [class.viewing]="message.isRecipientViewing && !isExpiredNow"
+                                   [class.viewed]="message.recipientViewedAt && isExpiredNow">
                                 @if (!message.recipientViewedAt) {
                                   <span class="material-icons-outlined">visibility_off</span>
                                   <span>Not opened</span>
                                 }
-                                @else if (message.isRecipientViewing) {
+                                @else if (message.isRecipientViewing && !isExpiredNow) {
                                   <span class="material-icons-outlined">visibility</span>
-                                  <span class="countdown-live">{{ getSenderCountdown(message.id) ?? 0 }}s</span>
+                                  <span class="countdown-live">{{ countdown }}s</span>
                                 }
-                                @else if (message.recipientViewExpired) {
+                                @else if (message.recipientViewedAt && isExpiredNow) {
                                   <span class="material-icons-outlined">done_all</span>
                                   <span>Opened {{ formatMessageTime(message.recipientViewedAt!) }}</span>
                                 }
@@ -141,12 +143,19 @@
                         <div class="image-grid" [class.single]="message.imageUrls!.length === 1" [class.grid-2]="message.imageUrls!.length === 2" [class.grid-many]="message.imageUrls!.length > 2">
                           @for (imageUrl of message.imageUrls; track imageUrl; let idx = $index) {
                             <button type="button" class="image-item" (click)="openGallery(message.imageUrls!, idx, $event, message)">
-                              <img [src]="imageUrl" alt="Shared image" loading="lazy">
+                              <img [ngSrc]="imageUrl" alt="Shared image" [width]="message.imageUrls!.length === 1 ? 400 : 200" [height]="message.imageUrls!.length === 1 ? 300 : 150" loading="lazy">
                             </button>
                           }
                         </div>
                       }
-                      <time>{{ formatMessageTime(message.createdAt) }}</time>
+                      <div class="message-meta">
+                        <time>{{ formatMessageTime(message.createdAt) }}</time>
+                        @if (message.isOwn) {
+                          <span class="read-status" [class.read]="message.read">
+                            <span class="material-icons-outlined">{{ message.read ? 'done_all' : 'done' }}</span>
+                          </span>
+                        }
+                      </div>
                     </div>
                     <!-- Message actions menu -->
                     <button type="button" class="message-menu-btn" [matMenuTriggerFor]="messageMenu">
@@ -171,7 +180,14 @@
                   <div class="message-wrapper">
                     <div class="bubble">
                       <p>{{ message.content }}</p>
-                      <time>{{ formatMessageTime(message.createdAt) }}</time>
+                      <div class="message-meta">
+                        <time>{{ formatMessageTime(message.createdAt) }}</time>
+                        @if (message.isOwn) {
+                          <span class="read-status" [class.read]="message.read">
+                            <span class="material-icons-outlined">{{ message.read ? 'done_all' : 'done' }}</span>
+                          </span>
+                        }
+                      </div>
                     </div>
                     <!-- Message actions menu -->
                     <button type="button" class="message-menu-btn" [matMenuTriggerFor]="messageMenu">
@@ -265,6 +281,7 @@
           </button>
 
           <input
+            #messageInputEl
             type="text"
             placeholder="Type a message..."
             [value]="messageInput()"
