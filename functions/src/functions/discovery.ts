@@ -72,6 +72,7 @@ interface SearchResult {
   lifestyle: string;
   connectionTypes: string[];
   idealRelationship: string;
+  photoURL: string | null; // The designated profile photo
   photos: string[];
   verified: boolean;
   values: string[];
@@ -315,6 +316,7 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
           lifestyle: onboarding?.lifestyle,
           connectionTypes: onboarding?.connectionTypes || [],
           idealRelationship: onboarding?.idealRelationship || "",
+          photoURL: data.photoURL || onboarding?.photos?.[0] || null,
           photos: onboarding?.photos || [],
           verified: onboarding?.verificationOptions?.includes("identity") || false,
           values: onboarding?.values || [],

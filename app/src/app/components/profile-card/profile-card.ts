@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
-import { NgOptimizedImage } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
@@ -31,7 +30,7 @@ export interface ProfileCardData {
   templateUrl: './profile-card.html',
   styleUrl: './profile-card.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [NgOptimizedImage, MatIconModule, MatTooltipModule],
+  imports: [MatIconModule, MatTooltipModule],
 })
 export class ProfileCardComponent {
   // Inputs
@@ -46,8 +45,10 @@ export class ProfileCardComponent {
 
   protected get photoUrl(): string | null {
     const p = this.profile();
+    // Use photoURL (the designated profile photo) first, fallback to first photo in array
+    if (p.photoURL) return p.photoURL;
     if (p.photos?.length) return p.photos[0];
-    return p.photoURL || null;
+    return null;
   }
 
   protected get isVerified(): boolean {

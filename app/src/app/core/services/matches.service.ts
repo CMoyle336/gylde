@@ -355,7 +355,7 @@ export class MatchesService {
       profiles.push({
         uid: userId,
         displayName: data.displayName || 'Unknown',
-        photoURL: data.onboarding?.photos?.[0] || data.photoURL || null,
+        photoURL: data.photoURL || data.onboarding?.photos?.[0] || null,
         photos: data.onboarding?.photos || [],
         age,
         city: data.onboarding?.city || null,

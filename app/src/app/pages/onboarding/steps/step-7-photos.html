@@ -48,26 +48,33 @@
         <button 
           type="button" 
           class="photo-remove" 
-          [disabled]="uploading()"
           (click)="removePhoto(0)"
           aria-label="Remove photo">
           <span class="material-icons-outlined">close</span>
         </button>
+      } @else if (uploadingPhotos().length > 0 && photoPreviews().length === 0) {
+        <!-- Primary photo is uploading -->
+        <div class="photo-uploading-slot">
+          <img [src]="uploadingPhotos()[0].preview" alt="Uploading" class="photo-preview uploading">
+          <div class="upload-overlay-onboarding">
+            @if (uploadingPhotos()[0].status === 'uploading') {
+              <span class="upload-spinner"></span>
+              <span class="upload-label">Uploading...</span>
+            } @else if (uploadingPhotos()[0].status === 'error') {
+              <span class="material-icons-outlined error-icon">error</span>
+              <span class="upload-label error">{{ uploadingPhotos()[0].error || 'Failed' }}</span>
+            }
+          </div>
+        </div>
       } @else {
-        <label class="photo-upload-btn" [class.uploading]="uploading()">
+        <label class="photo-upload-btn">
           <input 
             type="file" 
             accept="image/jpeg,image/jpg,image/png"
-            [disabled]="uploading()"
             (change)="onFileSelected($event, true)"
             style="display: none;">
-          @if (uploading()) {
-            <span class="upload-spinner"></span>
-            <span>Uploading...</span>
-          } @else {
-            <span class="material-icons-outlined">add_a_photo</span>
-            <span>{{ 'ONBOARDING.STEP_7.PRIMARY_PHOTO' | translate }}</span>
-          }
+          <span class="material-icons-outlined">add_a_photo</span>
+          <span>{{ 'ONBOARDING.STEP_7.PRIMARY_PHOTO' | translate }}</span>
         </label>
       }
     </div>
@@ -79,7 +86,6 @@
         <button 
           type="button" 
           class="photo-set-primary"
-          [disabled]="uploading()"
           (click)="setAsPrimary($index + 1)"
           aria-label="Set as profile photo"
           title="Set as profile photo">
@@ -88,7 +94,6 @@
         <button 
           type="button" 
           class="photo-remove" 
-          [disabled]="uploading()"
           (click)="removePhoto($index + 1)"
           aria-label="Remove photo">
           <span class="material-icons-outlined">close</span>
@@ -96,23 +101,34 @@
       </div>
     }
 
-    <!-- Empty Slots -->
-    @if (photoPreviews().length > 0 && photoPreviews().length < maxPhotos) {
+    <!-- Uploading Photos (after first one if primary exists) -->
+    @for (uploading of (photoPreviews().length > 0 ? uploadingPhotos() : uploadingPhotos().slice(1)); track uploading.id) {
+      <div class="photo-slot uploading-slot" [class.error]="uploading.status === 'error'">
+        <img [src]="uploading.preview" alt="Uploading" class="photo-preview uploading">
+        <div class="upload-overlay-onboarding">
+          @if (uploading.status === 'uploading') {
+            <span class="upload-spinner"></span>
+            <span class="upload-label">Uploading...</span>
+          } @else if (uploading.status === 'error') {
+            <span class="material-icons-outlined error-icon">error</span>
+            <span class="upload-label error">{{ uploading.error || 'Failed' }}</span>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Add Photo Button -->
+    @if (photoPreviews().length > 0 && (photoPreviews().length + uploadingPhotos().length) < maxPhotos) {
       <div class="photo-slot">
-        <label class="photo-upload-btn" [class.uploading]="uploading()">
+        <label class="photo-upload-btn">
           <input 
             type="file" 
             accept="image/jpeg,image/jpg,image/png"
-            [disabled]="uploading()"
-            (change)="onFileSelected($event, false)"
+            multiple
+            (change)="onFilesSelected($event)"
             style="display: none;">
-          @if (uploading()) {
-            <span class="upload-spinner"></span>
-            <span>Uploading...</span>
-          } @else {
-            <span class="material-icons-outlined">add</span>
-            <span>{{ 'ONBOARDING.STEP_7.ADD_PHOTO' | translate }}</span>
-          }
+          <span class="material-icons-outlined">add</span>
+          <span>{{ 'ONBOARDING.STEP_7.ADD_PHOTO' | translate }}</span>
         </label>
       </div>
     }

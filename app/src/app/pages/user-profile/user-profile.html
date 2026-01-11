@@ -23,7 +23,7 @@
           }
 
           <!-- Photo Navigation -->
-          @if ((profile.onboarding?.photos?.length || 0) > 1) {
+          @if (orderedPhotos().length > 1) {
             <button class="photo-nav prev" mat-icon-button (click)="prevPhoto()">
               <mat-icon>chevron_left</mat-icon>
             </button>
@@ -33,7 +33,7 @@
 
             <!-- Photo Indicators -->
             <div class="photo-indicators">
-              @for (photo of profile.onboarding?.photos || []; track photo; let i = $index) {
+              @for (photo of orderedPhotos(); track photo; let i = $index) {
                 <button 
                   class="indicator" 
                   [class.active]="i === selectedPhotoIndex()"
@@ -46,9 +46,9 @@
           </div>
 
         <!-- Thumbnail Strip -->
-        @if ((profile.onboarding?.photos?.length || 0) > 1) {
+        @if (orderedPhotos().length > 1) {
           <div class="photo-thumbnails">
-            @for (photo of profile.onboarding?.photos || []; track photo; let i = $index) {
+            @for (photo of orderedPhotos(); track photo; let i = $index) {
               <button 
                 class="thumbnail" 
                 [class.active]="i === selectedPhotoIndex()"

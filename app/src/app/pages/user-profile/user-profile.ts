@@ -49,10 +49,35 @@ export class UserProfileComponent implements OnInit, OnDestroy {
     return p ? this.favoritedUserIds().has(p.uid) : false;
   });
 
-  protected readonly profilePhoto = computed(() => {
+  // Reorder photos so the designated profile photo (photoURL) comes first
+  protected readonly orderedPhotos = computed(() => {
     const p = this.profile();
-    if (!p?.onboarding?.photos?.length) return null;
-    return p.onboarding.photos[this.selectedPhotoIndex()] || p.onboarding.photos[0];
+    const photos = p?.onboarding?.photos || [];
+    const photoURL = p?.photoURL;
+    
+    if (!photoURL || photos.length === 0) return photos;
+    
+    // If photoURL is already first, no reordering needed
+    if (photos[0] === photoURL) return photos;
+    
+    // Find the index of photoURL in the array
+    const photoURLIndex = photos.indexOf(photoURL);
+    if (photoURLIndex === -1) {
+      // photoURL not in array, prepend it
+      return [photoURL, ...photos];
+    }
+    
+    // Move photoURL to the front
+    const reordered = [...photos];
+    reordered.splice(photoURLIndex, 1);
+    reordered.unshift(photoURL);
+    return reordered;
+  });
+
+  protected readonly profilePhoto = computed(() => {
+    const photos = this.orderedPhotos();
+    if (!photos.length) return this.profile()?.photoURL || null;
+    return photos[this.selectedPhotoIndex()] || photos[0];
   });
 
   protected readonly age = computed(() => {
@@ -127,13 +152,13 @@ export class UserProfileComponent implements OnInit, OnDestroy {
   }
 
   protected prevPhoto(): void {
-    const photos = this.profile()?.onboarding?.photos || [];
+    const photos = this.orderedPhotos();
     const current = this.selectedPhotoIndex();
     this.selectedPhotoIndex.set(current > 0 ? current - 1 : photos.length - 1);
   }
 
   protected nextPhoto(): void {
-    const photos = this.profile()?.onboarding?.photos || [];
+    const photos = this.orderedPhotos();
     const current = this.selectedPhotoIndex();
     this.selectedPhotoIndex.set(current < photos.length - 1 ? current + 1 : 0);
   }

@@ -6,6 +6,7 @@ export * from "./favorites";
 export * from "./messages";
 export * from "./discovery";
 export * from "./users";
+export * from "./images";
 
 // Future function modules:
 // export * from "./matches";

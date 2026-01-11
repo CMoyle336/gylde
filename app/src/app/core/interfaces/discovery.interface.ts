@@ -23,6 +23,7 @@ export interface DiscoverableProfile {
   lifestyle: string;
   connectionTypes: string[];
   idealRelationship: string;
+  photoURL: string | null; // The designated profile photo
   photos: string[];
   verified: boolean;
   values: string[];

@@ -13,6 +13,7 @@
   flex-direction: column;
   flex: 1;
   color: var(--color-text-primary);
+  overflow-x: hidden;
 }
 
 .matches-page {
@@ -20,6 +21,13 @@
   margin: 0 auto;
   padding: 1.5rem;
   width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 640px) {
+  .matches-page {
+    padding: 0.75rem;
+  }
 }
 
 /* Tabs */
@@ -161,14 +169,14 @@
 
 @media (max-width: 640px) {
   .profile-grid {
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 400px) {
   .profile-grid {
-    grid-template-columns: 1fr;
+    gap: 0.5rem;
   }
 }
 

@@ -29,6 +29,13 @@
         <h2>Photos</h2>
         <p class="section-hint">Click the star to set as profile photo.</p>
         
+        @if (uploadError()) {
+          <div class="upload-error">
+            <mat-icon>error_outline</mat-icon>
+            <span>{{ uploadError() }}</span>
+          </div>
+        }
+        
         <div class="photos-grid">
           @for (photo of editablePhotos(); track photo; let i = $index) {
             <div class="photo-item" [class.is-profile]="photo === profilePhotoUrl()">
@@ -53,8 +60,24 @@
             </div>
           }
           
+          <!-- Uploading photos with individual loading states -->
+          @for (uploading of uploadingPhotos(); track uploading.id) {
+            <div class="photo-item uploading-item" [class.error]="uploading.status === 'error'">
+              <img [src]="uploading.preview" alt="Uploading photo" class="uploading-preview">
+              <div class="upload-overlay">
+                @if (uploading.status === 'uploading') {
+                  <div class="upload-spinner-overlay"></div>
+                  <span class="upload-status">Uploading...</span>
+                } @else if (uploading.status === 'error') {
+                  <mat-icon class="error-icon">error</mat-icon>
+                  <span class="upload-status error">{{ uploading.error || 'Failed' }}</span>
+                }
+              </div>
+            </div>
+          }
+          
           <!-- Add photo button -->
-          @if (editablePhotos().length < 6) {
+          @if (editablePhotos().length + uploadingPhotos().length < 6) {
             <button type="button" class="add-photo-btn" (click)="openPhotoPicker()">
               <mat-icon>add_photo_alternate</mat-icon>
               <span>Add Photo</span>

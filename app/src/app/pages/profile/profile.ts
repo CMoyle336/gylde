@@ -9,7 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { UserProfileService } from '../../core/services/user-profile.service';
-import { StorageService } from '../../core/services/storage.service';
+import { ImageUploadService } from '../../core/services/image-upload.service';
 import { AuthService } from '../../core/services/auth.service';
 import { OnboardingProfile } from '../../core/interfaces';
 
@@ -33,6 +33,13 @@ interface EditForm {
   occupation: string;
 }
 
+interface UploadingPhoto {
+  id: string;
+  preview: string;
+  status: 'uploading' | 'success' | 'error';
+  error?: string;
+}
+
 @Component({
   selector: 'app-profile',
   templateUrl: './profile.html',
@@ -52,8 +59,10 @@ interface EditForm {
 })
 export class ProfileComponent implements OnInit {
   private readonly userProfileService = inject(UserProfileService);
-  private readonly storageService = inject(StorageService);
+  private readonly imageUploadService = inject(ImageUploadService);
   private readonly authService = inject(AuthService);
+
+  protected readonly uploadError = signal<string | null>(null);
 
   @ViewChild('photoInput') photoInput!: ElementRef<HTMLInputElement>;
 
@@ -63,6 +72,9 @@ export class ProfileComponent implements OnInit {
 
   // Editable photos list (writable for immediate UI updates)
   protected readonly editablePhotos = signal<string[]>([]);
+
+  // Photos currently being uploaded (with preview)
+  protected readonly uploadingPhotos = signal<UploadingPhoto[]>([]);
 
   // Current profile photo URL (writable for immediate updates)
   protected readonly profilePhotoUrl = signal<string | null>(null);
@@ -253,32 +265,97 @@ export class ProfileComponent implements OnInit {
     const user = this.authService.user();
     if (!user) return;
 
-    this.saving.set(true);
+    // Clear previous error
+    this.uploadError.set(null);
 
-    try {
-      const currentPhotos = this.editablePhotos();
-      const newPhotos = [...currentPhotos];
-
-      for (const file of Array.from(files)) {
-        if (newPhotos.length >= 6) break;
-
-        const path = this.storageService.generateFilePath(user.uid, 'photos', file.name);
-        const url = await this.storageService.uploadFile(path, file);
-        newPhotos.push(url);
-      }
-
-      this.editablePhotos.set(newPhotos);
-
-      // If not editing, save immediately
-      if (!this.isEditing()) {
-        await this.savePhotosToProfile();
-      }
-    } catch (error) {
-      console.error('Error uploading photos:', error);
-    } finally {
-      this.saving.set(false);
-      input.value = ''; // Reset input
+    const currentPhotos = this.editablePhotos();
+    const currentUploading = this.uploadingPhotos().length;
+    const availableSlots = 6 - currentPhotos.length - currentUploading;
+    
+    // Check if user can upload more photos
+    if (availableSlots <= 0) {
+      this.uploadError.set('Maximum of 6 photos allowed');
+      input.value = '';
+      return;
     }
+
+    // Get files to upload (limited by available slots)
+    const filesToUpload = Array.from(files).slice(0, availableSlots);
+    
+    if (filesToUpload.length < files.length) {
+      this.uploadError.set(`Only ${availableSlots} more photo(s) can be added. Maximum is 6.`);
+    }
+
+    // Validate all files FIRST before any processing
+    for (const file of filesToUpload) {
+      const validation = this.imageUploadService.validateFile(file);
+      if (!validation.valid) {
+        this.uploadError.set(validation.error || 'Invalid file');
+        input.value = '';
+        return;
+      }
+    }
+
+    // Reset input immediately so user can select more files
+    input.value = '';
+
+    // Create previews and add to uploading list
+    const uploadingItems: UploadingPhoto[] = [];
+    for (const file of filesToUpload) {
+      const preview = await this.imageUploadService.createPreview(file);
+      const id = `upload-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      uploadingItems.push({ id, preview, status: 'uploading' });
+    }
+    
+    // Add all uploading items to the signal
+    this.uploadingPhotos.set([...this.uploadingPhotos(), ...uploadingItems]);
+
+    // Upload each file individually and update status
+    const successfulUrls: string[] = [];
+    
+    for (let i = 0; i < filesToUpload.length; i++) {
+      const file = filesToUpload[i];
+      const uploadingItem = uploadingItems[i];
+      
+      try {
+        const result = await this.imageUploadService.uploadImage(file, 'photos');
+        
+        if (result.success && result.url) {
+          successfulUrls.push(result.url);
+          
+          // Remove from uploading list BEFORE adding to editable photos
+          this.removeUploadingPhoto(uploadingItem.id);
+          
+          // Add to editable photos
+          this.editablePhotos.set([...this.editablePhotos(), result.url]);
+        } else {
+          this.updateUploadingPhotoStatus(uploadingItem.id, 'error', result.error);
+          // Remove failed upload after showing error briefly
+          setTimeout(() => this.removeUploadingPhoto(uploadingItem.id), 3000);
+        }
+      } catch (error) {
+        console.error('Error uploading photo:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Upload failed';
+        this.updateUploadingPhotoStatus(uploadingItem.id, 'error', errorMessage);
+        // Remove failed upload after showing error briefly
+        setTimeout(() => this.removeUploadingPhoto(uploadingItem.id), 3000);
+      }
+    }
+
+    // Save to profile if we had any successful uploads and not in edit mode
+    if (successfulUrls.length > 0 && !this.isEditing()) {
+      await this.savePhotosToProfile();
+    }
+  }
+
+  private updateUploadingPhotoStatus(id: string, status: 'uploading' | 'success' | 'error', error?: string): void {
+    this.uploadingPhotos.update(photos => 
+      photos.map(p => p.id === id ? { ...p, status, error } : p)
+    );
+  }
+
+  private removeUploadingPhoto(id: string): void {
+    this.uploadingPhotos.update(photos => photos.filter(p => p.id !== id));
   }
 
   async removePhoto(index: number): Promise<void> {
