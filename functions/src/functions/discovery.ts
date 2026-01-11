@@ -130,6 +130,9 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
     const searcherLocation = request.data.location;
 
     try {
+      // DEBUG: Add artificial delay to test skeleton loader (remove in production)
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
       // === BUILD FIRESTORE QUERY ===
       let query: FirebaseFirestore.Query = db.collection("users");
 

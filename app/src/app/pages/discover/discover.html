@@ -39,6 +39,16 @@
     </div>
 
     <div class="header-right">
+      <!-- Refresh Button -->
+      <button 
+        type="button" 
+        class="refresh-btn"
+        (click)="refresh()"
+        [disabled]="loading()"
+        matTooltip="Refresh results">
+        <mat-icon [class.spinning]="loading()">refresh</mat-icon>
+      </button>
+
       <!-- Saved Views Dropdown -->
       <button 
         type="button" 
@@ -266,10 +276,33 @@
   }
 
   <!-- Loading State -->
-  @if (loading()) {
-    <div class="loading-state">
-      <mat-spinner diameter="40"></mat-spinner>
-      <p>Finding profiles for you...</p>
+  @if (loading() && profiles().length === 0) {
+    <!-- Skeleton Loading State -->
+    <div class="profile-grid">
+      @for (i of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]; track i) {
+        <article class="profile-card skeleton">
+          <div class="card-photo">
+            <div class="skeleton-image"></div>
+          </div>
+          <div class="card-content">
+            <div class="card-header">
+              <div class="skeleton-text skeleton-name"></div>
+              <div class="skeleton-text skeleton-location"></div>
+            </div>
+            <div class="skeleton-text skeleton-tagline"></div>
+            <div class="skeleton-text skeleton-tagline-2"></div>
+            <div class="card-tags">
+              <div class="skeleton-tag"></div>
+              <div class="skeleton-tag"></div>
+            </div>
+            <div class="card-actions">
+              <div class="skeleton-button"></div>
+              <div class="skeleton-button"></div>
+              <div class="skeleton-button"></div>
+            </div>
+          </div>
+        </article>
+      }
     </div>
   } @else if (profiles().length === 0) {
     <!-- Empty State -->

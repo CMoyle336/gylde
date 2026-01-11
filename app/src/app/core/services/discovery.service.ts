@@ -115,18 +115,23 @@ export class DiscoveryService {
 
   /**
    * Search profiles using the Cloud Function
+   * @param loadMore - If true, load more results (pagination)
+   * @param forceRefresh - If true, always show loading state and clear existing results
    */
-  async searchProfiles(loadMore = false): Promise<void> {
+  async searchProfiles(loadMore = false, forceRefresh = false): Promise<void> {
     const currentUser = this.authService.user();
     if (!currentUser) return;
 
-    // Only show loading state if we don't have cached results
+    // Only show loading state if we don't have cached results (or force refresh)
     // This prevents the flash when returning to the discover page
     const hasExistingProfiles = this._profiles().length > 0;
     
     if (!loadMore) {
-      if (!hasExistingProfiles) {
+      if (!hasExistingProfiles || forceRefresh) {
         this._loading.set(true);
+        if (forceRefresh) {
+          this._profiles.set([]); // Clear existing results on force refresh
+        }
       }
       this._nextCursor.set(undefined);
     }

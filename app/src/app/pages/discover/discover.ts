@@ -97,6 +97,10 @@ export class DiscoverComponent implements OnInit {
     this.showAdvancedFilters.update(v => !v);
   }
 
+  protected async refresh(): Promise<void> {
+    await this.discoveryService.searchProfiles(false, true); // force refresh
+  }
+
   // Filter management
   protected updateFilter(key: keyof DiscoveryFilters, value: unknown): void {
     if (key === 'minAge' || key === 'maxAge') {
