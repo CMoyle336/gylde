@@ -40,6 +40,10 @@ export const routes: Routes = [
         path: 'settings',
         loadComponent: () => import('./pages/settings/settings').then((m) => m.SettingsComponent),
       },
+      {
+        path: 'user/:userId',
+        loadComponent: () => import('./pages/user-profile/user-profile').then((m) => m.UserProfileComponent),
+      },
     ],
   },
   // Redirect old dashboard route to discover

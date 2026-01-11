@@ -115,6 +115,39 @@ html {
   ));
 }
 
+// Global icon button centering fix
+.mat-mdc-icon-button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  
+  .mat-mdc-button-touch-target {
+    position: absolute;
+  }
+  
+  mat-icon,
+  .mat-icon {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+}
+
+// Fix for regular buttons with icons
+.mat-mdc-button,
+.mat-mdc-outlined-button,
+.mat-mdc-flat-button,
+.mat-mdc-raised-button,
+.mat-mdc-stroked-button {
+  mat-icon,
+  .mat-icon {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    vertical-align: middle !important;
+  }
+}
+
 // Slide toggle overrides
 html {
   @include mat.slide-toggle-overrides((

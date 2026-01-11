@@ -6,6 +6,10 @@ export const serverRoutes: ServerRoute[] = [
     path: 'messages/:conversationId',
     renderMode: RenderMode.Client
   },
+  {
+    path: 'user/:userId',
+    renderMode: RenderMode.Client
+  },
   // Catch-all for other routes
   {
     path: '**',

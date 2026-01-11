@@ -175,8 +175,7 @@ export class DiscoverComponent implements OnInit {
   }
 
   protected onViewProfile(profile: DiscoverableProfile): void {
-    console.log('View profile:', profile.uid);
-    // TODO: Navigate to profile detail
+    this.router.navigate(['/user', profile.uid]);
   }
 
   protected async onFavoriteProfile(profile: DiscoverableProfile): Promise<void> {

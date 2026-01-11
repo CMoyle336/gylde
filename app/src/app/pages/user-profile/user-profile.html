@@ -1,0 +1,281 @@
+<div class="user-profile-page">
+  @if (loading()) {
+    <app-profile-skeleton />
+  } @else if (error()) {
+    <div class="error-state">
+      <mat-icon class="error-icon">person_off</mat-icon>
+      <h2>{{ error() }}</h2>
+      <p class="error-hint">This profile may be private or no longer exists.</p>
+    </div>
+  } @else if (profile(); as profile) {
+    <div class="profile-content">
+      <!-- Photo Gallery -->
+      <section class="photo-section">
+        <div class="main-photo">
+          @if (profilePhoto()) {
+            <img [src]="profilePhoto()" [alt]="profile.displayName || 'Profile photo'">
+          } @else {
+            <div class="photo-placeholder">
+              <mat-icon>person</mat-icon>
+            </div>
+          }
+
+          <!-- Photo Navigation -->
+          @if ((profile.onboarding?.photos?.length || 0) > 1) {
+            <button class="photo-nav prev" mat-icon-button (click)="prevPhoto()">
+              <mat-icon>chevron_left</mat-icon>
+            </button>
+            <button class="photo-nav next" mat-icon-button (click)="nextPhoto()">
+              <mat-icon>chevron_right</mat-icon>
+            </button>
+
+            <!-- Photo Indicators -->
+            <div class="photo-indicators">
+              @for (photo of profile.onboarding?.photos || []; track photo; let i = $index) {
+                <button 
+                  class="indicator" 
+                  [class.active]="i === selectedPhotoIndex()"
+                  (click)="selectPhoto(i)">
+                </button>
+              }
+            </div>
+          }
+
+          <!-- Verified Badge -->
+          @if (profile.isVerified) {
+            <div class="verified-badge">
+              <mat-icon>verified</mat-icon>
+              Verified
+            </div>
+          }
+
+          <!-- Online Status -->
+          @if (isOnline()) {
+            <div class="online-badge">
+              <span class="online-dot"></span>
+              Online
+            </div>
+          } @else if (getLastActive()) {
+            <div class="last-active-badge">
+              {{ getLastActive() }}
+            </div>
+          }
+        </div>
+
+        <!-- Thumbnail Strip -->
+        @if ((profile.onboarding?.photos?.length || 0) > 1) {
+          <div class="photo-thumbnails">
+            @for (photo of profile.onboarding?.photos || []; track photo; let i = $index) {
+              <button 
+                class="thumbnail" 
+                [class.active]="i === selectedPhotoIndex()"
+                (click)="selectPhoto(i)">
+                <img [src]="photo" [alt]="'Photo ' + (i + 1)">
+              </button>
+            }
+          </div>
+        }
+      </section>
+
+      <!-- Profile Info -->
+      <section class="info-section">
+        <!-- Header with Name & Actions -->
+        <div class="profile-header">
+          <div class="name-location">
+            <h1 class="profile-name">
+              {{ profile.displayName || 'Anonymous' }}
+              @if (age()) {
+                <span class="age">, {{ age() }}</span>
+              }
+            </h1>
+            @if (profile.onboarding?.city; as city) {
+              <div class="location">
+                <mat-icon>location_on</mat-icon>
+                {{ city }}, {{ profile.onboarding?.country }}
+              </div>
+            }
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="action-buttons">
+            <button 
+              mat-flat-button
+              color="primary" 
+              class="message-btn"
+              (click)="onMessage()">
+              <mat-icon>chat_bubble</mat-icon>
+              Message
+            </button>
+            <button 
+              class="icon-btn favorite-btn"
+              [class.favorited]="isFavorited()"
+              (click)="onFavorite()"
+              [matTooltip]="isFavorited() ? 'Remove from favorites' : 'Add to favorites'">
+              <mat-icon>{{ isFavorited() ? 'favorite' : 'favorite_border' }}</mat-icon>
+            </button>
+            <button class="icon-btn" [matMenuTriggerFor]="moreMenu" matTooltip="More options">
+              <mat-icon>more_vert</mat-icon>
+            </button>
+            <mat-menu #moreMenu="matMenu">
+              <button mat-menu-item (click)="onReport()">
+                <mat-icon>flag</mat-icon>
+                Report User
+              </button>
+              <button mat-menu-item (click)="onBlock()">
+                <mat-icon>block</mat-icon>
+                Block User
+              </button>
+            </mat-menu>
+          </div>
+        </div>
+
+        <!-- Quick Info Tags -->
+        <div class="quick-info">
+          @if (formatGender(profile.onboarding?.genderIdentity)) {
+            <span class="info-tag">
+              <mat-icon>person</mat-icon>
+              {{ formatGender(profile.onboarding?.genderIdentity) }}
+            </span>
+          }
+          @if (formatLifestyle(profile.onboarding?.lifestyle)) {
+            <span class="info-tag">
+              <mat-icon>home</mat-icon>
+              {{ formatLifestyle(profile.onboarding?.lifestyle) }}
+            </span>
+          }
+          @if (profile.onboarding?.occupation; as occupation) {
+            <span class="info-tag">
+              <mat-icon>work</mat-icon>
+              {{ occupation }}
+            </span>
+          }
+          @if (profile.onboarding?.education; as education) {
+            <span class="info-tag">
+              <mat-icon>school</mat-icon>
+              {{ education }}
+            </span>
+          }
+        </div>
+
+        <!-- Looking For -->
+        <div class="profile-block">
+          <h3>Looking For</h3>
+          @if (profile.onboarding?.connectionTypes?.length) {
+            <div class="tag-list">
+              @for (type of profile.onboarding?.connectionTypes || []; track type) {
+                <span class="tag accent">{{ formatConnectionTypes([type]) }}</span>
+              }
+            </div>
+          } @else {
+            <p class="empty-placeholder">Not specified</p>
+          }
+        </div>
+
+        <!-- Values (moved up) -->
+        <div class="profile-block">
+          <h3>My Values</h3>
+          @if (profile.onboarding?.values?.length) {
+            <div class="tag-list">
+              @for (value of profile.onboarding?.values || []; track value) {
+                <span class="tag">{{ value }}</span>
+              }
+            </div>
+          } @else {
+            <p class="empty-placeholder">Not specified</p>
+          }
+        </div>
+
+        <!-- About / Ideal Relationship -->
+        <div class="profile-block">
+          <h3>About Me</h3>
+          @if (profile.onboarding?.idealRelationship) {
+            <p class="about-text">{{ profile.onboarding?.idealRelationship }}</p>
+          } @else {
+            <p class="empty-placeholder">Not specified</p>
+          }
+        </div>
+
+        <!-- What Support Means -->
+        <div class="profile-block">
+          <h3>What Support Means to Me</h3>
+          @if (profile.onboarding?.supportMeaning) {
+            <p class="about-text">{{ profile.onboarding?.supportMeaning }}</p>
+          } @else {
+            <p class="empty-placeholder">Not specified</p>
+          }
+        </div>
+
+        <!-- Lifestyle -->
+        <div class="profile-block">
+          <h3>Lifestyle</h3>
+          @if (profile.onboarding?.lifestyle) {
+            <span class="tag accent">{{ formatLifestyle(profile.onboarding?.lifestyle) }}</span>
+          } @else {
+            <p class="empty-placeholder">Not specified</p>
+          }
+        </div>
+
+        <!-- Personal Details -->
+        <div class="profile-block details-grid">
+          <h3>Details</h3>
+          <div class="details">
+            <div class="detail-item">
+              <span class="detail-label">Height</span>
+              <span class="detail-value" [class.empty]="!profile.onboarding?.height">
+                {{ profile.onboarding?.height || 'Not specified' }}
+              </span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Weight</span>
+              <span class="detail-value" [class.empty]="!profile.onboarding?.weight">
+                {{ profile.onboarding?.weight || 'Not specified' }}
+              </span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Ethnicity</span>
+              <span class="detail-value" [class.empty]="!profile.onboarding?.ethnicity">
+                {{ profile.onboarding?.ethnicity || 'Not specified' }}
+              </span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Relationship Status</span>
+              <span class="detail-value" [class.empty]="!profile.onboarding?.relationshipStatus">
+                {{ profile.onboarding?.relationshipStatus || 'Not specified' }}
+              </span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Children</span>
+              <span class="detail-value" [class.empty]="!profile.onboarding?.children">
+                {{ profile.onboarding?.children || 'Not specified' }}
+              </span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Education</span>
+              <span class="detail-value" [class.empty]="!profile.onboarding?.education">
+                {{ profile.onboarding?.education || 'Not specified' }}
+              </span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Occupation</span>
+              <span class="detail-value" [class.empty]="!profile.onboarding?.occupation">
+                {{ profile.onboarding?.occupation || 'Not specified' }}
+              </span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Smoking</span>
+              <span class="detail-value" [class.empty]="!profile.onboarding?.smoker">
+                {{ profile.onboarding?.smoker || 'Not specified' }}
+              </span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Drinking</span>
+              <span class="detail-value" [class.empty]="!profile.onboarding?.drinker">
+                {{ profile.onboarding?.drinker || 'Not specified' }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  }
+</div>
