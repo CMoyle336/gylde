@@ -103,40 +103,6 @@
         </div>
         <input #photoInput type="file" accept="image/*" multiple hidden (change)="onPhotosSelected($event)">
         
-        <!-- Photo Access Requests Section -->
-        @if (pendingRequests().length > 0) {
-          <div class="access-requests-section">
-            <h3>
-              <mat-icon>notifications</mat-icon>
-              Photo Access Requests
-              <span class="badge">{{ pendingRequestsCount() }}</span>
-            </h3>
-            <div class="access-list">
-              @for (request of pendingRequests(); track request.id) {
-                <div class="access-item">
-                  <img [src]="request.requesterPhoto || 'assets/default-avatar.png'" 
-                       alt="{{ request.requesterName }}"
-                       class="requester-photo">
-                  <div class="requester-info">
-                    <span class="requester-name">{{ request.requesterName }}</span>
-                    <span class="request-time">wants to see your private photos</span>
-                  </div>
-                  <div class="access-actions">
-                    <button mat-stroked-button color="primary" (click)="grantAccess(request.id)">
-                      <mat-icon>check</mat-icon>
-                      Grant
-                    </button>
-                    <button mat-stroked-button (click)="denyAccess(request.id)">
-                      <mat-icon>close</mat-icon>
-                      Deny
-                    </button>
-                  </div>
-                </div>
-              }
-            </div>
-          </div>
-        }
-        
         <!-- Granted Access Section -->
         @if (grants().length > 0) {
           <div class="access-grants-section">

@@ -1,0 +1,42 @@
+<div class="photo-access-dialog">
+  <div class="dialog-header">
+    <h2 mat-dialog-title>Private Photo Request</h2>
+    <button mat-icon-button class="close-btn" (click)="close()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <mat-dialog-content>
+    <div class="requester-info">
+      <img [src]="data.requesterPhoto || 'assets/default-avatar.png'" 
+           [alt]="data.requesterName"
+           class="requester-photo">
+      <div class="requester-text">
+        <span class="requester-name">{{ data.requesterName }}</span>
+        <span class="request-message">wants to view your private photos</span>
+      </div>
+    </div>
+
+    @if (error()) {
+      <div class="error-message">
+        <mat-icon>error_outline</mat-icon>
+        {{ error() }}
+      </div>
+    }
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    @if (processing()) {
+      <mat-spinner diameter="24"></mat-spinner>
+    } @else {
+      <button mat-stroked-button (click)="denyAccess()">
+        <mat-icon>block</mat-icon>
+        Deny
+      </button>
+      <button mat-flat-button color="primary" (click)="grantAccess()">
+        <mat-icon>check</mat-icon>
+        Grant Access
+      </button>
+    }
+  </mat-dialog-actions>
+</div>

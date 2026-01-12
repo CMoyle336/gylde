@@ -271,8 +271,7 @@
   pointer-events: none;
 }
 
-/* Access Request/Grant Sections */
-.access-requests-section,
+/* Access Grant Section */
 .access-grants-section {
   margin-top: 1.5rem;
   padding: 1rem;
@@ -281,7 +280,6 @@
   border: 1px solid var(--color-border);
 }
 
-.access-requests-section h3,
 .access-grants-section h3 {
   display: flex;
   align-items: center;
@@ -292,22 +290,11 @@
   color: var(--color-text-primary);
 }
 
-.access-requests-section h3 mat-icon,
 .access-grants-section h3 mat-icon {
   font-size: 1.25rem;
   width: 1.25rem;
   height: 1.25rem;
   color: var(--color-accent);
-}
-
-.access-requests-section h3 .badge {
-  background: var(--color-accent);
-  color: #1a1720;
-  font-size: 0.6875rem;
-  font-weight: 700;
-  padding: 0.15rem 0.4rem;
-  border-radius: 10px;
-  margin-left: auto;
 }
 
 .access-list {

@@ -128,6 +128,7 @@
                       @case ('message') { chat_bubble }
                       @case ('favorite') { star }
                       @case ('view') { visibility }
+                      @case ('photo_access_request') { lock }
                     }
                   </span>
                 </span>
@@ -139,6 +140,7 @@
                     @case ('message') { {{ activity.name }} messaged you }
                     @case ('favorite') { {{ activity.name }} favorited you }
                     @case ('view') { {{ activity.name }} viewed your profile }
+                    @case ('photo_access_request') { {{ activity.name }} requested access to your private photos }
                   }
                 </span>
                 <span class="activity-time">{{ activity.timeAgo }}</span>

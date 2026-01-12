@@ -288,6 +288,8 @@ export class ActivityService implements OnDestroy {
         return `💬 ${activity.fromUserName} sent you a message`;
       case 'view':
         return `👀 ${activity.fromUserName} viewed your profile`;
+      case 'photo_access_request':
+        return `🔒 ${activity.fromUserName} requested access to your private photos`;
       default:
         return `${activity.fromUserName} interacted with you`;
     }

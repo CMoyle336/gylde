@@ -92,11 +92,7 @@ export class ProfileComponent implements OnInit {
   // Photo privacy state (map of url -> isPrivate)
   protected readonly photoPrivacy = signal<Map<string, boolean>>(new Map());
 
-  // Pending photo access requests
-  protected readonly pendingRequests = this.photoAccessService.pendingRequests;
-  protected readonly pendingRequestsCount = this.photoAccessService.pendingRequestsCount;
-
-  // Users who have been granted access
+  // Users who have been granted access to view private photos
   protected readonly grants = this.photoAccessService.grants;
 
   // Max photos allowed
@@ -484,23 +480,7 @@ export class ProfileComponent implements OnInit {
     return this.photoPrivacy().get(photoUrl) || false;
   }
 
-  // Access request management
-  async grantAccess(requesterId: string): Promise<void> {
-    try {
-      await this.photoAccessService.respondToRequest(requesterId, 'grant');
-    } catch (error) {
-      console.error('Error granting access:', error);
-    }
-  }
-
-  async denyAccess(requesterId: string): Promise<void> {
-    try {
-      await this.photoAccessService.respondToRequest(requesterId, 'deny');
-    } catch (error) {
-      console.error('Error denying access:', error);
-    }
-  }
-
+  // Access management - revoke granted access
   async revokeAccess(userId: string): Promise<void> {
     try {
       await this.photoAccessService.revokeAccess(userId);

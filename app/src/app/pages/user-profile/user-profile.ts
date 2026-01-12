@@ -53,6 +53,9 @@ export class UserProfileComponent implements OnInit, OnDestroy {
   protected readonly requestingAccess = signal(false);
   protected readonly photoPrivacyMap = signal<Map<string, boolean>>(new Map());
 
+  // Real-time subscription cleanup
+  private accessStatusUnsubscribe?: () => void;
+
   private readonly favoritedUserIds = this.favoriteService.favoritedUserIds;
   
   protected readonly isFavorited = computed(() => {
@@ -131,7 +134,8 @@ export class UserProfileComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    // Cleanup if needed
+    // Cleanup real-time subscription
+    this.accessStatusUnsubscribe?.();
   }
 
   private async loadProfile(userId: string): Promise<void> {
@@ -167,15 +171,15 @@ export class UserProfileComponent implements OnInit, OnDestroy {
       }
       this.photoPrivacyMap.set(privacyMap);
 
-      // Check if current user has access to private photos
-      const currentUser = this.authService.user();
-      if (currentUser && currentUser.uid !== userId) {
-        const accessSummary = await this.photoAccessService.checkAccess(userId);
-        this.photoAccess.set(accessSummary);
-      } else if (currentUser?.uid === userId) {
-        // Viewing own profile - always has access
-        this.photoAccess.set({ hasAccess: true });
-      }
+      // Set up real-time subscription for photo access status
+      // This will update automatically when access is granted/denied
+      this.accessStatusUnsubscribe?.(); // Clean up any existing subscription
+      this.accessStatusUnsubscribe = this.photoAccessService.subscribeToAccessStatus(
+        userId,
+        (status) => {
+          this.photoAccess.set(status);
+        }
+      );
 
       // Record the profile view (creates activity for viewed user)
       await this.activityService.recordProfileView(
@@ -272,12 +276,37 @@ export class UserProfileComponent implements OnInit, OnDestroy {
     }
   }
 
+  protected async cancelPhotoAccessRequest(): Promise<void> {
+    const p = this.profile();
+    if (!p) return;
+
+    this.requestingAccess.set(true);
+    try {
+      await this.photoAccessService.cancelRequest(p.uid);
+      this.photoAccess.set({ hasAccess: false, requestStatus: undefined });
+    } catch (error) {
+      console.error('Error cancelling photo access request:', error);
+    } finally {
+      this.requestingAccess.set(false);
+    }
+  }
+
   protected getAccessStatusText(): string {
     const access = this.photoAccess();
     if (access.hasAccess) return '';
     if (access.requestStatus === 'pending') return 'Request pending';
     if (access.requestStatus === 'denied') return 'Request denied';
     return '';
+  }
+
+  protected isPhotoPrivate(photoUrl: string): boolean {
+    return this.photoPrivacyMap().get(photoUrl) || false;
+  }
+
+  protected isCurrentPhotoPrivate(): boolean {
+    const currentPhoto = this.profilePhoto();
+    if (!currentPhoto) return false;
+    return this.isPhotoPrivate(currentPhoto);
   }
 
   private calculateAge(birthDate: string): number {

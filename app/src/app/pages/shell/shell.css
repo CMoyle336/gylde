@@ -577,6 +577,14 @@
   color: white;
 }
 
+.activity-type-badge.type-photo_access_request {
+  background: var(--color-accent, #c9a962);
+}
+
+.activity-type-badge.type-photo_access_request .material-icons-outlined {
+  color: #1a1720;
+}
+
 .activity-content {
   flex: 1;
   min-width: 0;

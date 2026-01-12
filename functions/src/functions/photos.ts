@@ -90,7 +90,58 @@ export const requestPhotoAccess = onCall(async (request) => {
     pendingPhotoAccessCount: FieldValue.increment(1),
   });
 
+  // Activity creation is handled by onPhotoAccessRequestWrite trigger
+
   return { success: true, message: "Request sent" };
+});
+
+/**
+ * Cancel a pending photo access request
+ */
+export const cancelPhotoAccessRequest = onCall(async (request) => {
+  const { auth, data } = request;
+
+  if (!auth) {
+    throw new HttpsError("unauthenticated", "Must be authenticated");
+  }
+
+  const { targetUserId } = data;
+  const requesterId = auth.uid;
+
+  if (!targetUserId || typeof targetUserId !== "string") {
+    throw new HttpsError("invalid-argument", "Target user ID is required");
+  }
+
+  // Check if request exists
+  const requestRef = db
+    .collection("users")
+    .doc(targetUserId)
+    .collection("photoAccessRequests")
+    .doc(requesterId);
+
+  const requestDoc = await requestRef.get();
+
+  if (!requestDoc.exists) {
+    throw new HttpsError("not-found", "No pending request found");
+  }
+
+  const requestData = requestDoc.data();
+  if (requestData?.status !== "pending") {
+    throw new HttpsError(
+      "failed-precondition",
+      "Can only cancel pending requests"
+    );
+  }
+
+  // Delete the request (activity deletion is handled by onPhotoAccessRequestDeleted trigger)
+  await requestRef.delete();
+
+  // Decrement pending count on target user
+  await db.collection("users").doc(targetUserId).update({
+    pendingPhotoAccessCount: FieldValue.increment(-1),
+  });
+
+  return { success: true, message: "Request cancelled" };
 });
 
 /**
@@ -430,3 +481,90 @@ export const togglePhotoPrivacy = onCall(async (request) => {
     message: isPrivate ? "Photo marked as private" : "Photo made public",
   };
 });
+
+// ============================================================
+// FIRESTORE TRIGGERS FOR PHOTO ACCESS REQUESTS
+// ============================================================
+
+import { onDocumentWritten, onDocumentDeleted } from "firebase-functions/v2/firestore";
+
+/**
+ * Trigger: When a photo access request is created or updated
+ * Creates or updates the corresponding activity record
+ */
+export const onPhotoAccessRequestWrite = onDocumentWritten(
+  "users/{targetUserId}/photoAccessRequests/{requesterId}",
+  async (event) => {
+    const { targetUserId, requesterId } = event.params;
+    const afterData = event.data?.after.data();
+
+    // If document was deleted, skip (handled by onPhotoAccessRequestDeleted)
+    if (!afterData) {
+      return;
+    }
+
+    // Only create activity for pending requests
+    if (afterData.status !== "pending") {
+      return;
+    }
+
+    const activitiesRef = db
+      .collection("users")
+      .doc(targetUserId)
+      .collection("activities");
+
+    // Check for existing activity from this user
+    const existingActivity = await activitiesRef
+      .where("type", "==", "photo_access_request")
+      .where("fromUserId", "==", requesterId)
+      .limit(1)
+      .get();
+
+    if (!existingActivity.empty) {
+      // Update existing activity
+      await existingActivity.docs[0].ref.update({
+        createdAt: Timestamp.now(),
+        read: false,
+        fromUserName: afterData.requesterName,
+        fromUserPhoto: afterData.requesterPhoto,
+      });
+    } else {
+      // Create new activity
+      await activitiesRef.add({
+        type: "photo_access_request",
+        fromUserId: requesterId,
+        fromUserName: afterData.requesterName,
+        fromUserPhoto: afterData.requesterPhoto,
+        toUserId: targetUserId,
+        read: false,
+        createdAt: Timestamp.now(),
+      });
+    }
+  }
+);
+
+/**
+ * Trigger: When a photo access request is deleted
+ * Deletes the corresponding activity record
+ */
+export const onPhotoAccessRequestDeleted = onDocumentDeleted(
+  "users/{targetUserId}/photoAccessRequests/{requesterId}",
+  async (event) => {
+    const { targetUserId, requesterId } = event.params;
+
+    const activitiesRef = db
+      .collection("users")
+      .doc(targetUserId)
+      .collection("activities");
+
+    const activityQuery = await activitiesRef
+      .where("type", "==", "photo_access_request")
+      .where("fromUserId", "==", requesterId)
+      .limit(1)
+      .get();
+
+    if (!activityQuery.empty) {
+      await activityQuery.docs[0].ref.delete();
+    }
+  }
+);

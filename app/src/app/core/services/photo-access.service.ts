@@ -111,6 +111,18 @@ export class PhotoAccessService {
   }
 
   /**
+   * Cancel a pending photo access request
+   */
+  async cancelRequest(targetUserId: string): Promise<{ success: boolean; message: string }> {
+    const fn = httpsCallable<{ targetUserId: string }, { success: boolean; message: string }>(
+      this.functions,
+      'cancelPhotoAccessRequest'
+    );
+    const result = await fn({ targetUserId });
+    return result.data;
+  }
+
+  /**
    * Respond to a photo access request
    */
   async respondToRequest(
@@ -204,5 +216,52 @@ export class PhotoAccessService {
 
     const accessSummary = await this.checkAccess(targetUserId);
     return { photos: photoList, hasAccess: accessSummary.hasAccess };
+  }
+
+  /**
+   * Subscribe to real-time photo access status updates for a specific user
+   * Used on the user profile page to detect when access is granted/denied
+   * @returns Unsubscribe function
+   */
+  subscribeToAccessStatus(
+    targetUserId: string,
+    callback: (status: PhotoAccessSummary) => void
+  ): () => void {
+    const currentUser = this.authService.user();
+    if (!currentUser) {
+      callback({ hasAccess: false });
+      return () => {};
+    }
+
+    // Self always has access
+    if (currentUser.uid === targetUserId) {
+      callback({ hasAccess: true });
+      return () => {};
+    }
+
+    // Listen to the request document for status changes
+    const requestDocRef = doc(
+      this.firestore,
+      `users/${targetUserId}/photoAccessRequests/${currentUser.uid}`
+    );
+
+    const unsubscribe = onSnapshot(requestDocRef, (snapshot) => {
+      if (!snapshot.exists()) {
+        // No request exists
+        callback({ hasAccess: false, requestStatus: undefined });
+        return;
+      }
+
+      const data = snapshot.data();
+      const status = data['status'] as 'pending' | 'granted' | 'denied';
+      
+      callback({
+        hasAccess: status === 'granted',
+        requestStatus: status,
+        requestedAt: data['requestedAt']?.toDate(),
+      });
+    });
+
+    return unsubscribe;
   }
 }

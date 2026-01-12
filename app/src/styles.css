@@ -90,3 +90,36 @@ a {
   border-left: 3px solid #6b6777;
 }
 
+
+/* ============================================
+   MATERIAL SPINNER FIX
+   Fix off-center rotation on mat-spinner
+   ============================================ */
+
+/* Ensure mat-spinner displays as a proper inline-flex container */
+mat-spinner,
+mat-progress-spinner,
+.mat-mdc-progress-spinner {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+}
+
+/* Fix the internal SVG to not inherit max-width: 100% from global reset */
+mat-spinner svg,
+mat-progress-spinner svg,
+.mat-mdc-progress-spinner svg {
+  max-width: none;
+}
+
+/* Ensure the circular progress container is properly sized */
+.mdc-circular-progress {
+  display: inline-flex;
+  vertical-align: middle;
+}
+
+/* Fix spinner layer transform origin */
+.mdc-circular-progress__spinner-layer {
+  transform-origin: center center;
+}

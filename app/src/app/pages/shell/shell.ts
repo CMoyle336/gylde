@@ -7,12 +7,14 @@ import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialog } from '@angular/material/dialog';
 import { AuthService } from '../../core/services/auth.service';
 import { UserProfileService } from '../../core/services/user-profile.service';
 import { FavoriteService } from '../../core/services/favorite.service';
 import { ActivityService } from '../../core/services/activity.service';
 import { MessageService } from '../../core/services/message.service';
 import { ActivityDisplay } from '../../core/interfaces';
+import { PhotoAccessDialogComponent, PhotoAccessDialogData } from '../../components/photo-access-dialog';
 
 @Component({
   selector: 'app-shell',
@@ -40,6 +42,7 @@ export class ShellComponent implements OnInit, OnDestroy {
   private readonly messageService = inject(MessageService);
   private readonly translateService = inject(TranslateService);
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly dialog = inject(MatDialog);
 
   // Message state
   protected readonly messageUnreadCount = this.messageService.totalUnreadCount;
@@ -172,9 +175,29 @@ export class ShellComponent implements OnInit, OnDestroy {
         this.router.navigate(['/discover']);
         break;
 
+      case 'photo_access_request':
+        // Open dialog to approve/deny the request
+        this.openPhotoAccessDialog(activity);
+        break;
+
       default:
         this.router.navigate(['/discover']);
     }
+  }
+
+  private openPhotoAccessDialog(activity: ActivityDisplay): void {
+    const dialogData: PhotoAccessDialogData = {
+      requesterId: activity.fromUserId,
+      requesterName: activity.name,
+      requesterPhoto: activity.photo,
+    };
+
+    this.dialog.open(PhotoAccessDialogComponent, {
+      data: dialogData,
+      panelClass: 'photo-access-dialog-panel',
+      width: '400px',
+      maxWidth: '95vw',
+    });
   }
 
   protected markAllActivitiesAsRead(): void {
