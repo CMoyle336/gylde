@@ -1,11 +1,13 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { FirestoreService } from './firestore.service';
 import { AuthService } from './auth.service';
+import { UserProfileService } from './user-profile.service';
 
 export interface Favorite {
   fromUserId: string;
   toUserId: string;
   createdAt: Date;
+  private?: boolean; // If true, only visible to the creator, not the recipient
 }
 
 @Injectable({
@@ -14,6 +16,7 @@ export interface Favorite {
 export class FavoriteService {
   private readonly firestoreService = inject(FirestoreService);
   private readonly authService = inject(AuthService);
+  private readonly userProfileService = inject(UserProfileService);
 
   // Set of user IDs that the current user has favorited
   private readonly _favoritedUserIds = signal<Set<string>>(new Set());
@@ -53,10 +56,16 @@ export class FavoriteService {
     if (!currentUser) return false;
 
     try {
+      // Check if current user has favorite notifications disabled
+      const profile = await this.userProfileService.getCurrentUserProfile();
+      const createOnFavorite = profile?.settings?.activity?.createOnFavorite;
+      const isPrivate = createOnFavorite === false;
+
       const favorite: Favorite = {
         fromUserId: currentUser.uid,
         toUserId,
         createdAt: new Date(),
+        private: isPrivate,
       };
 
       // Store favorite in the current user's favorites subcollection

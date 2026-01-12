@@ -19,6 +19,7 @@ import {
 } from '@angular/fire/firestore';
 import { FirestoreService } from './firestore.service';
 import { AuthService } from './auth.service';
+import { UserProfileService } from './user-profile.service';
 import { Activity, ActivityDisplay } from '../interfaces';
 
 @Injectable({
@@ -28,6 +29,7 @@ export class ActivityService implements OnDestroy {
   private readonly firestore = inject(Firestore);
   private readonly firestoreService = inject(FirestoreService);
   private readonly authService = inject(AuthService);
+  private readonly userProfileService = inject(UserProfileService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly router = inject(Router);
@@ -225,12 +227,22 @@ export class ActivityService implements OnDestroy {
    * Record a profile view in the profileViews collection.
    * Activity creation is handled by a Firebase trigger (onProfileViewCreated).
    * Uses a single document per viewer-viewed pair for efficiency.
+   * Respects the user's activity.createOnView setting.
    */
   async recordProfileView(viewedUserId: string): Promise<void> {
     const currentUser = this.authService.user();
     if (!currentUser || currentUser.uid === viewedUserId) return;
 
     try {
+      // Check if current user has profile view activity creation enabled
+      const profile = await this.userProfileService.getCurrentUserProfile();
+      const createOnView = profile?.settings?.activity?.createOnView;
+      
+      // If explicitly set to false, don't record the view
+      if (createOnView === false) {
+        return;
+      }
+
       const viewsRef = collection(this.firestore, 'profileViews');
       
       // Check if we already have a view record from this user to this profile

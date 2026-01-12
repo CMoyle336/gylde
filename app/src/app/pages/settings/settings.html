@@ -5,52 +5,6 @@
   </header>
 
   <div class="settings-content">
-    <!-- Activity Settings -->
-    <section class="settings-section">
-      <div class="section-header">
-        <mat-icon>visibility</mat-icon>
-        <div>
-          <h2>{{ 'SETTINGS.ACTIVITY.TITLE' | translate }}</h2>
-          <p>{{ 'SETTINGS.ACTIVITY.SUBTITLE' | translate }}</p>
-        </div>
-      </div>
-
-      <div class="settings-group">
-        <div class="setting-item">
-          <div class="setting-info">
-            <span class="setting-label">{{ 'SETTINGS.ACTIVITY.VIEW_NOTIFICATIONS' | translate }}</span>
-            <span class="setting-description">{{ 'SETTINGS.ACTIVITY.VIEW_NOTIFICATIONS_DESC' | translate }}</span>
-          </div>
-          <mat-slide-toggle
-            [checked]="settings().activity?.createOnView ?? true"
-            (change)="updateSetting('activity', 'createOnView', $event.checked)">
-          </mat-slide-toggle>
-        </div>
-
-        <div class="setting-item">
-          <div class="setting-info">
-            <span class="setting-label">{{ 'SETTINGS.ACTIVITY.FAVORITE_NOTIFICATIONS' | translate }}</span>
-            <span class="setting-description">{{ 'SETTINGS.ACTIVITY.FAVORITE_NOTIFICATIONS_DESC' | translate }}</span>
-          </div>
-          <mat-slide-toggle
-            [checked]="settings().activity?.createOnFavorite ?? true"
-            (change)="updateSetting('activity', 'createOnFavorite', $event.checked)">
-          </mat-slide-toggle>
-        </div>
-
-        <div class="setting-item">
-          <div class="setting-info">
-            <span class="setting-label">{{ 'SETTINGS.ACTIVITY.MESSAGE_NOTIFICATIONS' | translate }}</span>
-            <span class="setting-description">{{ 'SETTINGS.ACTIVITY.MESSAGE_NOTIFICATIONS_DESC' | translate }}</span>
-          </div>
-          <mat-slide-toggle
-            [checked]="settings().activity?.createOnMessage ?? true"
-            (change)="updateSetting('activity', 'createOnMessage', $event.checked)">
-          </mat-slide-toggle>
-        </div>
-      </div>
-    </section>
-
     <!-- Privacy Settings -->
     <section class="settings-section">
       <div class="section-header">
@@ -97,12 +51,34 @@
 
         <div class="setting-item">
           <div class="setting-info">
-            <span class="setting-label">{{ 'SETTINGS.PRIVACY.SHOW_DISTANCE' | translate }}</span>
-            <span class="setting-description">{{ 'SETTINGS.PRIVACY.SHOW_DISTANCE_DESC' | translate }}</span>
+            <span class="setting-label">{{ 'SETTINGS.PRIVACY.SHOW_LOCATION' | translate }}</span>
+            <span class="setting-description">{{ 'SETTINGS.PRIVACY.SHOW_LOCATION_DESC' | translate }}</span>
           </div>
           <mat-slide-toggle
-            [checked]="settings().privacy?.showDistance ?? true"
-            (change)="updateSetting('privacy', 'showDistance', $event.checked)">
+            [checked]="settings().privacy?.showLocation ?? true"
+            (change)="updateSetting('privacy', 'showLocation', $event.checked)">
+          </mat-slide-toggle>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <span class="setting-label">{{ 'SETTINGS.ACTIVITY.VIEW_NOTIFICATIONS' | translate }}</span>
+            <span class="setting-description">{{ 'SETTINGS.ACTIVITY.VIEW_NOTIFICATIONS_DESC' | translate }}</span>
+          </div>
+          <mat-slide-toggle
+            [checked]="settings().activity?.createOnView ?? true"
+            (change)="updateSetting('activity', 'createOnView', $event.checked)">
+          </mat-slide-toggle>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-info">
+            <span class="setting-label">{{ 'SETTINGS.ACTIVITY.FAVORITE_NOTIFICATIONS' | translate }}</span>
+            <span class="setting-description">{{ 'SETTINGS.ACTIVITY.FAVORITE_NOTIFICATIONS_DESC' | translate }}</span>
+          </div>
+          <mat-slide-toggle
+            [checked]="settings().activity?.createOnFavorite ?? true"
+            (change)="updateSetting('activity', 'createOnFavorite', $event.checked)">
           </mat-slide-toggle>
         </div>
       </div>
@@ -394,6 +370,37 @@
             <mat-spinner diameter="20"></mat-spinner>
           } @else {
             {{ 'SETTINGS.DIALOGS.DELETE_BUTTON' | translate }}
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Disable Account Dialog -->
+@if (showDisableAccountDialog()) {
+  <div class="dialog-overlay" (click)="closeDialogs()">
+    <div class="dialog" (click)="$event.stopPropagation()">
+      <h3>{{ 'SETTINGS.DIALOGS.DISABLE_TITLE' | translate }}</h3>
+      <p>{{ 'SETTINGS.DIALOGS.DISABLE_DESC' | translate }}</p>
+      
+      <div class="warning-box info">
+        <mat-icon>info</mat-icon>
+        <span>{{ 'SETTINGS.DIALOGS.DISABLE_INFO' | translate }}</span>
+      </div>
+
+      @if (dialogError()) {
+        <p class="error-message">{{ dialogError() }}</p>
+      }
+
+      <div class="dialog-actions">
+        <button mat-button (click)="closeDialogs()">{{ 'SETTINGS.DIALOGS.CANCEL' | translate }}</button>
+        <button mat-flat-button color="warn" (click)="confirmDisableAccount()" 
+                [disabled]="dialogLoading()">
+          @if (dialogLoading()) {
+            <mat-spinner diameter="20"></mat-spinner>
+          } @else {
+            {{ 'SETTINGS.DIALOGS.DISABLE_BUTTON' | translate }}
           }
         </button>
       </div>

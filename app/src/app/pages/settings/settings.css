@@ -240,24 +240,49 @@
   margin-top: 1rem;
 }
 
-.delete-dialog .warning-box {
+.warning-box {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.75rem;
-  background: rgba(229, 115, 115, 0.1);
   padding: 1rem;
   border-radius: 8px;
   margin-bottom: 1.5rem;
+}
+
+.warning-box mat-icon {
+  flex-shrink: 0;
+  font-size: 1.25rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-top: 0.1rem;
+}
+
+.warning-box span {
+  font-size: 0.875rem;
+  color: var(--color-text-primary);
+  line-height: 1.5;
+}
+
+/* Danger variant (for delete) */
+.delete-dialog .warning-box,
+.warning-box.danger {
+  background: rgba(229, 115, 115, 0.1);
   border: 1px solid rgba(229, 115, 115, 0.3);
 }
 
-.delete-dialog .warning-box mat-icon {
+.delete-dialog .warning-box mat-icon,
+.warning-box.danger mat-icon {
   color: var(--color-danger);
 }
 
-.delete-dialog .warning-box span {
-  font-size: 0.875rem;
-  color: var(--color-text-primary);
+/* Info variant (for disable) */
+.warning-box.info {
+  background: rgba(var(--color-accent-rgb, 200, 170, 110), 0.1);
+  border: 1px solid rgba(var(--color-accent-rgb, 200, 170, 110), 0.3);
+}
+
+.warning-box.info mat-icon {
+  color: var(--color-accent);
 }
 
 .error-message {

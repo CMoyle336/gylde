@@ -9,11 +9,12 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
+import { Functions, httpsCallable } from '@angular/fire/functions';
 import { AuthService } from '../../core/services/auth.service';
 import { UserProfileService } from '../../core/services/user-profile.service';
-import { AuthResult } from '../../core/interfaces';
+import { AuthResult, UserProfile } from '../../core/interfaces';
 
-type AuthMode = 'login' | 'signup' | 'reset';
+type AuthMode = 'login' | 'signup' | 'reset' | 'disabled';
 
 @Component({
   selector: 'app-auth-modal',
@@ -25,6 +26,7 @@ type AuthMode = 'login' | 'signup' | 'reset';
 export class AuthModalComponent {
   private readonly authService = inject(AuthService);
   private readonly userProfileService = inject(UserProfileService);
+  private readonly functions = inject(Functions);
 
   readonly isOpen = input.required<boolean>();
   readonly initialMode = input<AuthMode>('login');
@@ -39,6 +41,10 @@ export class AuthModalComponent {
   protected readonly submitting = signal(false);
   protected readonly localError = signal<string | null>(null);
   protected readonly resetSent = signal(false);
+  protected readonly enablingAccount = signal(false);
+
+  // Store profile temporarily for disabled account flow
+  private disabledProfile: UserProfile | null = null;
 
   protected readonly authError = this.authService.error;
 
@@ -81,13 +87,24 @@ export class AuthModalComponent {
       switch (currentMode) {
         case 'login': {
           await this.authService.signIn(this.email(), this.password());
-          // Check if user has completed onboarding
           const user = this.authService.user();
           if (user) {
             const profile = await this.userProfileService.loadUserProfile(user.uid);
+            
+            // Check if account is disabled
+            if (profile?.settings?.account?.disabled) {
+              this.disabledProfile = profile;
+              this.mode.set('disabled');
+              return; // Don't emit authenticated - wait for re-enable decision
+            }
+            
             this.authenticated.emit({ isNewUser: !profile?.onboardingCompleted });
           }
           break;
+        }
+        case 'disabled': {
+          // This case shouldn't be submitted directly
+          return;
         }
         case 'signup': {
           await this.authService.signUp(this.email(), this.password(), this.displayName());
@@ -130,6 +147,12 @@ export class AuthModalComponent {
           await this.userProfileService.createUserProfile(user.uid, user.email, user.displayName);
           this.authenticated.emit({ isNewUser: true });
         } else {
+          // Check if account is disabled
+          if (profile.settings?.account?.disabled) {
+            this.disabledProfile = profile;
+            this.mode.set('disabled');
+            return;
+          }
           this.authenticated.emit({ isNewUser: !profile.onboardingCompleted });
         }
       }
@@ -138,6 +161,36 @@ export class AuthModalComponent {
     } finally {
       this.submitting.set(false);
     }
+  }
+
+  protected async onEnableAccount(): Promise<void> {
+    this.enablingAccount.set(true);
+    this.localError.set(null);
+
+    try {
+      const enableAccountFn = httpsCallable(this.functions, 'enableAccount');
+      await enableAccountFn({});
+
+      // Reload profile to get updated settings
+      const user = this.authService.user();
+      if (user) {
+        await this.userProfileService.loadUserProfile(user.uid);
+        this.authenticated.emit({ isNewUser: !this.disabledProfile?.onboardingCompleted });
+      }
+      this.disabledProfile = null;
+    } catch (error) {
+      console.error('Error enabling account:', error);
+      this.localError.set('Failed to enable account. Please try again.');
+    } finally {
+      this.enablingAccount.set(false);
+    }
+  }
+
+  protected onCancelEnable(): void {
+    // Sign out the user since they chose not to re-enable
+    this.authService.signOutUser();
+    this.disabledProfile = null;
+    this.mode.set('login');
   }
 
   protected onClose(): void {

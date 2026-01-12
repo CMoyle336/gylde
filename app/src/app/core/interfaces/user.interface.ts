@@ -49,7 +49,7 @@ export interface UserSettings {
     showOnlineStatus?: boolean; // Show online/last active status to others
     showLastActive?: boolean; // Show last active timestamp
     profileVisible?: boolean; // Make profile visible in discovery
-    showDistance?: boolean; // Show distance from other users
+    showLocation?: boolean; // Show location on profile
   };
 
   // Notification settings

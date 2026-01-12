@@ -25,6 +25,7 @@ export interface MatchProfile {
   isOnline: boolean;
   showOnlineStatus: boolean;
   showLastActive: boolean;
+  showLocation: boolean;
   lastActiveAt: Date | null;
   interactionDate: Date; // When the favorite/view happened
   // Additional fields for profile card
@@ -197,6 +198,7 @@ export class MatchesService {
 
   /**
    * Count new favorites since last viewed
+   * Excludes private favorites
    */
   private async countNewFavoritedMe(currentUserId: string): Promise<number> {
     const lastViewed = this.getLastViewedTime('favorited-me');
@@ -210,7 +212,9 @@ export class MatchesService {
     );
 
     const snapshot = await getDocs(q);
-    return snapshot.size;
+    // Filter out private favorites client-side (Firestore doesn't support multiple inequality filters on different fields)
+    const nonPrivateFavorites = snapshot.docs.filter(d => d.data()['private'] !== true);
+    return nonPrivateFavorites.length;
   }
 
   /**
@@ -270,6 +274,7 @@ export class MatchesService {
 
   /**
    * Load users who have favorited the current user
+   * Excludes private favorites (where the user has disabled favorite notifications)
    */
   private async loadFavoritedMe(currentUserId: string): Promise<MatchProfile[]> {
     // Query all users' favorites subcollections for documents where toUserId matches current user
@@ -278,6 +283,8 @@ export class MatchesService {
     const q = query(
       favoritesRef,
       where('toUserId', '==', currentUserId),
+      where('private', '!=', true), // Exclude private favorites
+      orderBy('private'), // Required for != query
       orderBy('createdAt', 'desc'),
       limit(50)
     );
@@ -332,14 +339,20 @@ export class MatchesService {
     const q = query(favoritesRef, orderBy('createdAt', 'desc'), limit(50));
 
     const snapshot = await getDocs(q);
-    const userIds = snapshot.docs.map(d => d.data()['toUserId'] as string);
     const interactionDates = new Map<string, Date>();
+    const userIds: string[] = [];
+    
     snapshot.docs.forEach(d => {
       const data = d.data();
-      interactionDates.set(
-        data['toUserId'],
-        data['createdAt']?.toDate?.() || new Date()
-      );
+      // Support both old format (odTargetUserId) and new format (toUserId)
+      const targetUserId = data['toUserId'] || data['odTargetUserId'];
+      if (targetUserId) {
+        userIds.push(targetUserId);
+        interactionDates.set(
+          targetUserId,
+          data['createdAt']?.toDate?.() || new Date()
+        );
+      }
     });
 
     return this.loadUserProfiles(userIds, interactionDates);
@@ -456,6 +469,7 @@ export class MatchesService {
 
       const showOnlineStatus = data.settings?.privacy?.showOnlineStatus !== false;
       const showLastActive = data.settings?.privacy?.showLastActive !== false;
+      const showLocation = data.settings?.privacy?.showLocation !== false;
 
       profiles.push({
         uid: userId,
@@ -463,12 +477,13 @@ export class MatchesService {
         photoURL: data.photoURL || data.onboarding?.photos?.[0] || null,
         photos: data.onboarding?.photos || [],
         age,
-        city: data.onboarding?.city || null,
-        country: data.onboarding?.country || null,
+        city: showLocation ? (data.onboarding?.city || null) : null,
+        country: showLocation ? (data.onboarding?.country || null) : null,
         isVerified: data.isVerified || false,
         isOnline: showOnlineStatus ? isOnline : false,
         showOnlineStatus,
         showLastActive,
+        showLocation,
         lastActiveAt: showLastActive ? lastActiveAt : null,
         interactionDate: interactionDates.get(userId) || new Date(),
         connectionTypes: data.onboarding?.connectionTypes || [],

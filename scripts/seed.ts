@@ -278,15 +278,10 @@ async function seedFavorites(
       // Store in user's favorites subcollection
       const favRef = db.collection('users').doc(fav.odUserId).collection('favorites').doc(fav.odTargetUserId);
       batch.set(favRef, {
-        odTargetUserId: fav.odTargetUserId,
+        fromUserId: fav.odUserId,
+        toUserId: fav.odTargetUserId,
         createdAt: fav.createdAt,
-      });
-
-      // Also store in target's "favoritedBy" subcollection for "who favorited me" queries
-      const favByRef = db.collection('users').doc(fav.odTargetUserId).collection('favoritedBy').doc(fav.odUserId);
-      batch.set(favByRef, {
-        odUserId: fav.odUserId,
-        createdAt: fav.createdAt,
+        private: false, // Default to public favorites in seed data
       });
     }
     

@@ -22,18 +22,56 @@
             @case ('login') { {{ 'AUTH.LOGIN.TITLE' | translate }} }
             @case ('signup') { {{ 'AUTH.SIGNUP.TITLE' | translate }} }
             @case ('reset') { {{ 'AUTH.RESET.TITLE' | translate }} }
+            @case ('disabled') { {{ 'AUTH.DISABLED.TITLE' | translate }} }
           }
         </h2>
-        <p class="modal-subtitle">
-          @switch (mode()) {
-            @case ('login') { {{ 'AUTH.LOGIN.SUBTITLE' | translate }} }
-            @case ('signup') { {{ 'AUTH.SIGNUP.SUBTITLE' | translate }} }
-            @case ('reset') { {{ 'AUTH.RESET.SUBTITLE' | translate }} }
-          }
-        </p>
+        @if (mode() !== 'disabled') {
+          <p class="modal-subtitle">
+            @switch (mode()) {
+              @case ('login') { {{ 'AUTH.LOGIN.SUBTITLE' | translate }} }
+              @case ('signup') { {{ 'AUTH.SIGNUP.SUBTITLE' | translate }} }
+              @case ('reset') { {{ 'AUTH.RESET.SUBTITLE' | translate }} }
+            }
+          </p>
+        }
       </div>
 
-      @if (resetSent()) {
+      @if (mode() === 'disabled') {
+        <div class="disabled-account">
+          <div class="disabled-icon">
+            <span class="material-icons-outlined">pause_circle</span>
+          </div>
+          <p class="disabled-message">{{ 'AUTH.DISABLED.MESSAGE' | translate }}</p>
+          <p class="disabled-info">{{ 'AUTH.DISABLED.INFO' | translate }}</p>
+
+          @if (localError()) {
+            <div class="error-message" role="alert">
+              <span class="material-icons-outlined">error</span>
+              {{ localError() }}
+            </div>
+          }
+
+          <div class="disabled-actions">
+            <button 
+              type="button" 
+              class="btn-primary"
+              [disabled]="enablingAccount()"
+              (click)="onEnableAccount()">
+              @if (enablingAccount()) {
+                <span class="spinner"></span>
+              }
+              {{ 'AUTH.DISABLED.ENABLE' | translate }}
+            </button>
+            <button 
+              type="button" 
+              class="btn-secondary"
+              [disabled]="enablingAccount()"
+              (click)="onCancelEnable()">
+              {{ 'AUTH.DISABLED.CANCEL' | translate }}
+            </button>
+          </div>
+        </div>
+      } @else if (resetSent()) {
         <div class="reset-success">
           <span class="material-icons-outlined">check_circle</span>
           <p>{{ 'AUTH.RESET.SUCCESS' | translate }}</p>

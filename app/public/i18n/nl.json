@@ -316,8 +316,8 @@
       "LAST_ACTIVE_DESC": "Toon wanneer je voor het laatst actief was",
       "PROFILE_VISIBILITY": "Profielzichtbaarheid",
       "PROFILE_VISIBILITY_DESC": "Maak je profiel zichtbaar bij ontdekken",
-      "SHOW_DISTANCE": "Toon afstand",
-      "SHOW_DISTANCE_DESC": "Laat anderen zien hoe ver weg je bent"
+      "SHOW_LOCATION": "Locatie tonen",
+      "SHOW_LOCATION_DESC": "Toon je stad en land op je profiel"
     },
     "NOTIFICATIONS": {
       "TITLE": "Meldingen",
@@ -410,6 +410,13 @@
       "PASSWORD_PLACEHOLDER": "Minimaal 6 karakters",
       "CONFIRM_PASSWORD": "Bevestig wachtwoord",
       "CONFIRM_PASSWORD_PLACEHOLDER": "Voer wachtwoord opnieuw in"
+    },
+    "DISABLED": {
+      "TITLE": "Account uitgeschakeld",
+      "MESSAGE": "Je account is uitgeschakeld.",
+      "INFO": "Wil je je account opnieuw activeren en je profiel herstellen?",
+      "ENABLE": "Account opnieuw activeren",
+      "CANCEL": "Uitloggen"
     },
     "OR": "of",
     "GOOGLE": "Doorgaan met Google"

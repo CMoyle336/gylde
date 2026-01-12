@@ -61,13 +61,14 @@ interface SearchResult {
   uid: string;
   displayName: string | null;
   age: number;
-  city: string;
-  country: string;
+  city: string | null;
+  country: string | null;
   distance?: number;
   lastActiveAt?: string; // Only included if user allows showing last active
   isOnline?: boolean; // True if active in last 15 minutes (only if privacy allows)
   showOnlineStatus: boolean; // Whether user allows their online status to be shown
   showLastActive: boolean; // Whether user allows their last active timestamp to be shown
+  showLocation: boolean; // Whether user allows their location to be shown
   genderIdentity: string;
   lifestyle: string;
   connectionTypes: string[];
@@ -313,6 +314,7 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
         const privacySettings = data.settings?.privacy || {};
         const showOnlineStatus = privacySettings.showOnlineStatus !== false;
         const showLastActive = privacySettings.showLastActive !== false;
+        const showLocation = privacySettings.showLocation !== false;
         
         // User is online if active within last 15 minutes
         let isCurrentlyOnline = false;
@@ -326,13 +328,14 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
           uid: doc.id,
           displayName: data.displayName,
           age: calculateAge(onboarding?.birthDate),
-          city: onboarding?.city,
-          country: onboarding?.country,
+          city: showLocation ? onboarding?.city : null,
+          country: showLocation ? onboarding?.country : null,
           distance,
           lastActiveAt: showLastActive && !isCurrentlyOnline ? lastActiveAt?.toISOString() : undefined,
           isOnline: isOnline || undefined,
           showOnlineStatus,
           showLastActive,
+          showLocation,
           genderIdentity: onboarding?.genderIdentity,
           lifestyle: onboarding?.lifestyle,
           connectionTypes: onboarding?.connectionTypes || [],

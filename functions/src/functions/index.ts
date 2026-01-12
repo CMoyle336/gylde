@@ -9,6 +9,7 @@ export * from "./users";
 export * from "./images";
 export * from "./photos";
 export * from "./profile-views";
+export * from "./accounts";
 
 // Future function modules:
 // export * from "./matches";

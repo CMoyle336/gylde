@@ -10,7 +10,7 @@ import * as logger from "firebase-functions/logger";
 
 /**
  * Triggered when a user favorites another user.
- * Creates an activity record for the recipient.
+ * Creates an activity record for the recipient (unless the favorite is private).
  */
 export const onFavoriteCreated = onDocumentCreated(
   "users/{userId}/favorites/{favoritedUserId}",
@@ -21,26 +21,32 @@ export const onFavoriteCreated = onDocumentCreated(
       return;
     }
 
+    const favoriteData = snapshot.data();
     const fromUserId = event.params.userId;
     const toUserId = event.params.favoritedUserId;
+    const isPrivate = favoriteData?.private === true;
 
-    logger.info(`User ${fromUserId} favorited user ${toUserId}`);
+    logger.info(`User ${fromUserId} favorited user ${toUserId} (private: ${isPrivate})`);
 
     try {
       // Get the user's display info
       const fromUser = await UserService.getDisplayInfo(fromUserId);
 
-      // Create activity for the favorited user
-      await ActivityService.createActivity(
-        toUserId,
-        "favorite",
-        fromUserId,
-        fromUser.displayName || "Someone",
-        fromUser.photoURL || null,
-        `/user/${fromUserId}` // Link to the user's profile who favorited them
-      );
+      // Only create activity if the favorite is not private
+      if (!isPrivate) {
+        // Create activity for the favorited user
+        await ActivityService.createActivity(
+          toUserId,
+          "favorite",
+          fromUserId,
+          fromUser.displayName || "Someone",
+          fromUser.photoURL || null,
+          `/user/${fromUserId}` // Link to the user's profile who favorited them
+        );
+      }
 
       // Check for mutual favorite (match)
+      // Note: A match can still occur even if one favorite is private
       const mutualFavoriteDoc = await db
         .collection("users")
         .doc(toUserId)

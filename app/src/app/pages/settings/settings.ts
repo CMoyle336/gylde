@@ -9,6 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { Router } from '@angular/router';
+import { Functions, httpsCallable } from '@angular/fire/functions';
 import { AuthService } from '../../core/services/auth.service';
 import { UserProfileService } from '../../core/services/user-profile.service';
 import { UserSettings } from '../../core/interfaces';
@@ -35,6 +36,7 @@ export class SettingsComponent implements OnInit {
   private readonly userProfileService = inject(UserProfileService);
   private readonly translateService = inject(TranslateService);
   private readonly router = inject(Router);
+  private readonly functions = inject(Functions);
 
   // User info
   protected readonly userEmail = computed(() => this.authService.user()?.email || null);
@@ -52,6 +54,7 @@ export class SettingsComponent implements OnInit {
   protected readonly showChangeEmailDialog = signal(false);
   protected readonly showResetPasswordDialog = signal(false);
   protected readonly showDeleteAccountDialog = signal(false);
+  protected readonly showDisableAccountDialog = signal(false);
   protected readonly dialogLoading = signal(false);
   protected readonly dialogError = signal<string | null>(null);
   protected readonly dialogSuccess = signal<string | null>(null);
@@ -81,7 +84,7 @@ export class SettingsComponent implements OnInit {
           showOnlineStatus: true,
           showLastActive: true,
           profileVisible: true,
-          showDistance: true,
+          showLocation: true,
         },
         notifications: {
           emailMatches: true,
@@ -161,12 +164,18 @@ export class SettingsComponent implements OnInit {
     this.showChangeEmailDialog.set(false);
     this.showResetPasswordDialog.set(false);
     this.showDeleteAccountDialog.set(false);
+    this.showDisableAccountDialog.set(false);
     this.dialogLoading.set(false);
     this.dialogError.set(null);
     this.dialogSuccess.set(null);
     this.newEmail = '';
     this.currentPassword = '';
     this.deleteConfirmation = '';
+  }
+
+  openDisableAccount(): void {
+    this.dialogError.set(null);
+    this.showDisableAccountDialog.set(true);
   }
 
   async changeEmail(): Promise<void> {
@@ -211,8 +220,20 @@ export class SettingsComponent implements OnInit {
   }
 
   async disableAccount(): Promise<void> {
-    this.saving.set(true);
+    // This is called from the button - open the confirmation dialog
+    this.openDisableAccount();
+  }
+
+  async confirmDisableAccount(): Promise<void> {
+    this.dialogLoading.set(true);
+    this.dialogError.set(null);
+
     try {
+      // Call Cloud Function to disable both Auth and Firestore
+      const disableAccountFn = httpsCallable(this.functions, 'disableAccount');
+      await disableAccountFn({});
+
+      // Update local state
       const currentSettings = this.settings();
       const updatedSettings: UserSettings = {
         ...currentSettings,
@@ -222,19 +243,28 @@ export class SettingsComponent implements OnInit {
           disabledAt: new Date(),
         },
       };
-
       this.settings.set(updatedSettings);
-      await this.saveSettings(updatedSettings);
+
+      // Close dialog and sign out
+      this.closeDialogs();
+      await this.authService.signOutUser();
+      this.router.navigate(['/']);
     } catch (error) {
       console.error('Error disabling account:', error);
+      this.dialogError.set('Failed to disable account. Please try again.');
     } finally {
-      this.saving.set(false);
+      this.dialogLoading.set(false);
     }
   }
 
   async enableAccount(): Promise<void> {
     this.saving.set(true);
     try {
+      // Call Cloud Function to enable both Auth and Firestore
+      const enableAccountFn = httpsCallable(this.functions, 'enableAccount');
+      await enableAccountFn({});
+
+      // Update local state
       const currentSettings = this.settings();
       const updatedSettings: UserSettings = {
         ...currentSettings,
@@ -244,9 +274,7 @@ export class SettingsComponent implements OnInit {
           disabledAt: undefined,
         },
       };
-
       this.settings.set(updatedSettings);
-      await this.saveSettings(updatedSettings);
     } catch (error) {
       console.error('Error enabling account:', error);
     } finally {

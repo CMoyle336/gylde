@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, inject, signal, OnInit, OnDestroy, computed } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal, OnInit, OnDestroy, computed, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -41,6 +42,7 @@ export class UserProfileComponent implements OnInit, OnDestroy {
   private readonly authService = inject(AuthService);
   private readonly activityService = inject(ActivityService);
   private readonly photoAccessService = inject(PhotoAccessService);
+  private readonly destroyRef = inject(DestroyRef);
 
   protected readonly profile = signal<UserProfile | null>(null);
   protected readonly loading = signal(true);
@@ -124,13 +126,26 @@ export class UserProfileComponent implements OnInit, OnDestroy {
   });
 
   ngOnInit(): void {
-    const userId = this.route.snapshot.paramMap.get('userId');
-    if (userId) {
-      this.loadProfile(userId);
-    } else {
-      this.error.set('User not found');
-      this.loading.set(false);
-    }
+    // Subscribe to route param changes to handle navigation between different user profiles
+    this.route.paramMap
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(params => {
+        const userId = params.get('userId');
+        if (userId) {
+          // Reset state when navigating to a different profile
+          this.selectedPhotoIndex.set(0);
+          this.profile.set(null);
+          this.photoAccess.set({ hasAccess: false });
+          this.photoPrivacyMap.set(new Map());
+          this.lastViewedMe.set(null);
+          this.error.set(null);
+          
+          this.loadProfile(userId);
+        } else {
+          this.error.set('User not found');
+          this.loading.set(false);
+        }
+      });
   }
 
   ngOnDestroy(): void {

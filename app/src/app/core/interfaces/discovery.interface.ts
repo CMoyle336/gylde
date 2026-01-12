@@ -11,14 +11,15 @@ export interface DiscoverableProfile {
   uid: string;
   displayName: string | null;
   age: number;
-  city: string;
-  country: string;
+  city: string | null;
+  country: string | null;
   location?: GeoLocation;
   distance?: number; // in miles
   lastActiveAt?: Date; // Last activity timestamp (only if user allows)
   isOnline?: boolean; // True if active in last 15 minutes (only if showOnlineStatus is true)
   showOnlineStatus: boolean; // Whether user allows their online status to be shown
   showLastActive: boolean; // Whether user allows their last active timestamp to be shown
+  showLocation: boolean; // Whether user allows their location to be shown
   genderIdentity: string;
   connectionTypes: string[];
   idealRelationship: string;

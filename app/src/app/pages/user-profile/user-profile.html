@@ -189,7 +189,7 @@
                 <span class="age">, {{ age() }}</span>
               }
             </h1>
-            @if (profile.onboarding?.city; as city) {
+            @if (profile.settings?.privacy?.showLocation !== false && profile.onboarding?.city; as city) {
               <div class="location">
                 <mat-icon>location_on</mat-icon>
                 {{ city }}, {{ profile.onboarding?.country }}

@@ -338,8 +338,8 @@
       "LAST_ACTIVE_DESC": "Display when you were last active",
       "PROFILE_VISIBILITY": "Profile visibility",
       "PROFILE_VISIBILITY_DESC": "Make your profile visible in discovery",
-      "SHOW_DISTANCE": "Show distance",
-      "SHOW_DISTANCE_DESC": "Let others see how far away you are"
+      "SHOW_LOCATION": "Show location",
+      "SHOW_LOCATION_DESC": "Display your city and country on your profile"
     },
     "NOTIFICATIONS": {
       "TITLE": "Notifications",
@@ -391,6 +391,10 @@
       "RESET_PASSWORD_TITLE": "Reset Password",
       "RESET_PASSWORD_DESC": "We'll send a password reset link to your email address.",
       "RESET_PASSWORD_SUCCESS": "Password reset email sent! Check your inbox.",
+      "DISABLE_TITLE": "Disable Account",
+      "DISABLE_DESC": "Your profile will be hidden from other users and you will be signed out.",
+      "DISABLE_INFO": "You can re-enable your account at any time by signing back in.",
+      "DISABLE_BUTTON": "Disable Account",
       "DELETE_TITLE": "Delete Account",
       "DELETE_DESC": "This action is permanent and cannot be undone. All your data, matches, and conversations will be deleted.",
       "DELETE_CONFIRM": "Type DELETE to confirm",
@@ -432,6 +436,13 @@
       "PASSWORD_PLACEHOLDER": "At least 6 characters",
       "CONFIRM_PASSWORD": "Confirm Password",
       "CONFIRM_PASSWORD_PLACEHOLDER": "Enter password again"
+    },
+    "DISABLED": {
+      "TITLE": "Account Disabled",
+      "MESSAGE": "Your account has been disabled.",
+      "INFO": "Would you like to re-enable your account and restore your profile?",
+      "ENABLE": "Re-enable Account",
+      "CANCEL": "Sign Out"
     },
     "OR": "or",
     "GOOGLE": "Continue with Google"
