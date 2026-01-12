@@ -9,7 +9,7 @@ import { MessageService } from '../../core/services/message.service';
 import { ProfileCardComponent, ProfileCardData } from '../../components/profile-card';
 import { ProfileCardSkeletonComponent } from '../../components/profile-card-skeleton';
 
-const VALID_TABS: MatchTab[] = ['favorited-me', 'viewed-me', 'my-favorites', 'my-views'];
+const VALID_TABS: MatchTab[] = ['my-matches', 'favorited-me', 'viewed-me', 'my-favorites', 'my-views'];
 
 @Component({
   selector: 'app-matches',
@@ -116,9 +116,14 @@ export class MatchesComponent implements OnInit {
     const wasUnfavorited = this.isFavorited(profile.uid);
     await this.favoriteService.toggleFavorite(profile.uid);
     
-    // If we're on the my-favorites tab and just unfavorited, remove from view
-    if (wasUnfavorited && this.activeTab() === 'my-favorites') {
-      this.matchesService.removeProfile(profile.uid);
+    // If we just unfavorited, remove from view on relevant tabs
+    if (wasUnfavorited) {
+      const tab = this.activeTab();
+      // Remove from my-favorites (we unfavorited them)
+      // Remove from my-matches (unfavoriting breaks the match)
+      if (tab === 'my-favorites' || tab === 'my-matches') {
+        this.matchesService.removeProfile(profile.uid);
+      }
     }
   }
 
@@ -128,6 +133,8 @@ export class MatchesComponent implements OnInit {
 
   protected getEmptyMessage(): string {
     switch (this.activeTab()) {
+      case 'my-matches':
+        return "You don't have any matches yet. When someone you favorite also favorites you, they'll appear here!";
       case 'favorited-me':
         return 'No one has favorited you yet. Keep your profile active!';
       case 'viewed-me':
@@ -141,6 +148,8 @@ export class MatchesComponent implements OnInit {
 
   protected getEmptyIcon(): string {
     switch (this.activeTab()) {
+      case 'my-matches':
+        return 'favorite';
       case 'favorited-me':
       case 'my-favorites':
         return 'favorite';

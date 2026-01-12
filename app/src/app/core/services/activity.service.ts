@@ -1,5 +1,6 @@
 import { Injectable, inject, signal, OnDestroy, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { 
   Firestore, 
@@ -28,10 +29,17 @@ export class ActivityService implements OnDestroy {
   private readonly authService = inject(AuthService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly router = inject(Router);
 
   private unsubscribe: Unsubscribe | null = null;
   private initialLoadDone = false;
-  private knownActivityIds = new Set<string>();
+  // Track activity ID -> last seen timestamp to detect both new and updated activities
+  private knownActivityTimestamps = new Map<string, number>();
+  
+  // Toast debouncing - collect activities and show only the most recent after a delay
+  private pendingToastActivities: Activity[] = [];
+  private toastDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
+  private readonly TOAST_DEBOUNCE_MS = 500;
 
   private readonly _activities = signal<ActivityDisplay[]>([]);
   private readonly _unreadCount = signal<number>(0);
@@ -53,7 +61,7 @@ export class ActivityService implements OnDestroy {
     
     // Reset state for new subscription
     this.initialLoadDone = false;
-    this.knownActivityIds.clear();
+    this.knownActivityTimestamps.clear();
 
     // Subscribe to real-time updates for activities where current user is the recipient
     this.unsubscribe = this.firestoreService.subscribeToCollection<Activity>(
@@ -64,26 +72,30 @@ export class ActivityService implements OnDestroy {
         const now = new Date();
         
         if (this.initialLoadDone) {
-          // After initial load, show toast for any new activities we haven't seen
+          // After initial load, queue toast for new OR updated activities
           activities.forEach(activity => {
-            if (activity.id && !this.knownActivityIds.has(activity.id)) {
-              this.showActivityToast(activity);
-              this.knownActivityIds.add(activity.id);
+            if (!activity.id) return;
+            
+            const activityTime = this.getActivityTimestamp(activity);
+            const lastSeenTime = this.knownActivityTimestamps.get(activity.id) || 0;
+            
+            // Queue toast if this is a new activity OR if the timestamp has changed (updated)
+            if (activityTime > lastSeenTime) {
+              this.queueToast(activity);
+              this.knownActivityTimestamps.set(activity.id, activityTime);
             }
           });
         } else {
-          // On initial load, show toast only for very recent activities (within 10 seconds)
+          // On initial load, queue toast only for very recent activities (within 10 seconds)
           activities.forEach(activity => {
-            const activityTime = activity.createdAt instanceof Date 
-              ? activity.createdAt 
-              : new Date((activity.createdAt as any)?.seconds * 1000 || 0);
-            const isRecent = (now.getTime() - activityTime.getTime()) < 10000;
+            if (!activity.id) return;
             
-            if (activity.id) {
-              this.knownActivityIds.add(activity.id);
-              if (isRecent && !activity.read) {
-                this.showActivityToast(activity);
-              }
+            const activityTime = this.getActivityTimestamp(activity);
+            const isRecent = (now.getTime() - activityTime) < 10000;
+            
+            this.knownActivityTimestamps.set(activity.id, activityTime);
+            if (isRecent && !activity.read) {
+              this.queueToast(activity);
             }
           });
           this.initialLoadDone = true;
@@ -96,6 +108,55 @@ export class ActivityService implements OnDestroy {
   }
 
   /**
+   * Get timestamp from activity as milliseconds
+   */
+  private getActivityTimestamp(activity: Activity): number {
+    if (activity.createdAt instanceof Date) {
+      return activity.createdAt.getTime();
+    }
+    return (activity.createdAt as any)?.seconds * 1000 || 0;
+  }
+
+  /**
+   * Queue an activity for toast notification with debouncing.
+   * If multiple activities come in quickly, only the most recent one will be shown.
+   */
+  private queueToast(activity: Activity): void {
+    this.pendingToastActivities.push(activity);
+    
+    // Clear any existing timeout
+    if (this.toastDebounceTimeout) {
+      clearTimeout(this.toastDebounceTimeout);
+    }
+    
+    // Set a new timeout to show the most recent toast
+    this.toastDebounceTimeout = setTimeout(() => {
+      this.showDebouncedToast();
+    }, this.TOAST_DEBOUNCE_MS);
+  }
+
+  /**
+   * Show the most recent activity from the pending queue
+   */
+  private showDebouncedToast(): void {
+    if (this.pendingToastActivities.length === 0) return;
+    
+    // Find the activity with the most recent timestamp
+    const mostRecent = this.pendingToastActivities.reduce((latest, current) => {
+      const latestTime = this.getActivityTimestamp(latest);
+      const currentTime = this.getActivityTimestamp(current);
+      return currentTime > latestTime ? current : latest;
+    });
+    
+    // Clear the queue
+    this.pendingToastActivities = [];
+    this.toastDebounceTimeout = null;
+    
+    // Show toast for the most recent activity
+    this.showActivityToast(mostRecent);
+  }
+
+  /**
    * Stop listening to activity updates
    */
   unsubscribeFromActivities(): void {
@@ -103,6 +164,12 @@ export class ActivityService implements OnDestroy {
       this.unsubscribe();
       this.unsubscribe = null;
     }
+    // Clear any pending toast timeout
+    if (this.toastDebounceTimeout) {
+      clearTimeout(this.toastDebounceTimeout);
+      this.toastDebounceTimeout = null;
+    }
+    this.pendingToastActivities = [];
   }
 
   // Note: Activity creation is handled by Firebase Cloud Functions
@@ -266,14 +333,29 @@ export class ActivityService implements OnDestroy {
   }
 
   private showActivityToast(activity: Activity): void {
+    // For messages: don't show toast if user is already in that conversation
+    if (activity.type === 'message' && activity.link && this.router.url.startsWith(activity.link)) {
+      return;
+    }
+
     const message = this.getActivityMessage(activity);
     
-    this.snackBar.open(message, 'View', {
+    // Only show "View" action if there's a link to navigate to
+    const actionLabel = activity.link ? 'View' : undefined;
+    
+    const snackBarRef = this.snackBar.open(message, actionLabel, {
       duration: 5000,
       horizontalPosition: 'right',
       verticalPosition: 'top',
       panelClass: ['activity-toast', `activity-toast-${activity.type}`],
     });
+
+    // Navigate to the link when user clicks the action button
+    if (activity.link) {
+      snackBarRef.onAction().subscribe(() => {
+        this.router.navigateByUrl(activity.link!);
+      });
+    }
   }
 
   private getActivityMessage(activity: Activity): string {

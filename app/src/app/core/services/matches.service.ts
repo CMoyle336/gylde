@@ -33,7 +33,7 @@ export interface MatchProfile {
   photos: string[];
 }
 
-export type MatchTab = 'favorited-me' | 'viewed-me' | 'my-favorites' | 'my-views';
+export type MatchTab = 'my-matches' | 'favorited-me' | 'viewed-me' | 'my-favorites' | 'my-views';
 
 const STORAGE_KEY_PREFIX = 'matches_last_viewed_';
 
@@ -47,7 +47,7 @@ export class MatchesService {
 
   private readonly _loading = signal(false);
   private readonly _initialized = signal(false); // Tracks if we've ever loaded data
-  private readonly _activeTab = signal<MatchTab>('favorited-me');
+  private readonly _activeTab = signal<MatchTab>('my-matches');
   private readonly _profiles = signal<MatchProfile[]>([]);
   private readonly _favoritedMeCount = signal(0);
   private readonly _viewedMeCount = signal(0);
@@ -149,6 +149,9 @@ export class MatchesService {
       let profiles: MatchProfile[] = [];
 
       switch (tab) {
+        case 'my-matches':
+          profiles = await this.loadMyMatches(currentUser.uid);
+          break;
         case 'favorited-me':
           profiles = await this.loadFavoritedMe(currentUser.uid);
           break;
@@ -228,6 +231,41 @@ export class MatchesService {
     // Deduplicate by viewerId
     const uniqueViewers = new Set(snapshot.docs.map(d => d.data()['viewerId']));
     return uniqueViewers.size;
+  }
+
+  /**
+   * Load users that the current user has matched with (mutual favorites)
+   */
+  private async loadMyMatches(currentUserId: string): Promise<MatchProfile[]> {
+    const matchesRef = collection(this.firestore, 'matches');
+    const q = query(
+      matchesRef,
+      where('users', 'array-contains', currentUserId),
+      orderBy('createdAt', 'desc'),
+      limit(50)
+    );
+
+    const snapshot = await getDocs(q);
+    
+    // Extract the other user's ID from each match
+    const userIds: string[] = [];
+    const interactionDates = new Map<string, Date>();
+    
+    snapshot.docs.forEach(d => {
+      const data = d.data();
+      const users = data['users'] as string[];
+      const otherUserId = users.find(uid => uid !== currentUserId);
+      
+      if (otherUserId) {
+        userIds.push(otherUserId);
+        interactionDates.set(
+          otherUserId,
+          data['createdAt']?.toDate?.() || new Date()
+        );
+      }
+    });
+
+    return this.loadUserProfiles(userIds, interactionDates);
   }
 
   /**
