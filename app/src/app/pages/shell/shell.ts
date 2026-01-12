@@ -173,7 +173,7 @@ export class ShellComponent implements OnInit, OnDestroy {
   private openPhotoAccessDialog(): void {
     this.dialog.open(PhotoAccessDialogComponent, {
       panelClass: 'photo-access-dialog-panel',
-      width: '450px',
+      width: '540px',
       maxWidth: '95vw',
     });
   }

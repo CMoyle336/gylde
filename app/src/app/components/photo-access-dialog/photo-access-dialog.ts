@@ -3,7 +3,6 @@ import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatTabsModule } from '@angular/material/tabs';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
 import { PhotoAccessService, PhotoAccessRequestDisplay, PhotoAccessGrantDisplay } from '../../core/services/photo-access.service';
@@ -18,7 +17,6 @@ import { PhotoAccessService, PhotoAccessRequestDisplay, PhotoAccessGrantDisplay 
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
-    MatTabsModule,
     MatTooltipModule,
     RouterLink,
   ],
@@ -30,6 +28,9 @@ export class PhotoAccessDialogComponent {
   // Read from the service's reactive signals
   protected readonly pendingRequests = this.photoAccessService.pendingRequests;
   protected readonly grants = this.photoAccessService.grants;
+
+  // Active tab state
+  protected activeTab: 'requests' | 'granted' = 'requests';
 
   // Track which items are being processed
   protected readonly processingIds = signal<Set<string>>(new Set());

@@ -1,6 +1,12 @@
 <div class="photo-access-dialog">
   <div class="dialog-header">
-    <h2 mat-dialog-title>Manage Private Photo Access</h2>
+    <div class="header-content">
+      <mat-icon class="header-icon">lock</mat-icon>
+      <div class="header-text">
+        <h2>Private Photo Access</h2>
+        <p class="header-subtitle">Manage who can view your private photos</p>
+      </div>
+    </div>
     <button mat-icon-button class="close-btn" (click)="close()">
       <mat-icon>close</mat-icon>
     </button>
@@ -14,112 +20,119 @@
       </div>
     }
 
-    <mat-tab-group>
-      <!-- Pending Requests Tab -->
-      <mat-tab>
-        <ng-template mat-tab-label>
-          <mat-icon>pending</mat-icon>
-          <span class="tab-label">Requests</span>
-          @if (pendingRequests().length > 0) {
-            <span class="badge">{{ pendingRequests().length }}</span>
-          }
-        </ng-template>
-        
-        <div class="tab-content">
-          @if (pendingRequests().length === 0) {
-            <div class="empty-state">
-              <mat-icon>inbox</mat-icon>
-              <p>No pending requests</p>
-            </div>
-          } @else {
-            <div class="access-list">
-              @for (request of pendingRequests(); track request.id) {
-                <div class="access-item">
-                  <a [routerLink]="['/user', request.id]" class="user-link" (click)="close()">
-                    <img [src]="request.requesterPhoto || 'assets/default-avatar.png'" 
-                         [alt]="request.requesterName"
-                         class="user-photo">
-                  </a>
-                  <div class="user-info">
-                    <a [routerLink]="['/user', request.id]" class="user-name" (click)="close()">
-                      {{ request.requesterName }}
-                    </a>
-                    <span class="request-time">{{ formatTimeAgo(request.requestedAt) }}</span>
-                  </div>
-                  <div class="access-actions">
-                    @if (isProcessing(request.id)) {
-                      <mat-spinner diameter="20"></mat-spinner>
-                    } @else {
-                      <button mat-icon-button 
-                              class="deny-btn" 
-                              (click)="denyAccess(request)"
-                              matTooltip="Deny">
-                        <mat-icon>close</mat-icon>
-                      </button>
-                      <button mat-icon-button 
-                              class="grant-btn" 
-                              (click)="grantAccess(request)"
-                              matTooltip="Grant Access">
-                        <mat-icon>check</mat-icon>
-                      </button>
-                    }
-                  </div>
-                </div>
-              }
-            </div>
-          }
-        </div>
-      </mat-tab>
+    <!-- Custom Tab Buttons -->
+    <div class="tab-buttons">
+      <button class="tab-btn" 
+              [class.active]="activeTab === 'requests'"
+              (click)="activeTab = 'requests'">
+        <mat-icon>mail</mat-icon>
+        <span>Requests</span>
+        @if (pendingRequests().length > 0) {
+          <span class="tab-badge">{{ pendingRequests().length }}</span>
+        }
+      </button>
+      <button class="tab-btn" 
+              [class.active]="activeTab === 'granted'"
+              (click)="activeTab = 'granted'">
+        <mat-icon>how_to_reg</mat-icon>
+        <span>Granted</span>
+        @if (grants().length > 0) {
+          <span class="tab-badge secondary">{{ grants().length }}</span>
+        }
+      </button>
+    </div>
 
-      <!-- Granted Access Tab -->
-      <mat-tab>
-        <ng-template mat-tab-label>
-          <mat-icon>visibility</mat-icon>
-          <span class="tab-label">Has Access</span>
-          @if (grants().length > 0) {
-            <span class="badge secondary">{{ grants().length }}</span>
-          }
-        </ng-template>
-        
-        <div class="tab-content">
-          @if (grants().length === 0) {
-            <div class="empty-state">
-              <mat-icon>visibility_off</mat-icon>
-              <p>No one has access yet</p>
+    <!-- Requests Tab Content -->
+    @if (activeTab === 'requests') {
+      <div class="tab-content">
+        @if (pendingRequests().length === 0) {
+          <div class="empty-state">
+            <div class="empty-icon">
+              <mat-icon>inbox</mat-icon>
             </div>
-          } @else {
-            <div class="access-list">
-              @for (grant of grants(); track grant.id) {
-                <div class="access-item">
-                  <a [routerLink]="['/user', grant.id]" class="user-link" (click)="close()">
-                    <img [src]="grant.grantedToPhoto || 'assets/default-avatar.png'" 
-                         [alt]="grant.grantedToName"
-                         class="user-photo">
+            <h3>No pending requests</h3>
+            <p>When someone requests access to your private photos, they'll appear here</p>
+          </div>
+        } @else {
+          <div class="access-list">
+            @for (request of pendingRequests(); track request.id) {
+              <div class="access-card">
+                <a [routerLink]="['/user', request.id]" class="user-avatar" (click)="close()">
+                  <img [src]="request.requesterPhoto || 'assets/default-avatar.png'" 
+                       [alt]="request.requesterName">
+                </a>
+                <div class="card-content">
+                  <a [routerLink]="['/user', request.id]" class="user-name-link" (click)="close()">
+                    {{ request.requesterName }}
                   </a>
-                  <div class="user-info">
-                    <a [routerLink]="['/user', grant.id]" class="user-name" (click)="close()">
-                      {{ grant.grantedToName }}
-                    </a>
-                    <span class="grant-time">granted {{ formatTimeAgo(grant.grantedAt) }}</span>
-                  </div>
-                  <div class="access-actions">
-                    @if (isProcessing(grant.id)) {
-                      <mat-spinner diameter="20"></mat-spinner>
-                    } @else {
-                      <button mat-stroked-button 
-                              class="revoke-btn" 
-                              (click)="revokeAccess(grant)">
-                        <mat-icon>block</mat-icon>
-                        Revoke
-                      </button>
-                    }
-                  </div>
+                  <span class="request-meta">Requested {{ formatTimeAgo(request.requestedAt) }}</span>
                 </div>
-              }
+                <div class="card-actions">
+                  @if (isProcessing(request.id)) {
+                    <mat-spinner diameter="24"></mat-spinner>
+                  } @else {
+                    <button class="action-btn deny" 
+                            (click)="denyAccess(request)"
+                            matTooltip="Deny request">
+                      <mat-icon>close</mat-icon>
+                    </button>
+                    <button class="action-btn approve" 
+                            (click)="grantAccess(request)"
+                            matTooltip="Grant access">
+                      <mat-icon>check</mat-icon>
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Granted Tab Content -->
+    @if (activeTab === 'granted') {
+      <div class="tab-content">
+        @if (grants().length === 0) {
+          <div class="empty-state">
+            <div class="empty-icon">
+              <mat-icon>person_off</mat-icon>
             </div>
-          }
-        </div>
-      </mat-tab>
-    </mat-tab-group>
+            <h3>No access granted</h3>
+            <p>You haven't granted anyone access to your private photos yet</p>
+          </div>
+        } @else {
+          <div class="access-list">
+            @for (grant of grants(); track grant.id) {
+              <div class="access-card">
+                <a [routerLink]="['/user', grant.id]" class="user-avatar" (click)="close()">
+                  <img [src]="grant.grantedToPhoto || 'assets/default-avatar.png'" 
+                       [alt]="grant.grantedToName">
+                </a>
+                <div class="card-content">
+                  <a [routerLink]="['/user', grant.id]" class="user-name-link" (click)="close()">
+                    {{ grant.grantedToName }}
+                  </a>
+                  <span class="request-meta">
+                    <mat-icon class="meta-icon">check_circle</mat-icon>
+                    Access granted {{ formatTimeAgo(grant.grantedAt) }}
+                  </span>
+                </div>
+                <div class="card-actions">
+                  @if (isProcessing(grant.id)) {
+                    <mat-spinner diameter="24"></mat-spinner>
+                  } @else {
+                    <button class="revoke-btn" (click)="revokeAccess(grant)">
+                      <mat-icon>block</mat-icon>
+                      Revoke
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
   </mat-dialog-content>
 </div>

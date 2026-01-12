@@ -124,6 +124,7 @@ export interface SeedUser {
     idealRelationship: string;
     supportMeaning: string;
     photos: string[];
+    photoDetails: SeedPhotoDetail[];
     verificationOptions: string[];
     // Secondary profile fields
     height?: string;
@@ -147,9 +148,36 @@ export interface SeedFavorite {
 
 export interface SeedProfileView {
   odId: string;
-  odViewerId: string;
-  odViewedUserId: string;
+  viewerId: string;
+  viewedUserId: string;
+  viewerName: string;
+  viewerPhoto: string | null;
   viewedAt: Date;
+}
+
+export interface SeedMatch {
+  odId: string;
+  user1Id: string;
+  user2Id: string;
+  matchedAt: Date;
+}
+
+export interface SeedActivity {
+  odId: string;
+  userId: string; // The user who receives this activity
+  type: 'favorite' | 'match' | 'view' | 'message';
+  fromUserId: string;
+  fromUserName: string;
+  fromUserPhoto: string | null;
+  link: string | null;
+  read: boolean;
+  createdAt: Date;
+}
+
+export interface SeedPhotoDetail {
+  url: string;
+  isPrivate: boolean;
+  order: number;
 }
 
 export interface SeedMessage {
@@ -242,6 +270,13 @@ export function generateUsers(count: number, seed?: number): SeedUser[] {
     const location = pickRandom(MICHIGAN_CITIES);
     const photos = pickRandomMultiple(SAMPLE_PHOTOS, 1, 4);
     
+    // Generate photo details with privacy - first photo is never private (it's the profile photo)
+    const photoDetails: SeedPhotoDetail[] = photos.map((url, index) => ({
+      url,
+      isPrivate: index > 0 && Math.random() > 0.7, // 30% chance for non-profile photos to be private
+      order: index,
+    }));
+    
     // Age range for this user
     const userAge = faker.number.int({ min: 21, max: 55 });
     const ageRangeMin = Math.max(18, userAge - faker.number.int({ min: 5, max: 15 }));
@@ -300,6 +335,7 @@ export function generateUsers(count: number, seed?: number): SeedUser[] {
         idealRelationship: faker.lorem.paragraph({ min: 1, max: 3 }),
         supportMeaning: faker.lorem.sentence({ min: 8, max: 20 }),
         photos,
+        photoDetails,
         verificationOptions: pickRandomMultiple(VERIFICATION_OPTIONS, 0, 2),
         // Secondary fields - not all users fill these out
         ...(Math.random() > 0.3 && { height: generateHeight() }),
@@ -356,6 +392,7 @@ export function generateFavorites(users: SeedUser[], avgFavoritesPerUser: number
 
 export function generateProfileViews(users: SeedUser[], avgViewsPerUser: number = 5): SeedProfileView[] {
   const views: SeedProfileView[] = [];
+  const viewPairs = new Set<string>();
 
   for (const user of users) {
     const numViews = faker.number.int({ min: 0, max: avgViewsPerUser * 2 });
@@ -365,16 +402,136 @@ export function generateProfileViews(users: SeedUser[], avgViewsPerUser: number 
       .slice(0, numViews);
 
     for (const viewer of viewers) {
+      const pairKey = `${viewer.uid}-${user.uid}`;
+      if (viewPairs.has(pairKey)) continue;
+      viewPairs.add(pairKey);
+
       views.push({
         odId: faker.string.uuid(),
-        odViewerId: viewer.uid,
-        odViewedUserId: user.uid,
+        viewerId: viewer.uid,
+        viewedUserId: user.uid,
+        viewerName: viewer.displayName,
+        viewerPhoto: viewer.photoURL,
         viewedAt: faker.date.recent({ days: 14 }),
       });
     }
   }
 
   return views;
+}
+
+export function generateMatches(
+  users: SeedUser[],
+  favorites: SeedFavorite[]
+): SeedMatch[] {
+  const matches: SeedMatch[] = [];
+  const favoriteMap = new Map<string, Date>();
+
+  // Build a map of who favorited whom
+  for (const fav of favorites) {
+    favoriteMap.set(`${fav.odUserId}-${fav.odTargetUserId}`, fav.createdAt);
+  }
+
+  // Find mutual favorites
+  const processedPairs = new Set<string>();
+  for (const fav of favorites) {
+    const reverseKey = `${fav.odTargetUserId}-${fav.odUserId}`;
+    const pairKey = [fav.odUserId, fav.odTargetUserId].sort().join('-');
+
+    if (favoriteMap.has(reverseKey) && !processedPairs.has(pairKey)) {
+      processedPairs.add(pairKey);
+      
+      // Match date is when the second favorite happened
+      const otherFavDate = favoriteMap.get(reverseKey)!;
+      const matchedAt = fav.createdAt > otherFavDate ? fav.createdAt : otherFavDate;
+
+      matches.push({
+        odId: faker.string.uuid(),
+        user1Id: fav.odUserId,
+        user2Id: fav.odTargetUserId,
+        matchedAt,
+      });
+    }
+  }
+
+  return matches;
+}
+
+export function generateActivities(
+  users: SeedUser[],
+  favorites: SeedFavorite[],
+  matches: SeedMatch[],
+  views: SeedProfileView[]
+): SeedActivity[] {
+  const activities: SeedActivity[] = [];
+  const userMap = new Map(users.map(u => [u.uid, u]));
+
+  // Generate favorite activities
+  for (const fav of favorites) {
+    const fromUser = userMap.get(fav.odUserId);
+    if (!fromUser) continue;
+
+    activities.push({
+      odId: faker.string.uuid(),
+      userId: fav.odTargetUserId, // The person being favorited receives the activity
+      type: 'favorite',
+      fromUserId: fav.odUserId,
+      fromUserName: fromUser.displayName,
+      fromUserPhoto: fromUser.photoURL,
+      link: `/user/${fav.odUserId}`,
+      read: Math.random() > 0.3, // 70% read
+      createdAt: fav.createdAt,
+    });
+  }
+
+  // Generate match activities (both users get one)
+  for (const match of matches) {
+    const user1 = userMap.get(match.user1Id);
+    const user2 = userMap.get(match.user2Id);
+    if (!user1 || !user2) continue;
+
+    activities.push({
+      odId: faker.string.uuid(),
+      userId: match.user1Id,
+      type: 'match',
+      fromUserId: match.user2Id,
+      fromUserName: user2.displayName,
+      fromUserPhoto: user2.photoURL,
+      link: `/user/${match.user2Id}`,
+      read: Math.random() > 0.4,
+      createdAt: match.matchedAt,
+    });
+
+    activities.push({
+      odId: faker.string.uuid(),
+      userId: match.user2Id,
+      type: 'match',
+      fromUserId: match.user1Id,
+      fromUserName: user1.displayName,
+      fromUserPhoto: user1.photoURL,
+      link: `/user/${match.user1Id}`,
+      read: Math.random() > 0.4,
+      createdAt: match.matchedAt,
+    });
+  }
+
+  // Generate view activities (limit to some percentage)
+  const viewsToProcess = views.filter(() => Math.random() > 0.6); // Only 40% of views generate activities
+  for (const view of viewsToProcess) {
+    activities.push({
+      odId: faker.string.uuid(),
+      userId: view.viewedUserId,
+      type: 'view',
+      fromUserId: view.viewerId,
+      fromUserName: view.viewerName,
+      fromUserPhoto: view.viewerPhoto,
+      link: `/user/${view.viewerId}`,
+      read: Math.random() > 0.5,
+      createdAt: view.viewedAt,
+    });
+  }
+
+  return activities;
 }
 
 export function generateConversationsAndMessages(

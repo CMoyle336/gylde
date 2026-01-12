@@ -16,9 +16,14 @@ import { getAuth } from 'firebase-admin/auth';
 import { 
   generateUsers, 
   generateFavorites, 
-  generateProfileViews, 
+  generateProfileViews,
+  generateMatches,
+  generateActivities,
   generateConversationsAndMessages,
   SeedUser,
+  SeedMatch,
+  SeedActivity,
+  SeedProfileView,
 } from './seed-data/users';
 
 // Configuration
@@ -60,6 +65,9 @@ async function main() {
     await clearAuthUsers(auth);
     await clearCollection(db, 'users');
     await clearCollection(db, 'conversations');
+    await clearCollection(db, 'matches');
+    await clearCollection(db, 'profileViews');
+    await clearCollection(db, 'activities');
     console.log('✅ Data cleared\n');
   }
 
@@ -71,8 +79,14 @@ async function main() {
   const favorites = generateFavorites(users, 3);
   console.log(`   ✓ Generated ${favorites.length} favorites`);
 
+  const matches = generateMatches(users, favorites);
+  console.log(`   ✓ Generated ${matches.length} matches (mutual favorites)`);
+
   const views = generateProfileViews(users, 5);
   console.log(`   ✓ Generated ${views.length} profile views`);
+
+  const activities = generateActivities(users, favorites, matches, views);
+  console.log(`   ✓ Generated ${activities.length} activity records`);
 
   const { conversations, messages } = generateConversationsAndMessages(users, 2);
   console.log(`   ✓ Generated ${conversations.length} conversations with ${messages.length} messages`);
@@ -89,9 +103,17 @@ async function main() {
   console.log('\n❤️  Seeding favorites...');
   await seedFavorites(db, favorites);
 
+  // Seed matches
+  console.log('\n💕 Seeding matches...');
+  await seedMatches(db, matches);
+
   // Seed profile views
   console.log('\n👀 Seeding profile views...');
   await seedProfileViews(db, views);
+
+  // Seed activities
+  console.log('\n📬 Seeding activities...');
+  await seedActivities(db, activities);
 
   // Seed conversations and messages
   console.log('\n💬 Seeding conversations and messages...');
@@ -216,7 +238,10 @@ async function seedFirestoreUsers(db: FirebaseFirestore.Firestore, users: SeedUs
         isVerified,
         geohash,
         onboardingCompleted: user.onboardingCompleted,
-        onboarding: user.onboarding,
+        onboarding: {
+          ...user.onboarding,
+          photoDetails: user.onboarding.photoDetails,
+        },
         settings: user.settings,
       });
     }
@@ -265,7 +290,7 @@ async function seedFavorites(
 
 async function seedProfileViews(
   db: FirebaseFirestore.Firestore,
-  views: { odId: string; odViewerId: string; odViewedUserId: string; viewedAt: Date }[]
+  views: SeedProfileView[]
 ) {
   const batchSize = 500;
   let totalCreated = 0;
@@ -275,17 +300,13 @@ async function seedProfileViews(
     const batchViews = views.slice(i, i + batchSize);
 
     for (const view of batchViews) {
-      // Store in viewer's "viewed" subcollection (profiles I've viewed)
-      const viewedRef = db.collection('users').doc(view.odViewerId).collection('viewed').doc(view.odViewedUserId);
-      batch.set(viewedRef, {
-        odViewedUserId: view.odViewedUserId,
-        viewedAt: view.viewedAt,
-      });
-
-      // Store in viewed user's "viewedBy" subcollection (who viewed me)
-      const viewedByRef = db.collection('users').doc(view.odViewedUserId).collection('viewedBy').doc(view.odViewerId);
-      batch.set(viewedByRef, {
-        odViewerId: view.odViewerId,
+      // Store in top-level profileViews collection
+      const viewRef = db.collection('profileViews').doc(view.odId);
+      batch.set(viewRef, {
+        viewerId: view.viewerId,
+        viewedUserId: view.viewedUserId,
+        viewerName: view.viewerName,
+        viewerPhoto: view.viewerPhoto,
         viewedAt: view.viewedAt,
       });
     }
@@ -294,7 +315,64 @@ async function seedProfileViews(
     totalCreated += batchViews.length;
   }
 
-  console.log(`  ✓ Created ${totalCreated} profile views (and viewedBy references)`);
+  console.log(`  ✓ Created ${totalCreated} profile views`);
+}
+
+async function seedMatches(
+  db: FirebaseFirestore.Firestore,
+  matches: SeedMatch[]
+) {
+  const batchSize = 500;
+  let totalCreated = 0;
+
+  for (let i = 0; i < matches.length; i += batchSize) {
+    const batch = db.batch();
+    const batchMatches = matches.slice(i, i + batchSize);
+
+    for (const match of batchMatches) {
+      const matchRef = db.collection('matches').doc(match.odId);
+      batch.set(matchRef, {
+        users: [match.user1Id, match.user2Id],
+        matchedAt: match.matchedAt,
+      });
+    }
+    
+    await batch.commit();
+    totalCreated += batchMatches.length;
+  }
+
+  console.log(`  ✓ Created ${totalCreated} matches`);
+}
+
+async function seedActivities(
+  db: FirebaseFirestore.Firestore,
+  activities: SeedActivity[]
+) {
+  const batchSize = 500;
+  let totalCreated = 0;
+
+  for (let i = 0; i < activities.length; i += batchSize) {
+    const batch = db.batch();
+    const batchActivities = activities.slice(i, i + batchSize);
+
+    for (const activity of batchActivities) {
+      const activityRef = db.collection('users').doc(activity.userId).collection('activities').doc(activity.odId);
+      batch.set(activityRef, {
+        type: activity.type,
+        fromUserId: activity.fromUserId,
+        fromUserName: activity.fromUserName,
+        fromUserPhoto: activity.fromUserPhoto,
+        link: activity.link,
+        read: activity.read,
+        createdAt: activity.createdAt,
+      });
+    }
+    
+    await batch.commit();
+    totalCreated += batchActivities.length;
+  }
+
+  console.log(`  ✓ Created ${totalCreated} activity records`);
 }
 
 async function seedConversations(
