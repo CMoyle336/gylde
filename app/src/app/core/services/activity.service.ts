@@ -13,6 +13,7 @@ import {
   addDoc, 
   updateDoc,
   doc,
+  writeBatch,
   serverTimestamp,
   Unsubscribe 
 } from '@angular/fire/firestore';
@@ -194,15 +195,29 @@ export class ActivityService implements OnDestroy {
   }
 
   /**
-   * Mark all activities as read
+   * Mark all activities as read using a batch write
    */
   async markAllAsRead(): Promise<void> {
     const currentUser = this.authService.user();
     if (!currentUser) return;
 
-    const activities = this._activities();
-    for (const activity of activities.filter(a => !a.read)) {
-      await this.markAsRead(activity.id);
+    try {
+      // Query for all unread activities
+      const activitiesRef = collection(this.firestore, `users/${currentUser.uid}/activities`);
+      const unreadQuery = query(activitiesRef, where('read', '==', false));
+      const snapshot = await getDocs(unreadQuery);
+
+      if (snapshot.empty) return;
+
+      // Use batch write to update all at once
+      const batch = writeBatch(this.firestore);
+      snapshot.docs.forEach(docSnapshot => {
+        batch.update(docSnapshot.ref, { read: true });
+      });
+
+      await batch.commit();
+    } catch (error) {
+      console.error('Failed to mark all activities as read:', error);
     }
   }
 
@@ -370,6 +385,10 @@ export class ActivityService implements OnDestroy {
         return `👀 ${activity.fromUserName} viewed your profile`;
       case 'photo_access_request':
         return `🔒 ${activity.fromUserName} requested access to your private photos`;
+      case 'photo_access_granted':
+        return `✅ ${activity.fromUserName} granted you access to their private photos`;
+      case 'photo_access_denied':
+        return `❌ ${activity.fromUserName} denied your photo access request`;
       default:
         return `${activity.fromUserName} interacted with you`;
     }

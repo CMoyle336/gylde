@@ -490,12 +490,14 @@ import { onDocumentWritten, onDocumentDeleted } from "firebase-functions/v2/fire
 
 /**
  * Trigger: When a photo access request is created or updated
- * Creates or updates the corresponding activity record
+ * - For pending requests: creates activity for the target user (owner)
+ * - For granted/denied: creates activity for the requester to notify them
  */
 export const onPhotoAccessRequestWrite = onDocumentWritten(
   "users/{targetUserId}/photoAccessRequests/{requesterId}",
   async (event) => {
     const { targetUserId, requesterId } = event.params;
+    const beforeData = event.data?.before.data();
     const afterData = event.data?.after.data();
 
     // If document was deleted, skip (handled by onPhotoAccessRequestDeleted)
@@ -503,44 +505,78 @@ export const onPhotoAccessRequestWrite = onDocumentWritten(
       return;
     }
 
-    // Only create activity for pending requests
-    if (afterData.status !== "pending") {
+    // Case 1: New pending request or updated pending request
+    // Create/update activity for the target user (photo owner)
+    if (afterData.status === "pending") {
+      const activitiesRef = db
+        .collection("users")
+        .doc(targetUserId)
+        .collection("activities");
+
+      // Check for existing activity from this user
+      const existingActivity = await activitiesRef
+        .where("type", "==", "photo_access_request")
+        .where("fromUserId", "==", requesterId)
+        .limit(1)
+        .get();
+
+      if (!existingActivity.empty) {
+        // Update existing activity
+        await existingActivity.docs[0].ref.update({
+          createdAt: Timestamp.now(),
+          read: false,
+          fromUserName: afterData.requesterName,
+          fromUserPhoto: afterData.requesterPhoto,
+          link: null,
+        });
+      } else {
+        // Create new activity
+        await activitiesRef.add({
+          type: "photo_access_request",
+          fromUserId: requesterId,
+          fromUserName: afterData.requesterName,
+          fromUserPhoto: afterData.requesterPhoto,
+          toUserId: targetUserId,
+          read: false,
+          createdAt: Timestamp.now(),
+          link: null,
+        });
+      }
       return;
     }
 
-    const activitiesRef = db
-      .collection("users")
-      .doc(targetUserId)
-      .collection("activities");
+    // Case 2: Status changed from pending to granted or denied
+    // Create activity for the requester to notify them
+    const wasStatusChange =
+      beforeData?.status === "pending" &&
+      (afterData.status === "granted" || afterData.status === "denied");
 
-    // Check for existing activity from this user
-    const existingActivity = await activitiesRef
-      .where("type", "==", "photo_access_request")
-      .where("fromUserId", "==", requesterId)
-      .limit(1)
-      .get();
+    if (wasStatusChange) {
+      // Get the target user's (owner's) profile info
+      const ownerDoc = await db.collection("users").doc(targetUserId).get();
+      const ownerData = ownerDoc.data();
+      const ownerName = ownerData?.displayName || "Someone";
+      const ownerPhoto = ownerData?.photoURL || null;
 
-    if (!existingActivity.empty) {
-      // Update existing activity
-      await existingActivity.docs[0].ref.update({
-        createdAt: Timestamp.now(),
-        read: false,
-        fromUserName: afterData.requesterName,
-        fromUserPhoto: afterData.requesterPhoto,
-        link: null, // No link - opens dialog instead
-      });
-    } else {
-      // Create new activity
-      await activitiesRef.add({
-        type: "photo_access_request",
-        fromUserId: requesterId,
-        fromUserName: afterData.requesterName,
-        fromUserPhoto: afterData.requesterPhoto,
-        toUserId: targetUserId,
-        read: false,
-        createdAt: Timestamp.now(),
-        link: null, // No link - opens dialog instead
-      });
+      const activityType = afterData.status === "granted"
+        ? "photo_access_granted"
+        : "photo_access_denied";
+
+      // Create activity for the requester
+      await db
+        .collection("users")
+        .doc(requesterId)
+        .collection("activities")
+        .add({
+          type: activityType,
+          fromUserId: targetUserId,
+          fromUserName: ownerName,
+          fromUserPhoto: ownerPhoto,
+          toUserId: requesterId,
+          read: false,
+          createdAt: Timestamp.now(),
+          link: `/user/${targetUserId}`,
+        });
     }
   }
 );

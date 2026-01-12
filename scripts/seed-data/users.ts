@@ -180,6 +180,16 @@ export interface SeedPhotoDetail {
   order: number;
 }
 
+export interface SeedPhotoAccessRequest {
+  odId: string;
+  targetUserId: string;  // Owner of the photos
+  requesterId: string;   // Person requesting access
+  requesterName: string;
+  requesterPhoto: string | null;
+  status: 'pending';
+  requestedAt: Date;
+}
+
 export interface SeedMessage {
   odId: string;
   odConversationId: string;
@@ -268,12 +278,16 @@ export function generateUsers(count: number, seed?: number): SeedUser[] {
     const email = `${firstName.toLowerCase()}${i + 1}@test.com`;
 
     const location = pickRandom(MICHIGAN_CITIES);
-    const photos = pickRandomMultiple(SAMPLE_PHOTOS, 1, 4);
+    // Ensure at least 3 photos so we have room for private photos
+    const photos = pickRandomMultiple(SAMPLE_PHOTOS, 3, 5);
     
     // Generate photo details with privacy - first photo is never private (it's the profile photo)
+    // Ensure everyone has 1-2 private photos for testing
+    const numPrivatePhotos = faker.number.int({ min: 1, max: 2 });
     const photoDetails: SeedPhotoDetail[] = photos.map((url, index) => ({
       url,
-      isPrivate: index > 0 && Math.random() > 0.7, // 30% chance for non-profile photos to be private
+      // First photo is never private, then mark some as private
+      isPrivate: index > 0 && index <= numPrivatePhotos,
       order: index,
     }));
     
@@ -630,6 +644,38 @@ export function generateConversationsAndMessages(
   }
 
   return { conversations, messages };
+}
+
+/**
+ * Generate photo access requests - everyone requests access from everyone else who has private photos
+ */
+export function generatePhotoAccessRequests(users: SeedUser[]): SeedPhotoAccessRequest[] {
+  const requests: SeedPhotoAccessRequest[] = [];
+
+  // Find users with private photos
+  const usersWithPrivatePhotos = users.filter(u => 
+    u.onboarding.photoDetails.some(p => p.isPrivate)
+  );
+
+  // Each user requests access to all other users' private photos
+  for (const requester of users) {
+    for (const owner of usersWithPrivatePhotos) {
+      // Skip self
+      if (requester.uid === owner.uid) continue;
+
+      requests.push({
+        odId: faker.string.uuid(),
+        targetUserId: owner.uid,
+        requesterId: requester.uid,
+        requesterName: requester.displayName,
+        requesterPhoto: requester.photoURL,
+        status: 'pending',
+        requestedAt: faker.date.recent({ days: 7 }),
+      });
+    }
+  }
+
+  return requests;
 }
 
 // ============================================================================

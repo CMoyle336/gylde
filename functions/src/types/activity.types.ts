@@ -3,7 +3,7 @@
  */
 import { FieldValue } from "firebase-admin/firestore";
 
-export type ActivityType = "favorite" | "match" | "message" | "view" | "photo_access_request";
+export type ActivityType = "favorite" | "match" | "message" | "view" | "photo_access_request" | "photo_access_granted" | "photo_access_denied";
 
 export interface ActivityBase {
   type: ActivityType;

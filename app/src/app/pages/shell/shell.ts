@@ -13,6 +13,7 @@ import { UserProfileService } from '../../core/services/user-profile.service';
 import { FavoriteService } from '../../core/services/favorite.service';
 import { ActivityService } from '../../core/services/activity.service';
 import { MessageService } from '../../core/services/message.service';
+import { MatchesService } from '../../core/services/matches.service';
 import { ActivityDisplay } from '../../core/interfaces';
 import { PhotoAccessDialogComponent } from '../../components/photo-access-dialog';
 
@@ -40,6 +41,7 @@ export class ShellComponent implements OnInit, OnDestroy {
   private readonly favoriteService = inject(FavoriteService);
   private readonly activityService = inject(ActivityService);
   private readonly messageService = inject(MessageService);
+  private readonly matchesService = inject(MatchesService);
   private readonly translateService = inject(TranslateService);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly dialog = inject(MatDialog);
@@ -53,14 +55,20 @@ export class ShellComponent implements OnInit, OnDestroy {
   protected readonly sidenavOpen = signal(false);
   protected readonly sidenavExpanded = signal(true);
   protected readonly isMobile = signal(false);
+  protected readonly activityExpanded = signal(true);
   
   // Current user info
   protected readonly currentUser = this.authService.user;
   protected readonly userPhotoURL = computed(() => this.currentUser()?.photoURL ?? null);
 
+  // Matches badge count (sum of favorited-me and viewed-me counts)
+  protected readonly matchesBadgeCount = computed(() => 
+    this.matchesService.favoritedMeCount() + this.matchesService.viewedMeCount()
+  );
+
   protected readonly navItems = [
     { id: 'discover', path: '/discover', icon: 'explore', labelKey: 'DISCOVER' },
-    { id: 'matches', path: '/matches', icon: 'favorite', labelKey: 'MATCHES', badge: 3 },
+    { id: 'matches', path: '/matches', icon: 'favorite', labelKey: 'MATCHES' },
     { id: 'messages', path: '/messages', icon: 'chat_bubble', labelKey: 'MESSAGES' },
     { id: 'profile', path: '/profile', icon: 'person', labelKey: 'PROFILE' },
     { id: 'settings', path: '/settings', icon: 'settings', labelKey: 'SETTINGS' },
@@ -74,6 +82,7 @@ export class ShellComponent implements OnInit, OnDestroy {
     this.favoriteService.loadFavorites();
     this.activityService.subscribeToActivities();
     this.messageService.subscribeToConversations();
+    this.matchesService.loadBadgeCounts();
     this.checkScreenSize();
     
     // Track user activity
@@ -180,5 +189,9 @@ export class ShellComponent implements OnInit, OnDestroy {
 
   protected markAllActivitiesAsRead(): void {
     this.activityService.markAllAsRead();
+  }
+
+  protected toggleActivitySection(): void {
+    this.activityExpanded.update(v => !v);
   }
 }

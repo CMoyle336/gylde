@@ -84,7 +84,12 @@ export class MessageService {
   });
 
   readonly totalUnreadCount = computed(() => {
-    return this._conversations().reduce((sum, conv) => sum + conv.unreadCount, 0);
+    const activeId = this._activeConversation()?.id;
+    return this._conversations().reduce((sum, conv) => {
+      // Exclude active conversation from unread count since user is viewing it
+      if (conv.id === activeId) return sum;
+      return sum + conv.unreadCount;
+    }, 0);
   });
 
   /**

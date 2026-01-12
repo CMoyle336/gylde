@@ -20,10 +20,12 @@ import {
   generateMatches,
   generateActivities,
   generateConversationsAndMessages,
+  generatePhotoAccessRequests,
   SeedUser,
   SeedMatch,
   SeedActivity,
   SeedProfileView,
+  SeedPhotoAccessRequest,
 } from './seed-data/users';
 
 // Configuration
@@ -91,6 +93,9 @@ async function main() {
   const { conversations, messages } = generateConversationsAndMessages(users, 2);
   console.log(`   ✓ Generated ${conversations.length} conversations with ${messages.length} messages`);
 
+  const photoAccessRequests = generatePhotoAccessRequests(users);
+  console.log(`   ✓ Generated ${photoAccessRequests.length} photo access requests`);
+
   // Seed auth users
   console.log('\n🔐 Creating Auth users...');
   await seedAuthUsers(auth, users);
@@ -118,6 +123,10 @@ async function main() {
   // Seed conversations and messages
   console.log('\n💬 Seeding conversations and messages...');
   await seedConversations(db, conversations, messages);
+
+  // Seed photo access requests
+  console.log('\n🔒 Seeding photo access requests...');
+  await seedPhotoAccessRequests(db, photoAccessRequests, users);
   
   console.log('\n🎉 Seeding complete!');
   printLoginCredentials(users);
@@ -427,6 +436,71 @@ async function seedConversations(
   }
 
   console.log(`  ✓ Created ${messagesCreated} messages`);
+}
+
+async function seedPhotoAccessRequests(
+  db: FirebaseFirestore.Firestore,
+  requests: SeedPhotoAccessRequest[],
+  users: SeedUser[]
+) {
+  const batchSize = 500;
+  let totalRequestsCreated = 0;
+  let totalPendingCountUpdates = 0;
+
+  // Create a map to track pending counts per user
+  const pendingCounts = new Map<string, number>();
+  for (const request of requests) {
+    const currentCount = pendingCounts.get(request.targetUserId) || 0;
+    pendingCounts.set(request.targetUserId, currentCount + 1);
+  }
+
+  // Seed requests in batches
+  for (let i = 0; i < requests.length; i += batchSize) {
+    const batch = db.batch();
+    const batchRequests = requests.slice(i, i + batchSize);
+
+    for (const request of batchRequests) {
+      // Store in target user's photoAccessRequests subcollection
+      const requestRef = db
+        .collection('users')
+        .doc(request.targetUserId)
+        .collection('photoAccessRequests')
+        .doc(request.requesterId);
+      
+      batch.set(requestRef, {
+        requesterId: request.requesterId,
+        requesterName: request.requesterName,
+        requesterPhoto: request.requesterPhoto,
+        status: request.status,
+        requestedAt: request.requestedAt,
+      });
+    }
+    
+    await batch.commit();
+    totalRequestsCreated += batchRequests.length;
+  }
+
+  console.log(`  ✓ Created ${totalRequestsCreated} photo access requests`);
+
+  // Update pending counts on user profiles
+  const userIds = Array.from(pendingCounts.keys());
+  for (let i = 0; i < userIds.length; i += batchSize) {
+    const batch = db.batch();
+    const batchUserIds = userIds.slice(i, i + batchSize);
+
+    for (const userId of batchUserIds) {
+      const count = pendingCounts.get(userId) || 0;
+      const userRef = db.collection('users').doc(userId);
+      batch.update(userRef, {
+        pendingPhotoAccessCount: count,
+      });
+    }
+    
+    await batch.commit();
+    totalPendingCountUpdates += batchUserIds.length;
+  }
+
+  console.log(`  ✓ Updated pending counts for ${totalPendingCountUpdates} users`);
 }
 
 // ============================================================================
