@@ -11,6 +11,9 @@ import {
   signInWithPopup,
   sendPasswordResetEmail,
   updateProfile,
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+  verifyBeforeUpdateEmail,
 } from '@angular/fire/auth';
 import { AuthUser } from '../interfaces';
 
@@ -134,6 +137,32 @@ export class AuthService {
     try {
       this._error.set(null);
       await sendPasswordResetEmail(this.auth, email);
+    } catch (error) {
+      this._error.set(this.getErrorMessage(error));
+      throw error;
+    }
+  }
+
+  /**
+   * Change user's email address
+   * Requires re-authentication and sends verification to new email
+   */
+  async changeEmail(newEmail: string, currentPassword: string): Promise<void> {
+    const currentUser = this.auth.currentUser;
+    if (!currentUser || !currentUser.email) {
+      throw new Error('No authenticated user');
+    }
+
+    try {
+      this._error.set(null);
+
+      // Re-authenticate user with current password
+      const credential = EmailAuthProvider.credential(currentUser.email, currentPassword);
+      await reauthenticateWithCredential(currentUser, credential);
+
+      // Send verification email to new address
+      // When user clicks the link, their email will be updated
+      await verifyBeforeUpdateEmail(currentUser, newEmail);
     } catch (error) {
       this._error.set(this.getErrorMessage(error));
       throw error;

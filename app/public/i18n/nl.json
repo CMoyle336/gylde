@@ -373,6 +373,7 @@
       "DELETE_DESC": "Deze actie is permanent en kan niet ongedaan worden gemaakt. Al je gegevens, matches en gesprekken worden verwijderd.",
       "DELETE_CONFIRM": "Typ DELETE om te bevestigen",
       "CANCEL": "Annuleren",
+      "CLOSE": "Sluiten",
       "CHANGE_EMAIL": "E-mail wijzigen",
       "SEND_RESET": "Reset link versturen",
       "DELETE_BUTTON": "Verwijder mijn account"

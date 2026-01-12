@@ -431,8 +431,9 @@ export class MatchesService {
       const data = userDataMap.get(userId);
       if (!data) continue;
 
-      // Skip hidden profiles
-      if (data.settings?.privacy?.profileVisible === false) continue;
+      // Note: We intentionally do NOT filter by profileVisible here.
+      // profileVisible only affects discover/search results.
+      // Users should still appear in matches, favorites, views, etc.
 
       // Calculate age
       let age: number | null = null;

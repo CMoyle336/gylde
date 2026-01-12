@@ -144,6 +144,7 @@ export class SettingsComponent implements OnInit {
     this.newEmail = '';
     this.currentPassword = '';
     this.dialogError.set(null);
+    this.dialogSuccess.set(null);
     this.showChangeEmailDialog.set(true);
   }
 
@@ -188,12 +189,34 @@ export class SettingsComponent implements OnInit {
     this.dialogError.set(null);
 
     try {
-      // Note: Email change requires reauthentication in Firebase
-      // This would need to be implemented in the auth service
-      // For now, show a message that this feature is coming
-      this.dialogError.set('Email change is not yet available. Please contact support.');
-    } catch (error) {
-      this.dialogError.set('Failed to change email. Please try again.');
+      await this.authService.changeEmail(this.newEmail, this.currentPassword);
+      this.dialogSuccess.set('Verification email sent to your new address. Please check your inbox and click the link to confirm the change.');
+      this.newEmail = '';
+      this.currentPassword = '';
+    } catch (error: unknown) {
+      // Handle specific Firebase errors
+      if (error && typeof error === 'object' && 'code' in error) {
+        const code = (error as { code: string }).code;
+        switch (code) {
+          case 'auth/wrong-password':
+          case 'auth/invalid-credential':
+            this.dialogError.set('Incorrect password. Please try again.');
+            break;
+          case 'auth/email-already-in-use':
+            this.dialogError.set('This email is already in use by another account.');
+            break;
+          case 'auth/invalid-email':
+            this.dialogError.set('Please enter a valid email address.');
+            break;
+          case 'auth/requires-recent-login':
+            this.dialogError.set('Please sign out and sign back in, then try again.');
+            break;
+          default:
+            this.dialogError.set('Failed to change email. Please try again.');
+        }
+      } else {
+        this.dialogError.set('Failed to change email. Please try again.');
+      }
     } finally {
       this.dialogLoading.set(false);
     }

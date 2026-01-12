@@ -275,31 +275,42 @@
   <div class="dialog-overlay" (click)="closeDialogs()">
     <div class="dialog" (click)="$event.stopPropagation()">
       <h3>{{ 'SETTINGS.DIALOGS.CHANGE_EMAIL_TITLE' | translate }}</h3>
-      <p>{{ 'SETTINGS.DIALOGS.CHANGE_EMAIL_DESC' | translate }}</p>
       
-      <mat-form-field appearance="outline" class="full-width">
-        <mat-label>{{ 'SETTINGS.DIALOGS.NEW_EMAIL' | translate }}</mat-label>
-        <input matInput type="email" [(ngModel)]="newEmail" placeholder="you@example.com">
-      </mat-form-field>
+      @if (!dialogSuccess()) {
+        <p>{{ 'SETTINGS.DIALOGS.CHANGE_EMAIL_DESC' | translate }}</p>
+        
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>{{ 'SETTINGS.DIALOGS.NEW_EMAIL' | translate }}</mat-label>
+          <input matInput type="email" [(ngModel)]="newEmail" placeholder="you@example.com">
+        </mat-form-field>
 
-      <mat-form-field appearance="outline" class="full-width">
-        <mat-label>{{ 'SETTINGS.DIALOGS.CURRENT_PASSWORD' | translate }}</mat-label>
-        <input matInput type="password" [(ngModel)]="currentPassword">
-      </mat-form-field>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>{{ 'SETTINGS.DIALOGS.CURRENT_PASSWORD' | translate }}</mat-label>
+          <input matInput type="password" [(ngModel)]="currentPassword">
+        </mat-form-field>
+      }
 
       @if (dialogError()) {
         <p class="error-message">{{ dialogError() }}</p>
       }
 
+      @if (dialogSuccess()) {
+        <p class="success-message">{{ dialogSuccess() }}</p>
+      }
+
       <div class="dialog-actions">
-        <button mat-button (click)="closeDialogs()">{{ 'SETTINGS.DIALOGS.CANCEL' | translate }}</button>
-        <button mat-flat-button color="primary" (click)="changeEmail()" [disabled]="dialogLoading()">
-          @if (dialogLoading()) {
-            <mat-spinner diameter="20"></mat-spinner>
-          } @else {
-            {{ 'SETTINGS.DIALOGS.CHANGE_EMAIL' | translate }}
-          }
+        <button mat-button (click)="closeDialogs()">
+          {{ dialogSuccess() ? ('SETTINGS.DIALOGS.CLOSE' | translate) : ('SETTINGS.DIALOGS.CANCEL' | translate) }}
         </button>
+        @if (!dialogSuccess()) {
+          <button mat-flat-button color="primary" (click)="changeEmail()" [disabled]="dialogLoading()">
+            @if (dialogLoading()) {
+              <mat-spinner diameter="20"></mat-spinner>
+            } @else {
+              {{ 'SETTINGS.DIALOGS.CHANGE_EMAIL' | translate }}
+            }
+          </button>
+        }
       </div>
     </div>
   </div>

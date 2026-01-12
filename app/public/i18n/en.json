@@ -399,6 +399,7 @@
       "DELETE_DESC": "This action is permanent and cannot be undone. All your data, matches, and conversations will be deleted.",
       "DELETE_CONFIRM": "Type DELETE to confirm",
       "CANCEL": "Cancel",
+      "CLOSE": "Close",
       "CHANGE_EMAIL": "Change Email",
       "SEND_RESET": "Send Reset Link",
       "DELETE_BUTTON": "Delete My Account"

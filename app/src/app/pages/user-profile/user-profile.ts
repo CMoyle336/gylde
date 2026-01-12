@@ -169,12 +169,10 @@ export class UserProfileComponent implements OnInit, OnDestroy {
 
       const userData = userSnap.data() as UserProfile;
       
-      // Check if profile is visible
-      if (userData.settings?.privacy?.profileVisible === false) {
-        this.error.set('This profile is private');
-        this.loading.set(false);
-        return;
-      }
+      // Note: We do NOT check profileVisible here.
+      // profileVisible only affects discover/search results.
+      // Users can still view profiles they have direct links to
+      // (e.g., from matches, favorites, messages, activity).
 
       this.profile.set(userData);
 
