@@ -527,6 +527,7 @@ export const onPhotoAccessRequestWrite = onDocumentWritten(
         read: false,
         fromUserName: afterData.requesterName,
         fromUserPhoto: afterData.requesterPhoto,
+        link: null, // No link - opens dialog instead
       });
     } else {
       // Create new activity
@@ -538,6 +539,7 @@ export const onPhotoAccessRequestWrite = onDocumentWritten(
         toUserId: targetUserId,
         read: false,
         createdAt: Timestamp.now(),
+        link: null, // No link - opens dialog instead
       });
     }
   }

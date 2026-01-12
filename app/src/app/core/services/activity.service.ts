@@ -140,92 +140,90 @@ export class ActivityService implements OnDestroy {
   }
 
   /**
-   * Record a profile view. Creates a view activity for the viewed user
-   * and records the view in the profileViews collection for querying.
+   * Record a profile view in the profileViews collection.
+   * Activity creation is handled by a Firebase trigger (onProfileViewCreated).
+   * Uses a single document per viewer-viewed pair for efficiency.
    */
-  async recordProfileView(
-    viewedUserId: string,
-    viewedUserName: string,
-    viewedUserPhoto: string | null
-  ): Promise<void> {
+  async recordProfileView(viewedUserId: string): Promise<void> {
     const currentUser = this.authService.user();
     if (!currentUser || currentUser.uid === viewedUserId) return;
 
     try {
-      // Check if we already have a view record within the last hour (to avoid spam)
       const viewsRef = collection(this.firestore, 'profileViews');
-      const recentViewQuery = query(
+      
+      // Check if we already have a view record from this user to this profile
+      const existingViewQuery = query(
         viewsRef,
         where('viewerId', '==', currentUser.uid),
         where('viewedUserId', '==', viewedUserId),
-        orderBy('viewedAt', 'desc'),
         limit(1)
       );
       
-      const recentSnapshot = await getDocs(recentViewQuery);
-      if (!recentSnapshot.empty) {
-        const lastView = recentSnapshot.docs[0].data();
-        const lastViewTime = lastView['viewedAt']?.toDate?.() || new Date(0);
+      const existingSnapshot = await getDocs(existingViewQuery);
+      
+      if (!existingSnapshot.empty) {
+        const existingDoc = existingSnapshot.docs[0];
+        const lastViewTime = existingDoc.data()['viewedAt']?.toDate?.() || new Date(0);
         const hourAgo = new Date(Date.now() - 60 * 60 * 1000);
         
-        if (lastViewTime > hourAgo) {
-          // Update the existing view timestamp instead of creating new record
-          await updateDoc(recentSnapshot.docs[0].ref, {
-            viewedAt: serverTimestamp(),
-          });
-          return;
+        // Always update the timestamp
+        await updateDoc(existingDoc.ref, {
+          viewedAt: serverTimestamp(),
+          viewerName: currentUser.displayName || 'Someone',
+          viewerPhoto: currentUser.photoURL,
+        });
+        
+        // Only trigger activity update if last view was more than an hour ago
+        // (The trigger won't fire on update, only on create, so we handle this differently)
+        if (lastViewTime <= hourAgo) {
+          // For views older than an hour, we need to update the activity too
+          // This is handled by manually updating the activity
+          await this.updateViewActivity(viewedUserId, currentUser);
         }
+      } else {
+        // Create new profile view record
+        // Activity creation is handled by onProfileViewCreated trigger
+        await addDoc(viewsRef, {
+          viewerId: currentUser.uid,
+          viewerName: currentUser.displayName || 'Someone',
+          viewerPhoto: currentUser.photoURL,
+          viewedUserId: viewedUserId,
+          viewedAt: serverTimestamp(),
+        });
       }
+    } catch (error) {
+      console.error('Error recording profile view:', error);
+    }
+  }
 
-      // Record the profile view
-      await addDoc(viewsRef, {
-        viewerId: currentUser.uid,
-        viewerName: currentUser.displayName || 'Someone',
-        viewerPhoto: currentUser.photoURL,
-        viewedUserId: viewedUserId,
-        viewedAt: serverTimestamp(),
-      });
-
-      // Create activity for the viewed user (so they know someone viewed them)
+  /**
+   * Update an existing view activity (for when we update an old profile view record)
+   */
+  private async updateViewActivity(
+    viewedUserId: string,
+    currentUser: { uid: string; displayName: string | null; photoURL: string | null }
+  ): Promise<void> {
+    try {
       const activitiesRef = collection(this.firestore, `users/${viewedUserId}/activities`);
-      
-      // Check if there's already a recent view activity from this user
       const activityQuery = query(
         activitiesRef,
         where('fromUserId', '==', currentUser.uid),
         where('type', '==', 'view'),
-        orderBy('createdAt', 'desc'),
         limit(1)
       );
       
       const activitySnapshot = await getDocs(activityQuery);
       if (!activitySnapshot.empty) {
-        const lastActivity = activitySnapshot.docs[0].data();
-        const lastActivityTime = lastActivity['createdAt']?.toDate?.() || new Date(0);
-        const hourAgo = new Date(Date.now() - 60 * 60 * 1000);
-        
-        if (lastActivityTime > hourAgo) {
-          // Update existing activity
-          await updateDoc(activitySnapshot.docs[0].ref, {
-            createdAt: serverTimestamp(),
-            read: false,
-          });
-          return;
-        }
+        await updateDoc(activitySnapshot.docs[0].ref, {
+          createdAt: serverTimestamp(),
+          read: false,
+          link: `/user/${currentUser.uid}`,
+          fromUserName: currentUser.displayName || 'Someone',
+          fromUserPhoto: currentUser.photoURL,
+        });
       }
-
-      // Create new view activity
-      await addDoc(activitiesRef, {
-        type: 'view',
-        fromUserId: currentUser.uid,
-        fromUserName: currentUser.displayName || 'Someone',
-        fromUserPhoto: currentUser.photoURL,
-        toUserId: viewedUserId,
-        read: false,
-        createdAt: serverTimestamp(),
-      });
     } catch (error) {
-      console.error('Error recording profile view:', error);
+      console.error('Error updating view activity:', error);
     }
   }
 
@@ -239,11 +237,11 @@ export class ActivityService implements OnDestroy {
 
     try {
       const viewsRef = collection(this.firestore, 'profileViews');
+      // Using simple equality filters (no orderBy) to avoid index requirements
       const q = query(
         viewsRef,
         where('viewerId', '==', userId),
         where('viewedUserId', '==', currentUser.uid),
-        orderBy('viewedAt', 'desc'),
         limit(1)
       );
 
@@ -309,6 +307,7 @@ export class ActivityService implements OnDestroy {
       time: createdAt.toISOString(),
       timeAgo: this.getTimeAgo(createdAt),
       read: activity.read,
+      link: activity.link,
     };
   }
 

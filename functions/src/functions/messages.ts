@@ -64,7 +64,8 @@ export const onMessageCreated = onDocumentCreated(
         "message",
         senderId,
         senderName,
-        senderPhoto
+        senderPhoto,
+        `/messages/${conversationId}` // Link to the conversation
       );
 
       logger.info(`Message activity upserted for ${recipientId} from ${senderName}`);

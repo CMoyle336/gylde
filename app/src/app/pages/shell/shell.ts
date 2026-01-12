@@ -151,36 +151,21 @@ export class ShellComponent implements OnInit, OnDestroy {
       this.sidenavOpen.set(false);
     }
 
+    // If the activity has a link, navigate to it
+    if (activity.link) {
+      this.router.navigateByUrl(activity.link);
+      return;
+    }
+
+    // Handle activities without links (like photo_access_request which opens a dialog)
     switch (activity.type) {
-      case 'message':
-        // Find the conversation with this user and navigate to it
-        const conversationId = await this.messageService.findConversationByUserId(activity.fromUserId);
-        if (conversationId) {
-          this.router.navigate(['/messages', conversationId]);
-        } else {
-          // Fallback to messages list if conversation not found
-          this.router.navigate(['/messages']);
-        }
-        break;
-
-      case 'match':
-      case 'favorite':
-        // Navigate to the user's profile (when implemented)
-        // For now, navigate to matches
-        this.router.navigate(['/matches']);
-        break;
-
-      case 'view':
-        // Navigate to discover or profile
-        this.router.navigate(['/discover']);
-        break;
-
       case 'photo_access_request':
         // Open dialog to approve/deny the request
         this.openPhotoAccessDialog(activity);
         break;
 
       default:
+        // Fallback for activities without links
         this.router.navigate(['/discover']);
     }
   }

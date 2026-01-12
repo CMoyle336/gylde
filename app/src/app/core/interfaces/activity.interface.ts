@@ -14,6 +14,7 @@ export interface ActivityBase {
   fromUserPhoto: string | null;
   toUserId: string;
   read: boolean;
+  link?: string | null; // Navigation link for the activity (null for activities like photo_access_request that open dialogs)
 }
 
 /**
@@ -36,4 +37,5 @@ export interface ActivityDisplay {
   time: string;
   timeAgo: string;
   read: boolean;
+  link?: string | null;
 }

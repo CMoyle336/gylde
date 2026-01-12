@@ -3,7 +3,7 @@
  */
 import { FieldValue } from "firebase-admin/firestore";
 
-export type ActivityType = "favorite" | "match" | "message" | "view";
+export type ActivityType = "favorite" | "match" | "message" | "view" | "photo_access_request";
 
 export interface ActivityBase {
   type: ActivityType;
@@ -12,6 +12,7 @@ export interface ActivityBase {
   fromUserPhoto: string | null;
   toUserId: string;
   read: boolean;
+  link?: string | null; // Navigation link for the activity (null for activities like photo_access_request that open dialogs)
 }
 
 /**

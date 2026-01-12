@@ -10,13 +10,15 @@ import * as logger from "firebase-functions/logger";
 export class ActivityService {
   /**
    * Create an activity record for a user
+   * @param link - Navigation link for the activity (null for activities that open dialogs instead)
    */
   static async createActivity(
     toUserId: string,
     type: ActivityType,
     fromUserId: string,
     fromUserName: string,
-    fromUserPhoto: string | null
+    fromUserPhoto: string | null,
+    link: string | null = null
   ): Promise<string> {
     const activityId = `${type}_${fromUserId}_${Date.now()}`;
 
@@ -28,6 +30,7 @@ export class ActivityService {
       toUserId,
       createdAt: FieldValue.serverTimestamp(),
       read: false,
+      link,
     };
 
     await db
@@ -46,13 +49,15 @@ export class ActivityService {
    * If an activity of the same type from the same user already exists,
    * update it instead of creating a new one.
    * Useful for message activities to avoid duplicates.
+   * @param link - Navigation link for the activity (null for activities that open dialogs instead)
    */
   static async upsertActivity(
     toUserId: string,
     type: ActivityType,
     fromUserId: string,
     fromUserName: string,
-    fromUserPhoto: string | null
+    fromUserPhoto: string | null,
+    link: string | null = null
   ): Promise<string> {
     const activitiesRef = db
       .collection("users")
@@ -74,13 +79,14 @@ export class ActivityService {
         fromUserPhoto,
         createdAt: FieldValue.serverTimestamp(),
         read: false,
+        link,
       });
       logger.info(`Activity updated: ${type} for user ${toUserId} from ${fromUserName}`);
       return existingDoc.id;
     }
 
     // Create new activity
-    return this.createActivity(toUserId, type, fromUserId, fromUserName, fromUserPhoto);
+    return this.createActivity(toUserId, type, fromUserId, fromUserName, fromUserPhoto, link);
   }
 
   /**

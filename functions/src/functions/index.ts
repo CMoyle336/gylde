@@ -8,6 +8,7 @@ export * from "./discovery";
 export * from "./users";
 export * from "./images";
 export * from "./photos";
+export * from "./profile-views";
 
 // Future function modules:
 // export * from "./matches";

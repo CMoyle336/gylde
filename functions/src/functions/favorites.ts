@@ -36,7 +36,8 @@ export const onFavoriteCreated = onDocumentCreated(
         "favorite",
         fromUserId,
         fromUser.displayName || "Someone",
-        fromUser.photoURL || null
+        fromUser.photoURL || null,
+        `/user/${fromUserId}` // Link to the user's profile who favorited them
       );
 
       // Check for mutual favorite (match)
@@ -156,14 +157,16 @@ async function handleMatch(
       "match",
       toUserId,
       toUser.displayName || "Someone",
-      toUser.photoURL || null
+      toUser.photoURL || null,
+      `/user/${toUserId}` // Link to the matched user's profile
     ),
     ActivityService.createActivity(
       toUserId,
       "match",
       fromUserId,
       fromUser.displayName || "Someone",
-      fromUser.photoURL || null
+      fromUser.photoURL || null,
+      `/user/${fromUserId}` // Link to the matched user's profile
     ),
   ]);
 

@@ -181,12 +181,8 @@ export class UserProfileComponent implements OnInit, OnDestroy {
         }
       );
 
-      // Record the profile view (creates activity for viewed user)
-      await this.activityService.recordProfileView(
-        userId,
-        userData.displayName || 'Unknown',
-        userData.photoURL || null
-      );
+      // Record the profile view (activity created by Firebase trigger)
+      await this.activityService.recordProfileView(userId);
 
       // Get when this user last viewed the current user
       const lastViewed = await this.activityService.getLastViewedBy(userId);
