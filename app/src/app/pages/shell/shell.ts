@@ -14,7 +14,7 @@ import { FavoriteService } from '../../core/services/favorite.service';
 import { ActivityService } from '../../core/services/activity.service';
 import { MessageService } from '../../core/services/message.service';
 import { ActivityDisplay } from '../../core/interfaces';
-import { PhotoAccessDialogComponent, PhotoAccessDialogData } from '../../components/photo-access-dialog';
+import { PhotoAccessDialogComponent } from '../../components/photo-access-dialog';
 
 @Component({
   selector: 'app-shell',
@@ -160,8 +160,8 @@ export class ShellComponent implements OnInit, OnDestroy {
     // Handle activities without links (like photo_access_request which opens a dialog)
     switch (activity.type) {
       case 'photo_access_request':
-        // Open dialog to approve/deny the request
-        this.openPhotoAccessDialog(activity);
+        // Open dialog to manage photo access (shows all pending requests)
+        this.openPhotoAccessDialog();
         break;
 
       default:
@@ -170,17 +170,10 @@ export class ShellComponent implements OnInit, OnDestroy {
     }
   }
 
-  private openPhotoAccessDialog(activity: ActivityDisplay): void {
-    const dialogData: PhotoAccessDialogData = {
-      requesterId: activity.fromUserId,
-      requesterName: activity.name,
-      requesterPhoto: activity.photo,
-    };
-
+  private openPhotoAccessDialog(): void {
     this.dialog.open(PhotoAccessDialogComponent, {
-      data: dialogData,
       panelClass: 'photo-access-dialog-panel',
-      width: '400px',
+      width: '450px',
       maxWidth: '95vw',
     });
   }

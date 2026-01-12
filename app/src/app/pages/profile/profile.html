@@ -103,32 +103,16 @@
         </div>
         <input #photoInput type="file" accept="image/*" multiple hidden (change)="onPhotosSelected($event)">
         
-        <!-- Granted Access Section -->
-        @if (grants().length > 0) {
-          <div class="access-grants-section">
-            <h3>
-              <mat-icon>visibility</mat-icon>
-              Who Can View Private Photos
-            </h3>
-            <div class="access-list">
-              @for (grant of grants(); track grant.id) {
-                <div class="access-item">
-                  <img [src]="grant.grantedToPhoto || 'assets/default-avatar.png'" 
-                       alt="{{ grant.grantedToName }}"
-                       class="requester-photo">
-                  <div class="requester-info">
-                    <span class="requester-name">{{ grant.grantedToName }}</span>
-                    <span class="grant-time">has access</span>
-                  </div>
-                  <div class="access-actions">
-                    <button mat-stroked-button color="warn" (click)="revokeAccess(grant.id)">
-                      <mat-icon>block</mat-icon>
-                      Revoke
-                    </button>
-                  </div>
-                </div>
+        <!-- Manage Private Photo Access -->
+        @if (hasPrivatePhotos()) {
+          <div class="manage-access-section">
+            <button mat-stroked-button class="manage-access-btn" (click)="openAccessDialog()">
+              <mat-icon>lock</mat-icon>
+              Manage Private Photo Access
+              @if (pendingRequestsCount() > 0) {
+                <span class="request-badge">{{ pendingRequestsCount() }}</span>
               }
-            </div>
+            </button>
           </div>
         }
       </section>

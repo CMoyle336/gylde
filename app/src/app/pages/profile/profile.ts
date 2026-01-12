@@ -8,6 +8,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialog } from '@angular/material/dialog';
 import { UserProfileService } from '../../core/services/user-profile.service';
 import { ImageUploadService } from '../../core/services/image-upload.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -16,6 +17,7 @@ import { OnboardingProfile } from '../../core/interfaces';
 import { Photo } from '../../core/interfaces/photo.interface';
 import { ALL_CONNECTION_TYPES, getConnectionTypeLabel, SUPPORT_ORIENTATION_OPTIONS, getSupportOrientationLabel } from '../../core/constants/connection-types';
 import { MAX_PHOTOS_PER_USER } from '../../core/constants/app-config';
+import { PhotoAccessDialogComponent } from '../../components/photo-access-dialog';
 
 interface EditForm {
   // Basic info
@@ -71,6 +73,7 @@ export class ProfileComponent implements OnInit {
   private readonly imageUploadService = inject(ImageUploadService);
   private readonly authService = inject(AuthService);
   private readonly photoAccessService = inject(PhotoAccessService);
+  private readonly dialog = inject(MatDialog);
 
   protected readonly uploadError = signal<string | null>(null);
 
@@ -92,11 +95,17 @@ export class ProfileComponent implements OnInit {
   // Photo privacy state (map of url -> isPrivate)
   protected readonly photoPrivacy = signal<Map<string, boolean>>(new Map());
 
-  // Users who have been granted access to view private photos
-  protected readonly grants = this.photoAccessService.grants;
+  // Pending requests count (for badge)
+  protected readonly pendingRequestsCount = this.photoAccessService.pendingRequestsCount;
 
   // Max photos allowed
   protected readonly maxPhotos = MAX_PHOTOS_PER_USER;
+
+  // Check if user has any private photos
+  protected readonly hasPrivatePhotos = computed(() => {
+    const privacyMap = this.photoPrivacy();
+    return Array.from(privacyMap.values()).some(isPrivate => isPrivate);
+  });
 
   // Computed: photos with their privacy status
   protected readonly photosWithPrivacy = computed(() => {
@@ -480,13 +489,13 @@ export class ProfileComponent implements OnInit {
     return this.photoPrivacy().get(photoUrl) || false;
   }
 
-  // Access management - revoke granted access
-  async revokeAccess(userId: string): Promise<void> {
-    try {
-      await this.photoAccessService.revokeAccess(userId);
-    } catch (error) {
-      console.error('Error revoking access:', error);
-    }
+  // Open the photo access management dialog
+  openAccessDialog(): void {
+    this.dialog.open(PhotoAccessDialogComponent, {
+      panelClass: 'photo-access-dialog-panel',
+      width: '450px',
+      maxWidth: '95vw',
+    });
   }
 
   private async savePhotosToProfile(): Promise<void> {
