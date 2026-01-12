@@ -3,6 +3,9 @@
    ============================================ */
 
 :host {
+  display: block;
+  overflow-x: hidden;
+  
   --color-bg-primary: #0d0b0e;
   --color-bg-secondary: #1a1720;
   --color-bg-elevated: #252030;
@@ -89,6 +92,12 @@
   gap: 1rem;
   position: sticky;
   top: 1rem;
+  min-width: 0; /* Prevent flex overflow */
+}
+
+.photo-section {
+  min-width: 0; /* Prevent overflow in grid/flex containers */
+  max-width: 100%;
 }
 
 .info-section {
@@ -99,6 +108,7 @@
   .profile-content {
     grid-template-columns: 1fr;
     gap: 1.5rem;
+    min-width: 0;
   }
 
   .left-column {
@@ -108,6 +118,9 @@
 
   .photo-section {
     order: 1;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
   }
 
   .info-section {
@@ -280,14 +293,31 @@
   gap: 0.5rem;
   margin-top: 0.75rem;
   overflow-x: auto;
+  overflow-y: hidden;
   padding-bottom: 0.25rem;
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Hide scrollbar but keep functionality */
+.photo-thumbnails::-webkit-scrollbar {
+  height: 4px;
+}
+
+.photo-thumbnails::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.photo-thumbnails::-webkit-scrollbar-thumb {
+  background: var(--color-text-muted);
+  border-radius: 2px;
 }
 
 .thumbnail {
   flex-shrink: 0;
-  width: 60px;
-  height: 80px;
-  border-radius: 8px;
+  width: 50px;
+  height: 66px;
+  border-radius: 6px;
   overflow: hidden;
   border: 2px solid transparent;
   background: none;

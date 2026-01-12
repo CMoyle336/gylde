@@ -26,8 +26,11 @@
     <div class="profile-content">
       <!-- Photos Section -->
       <section class="photos-section">
-        <h2>Photos</h2>
-        <p class="section-hint">Click the star to set as profile photo.</p>
+        <div class="section-header">
+          <h2>Photos</h2>
+          <span class="photo-count">{{ editablePhotos().length }} / {{ maxPhotos }}</span>
+        </div>
+        <p class="section-hint">Click the star to set as profile photo. You can upload up to {{ maxPhotos }} photos.</p>
         
         @if (uploadError()) {
           <div class="upload-error">
@@ -77,7 +80,7 @@
           }
           
           <!-- Add photo button -->
-          @if (editablePhotos().length + uploadingPhotos().length < 6) {
+          @if (editablePhotos().length + uploadingPhotos().length < maxPhotos) {
             <button type="button" class="add-photo-btn" (click)="openPhotoPicker()">
               <mat-icon>add_photo_alternate</mat-icon>
               <span>Add Photo</span>

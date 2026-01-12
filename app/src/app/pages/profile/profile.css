@@ -90,13 +90,28 @@
   margin-bottom: 2.5rem;
 }
 
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
 .photos-section h2,
 .info-section h2 {
   font-family: var(--font-display);
   font-size: 1.125rem;
   font-weight: 600;
-  margin: 0 0 0.5rem;
+  margin: 0;
   color: var(--color-text-primary);
+}
+
+.photo-count {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  background: var(--color-bg-elevated);
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
 }
 
 .section-hint {
@@ -126,15 +141,36 @@
 
 .photos-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 0.75rem;
+  max-height: 500px;
+  overflow-y: auto;
+  padding: 4px;
+  padding-right: 0.5rem;
+}
+
+.photos-grid::-webkit-scrollbar {
+  width: 6px;
+}
+
+.photos-grid::-webkit-scrollbar-track {
+  background: var(--color-bg-elevated);
+  border-radius: 3px;
+}
+
+.photos-grid::-webkit-scrollbar-thumb {
+  background: var(--color-text-muted);
+  border-radius: 3px;
+}
+
+.photos-grid::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-secondary);
 }
 
 .photo-item {
   position: relative;
-  aspect-ratio: 3 / 4;
-  border-radius: 12px;
-  overflow: hidden;
+  aspect-ratio: 1;
+  border-radius: 8px;
   background: var(--color-bg-elevated);
 }
 
@@ -142,10 +178,12 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  border-radius: 8px;
 }
 
 .photo-item.is-profile {
-  box-shadow: 0 0 0 2px var(--color-accent);
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
 }
 
 .photo-overlay {
@@ -156,9 +194,11 @@
   align-items: flex-end;
   justify-content: center;
   gap: 0.5rem;
-  padding: 0.75rem;
+  padding: 0.5rem;
   opacity: 0;
   transition: opacity 0.2s;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .photo-item:hover .photo-overlay {
@@ -186,16 +226,16 @@
 
 .profile-badge {
   position: absolute;
-  top: 0.5rem;
-  left: 0.5rem;
-  padding: 0.25rem 0.5rem;
+  top: 0.35rem;
+  left: 0.35rem;
+  padding: 0.15rem 0.35rem;
   background: var(--color-accent);
   color: #1a1720;
-  font-size: 0.6875rem;
+  font-size: 0.5625rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  border-radius: 4px;
+  letter-spacing: 0.3px;
+  border-radius: 3px;
 }
 
 .add-photo-btn {
@@ -203,12 +243,13 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  aspect-ratio: 3 / 4;
-  border-radius: 12px;
+  gap: 0.25rem;
+  aspect-ratio: 1;
+  border-radius: 8px;
   background: var(--color-bg-elevated);
   border: 2px dashed var(--color-border);
   color: var(--color-text-muted);
+  font-size: 0.75rem;
   font-size: 0.8125rem;
   font-weight: 500;
   cursor: pointer;
@@ -222,9 +263,9 @@
 }
 
 .add-photo-btn mat-icon {
-  font-size: 2rem;
-  width: 2rem;
-  height: 2rem;
+  font-size: 1.5rem;
+  width: 1.5rem;
+  height: 1.5rem;
 }
 
 .add-photo-btn.uploading {
@@ -259,6 +300,7 @@
 
 .photo-item.uploading-item .uploading-preview {
   filter: brightness(0.6);
+  border-radius: 8px;
 }
 
 .photo-item.uploading-item.error .uploading-preview {
@@ -272,26 +314,31 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.75rem;
-  background: rgba(0, 0, 0, 0.4);
+  gap: 0.25rem;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 0.5rem;
+  border-radius: 8px;
 }
 
 .upload-spinner-overlay {
-  width: 40px;
-  height: 40px;
-  border: 4px solid rgba(255, 255, 255, 0.2);
+  width: 28px;
+  height: 28px;
+  border: 3px solid rgba(255, 255, 255, 0.2);
   border-top-color: var(--color-accent);
   border-radius: 50%;
   animation: upload-spin 0.8s linear infinite;
+  flex-shrink: 0;
 }
 
 .upload-status {
-  font-size: 0.75rem;
+  font-size: 0.625rem;
   font-weight: 600;
   color: #fff;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  text-align: center;
+  line-height: 1.2;
 }
 
 .upload-status.error {
@@ -304,10 +351,11 @@
 }
 
 .upload-overlay .error-icon {
-  font-size: 2.5rem;
-  width: 2.5rem;
-  height: 2.5rem;
+  font-size: 1.5rem;
+  width: 1.5rem;
+  height: 1.5rem;
   color: var(--color-error);
+  flex-shrink: 0;
 }
 
 /* ============================================
@@ -427,8 +475,11 @@
   }
 
   .photos-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.75rem;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 0.5rem;
+    max-height: 400px;
+    padding: 4px;
+    padding-right: 0.5rem;
   }
 
   .info-grid {

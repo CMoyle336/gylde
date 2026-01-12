@@ -294,10 +294,10 @@ export const uploadProfileImage = onCall<UploadImageRequest, Promise<UploadImage
     const userData = userDoc.data();
     const currentPhotos = userData?.onboarding?.photos || [];
     
-    if (folder === "photos" && currentPhotos.length >= 6) {
+    if (folder === "photos" && currentPhotos.length >= 20) {
       throw new HttpsError(
         "resource-exhausted",
-        "Maximum of 6 photos allowed. Please delete a photo first."
+        "Maximum of 20 photos allowed. Please delete a photo first."
       );
     }
 
@@ -562,20 +562,20 @@ export const uploadProfileImages = onCall<UploadImagesRequest, Promise<UploadIma
       throw new HttpsError("invalid-argument", "No images provided");
     }
 
-    if (images.length > 6) {
-      throw new HttpsError("invalid-argument", "Maximum 6 images per upload");
+    if (images.length > 10) {
+      throw new HttpsError("invalid-argument", "Maximum 10 images per upload batch");
     }
 
     // Check user's current photo count
     const userDoc = await db.collection("users").doc(userId).get();
     const userData = userDoc.data();
     const currentPhotos = userData?.onboarding?.photos || [];
-    const availableSlots = 6 - currentPhotos.length;
+    const availableSlots = 20 - currentPhotos.length;
 
     if (folder === "photos" && images.length > availableSlots) {
       throw new HttpsError(
         "resource-exhausted",
-        `You can only upload ${availableSlots} more photo(s). Maximum is 6.`
+        `You can only upload ${availableSlots} more photo(s). Maximum is 20.`
       );
     }
 
@@ -598,7 +598,7 @@ export const uploadProfileImages = onCall<UploadImagesRequest, Promise<UploadIma
             image, 
             folder, 
             currentPhotos.length + results.filter(r => r.success).length + idx,
-            6,
+            20,
             apiKey
           )
         )

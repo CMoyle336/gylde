@@ -13,6 +13,7 @@ import { ImageUploadService } from '../../core/services/image-upload.service';
 import { AuthService } from '../../core/services/auth.service';
 import { OnboardingProfile } from '../../core/interfaces';
 import { ALL_CONNECTION_TYPES, getConnectionTypeLabel, SUPPORT_ORIENTATION_OPTIONS, getSupportOrientationLabel } from '../../core/constants/connection-types';
+import { MAX_PHOTOS_PER_USER } from '../../core/constants/app-config';
 
 interface EditForm {
   // Basic info
@@ -84,6 +85,9 @@ export class ProfileComponent implements OnInit {
 
   // Current profile photo URL (writable for immediate updates)
   protected readonly profilePhotoUrl = signal<string | null>(null);
+
+  // Max photos allowed
+  protected readonly maxPhotos = MAX_PHOTOS_PER_USER;
 
   constructor() {
     // Sync photos from profile when not editing
@@ -287,11 +291,11 @@ export class ProfileComponent implements OnInit {
 
     const currentPhotos = this.editablePhotos();
     const currentUploading = this.uploadingPhotos().length;
-    const availableSlots = 6 - currentPhotos.length - currentUploading;
+    const availableSlots = this.maxPhotos - currentPhotos.length - currentUploading;
     
     // Check if user can upload more photos
     if (availableSlots <= 0) {
-      this.uploadError.set('Maximum of 6 photos allowed');
+      this.uploadError.set(`Maximum of ${this.maxPhotos} photos allowed`);
       input.value = '';
       return;
     }
@@ -300,7 +304,7 @@ export class ProfileComponent implements OnInit {
     const filesToUpload = Array.from(files).slice(0, availableSlots);
     
     if (filesToUpload.length < files.length) {
-      this.uploadError.set(`Only ${availableSlots} more photo(s) can be added. Maximum is 6.`);
+      this.uploadError.set(`Only ${availableSlots} more photo(s) can be added. Maximum is ${this.maxPhotos}.`);
     }
 
     // Validate all files FIRST before any processing

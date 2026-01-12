@@ -472,24 +472,45 @@
 /* Photo Upload */
 .photo-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 0.75rem;
+  max-height: 450px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.photo-grid::-webkit-scrollbar {
+  width: 6px;
+}
+
+.photo-grid::-webkit-scrollbar-track {
+  background: var(--color-bg-elevated, #252030);
+  border-radius: 3px;
+}
+
+.photo-grid::-webkit-scrollbar-thumb {
+  background: var(--color-text-muted, #6b6777);
+  border-radius: 3px;
 }
 
 @media (max-width: 480px) {
   .photo-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    max-height: 350px;
   }
 }
 
 .photo-slot {
   aspect-ratio: 1;
   position: relative;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .photo-slot.primary {
   grid-column: span 2;
   grid-row: span 2;
+  border-radius: 12px;
 }
 
 .photo-upload-btn {

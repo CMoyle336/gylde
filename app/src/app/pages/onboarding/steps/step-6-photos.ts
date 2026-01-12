@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, computed, signal } from '@a
 import { TranslateModule } from '@ngx-translate/core';
 import { OnboardingService } from '../onboarding.service';
 import { ImageUploadService } from '../../../core/services/image-upload.service';
+import { MAX_PHOTOS_PER_USER } from '../../../core/constants/app-config';
 
 interface PhotoUpload {
   url: string;
@@ -26,7 +27,7 @@ export class Step6PhotosComponent {
   protected readonly onboarding = inject(OnboardingService);
   private readonly imageUploadService = inject(ImageUploadService);
   
-  protected readonly maxPhotos = 6;
+  protected readonly maxPhotos = MAX_PHOTOS_PER_USER;
   protected readonly uploading = signal(false);
   protected readonly uploadError = signal<string | null>(null);
 
