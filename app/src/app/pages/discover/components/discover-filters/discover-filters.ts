@@ -5,6 +5,11 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { DiscoveryFilters } from '../../../../core/interfaces';
+import { 
+  RELATIONSHIP_GOALS, 
+  RELATIONSHIP_STYLE, 
+  LIFESTYLE_PREFERENCES 
+} from '../../../../core/constants/connection-types';
 
 export interface FilterOption {
   label: string;
@@ -40,6 +45,11 @@ export class DiscoverFiltersComponent {
   readonly drinkerOptions = input.required<string[]>();
   readonly educationOptions = input.required<string[]>();
   readonly distanceOptions = input.required<DistanceOption[]>();
+
+  // Connection type groups for organized display
+  protected readonly relationshipGoals = () => RELATIONSHIP_GOALS;
+  protected readonly relationshipStyle = () => RELATIONSHIP_STYLE;
+  protected readonly lifestylePreferences = () => LIFESTYLE_PREFERENCES;
 
   // Outputs
   readonly filterChange = output<{ key: keyof DiscoveryFilters; value: unknown }>();

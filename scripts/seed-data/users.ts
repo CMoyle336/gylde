@@ -1,45 +1,76 @@
 /**
- * Sample user data for Firestore seeding
+ * Dynamic user data generation using Faker.js
  */
 
-export interface SeedUser {
-  uid: string;
-  email: string;
-  password: string; // For Firebase Auth
-  displayName: string;
-  photoURL: string | null;
-  onboardingCompleted: boolean;
-  lastActiveAt?: Date; // When user was last active
-  settings?: {
-    privacy?: {
-      showOnlineStatus?: boolean;
-      showLastActive?: boolean;
-      profileVisible?: boolean;
-    };
-  };
-  onboarding: {
-    birthDate: string;
-    city: string;
-    country: string;
-    location: { latitude: number; longitude: number };
-    genderIdentity: string;
-    genderCustom?: string;
-    interestedIn: string[];
-    ageRangeMin: number;
-    ageRangeMax: number;
-    connectionTypes: string[];
-    supportOrientation: string[];
-    values: string[];
-    lifestyle: string;
-    idealRelationship: string;
-    supportMeaning?: string;
-    photos: string[];
-    verificationOptions: string[];
-  };
-}
+import { faker } from '@faker-js/faker';
 
-// Sample photos from picsum.photos (placeholder images)
-const samplePhotos = [
+// ============================================================================
+// CONSTANTS (matching app/src/app/core/constants/connection-types.ts)
+// ============================================================================
+
+const RELATIONSHIP_GOALS = [
+  'long-term', 'marriage-minded', 'romance', 'friends-first', 
+  'casual', 'travel-partner', 'mentorship'
+];
+
+const RELATIONSHIP_STYLE = [
+  'monogamous', 'non-monogamous', 'open-relationship', 'discretion'
+];
+
+const LIFESTYLE_PREFERENCES = [
+  'luxury-lifestyle', 'active-lifestyle', 'jet-setter', 'foodie',
+  'nightlife', 'cultural', 'homebody', 'adventurous',
+  'health-conscious', 'career-driven', 'laid-back', 'social-butterfly'
+];
+
+const ALL_CONNECTION_TYPES = [...RELATIONSHIP_GOALS, ...RELATIONSHIP_STYLE, ...LIFESTYLE_PREFERENCES];
+
+const SUPPORT_ORIENTATIONS = ['providing', 'receiving', 'either', 'private'];
+
+const GENDER_IDENTITIES = ['woman', 'man', 'nonbinary'];
+
+const ETHNICITY_OPTIONS = [
+  'Asian', 'Black/African', 'Hispanic/Latino', 'Middle Eastern',
+  'Native American', 'Pacific Islander', 'White/Caucasian', 'Mixed', 'Other'
+];
+
+const RELATIONSHIP_STATUS_OPTIONS = [
+  'Single', 'Divorced', 'Separated', 'Widowed', 'In a relationship', 'Married'
+];
+
+const CHILDREN_OPTIONS = [
+  'No children', 'Have children', 'Want children', "Don't want children"
+];
+
+const SMOKING_OPTIONS = ['Non-smoker', 'Occasional smoker', 'Regular smoker'];
+
+const DRINKING_OPTIONS = ['Non-drinker', 'Social drinker', 'Regular drinker'];
+
+const EDUCATION_OPTIONS = [
+  'High school', 'Some college', "Associate's degree", 
+  "Bachelor's degree", "Master's degree", 'Doctorate', 'Trade school'
+];
+
+const VERIFICATION_OPTIONS = ['identity', 'photo', 'income'];
+
+// Cities in Michigan area for realistic location clustering
+const MICHIGAN_CITIES = [
+  { city: 'Detroit', state: 'MI', lat: 42.3314, lng: -83.0458 },
+  { city: 'Ann Arbor', state: 'MI', lat: 42.2808, lng: -83.7430 },
+  { city: 'Grand Rapids', state: 'MI', lat: 42.9634, lng: -85.6681 },
+  { city: 'Royal Oak', state: 'MI', lat: 42.4895, lng: -83.1446 },
+  { city: 'Troy', state: 'MI', lat: 42.6064, lng: -83.1498 },
+  { city: 'Birmingham', state: 'MI', lat: 42.5467, lng: -83.2113 },
+  { city: 'Ferndale', state: 'MI', lat: 42.4606, lng: -83.1346 },
+  { city: 'Plymouth', state: 'MI', lat: 42.3714, lng: -83.4702 },
+  { city: 'Ypsilanti', state: 'MI', lat: 42.2411, lng: -83.6129 },
+  { city: 'Dearborn', state: 'MI', lat: 42.3223, lng: -83.1763 },
+  { city: 'Bloomfield Hills', state: 'MI', lat: 42.5839, lng: -83.2455 },
+  { city: 'Novi', state: 'MI', lat: 42.4801, lng: -83.4755 },
+];
+
+// Sample profile photos
+const SAMPLE_PHOTOS = [
   'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop',
   'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop',
   'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&h=400&fit=crop',
@@ -48,219 +79,405 @@ const samplePhotos = [
   'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=400&fit=crop',
   'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=400&fit=crop',
   'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=400&h=400&fit=crop',
+  'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop',
+  'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&fit=crop',
+  'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&h=400&fit=crop',
+  'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=400&h=400&fit=crop',
 ];
 
-export const sampleUsers: SeedUser[] = [
-  {
-    uid: 'seed-user-001',
-    email: 'emma@test.com',
-    password: 'password123',
-    displayName: 'Emma Wilson',
-    photoURL: samplePhotos[0],
-    onboardingCompleted: true,
-    // Testing privacy settings - this user hides their activity status
-    settings: {
-      privacy: {
-        showOnlineStatus: false,
-        showLastActive: false,
+// ============================================================================
+// INTERFACES
+// ============================================================================
+
+export interface SeedUser {
+  uid: string;
+  email: string;
+  password: string;
+  displayName: string;
+  photoURL: string | null;
+  onboardingCompleted: boolean;
+  lastActiveAt: Date;
+  settings: {
+    privacy: {
+      showOnlineStatus: boolean;
+      showLastActive: boolean;
+      profileVisible: boolean;
+    };
+    notifications: {
+      messages: boolean;
+      matches: boolean;
+      favorites: boolean;
+      views: boolean;
+    };
+  };
+  onboarding: {
+    birthDate: string;
+    city: string;
+    country: string;
+    location: { latitude: number; longitude: number };
+    genderIdentity: string;
+    interestedIn: string[];
+    ageRangeMin: number;
+    ageRangeMax: number;
+    connectionTypes: string[];
+    supportOrientation: string;
+    idealRelationship: string;
+    supportMeaning: string;
+    photos: string[];
+    verificationOptions: string[];
+    // Secondary profile fields
+    height?: string;
+    weight?: string;
+    ethnicity?: string;
+    relationshipStatus?: string;
+    children?: string;
+    smoker?: string;
+    drinker?: string;
+    education?: string;
+    occupation?: string;
+  };
+}
+
+export interface SeedFavorite {
+  odId: string;
+  odUserId: string;
+  odTargetUserId: string;
+  createdAt: Date;
+}
+
+export interface SeedProfileView {
+  odId: string;
+  odViewerId: string;
+  odViewedUserId: string;
+  viewedAt: Date;
+}
+
+export interface SeedMessage {
+  odId: string;
+  odConversationId: string;
+  odSenderId: string;
+  content: string;
+  createdAt: Date;
+  read: boolean;
+}
+
+export interface SeedConversation {
+  odId: string;
+  odParticipants: string[];
+  lastMessageAt: Date;
+  lastMessage: string;
+  lastSenderId: string;
+}
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+function pickRandom<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function pickRandomMultiple<T>(arr: T[], min: number, max: number): T[] {
+  const count = faker.number.int({ min, max });
+  const shuffled = [...arr].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, count);
+}
+
+function generateBirthDate(minAge: number, maxAge: number): string {
+  const age = faker.number.int({ min: minAge, max: maxAge });
+  const birthYear = new Date().getFullYear() - age;
+  const birthMonth = faker.number.int({ min: 1, max: 12 });
+  const birthDay = faker.number.int({ min: 1, max: 28 });
+  return `${birthYear}-${String(birthMonth).padStart(2, '0')}-${String(birthDay).padStart(2, '0')}`;
+}
+
+function generateHeight(): string {
+  const feet = faker.number.int({ min: 5, max: 6 });
+  const inches = faker.number.int({ min: 0, max: 11 });
+  return `${feet}'${inches}"`;
+}
+
+function generateWeight(): string {
+  const lbs = faker.number.int({ min: 110, max: 220 });
+  return `${lbs} lbs`;
+}
+
+function getInterestedIn(gender: string): string[] {
+  // Realistic distribution of preferences
+  const roll = Math.random();
+  if (gender === 'woman') {
+    if (roll < 0.85) return ['men'];
+    if (roll < 0.95) return ['women'];
+    return ['men', 'women'];
+  } else if (gender === 'man') {
+    if (roll < 0.85) return ['women'];
+    if (roll < 0.95) return ['men'];
+    return ['men', 'women'];
+  } else {
+    // nonbinary - more varied preferences
+    return pickRandomMultiple(['men', 'women', 'nonbinary'], 1, 3);
+  }
+}
+
+// ============================================================================
+// GENERATION FUNCTIONS
+// ============================================================================
+
+export function generateUsers(count: number, seed?: number): SeedUser[] {
+  if (seed !== undefined) {
+    faker.seed(seed);
+  }
+
+  const users: SeedUser[] = [];
+
+  for (let i = 0; i < count; i++) {
+    const uid = `seed-user-${String(i + 1).padStart(3, '0')}`;
+    const gender = pickRandom(GENDER_IDENTITIES);
+    const sex = gender === 'woman' ? 'female' : gender === 'man' ? 'male' : pickRandom(['female', 'male']);
+    const firstName = faker.person.firstName(sex as 'female' | 'male');
+    const lastName = faker.person.lastName();
+    const displayName = `${firstName} ${lastName}`;
+    const email = `${firstName.toLowerCase()}${i + 1}@test.com`;
+
+    const location = pickRandom(MICHIGAN_CITIES);
+    const photos = pickRandomMultiple(SAMPLE_PHOTOS, 1, 4);
+    
+    // Age range for this user
+    const userAge = faker.number.int({ min: 21, max: 55 });
+    const ageRangeMin = Math.max(18, userAge - faker.number.int({ min: 5, max: 15 }));
+    const ageRangeMax = Math.min(70, userAge + faker.number.int({ min: 5, max: 20 }));
+
+    // Activity - some users very recent, some older
+    const now = Date.now();
+    let lastActiveAt: Date;
+    const activityRoll = Math.random();
+    if (activityRoll < 0.3) {
+      // 30% - online now (within 15 minutes)
+      lastActiveAt = new Date(now - faker.number.int({ min: 0, max: 15 * 60 * 1000 }));
+    } else if (activityRoll < 0.6) {
+      // 30% - active today
+      lastActiveAt = new Date(now - faker.number.int({ min: 15 * 60 * 1000, max: 24 * 60 * 60 * 1000 }));
+    } else if (activityRoll < 0.85) {
+      // 25% - active this week
+      lastActiveAt = new Date(now - faker.number.int({ min: 24 * 60 * 60 * 1000, max: 7 * 24 * 60 * 60 * 1000 }));
+    } else {
+      // 15% - inactive for a while
+      lastActiveAt = new Date(now - faker.number.int({ min: 7 * 24 * 60 * 60 * 1000, max: 30 * 24 * 60 * 60 * 1000 }));
+    }
+
+    const user: SeedUser = {
+      uid,
+      email,
+      password: 'password123',
+      displayName,
+      photoURL: photos[0],
+      onboardingCompleted: true,
+      lastActiveAt,
+      settings: {
+        privacy: {
+          showOnlineStatus: Math.random() > 0.1, // 90% show online status
+          showLastActive: Math.random() > 0.15, // 85% show last active
+          profileVisible: true,
+        },
+        notifications: {
+          messages: true,
+          matches: true,
+          favorites: Math.random() > 0.2,
+          views: Math.random() > 0.3,
+        },
       },
-    },
-    onboarding: {
-      birthDate: '1995-03-15',
-      city: 'Ann Arbor',
-      country: 'US',
-      location: { latitude: 42.2808, longitude: -83.7430 },
-      genderIdentity: 'woman',
-      interestedIn: ['men'],
-      ageRangeMin: 28,
-      ageRangeMax: 42,
-      connectionTypes: ['intentional-dating', 'long-term'],
-      supportOrientation: ['receiving', 'mutual'],
-      values: ['ambition', 'growth', 'stability'],
-      lifestyle: 'somewhat-flexible',
-      idealRelationship: 'I\'m looking for a partner who values deep conversations and shared growth. Someone who understands that success takes dedication and wants to build something meaningful together.',
-      supportMeaning: 'Support means having someone in my corner who believes in my dreams and helps me reach them.',
-      photos: [samplePhotos[0]],
-      verificationOptions: ['identity'],
-    },
-  },
-  {
-    uid: 'seed-user-002',
-    email: 'james@test.com',
-    password: 'password123',
-    displayName: 'James Chen',
-    photoURL: samplePhotos[1],
-    onboardingCompleted: true,
-    onboarding: {
-      birthDate: '1988-07-22',
-      city: 'Detroit',
-      country: 'US',
-      location: { latitude: 42.3314, longitude: -83.0458 },
-      genderIdentity: 'man',
-      interestedIn: ['women'],
-      ageRangeMin: 25,
-      ageRangeMax: 38,
-      connectionTypes: ['intentional-dating', 'mentorship'],
-      supportOrientation: ['providing'],
-      values: ['generosity', 'ambition', 'adventure'],
-      lifestyle: 'very-flexible',
-      idealRelationship: 'I\'ve built a successful career and now want to share my life with someone special. Looking for genuine connection, not just surface-level attraction.',
-      supportMeaning: 'I believe in lifting up my partner and helping them achieve their full potential.',
-      photos: [samplePhotos[1]],
-      verificationOptions: ['identity', 'photo'],
-    },
-  },
-  {
-    uid: 'seed-user-003',
-    email: 'sofia@test.com',
-    password: 'password123',
-    displayName: 'Sofia Martinez',
-    photoURL: samplePhotos[2],
-    onboardingCompleted: true,
-    onboarding: {
-      birthDate: '1997-11-08',
-      city: 'Ypsilanti',
-      country: 'US',
-      location: { latitude: 42.2411, longitude: -83.6129 },
-      genderIdentity: 'woman',
-      interestedIn: ['men', 'women'],
-      ageRangeMin: 26,
-      ageRangeMax: 45,
-      connectionTypes: ['intentional-dating', 'lifestyle-aligned'],
-      supportOrientation: ['receiving'],
-      values: ['independence', 'emotional-maturity', 'adventure'],
-      lifestyle: 'structured',
-      idealRelationship: 'Seeking someone who appreciates the finer things in life but also values authentic connection. Travel, culture, and meaningful experiences matter to me.',
-      photos: [samplePhotos[2]],
-      verificationOptions: [],
-    },
-  },
-  {
-    uid: 'seed-user-004',
-    email: 'michael@test.com',
-    password: 'password123',
-    displayName: 'Michael Thompson',
-    photoURL: samplePhotos[3],
-    onboardingCompleted: true,
-    onboarding: {
-      birthDate: '1985-02-28',
-      city: 'Royal Oak',
-      country: 'US',
-      location: { latitude: 42.4895, longitude: -83.1446 },
-      genderIdentity: 'man',
-      interestedIn: ['women'],
-      ageRangeMin: 24,
-      ageRangeMax: 36,
-      connectionTypes: ['long-term', 'lifestyle-aligned'],
-      supportOrientation: ['providing', 'mutual'],
-      values: ['stability', 'generosity', 'growth'],
-      lifestyle: 'highly-demanding',
-      idealRelationship: 'Entrepreneur looking for a partner who understands the demands of building something from the ground up. Want someone to share the journey with.',
-      supportMeaning: 'Being there emotionally and financially for someone I care about.',
-      photos: [samplePhotos[3]],
-      verificationOptions: ['identity'],
-    },
-  },
-  {
-    uid: 'seed-user-005',
-    email: 'olivia@test.com',
-    password: 'password123',
-    displayName: 'Olivia Johnson',
-    photoURL: samplePhotos[4],
-    onboardingCompleted: true,
-    onboarding: {
-      birthDate: '1999-06-12',
-      city: 'Birmingham',
-      country: 'US',
-      location: { latitude: 42.5467, longitude: -83.2113 },
-      genderIdentity: 'woman',
-      interestedIn: ['men'],
-      ageRangeMin: 30,
-      ageRangeMax: 50,
-      connectionTypes: ['intentional-dating', 'mentorship'],
-      supportOrientation: ['receiving'],
-      values: ['ambition', 'adventure', 'emotional-maturity'],
-      lifestyle: 'very-flexible',
-      idealRelationship: 'Recent graduate looking for someone established who can help guide me while we build a genuine connection. I bring energy, curiosity, and loyalty.',
-      photos: [samplePhotos[4]],
-      verificationOptions: ['photo'],
-    },
-  },
-  {
-    uid: 'seed-user-006',
-    email: 'david@test.com',
-    password: 'password123',
-    displayName: 'David Williams',
-    photoURL: samplePhotos[5],
-    onboardingCompleted: true,
-    onboarding: {
-      birthDate: '1982-09-05',
-      city: 'Troy',
-      country: 'US',
-      location: { latitude: 42.6064, longitude: -83.1498 },
-      genderIdentity: 'man',
-      interestedIn: ['women'],
-      ageRangeMin: 25,
-      ageRangeMax: 40,
-      connectionTypes: ['long-term', 'intentional-dating'],
-      supportOrientation: ['providing'],
-      values: ['stability', 'independence', 'generosity'],
-      lifestyle: 'somewhat-flexible',
-      idealRelationship: 'Successful professional seeking a genuine partner. Not interested in games or casual dating. Looking for someone ready to build a life together.',
-      supportMeaning: 'Taking care of my partner so they can focus on what matters to them.',
-      photos: [samplePhotos[5]],
-      verificationOptions: ['identity', 'photo'],
-    },
-  },
-  {
-    uid: 'seed-user-007',
-    email: 'ava@test.com',
-    password: 'password123',
-    displayName: 'Ava Brown',
-    photoURL: samplePhotos[6],
-    onboardingCompleted: true,
-    onboarding: {
-      birthDate: '1996-04-20',
-      city: 'Ferndale',
-      country: 'US',
-      location: { latitude: 42.4606, longitude: -83.1346 },
-      genderIdentity: 'woman',
-      interestedIn: ['men', 'women'],
-      ageRangeMin: 28,
-      ageRangeMax: 48,
-      connectionTypes: ['lifestyle-aligned', 'exploring'],
-      supportOrientation: ['mutual'],
-      values: ['adventure', 'growth', 'emotional-maturity'],
-      lifestyle: 'very-flexible',
-      idealRelationship: 'Creative soul looking for someone who appreciates art, travel, and spontaneity. Want a partner who supports my dreams while we create memories together.',
-      photos: [samplePhotos[6]],
-      verificationOptions: [],
-    },
-  },
-  {
-    uid: 'seed-user-008',
-    email: 'sarah@test.com',
-    password: 'password123',
-    displayName: 'Sarah Davis',
-    photoURL: samplePhotos[7],
-    onboardingCompleted: true,
-    onboarding: {
-      birthDate: '1993-12-03',
-      city: 'Plymouth',
-      country: 'US',
-      location: { latitude: 42.3714, longitude: -83.4702 },
-      genderIdentity: 'woman',
-      interestedIn: ['men'],
-      ageRangeMin: 32,
-      ageRangeMax: 55,
-      connectionTypes: ['intentional-dating', 'long-term'],
-      supportOrientation: ['receiving', 'mutual'],
-      values: ['stability', 'ambition', 'generosity'],
-      lifestyle: 'structured',
-      idealRelationship: 'Looking for a mature, established partner who knows what they want. I value honesty, communication, and building a secure future together.',
-      supportMeaning: 'Having someone who provides stability and security while we grow together.',
-      photos: [samplePhotos[7]],
-      verificationOptions: ['identity'],
-    },
-  },
-];
+      onboarding: {
+        birthDate: generateBirthDate(userAge, userAge),
+        city: location.city,
+        country: 'US',
+        location: { latitude: location.lat, longitude: location.lng },
+        genderIdentity: gender,
+        interestedIn: getInterestedIn(gender),
+        ageRangeMin,
+        ageRangeMax,
+        connectionTypes: pickRandomMultiple(ALL_CONNECTION_TYPES, 2, 5),
+        supportOrientation: pickRandom(SUPPORT_ORIENTATIONS),
+        idealRelationship: faker.lorem.paragraph({ min: 1, max: 3 }),
+        supportMeaning: faker.lorem.sentence({ min: 8, max: 20 }),
+        photos,
+        verificationOptions: pickRandomMultiple(VERIFICATION_OPTIONS, 0, 2),
+        // Secondary fields - not all users fill these out
+        ...(Math.random() > 0.3 && { height: generateHeight() }),
+        ...(Math.random() > 0.5 && { weight: generateWeight() }),
+        ...(Math.random() > 0.2 && { ethnicity: pickRandom(ETHNICITY_OPTIONS) }),
+        ...(Math.random() > 0.3 && { relationshipStatus: pickRandom(RELATIONSHIP_STATUS_OPTIONS) }),
+        ...(Math.random() > 0.4 && { children: pickRandom(CHILDREN_OPTIONS) }),
+        ...(Math.random() > 0.5 && { smoker: pickRandom(SMOKING_OPTIONS) }),
+        ...(Math.random() > 0.4 && { drinker: pickRandom(DRINKING_OPTIONS) }),
+        ...(Math.random() > 0.3 && { education: pickRandom(EDUCATION_OPTIONS) }),
+        ...(Math.random() > 0.3 && { occupation: faker.person.jobTitle() }),
+      },
+    };
+
+    users.push(user);
+  }
+
+  return users;
+}
+
+export function generateFavorites(users: SeedUser[], avgFavoritesPerUser: number = 3): SeedFavorite[] {
+  const favorites: SeedFavorite[] = [];
+  const existingPairs = new Set<string>();
+
+  for (const user of users) {
+    const numFavorites = faker.number.int({ min: 0, max: avgFavoritesPerUser * 2 });
+    const potentialTargets = users.filter(u => 
+      u.uid !== user.uid && 
+      // Basic compatibility check
+      u.onboarding.interestedIn.includes(user.onboarding.genderIdentity) &&
+      user.onboarding.interestedIn.includes(u.onboarding.genderIdentity)
+    );
+
+    const targets = potentialTargets
+      .sort(() => Math.random() - 0.5)
+      .slice(0, numFavorites);
+
+    for (const target of targets) {
+      const pairKey = `${user.uid}-${target.uid}`;
+      if (!existingPairs.has(pairKey)) {
+        existingPairs.add(pairKey);
+        favorites.push({
+          odId: faker.string.uuid(),
+          odUserId: user.uid,
+          odTargetUserId: target.uid,
+          createdAt: faker.date.recent({ days: 30 }),
+        });
+      }
+    }
+  }
+
+  return favorites;
+}
+
+export function generateProfileViews(users: SeedUser[], avgViewsPerUser: number = 5): SeedProfileView[] {
+  const views: SeedProfileView[] = [];
+
+  for (const user of users) {
+    const numViews = faker.number.int({ min: 0, max: avgViewsPerUser * 2 });
+    const potentialViewers = users.filter(u => u.uid !== user.uid);
+    const viewers = potentialViewers
+      .sort(() => Math.random() - 0.5)
+      .slice(0, numViews);
+
+    for (const viewer of viewers) {
+      views.push({
+        odId: faker.string.uuid(),
+        odViewerId: viewer.uid,
+        odViewedUserId: user.uid,
+        viewedAt: faker.date.recent({ days: 14 }),
+      });
+    }
+  }
+
+  return views;
+}
+
+export function generateConversationsAndMessages(
+  users: SeedUser[],
+  avgConversationsPerUser: number = 2
+): { conversations: SeedConversation[]; messages: SeedMessage[] } {
+  const conversations: SeedConversation[] = [];
+  const messages: SeedMessage[] = [];
+  const existingPairs = new Set<string>();
+
+  const messageTemplates = [
+    "Hey! I saw your profile and thought we might have some things in common 😊",
+    "Hi there! Love your photos. Would you like to chat?",
+    "Hello! I noticed we're both into {interest}. That's awesome!",
+    "Hey, your profile really stood out to me. How's your day going?",
+    "Hi! I'd love to get to know you better. What do you do for fun?",
+    "Thanks for matching! What brings you to this app?",
+    "Hey! I see you're from {city}. I love it there!",
+    "Hi! Your bio made me smile. Care to chat?",
+    "Hello! You seem really interesting. Tell me more about yourself?",
+    "Hey there! I think we'd get along well. What do you think?",
+  ];
+
+  const replyTemplates = [
+    "Thanks for reaching out! I'd love to chat more.",
+    "Hey! Nice to meet you too. How's your week been?",
+    "Hi! Thanks, I appreciate that. What about you?",
+    "Hello! Great to hear from you. Let's definitely chat more.",
+    "Hey! I'm doing well, thanks for asking. What are you up to?",
+    "Thanks! I've been pretty busy but always have time for good conversation.",
+    "Hi! Yes, I'd love to get to know you better too.",
+    "Hey there! Your profile is great too. What are your hobbies?",
+  ];
+
+  for (const user of users) {
+    const numConversations = faker.number.int({ min: 0, max: avgConversationsPerUser * 2 });
+    const potentialPartners = users.filter(u => 
+      u.uid !== user.uid &&
+      u.onboarding.interestedIn.includes(user.onboarding.genderIdentity) &&
+      user.onboarding.interestedIn.includes(u.onboarding.genderIdentity)
+    );
+
+    const partners = potentialPartners
+      .sort(() => Math.random() - 0.5)
+      .slice(0, numConversations);
+
+    for (const partner of partners) {
+      const pairKey = [user.uid, partner.uid].sort().join('-');
+      if (existingPairs.has(pairKey)) continue;
+      existingPairs.add(pairKey);
+
+      const conversationId = faker.string.uuid();
+      const numMessages = faker.number.int({ min: 2, max: 10 });
+      const conversationStart = faker.date.recent({ days: 14 });
+      
+      let lastMessage = '';
+      let lastSenderId = '';
+      let currentTime = conversationStart;
+
+      for (let i = 0; i < numMessages; i++) {
+        const isFirstMessage = i === 0;
+        const sender = i % 2 === 0 ? user : partner;
+        const template = isFirstMessage 
+          ? pickRandom(messageTemplates)
+          : pickRandom(replyTemplates);
+        
+        const content = template
+          .replace('{interest}', pickRandom(sender.onboarding.connectionTypes))
+          .replace('{city}', sender.onboarding.city);
+
+        // Add some time between messages
+        currentTime = new Date(currentTime.getTime() + faker.number.int({ min: 60000, max: 86400000 }));
+
+        const message: SeedMessage = {
+          odId: faker.string.uuid(),
+          odConversationId: conversationId,
+          odSenderId: sender.uid,
+          content,
+          createdAt: currentTime,
+          read: i < numMessages - 1 || Math.random() > 0.3, // Last message might be unread
+        };
+
+        messages.push(message);
+        lastMessage = content;
+        lastSenderId = sender.uid;
+      }
+
+      conversations.push({
+        odId: conversationId,
+        odParticipants: [user.uid, partner.uid],
+        lastMessageAt: currentTime,
+        lastMessage,
+        lastSenderId,
+      });
+    }
+  }
+
+  return { conversations, messages };
+}
+
+// ============================================================================
+// MAIN EXPORT FOR BACKWARD COMPATIBILITY
+// ============================================================================
+
+// Default export: generate 20 users with a fixed seed for reproducibility
+export const sampleUsers = generateUsers(20, 12345);

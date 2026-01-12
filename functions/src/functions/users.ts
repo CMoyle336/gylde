@@ -63,9 +63,7 @@ function encodeGeohash(latitude: number, longitude: number, precision: number = 
 function calculateDenormalizedFields(data: FirebaseFirestore.DocumentData) {
   // Privacy settings
   const privacySettings = data.settings?.privacy || {};
-  const showOnlineStatus = privacySettings.showOnlineStatus !== false;
   const showLastActive = privacySettings.showLastActive !== false;
-  const canShowActivity = showOnlineStatus || showLastActive;
   const profileVisible = privacySettings.profileVisible !== false;
 
   // Account settings
@@ -79,9 +77,9 @@ function calculateDenormalizedFields(data: FirebaseFirestore.DocumentData) {
   // Verification status
   const isVerified = data.onboarding?.verificationOptions?.includes("identity") || false;
 
-  // Sortable last active
+  // Sortable last active - only set if user allows showing last active time
   const lastActiveAt = data.lastActiveAt as Timestamp | undefined;
-  const sortableLastActive = canShowActivity && lastActiveAt ? lastActiveAt : null;
+  const sortableLastActive = showLastActive && lastActiveAt ? lastActiveAt : null;
 
   // Geohash for location-based queries
   const location = data.onboarding?.location;

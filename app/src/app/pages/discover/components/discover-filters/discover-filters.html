@@ -1,5 +1,6 @@
 <div class="filters-panel">
-  <div class="filters-grid">
+  <!-- Primary Filters Row -->
+  <div class="filters-row primary-filters">
     <!-- Distance -->
     <div class="filter-group">
       <label class="filter-label">Distance</label>
@@ -12,14 +13,16 @@
       </mat-form-field>
     </div>
 
-    <!-- Verified Only -->
+    <!-- Verification -->
     <div class="filter-group">
       <label class="filter-label">Verification</label>
-      <mat-slide-toggle
-        [checked]="filters().verifiedOnly"
-        (change)="updateFilter('verifiedOnly', $event.checked)">
-        Verified profiles only
-      </mat-slide-toggle>
+      <div class="toggle-item">
+        <mat-slide-toggle
+          [checked]="filters().verifiedOnly"
+          (change)="updateFilter('verifiedOnly', $event.checked)">
+          Verified profiles only
+        </mat-slide-toggle>
+      </div>
     </div>
 
     <!-- Activity -->
@@ -38,12 +41,39 @@
         </mat-slide-toggle>
       </div>
     </div>
+  </div>
 
-    <!-- Looking For -->
-    <div class="filter-group wide">
-      <label class="filter-label">Looking For</label>
-      <div class="chip-select">
-        @for (option of connectionTypeOptions(); track option.value) {
+  <!-- Looking For Section -->
+  <div class="filter-section">
+    <label class="filter-label">Looking For</label>
+    <div class="chip-grid">
+      <!-- Relationship Goals -->
+      <div class="chip-group-row">
+        @for (option of relationshipGoals(); track option.value) {
+          <button 
+            type="button"
+            class="filter-chip"
+            [class.selected]="isFilterSelected('connectionTypes', option.value)"
+            (click)="toggleArrayFilter('connectionTypes', option.value)">
+            {{ option.label }}
+          </button>
+        }
+      </div>
+      <!-- Relationship Style -->
+      <div class="chip-group-row">
+        @for (option of relationshipStyle(); track option.value) {
+          <button 
+            type="button"
+            class="filter-chip"
+            [class.selected]="isFilterSelected('connectionTypes', option.value)"
+            (click)="toggleArrayFilter('connectionTypes', option.value)">
+            {{ option.label }}
+          </button>
+        }
+      </div>
+      <!-- Lifestyle -->
+      <div class="chip-group-row">
+        @for (option of lifestylePreferences(); track option.value) {
           <button 
             type="button"
             class="filter-chip"
@@ -54,15 +84,17 @@
         }
       </div>
     </div>
+  </div>
 
-    <!-- Show More Filters Toggle -->
-    <button type="button" class="show-more-btn" (click)="toggleAdvancedFilters()">
-      <mat-icon>{{ showAdvancedFilters() ? 'expand_less' : 'expand_more' }}</mat-icon>
-      {{ showAdvancedFilters() ? 'Less filters' : 'More filters' }}
-    </button>
+  <!-- Show More Filters Toggle -->
+  <button type="button" class="show-more-btn" (click)="toggleAdvancedFilters()">
+    <mat-icon>{{ showAdvancedFilters() ? 'expand_less' : 'expand_more' }}</mat-icon>
+    {{ showAdvancedFilters() ? 'Less filters' : 'More filters' }}
+  </button>
 
-    <!-- Advanced Filters -->
-    @if (showAdvancedFilters()) {
+  <!-- Advanced Filters -->
+  @if (showAdvancedFilters()) {
+    <div class="filters-row advanced-filters">
       <!-- Ethnicity -->
       <div class="filter-group">
         <label class="filter-label">Ethnicity</label>
@@ -134,8 +166,8 @@
           </mat-select>
         </mat-form-field>
       </div>
-    }
-  </div>
+    </div>
+  }
 
   <!-- Filter Actions -->
   <div class="filter-actions">

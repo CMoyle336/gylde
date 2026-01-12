@@ -124,16 +124,25 @@ export class UserProfileService {
     if (!user) return;
 
     try {
+      const now = new Date();
+      const currentProfile = this._profile();
+      
+      // Check if user's privacy settings allow showing last active time
+      const privacy = currentProfile?.settings?.privacy;
+      const showLastActive = privacy?.showLastActive !== false;
+      
+      // Update both lastActiveAt and sortableLastActive together
+      // This prevents the onUserUpdated trigger from needing to sync them
       await this.firestoreService.updateDocument('users', user.uid, {
-        lastActiveAt: new Date(),
+        lastActiveAt: now,
+        sortableLastActive: showLastActive ? now : null,
       });
 
       // Update local profile
-      const currentProfile = this._profile();
       if (currentProfile) {
         this._profile.set({
           ...currentProfile,
-          lastActiveAt: new Date(),
+          lastActiveAt: now,
         });
       }
     } catch (error) {
