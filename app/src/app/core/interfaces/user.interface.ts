@@ -3,6 +3,7 @@
  */
 
 import { GeoLocation } from './geo.interface';
+import { Photo } from './photo.interface';
 
 /**
  * Main user profile document structure
@@ -112,7 +113,8 @@ export interface OnboardingProfile {
   supportMeaning?: string;
 
   // Step 6: Photos
-  photos: string[];
+  photos: string[]; // Legacy: array of URLs for backward compatibility
+  photoDetails?: Photo[]; // New: detailed photo objects with privacy info
 
   // Step 7: Verification
   verificationOptions: string[];

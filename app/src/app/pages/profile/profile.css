@@ -238,6 +238,140 @@
   border-radius: 3px;
 }
 
+.private-badge {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.35rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.private-badge mat-icon {
+  font-size: 0.75rem;
+  width: 0.75rem;
+  height: 0.75rem;
+  color: #fff;
+}
+
+.photo-item.is-private {
+  opacity: 0.85;
+}
+
+.photo-item.is-private::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, transparent 60%, rgba(0, 0, 0, 0.3) 100%);
+  border-radius: 8px;
+  pointer-events: none;
+}
+
+/* Access Request/Grant Sections */
+.access-requests-section,
+.access-grants-section {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: var(--color-bg-elevated);
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+}
+
+.access-requests-section h3,
+.access-grants-section h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 1rem 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.access-requests-section h3 mat-icon,
+.access-grants-section h3 mat-icon {
+  font-size: 1.25rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--color-accent);
+}
+
+.access-requests-section h3 .badge {
+  background: var(--color-accent);
+  color: #1a1720;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  padding: 0.15rem 0.4rem;
+  border-radius: 10px;
+  margin-left: auto;
+}
+
+.access-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.access-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem;
+  background: var(--color-bg);
+  border-radius: 6px;
+}
+
+.requester-photo {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.requester-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.requester-name {
+  display: block;
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: var(--color-text-primary);
+}
+
+.request-time,
+.grant-time {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.access-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.access-actions button {
+  min-width: auto;
+  padding: 0 0.75rem;
+  height: 32px;
+  font-size: 0.75rem;
+}
+
+.access-actions button mat-icon {
+  font-size: 1rem;
+  width: 1rem;
+  height: 1rem;
+  margin-right: 0.25rem;
+}
+
 .add-photo-btn {
   display: flex;
   flex-direction: column;

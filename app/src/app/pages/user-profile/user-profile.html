@@ -58,6 +58,50 @@
             }
           </div>
         }
+        
+        <!-- Private Photos Notice -->
+        @if (hasHiddenPrivatePhotos()) {
+          <div class="private-photos-notice">
+            <div class="notice-content">
+              <mat-icon>lock</mat-icon>
+              <div class="notice-text">
+                <span class="notice-title">{{ privatePhotoCount() }} private photo{{ privatePhotoCount() > 1 ? 's' : '' }}</span>
+                @if (getAccessStatusText()) {
+                  <span class="notice-status">{{ getAccessStatusText() }}</span>
+                } @else {
+                  <span class="notice-hint">Request access to view</span>
+                }
+              </div>
+            </div>
+            @if (!photoAccess().requestStatus) {
+              <button 
+                mat-stroked-button 
+                color="primary"
+                class="request-access-btn"
+                [disabled]="requestingAccess()"
+                (click)="requestPhotoAccess()">
+                @if (requestingAccess()) {
+                  <mat-spinner diameter="18"></mat-spinner>
+                } @else {
+                  <ng-container>
+                    <mat-icon>vpn_key</mat-icon>
+                    Request Access
+                  </ng-container>
+                }
+              </button>
+            } @else if (photoAccess().requestStatus === 'pending') {
+              <span class="pending-badge">
+                <mat-icon>hourglass_empty</mat-icon>
+                Pending
+              </span>
+            } @else if (photoAccess().requestStatus === 'denied') {
+              <span class="denied-badge">
+                <mat-icon>block</mat-icon>
+                Denied
+              </span>
+            }
+          </div>
+        }
       </section>
 
       <!-- Profile Stats (separate section for mobile reordering) -->

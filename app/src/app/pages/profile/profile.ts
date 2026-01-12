@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ElementRef, OnInit, ViewChild, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, OnInit, ViewChild, effect, inject, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -11,7 +11,9 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { UserProfileService } from '../../core/services/user-profile.service';
 import { ImageUploadService } from '../../core/services/image-upload.service';
 import { AuthService } from '../../core/services/auth.service';
+import { PhotoAccessService } from '../../core/services/photo-access.service';
 import { OnboardingProfile } from '../../core/interfaces';
+import { Photo } from '../../core/interfaces/photo.interface';
 import { ALL_CONNECTION_TYPES, getConnectionTypeLabel, SUPPORT_ORIENTATION_OPTIONS, getSupportOrientationLabel } from '../../core/constants/connection-types';
 import { MAX_PHOTOS_PER_USER } from '../../core/constants/app-config';
 
@@ -68,6 +70,7 @@ export class ProfileComponent implements OnInit {
   private readonly userProfileService = inject(UserProfileService);
   private readonly imageUploadService = inject(ImageUploadService);
   private readonly authService = inject(AuthService);
+  private readonly photoAccessService = inject(PhotoAccessService);
 
   protected readonly uploadError = signal<string | null>(null);
 
@@ -86,8 +89,31 @@ export class ProfileComponent implements OnInit {
   // Current profile photo URL (writable for immediate updates)
   protected readonly profilePhotoUrl = signal<string | null>(null);
 
+  // Photo privacy state (map of url -> isPrivate)
+  protected readonly photoPrivacy = signal<Map<string, boolean>>(new Map());
+
+  // Pending photo access requests
+  protected readonly pendingRequests = this.photoAccessService.pendingRequests;
+  protected readonly pendingRequestsCount = this.photoAccessService.pendingRequestsCount;
+
+  // Users who have been granted access
+  protected readonly grants = this.photoAccessService.grants;
+
   // Max photos allowed
   protected readonly maxPhotos = MAX_PHOTOS_PER_USER;
+
+  // Computed: photos with their privacy status
+  protected readonly photosWithPrivacy = computed(() => {
+    const photos = this.editablePhotos();
+    const privacyMap = this.photoPrivacy();
+    const profilePhoto = this.profilePhotoUrl();
+    
+    return photos.map(url => ({
+      url,
+      isPrivate: privacyMap.get(url) || false,
+      isProfilePhoto: url === profilePhoto,
+    }));
+  });
 
   constructor() {
     // Sync photos from profile when not editing
@@ -96,6 +122,14 @@ export class ProfileComponent implements OnInit {
       if (profile && !this.isEditing()) {
         this.editablePhotos.set([...(profile.onboarding?.photos || [])]);
         this.profilePhotoUrl.set(profile.photoURL || null);
+        
+        // Sync photo privacy state
+        const photoDetails = profile.onboarding?.photoDetails || [];
+        const privacyMap = new Map<string, boolean>();
+        for (const detail of photoDetails as Photo[]) {
+          privacyMap.set(detail.url, detail.isPrivate);
+        }
+        this.photoPrivacy.set(privacyMap);
       }
     });
   }
@@ -106,6 +140,14 @@ export class ProfileComponent implements OnInit {
     if (profile) {
       this.editablePhotos.set([...(profile.onboarding?.photos || [])]);
       this.profilePhotoUrl.set(profile.photoURL || null);
+      
+      // Sync photo privacy state
+      const photoDetails = profile.onboarding?.photoDetails || [];
+      const privacyMap = new Map<string, boolean>();
+      for (const detail of photoDetails as Photo[]) {
+        privacyMap.set(detail.url, detail.isPrivate);
+      }
+      this.photoPrivacy.set(privacyMap);
     }
   }
 
@@ -397,11 +439,73 @@ export class ProfileComponent implements OnInit {
   }
 
   async setAsProfilePhoto(photoUrl: string): Promise<void> {
+    // If this photo is private, make it public first (profile photo can't be private)
+    if (this.photoPrivacy().get(photoUrl)) {
+      await this.togglePhotoPrivacy(photoUrl);
+    }
+    
     this.profilePhotoUrl.set(photoUrl);
 
     // If not editing, save immediately
     if (!this.isEditing()) {
       await this.updateProfilePhoto(photoUrl);
+    }
+  }
+
+  // Photo privacy management
+  async togglePhotoPrivacy(photoUrl: string): Promise<void> {
+    // Cannot make profile photo private
+    if (photoUrl === this.profilePhotoUrl()) {
+      this.uploadError.set('Profile photo cannot be private. Choose a different profile photo first.');
+      setTimeout(() => this.uploadError.set(null), 3000);
+      return;
+    }
+
+    const currentPrivacy = this.photoPrivacy().get(photoUrl) || false;
+    const newPrivacy = !currentPrivacy;
+
+    try {
+      await this.photoAccessService.togglePhotoPrivacy(photoUrl, newPrivacy);
+      
+      // Update local state
+      this.photoPrivacy.update(map => {
+        const newMap = new Map(map);
+        newMap.set(photoUrl, newPrivacy);
+        return newMap;
+      });
+    } catch (error) {
+      console.error('Error toggling photo privacy:', error);
+      this.uploadError.set('Failed to update photo privacy');
+      setTimeout(() => this.uploadError.set(null), 3000);
+    }
+  }
+
+  isPhotoPrivate(photoUrl: string): boolean {
+    return this.photoPrivacy().get(photoUrl) || false;
+  }
+
+  // Access request management
+  async grantAccess(requesterId: string): Promise<void> {
+    try {
+      await this.photoAccessService.respondToRequest(requesterId, 'grant');
+    } catch (error) {
+      console.error('Error granting access:', error);
+    }
+  }
+
+  async denyAccess(requesterId: string): Promise<void> {
+    try {
+      await this.photoAccessService.respondToRequest(requesterId, 'deny');
+    } catch (error) {
+      console.error('Error denying access:', error);
+    }
+  }
+
+  async revokeAccess(userId: string): Promise<void> {
+    try {
+      await this.photoAccessService.revokeAccess(userId);
+    } catch (error) {
+      console.error('Error revoking access:', error);
     }
   }
 

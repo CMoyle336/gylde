@@ -5,12 +5,15 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Firestore, doc, getDoc } from '@angular/fire/firestore';
 import { UserProfile } from '../../core/interfaces';
+import { Photo, PhotoAccessSummary } from '../../core/interfaces/photo.interface';
 import { FavoriteService } from '../../core/services/favorite.service';
 import { MessageService } from '../../core/services/message.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ActivityService } from '../../core/services/activity.service';
+import { PhotoAccessService } from '../../core/services/photo-access.service';
 import { ProfileSkeletonComponent } from './components';
 import { formatConnectionTypes as formatConnectionTypesUtil } from '../../core/constants/connection-types';
 
@@ -25,6 +28,7 @@ import { formatConnectionTypes as formatConnectionTypesUtil } from '../../core/c
     MatChipsModule,
     MatTooltipModule,
     MatMenuModule,
+    MatProgressSpinnerModule,
     ProfileSkeletonComponent,
   ],
 })
@@ -36,12 +40,18 @@ export class UserProfileComponent implements OnInit, OnDestroy {
   private readonly messageService = inject(MessageService);
   private readonly authService = inject(AuthService);
   private readonly activityService = inject(ActivityService);
+  private readonly photoAccessService = inject(PhotoAccessService);
 
   protected readonly profile = signal<UserProfile | null>(null);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly selectedPhotoIndex = signal(0);
   protected readonly lastViewedMe = signal<Date | null>(null);
+
+  // Photo access state
+  protected readonly photoAccess = signal<PhotoAccessSummary>({ hasAccess: false });
+  protected readonly requestingAccess = signal(false);
+  protected readonly photoPrivacyMap = signal<Map<string, boolean>>(new Map());
 
   private readonly favoritedUserIds = this.favoriteService.favoritedUserIds;
   
@@ -50,26 +60,49 @@ export class UserProfileComponent implements OnInit, OnDestroy {
     return p ? this.favoritedUserIds().has(p.uid) : false;
   });
 
+  // Has private photos that viewer can't see
+  protected readonly hasHiddenPrivatePhotos = computed(() => {
+    const privacyMap = this.photoPrivacyMap();
+    const access = this.photoAccess();
+    if (access.hasAccess) return false;
+    return Array.from(privacyMap.values()).some(isPrivate => isPrivate);
+  });
+
+  // Count of private photos
+  protected readonly privatePhotoCount = computed(() => {
+    const privacyMap = this.photoPrivacyMap();
+    return Array.from(privacyMap.values()).filter(isPrivate => isPrivate).length;
+  });
+
   // Reorder photos so the designated profile photo (photoURL) comes first
+  // Also filter out private photos if user doesn't have access
   protected readonly orderedPhotos = computed(() => {
     const p = this.profile();
     const photos = p?.onboarding?.photos || [];
     const photoURL = p?.photoURL;
+    const privacyMap = this.photoPrivacyMap();
+    const access = this.photoAccess();
     
-    if (!photoURL || photos.length === 0) return photos;
+    // Filter out private photos if no access
+    let visiblePhotos = photos;
+    if (!access.hasAccess) {
+      visiblePhotos = photos.filter(url => !privacyMap.get(url));
+    }
+    
+    if (!photoURL || visiblePhotos.length === 0) return visiblePhotos;
     
     // If photoURL is already first, no reordering needed
-    if (photos[0] === photoURL) return photos;
+    if (visiblePhotos[0] === photoURL) return visiblePhotos;
     
     // Find the index of photoURL in the array
-    const photoURLIndex = photos.indexOf(photoURL);
+    const photoURLIndex = visiblePhotos.indexOf(photoURL);
     if (photoURLIndex === -1) {
-      // photoURL not in array, prepend it
-      return [photoURL, ...photos];
+      // photoURL not in array, prepend it (profile photo is always visible)
+      return [photoURL, ...visiblePhotos];
     }
     
     // Move photoURL to the front
-    const reordered = [...photos];
+    const reordered = [...visiblePhotos];
     reordered.splice(photoURLIndex, 1);
     reordered.unshift(photoURL);
     return reordered;
@@ -125,6 +158,24 @@ export class UserProfileComponent implements OnInit, OnDestroy {
       }
 
       this.profile.set(userData);
+
+      // Load photo privacy info
+      const photoDetails = userData.onboarding?.photoDetails || [];
+      const privacyMap = new Map<string, boolean>();
+      for (const detail of photoDetails as Photo[]) {
+        privacyMap.set(detail.url, detail.isPrivate);
+      }
+      this.photoPrivacyMap.set(privacyMap);
+
+      // Check if current user has access to private photos
+      const currentUser = this.authService.user();
+      if (currentUser && currentUser.uid !== userId) {
+        const accessSummary = await this.photoAccessService.checkAccess(userId);
+        this.photoAccess.set(accessSummary);
+      } else if (currentUser?.uid === userId) {
+        // Viewing own profile - always has access
+        this.photoAccess.set({ hasAccess: true });
+      }
 
       // Record the profile view (creates activity for viewed user)
       await this.activityService.recordProfileView(
@@ -204,6 +255,29 @@ export class UserProfileComponent implements OnInit, OnDestroy {
   protected onBlock(): void {
     // TODO: Implement block functionality
     console.log('Block user:', this.profile()?.uid);
+  }
+
+  protected async requestPhotoAccess(): Promise<void> {
+    const p = this.profile();
+    if (!p) return;
+
+    this.requestingAccess.set(true);
+    try {
+      await this.photoAccessService.requestAccess(p.uid);
+      this.photoAccess.set({ hasAccess: false, requestStatus: 'pending' });
+    } catch (error) {
+      console.error('Error requesting photo access:', error);
+    } finally {
+      this.requestingAccess.set(false);
+    }
+  }
+
+  protected getAccessStatusText(): string {
+    const access = this.photoAccess();
+    if (access.hasAccess) return '';
+    if (access.requestStatus === 'pending') return 'Request pending';
+    if (access.requestStatus === 'denied') return 'Request denied';
+    return '';
   }
 
   private calculateAge(birthDate: string): number {

@@ -40,15 +40,24 @@
         }
         
         <div class="photos-grid">
-          @for (photo of editablePhotos(); track photo; let i = $index) {
-            <div class="photo-item" [class.is-profile]="photo === profilePhotoUrl()">
-              <img [src]="photo" alt="Profile photo {{ i + 1 }}">
+          @for (photoItem of photosWithPrivacy(); track photoItem.url; let i = $index) {
+            <div class="photo-item" 
+                 [class.is-profile]="photoItem.isProfilePhoto"
+                 [class.is-private]="photoItem.isPrivate">
+              <img [src]="photoItem.url" alt="Profile photo {{ i + 1 }}">
               <div class="photo-overlay">
                 <button mat-icon-button 
-                        [class.active]="photo === profilePhotoUrl()"
-                        (click)="setAsProfilePhoto(photo)"
+                        [class.active]="photoItem.isProfilePhoto"
+                        (click)="setAsProfilePhoto(photoItem.url)"
                         matTooltip="Set as profile photo">
-                  <mat-icon>{{ photo === profilePhotoUrl() ? 'star' : 'star_outline' }}</mat-icon>
+                  <mat-icon>{{ photoItem.isProfilePhoto ? 'star' : 'star_outline' }}</mat-icon>
+                </button>
+                <button mat-icon-button 
+                        [class.active]="photoItem.isPrivate"
+                        (click)="togglePhotoPrivacy(photoItem.url)"
+                        [matTooltip]="photoItem.isPrivate ? 'Make public' : 'Make private'"
+                        [disabled]="photoItem.isProfilePhoto">
+                  <mat-icon>{{ photoItem.isPrivate ? 'lock' : 'lock_open' }}</mat-icon>
                 </button>
                 <button mat-icon-button 
                         class="remove-btn"
@@ -57,8 +66,13 @@
                   <mat-icon>delete</mat-icon>
                 </button>
               </div>
-              @if (photo === profilePhotoUrl()) {
+              @if (photoItem.isProfilePhoto) {
                 <div class="profile-badge">Profile</div>
+              }
+              @if (photoItem.isPrivate) {
+                <div class="private-badge">
+                  <mat-icon>lock</mat-icon>
+                </div>
               }
             </div>
           }
@@ -88,6 +102,69 @@
           }
         </div>
         <input #photoInput type="file" accept="image/*" multiple hidden (change)="onPhotosSelected($event)">
+        
+        <!-- Photo Access Requests Section -->
+        @if (pendingRequests().length > 0) {
+          <div class="access-requests-section">
+            <h3>
+              <mat-icon>notifications</mat-icon>
+              Photo Access Requests
+              <span class="badge">{{ pendingRequestsCount() }}</span>
+            </h3>
+            <div class="access-list">
+              @for (request of pendingRequests(); track request.id) {
+                <div class="access-item">
+                  <img [src]="request.requesterPhoto || 'assets/default-avatar.png'" 
+                       alt="{{ request.requesterName }}"
+                       class="requester-photo">
+                  <div class="requester-info">
+                    <span class="requester-name">{{ request.requesterName }}</span>
+                    <span class="request-time">wants to see your private photos</span>
+                  </div>
+                  <div class="access-actions">
+                    <button mat-stroked-button color="primary" (click)="grantAccess(request.id)">
+                      <mat-icon>check</mat-icon>
+                      Grant
+                    </button>
+                    <button mat-stroked-button (click)="denyAccess(request.id)">
+                      <mat-icon>close</mat-icon>
+                      Deny
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+        
+        <!-- Granted Access Section -->
+        @if (grants().length > 0) {
+          <div class="access-grants-section">
+            <h3>
+              <mat-icon>visibility</mat-icon>
+              Who Can View Private Photos
+            </h3>
+            <div class="access-list">
+              @for (grant of grants(); track grant.id) {
+                <div class="access-item">
+                  <img [src]="grant.grantedToPhoto || 'assets/default-avatar.png'" 
+                       alt="{{ grant.grantedToName }}"
+                       class="requester-photo">
+                  <div class="requester-info">
+                    <span class="requester-name">{{ grant.grantedToName }}</span>
+                    <span class="grant-time">has access</span>
+                  </div>
+                  <div class="access-actions">
+                    <button mat-stroked-button color="warn" (click)="revokeAccess(grant.id)">
+                      <mat-icon>block</mat-icon>
+                      Revoke
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
       </section>
 
       <!-- Basic Info Section -->

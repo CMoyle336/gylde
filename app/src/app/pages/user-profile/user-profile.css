@@ -334,6 +334,92 @@
   border-color: var(--color-text-muted);
 }
 
+/* Private Photos Notice */
+.private-photos-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding: 0.875rem 1rem;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+
+.notice-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.notice-content > mat-icon {
+  font-size: 1.5rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  color: var(--color-accent);
+}
+
+.notice-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.notice-title {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--color-text-primary);
+}
+
+.notice-hint {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.notice-status {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.request-access-btn {
+  flex-shrink: 0;
+}
+
+.request-access-btn mat-icon {
+  margin-right: 0.25rem;
+}
+
+.pending-badge,
+.denied-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.pending-badge {
+  background: rgba(201, 169, 98, 0.2);
+  color: var(--color-accent);
+}
+
+.pending-badge mat-icon,
+.denied-badge mat-icon {
+  font-size: 0.875rem;
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.denied-badge {
+  background: rgba(229, 115, 115, 0.2);
+  color: var(--color-error);
+}
+
 .thumbnail img {
   width: 100%;
   height: 100%;
