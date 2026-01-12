@@ -51,11 +51,23 @@ export class ShellComponent implements OnInit, OnDestroy {
   protected readonly activeConversation = this.messageService.activeConversation;
   protected readonly profileCompletion = signal(75);
   
-  // Sidebar state
+  // Sidebar state - initialize from localStorage
   protected readonly sidenavOpen = signal(false);
-  protected readonly sidenavExpanded = signal(true);
+  protected readonly sidenavExpanded = signal(this.getStoredState('sidenavExpanded', true));
   protected readonly isMobile = signal(false);
-  protected readonly activityExpanded = signal(true);
+  protected readonly activityExpanded = signal(this.getStoredState('activityExpanded', true));
+
+  private getStoredState(key: string, defaultValue: boolean): boolean {
+    if (!isPlatformBrowser(this.platformId)) return defaultValue;
+    const stored = localStorage.getItem(key);
+    return stored !== null ? stored === 'true' : defaultValue;
+  }
+
+  private saveState(key: string, value: boolean): void {
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.setItem(key, String(value));
+    }
+  }
   
   // Current user info
   protected readonly currentUser = this.authService.user;
@@ -125,7 +137,11 @@ export class ShellComponent implements OnInit, OnDestroy {
   }
 
   protected toggleSidenavExpanded(): void {
-    this.sidenavExpanded.update(v => !v);
+    this.sidenavExpanded.update(v => {
+      const newValue = !v;
+      this.saveState('sidenavExpanded', newValue);
+      return newValue;
+    });
   }
 
   protected onNavItemClick(): void {
@@ -182,7 +198,7 @@ export class ShellComponent implements OnInit, OnDestroy {
   private openPhotoAccessDialog(): void {
     this.dialog.open(PhotoAccessDialogComponent, {
       panelClass: 'photo-access-dialog-panel',
-      width: '540px',
+      width: '420px',
       maxWidth: '95vw',
     });
   }
@@ -192,6 +208,31 @@ export class ShellComponent implements OnInit, OnDestroy {
   }
 
   protected toggleActivitySection(): void {
-    this.activityExpanded.update(v => !v);
+    this.activityExpanded.update(v => {
+      const newValue = !v;
+      this.saveState('activityExpanded', newValue);
+      return newValue;
+    });
+  }
+
+  protected getActivityTooltip(activity: ActivityDisplay): string {
+    switch (activity.type) {
+      case 'match':
+        return `Matched with ${activity.name}`;
+      case 'message':
+        return `${activity.name} messaged you`;
+      case 'favorite':
+        return `${activity.name} favorited you`;
+      case 'view':
+        return `${activity.name} viewed your profile`;
+      case 'photo_access_request':
+        return `${activity.name} requested access to your private photos`;
+      case 'photo_access_granted':
+        return `${activity.name} granted you access to their private photos`;
+      case 'photo_access_denied':
+        return `${activity.name} denied your photo access request`;
+      default:
+        return `${activity.name} interacted with you`;
+    }
   }
 }

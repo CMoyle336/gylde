@@ -493,7 +493,7 @@ export class ProfileComponent implements OnInit {
   openAccessDialog(): void {
     this.dialog.open(PhotoAccessDialogComponent, {
       panelClass: 'photo-access-dialog-panel',
-      width: '540px',
+      width: '420px',
       maxWidth: '95vw',
     });
   }

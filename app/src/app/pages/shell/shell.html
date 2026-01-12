@@ -102,20 +102,6 @@
             expand_less
           </span>
         </button>
-        
-        @if (unreadActivityCount() > 0) {
-          <div class="activity-actions">
-            <button 
-              type="button" 
-              class="mark-all-read-btn"
-              (click)="markAllActivitiesAsRead()"
-              matTooltip="Mark all as read"
-              matTooltipPosition="right">
-              <span class="material-icons-outlined">done_all</span>
-              <span class="mark-all-text">Mark all read</span>
-            </button>
-          </div>
-        }
 
         <ul class="activity-list">
           @for (activity of recentActivity() | slice:0:20; track activity.id) {
@@ -123,8 +109,7 @@
               type="button"
               class="activity-item" 
               [class.unread]="!activity.read"
-              [matTooltip]="activity.name"
-              [matTooltipDisabled]="sidenavExpanded()"
+              [matTooltip]="getActivityTooltip(activity)"
               matTooltipPosition="right"
               (click)="onActivityClick(activity)">
               <div class="activity-avatar">
@@ -172,6 +157,18 @@
             </li>
           }
         </ul>
+
+        @if (unreadActivityCount() > 0) {
+          <div class="activity-actions">
+            <button 
+              type="button" 
+              class="mark-all-read-btn"
+              (click)="markAllActivitiesAsRead()">
+              <span class="material-icons-outlined">done_all</span>
+              <span class="mark-all-text">Mark all read</span>
+            </button>
+          </div>
+        }
       </div>
     </div>
 
