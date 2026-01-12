@@ -34,16 +34,13 @@
           <app-step-4-support />
         }
         @case (5) {
-          <app-step-5-values />
+          <app-step-5-prompts />
         }
         @case (6) {
-          <app-step-6-prompts />
+          <app-step-6-photos />
         }
         @case (7) {
-          <app-step-7-photos />
-        }
-        @case (8) {
-          <app-step-8-verification />
+          <app-step-7-verification />
         }
       }
     </div>
@@ -69,7 +66,7 @@
     </button>
 
     <div class="footer-actions">
-      @if (onboarding.currentStep() === 4 || onboarding.currentStep() === 8) {
+      @if (onboarding.currentStep() === 4 || onboarding.currentStep() === 7) {
         <button 
           type="button" 
           class="btn-skip" 

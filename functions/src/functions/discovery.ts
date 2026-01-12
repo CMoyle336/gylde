@@ -76,7 +76,7 @@ interface SearchResult {
   photos: string[];
   verified: boolean;
   values: string[];
-  supportOrientation: string[];
+  supportOrientation: string;
   // Secondary fields
   ethnicity?: string;
   relationshipStatus?: string;
@@ -133,6 +133,22 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
     try {
       // DEBUG: Add artificial delay to test skeleton loader (remove in production)
       await new Promise(resolve => setTimeout(resolve, 1500));
+
+      // Fetch current user's profile to get their support orientation
+      const currentUserDoc = await db.collection("users").doc(currentUserId).get();
+      const currentUserData = currentUserDoc.data();
+      const currentUserSupportOrientation = currentUserData?.onboarding?.supportOrientation as string | undefined;
+
+      // Determine compatible support orientations based on current user's preference
+      // - "receiving" users should see "providing" or "either" profiles
+      // - "providing" users should see "receiving" or "either" profiles
+      // - "either" or "private" or undefined users see all (no filtering)
+      let compatibleSupportOrientations: string[] | null = null;
+      if (currentUserSupportOrientation === 'receiving') {
+        compatibleSupportOrientations = ['providing', 'either'];
+      } else if (currentUserSupportOrientation === 'providing') {
+        compatibleSupportOrientations = ['receiving', 'either'];
+      }
 
       // === BUILD FIRESTORE QUERY ===
       let query: FirebaseFirestore.Query = db.collection("users");
@@ -207,15 +223,17 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
       }
 
       // 8. Array filter: connectionTypes (only one array-contains-any allowed per query)
-      // Prioritize connectionTypes as it's the most commonly used filter
       if (filters.connectionTypes?.length) {
         query = query.where("onboarding.connectionTypes", "array-contains-any", filters.connectionTypes.slice(0, 30));
-      } else if (filters.supportOrientation?.length) {
-        // Fall back to supportOrientation if no connectionTypes filter
-        query = query.where("onboarding.supportOrientation", "array-contains-any", filters.supportOrientation.slice(0, 30));
-      } else if (filters.values?.length) {
-        // Fall back to values if no other array filters
-        query = query.where("onboarding.values", "array-contains-any", filters.values.slice(0, 30));
+      }
+      
+      // 9. Support orientation filter
+      // If user explicitly set a filter, use that; otherwise apply automatic matching
+      if (filters.supportOrientation?.length) {
+        query = query.where("onboarding.supportOrientation", "in", filters.supportOrientation.slice(0, 30));
+      } else if (compatibleSupportOrientations) {
+        // Automatically filter based on current user's support orientation
+        query = query.where("onboarding.supportOrientation", "in", compatibleSupportOrientations);
       }
 
       // 9. Geohash-based distance filtering
@@ -297,8 +315,13 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
         const privacySettings = data.settings?.privacy || {};
         const showOnlineStatus = privacySettings.showOnlineStatus !== false;
         const showLastActive = privacySettings.showLastActive !== false;
-        const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
-        const isCurrentlyOnline = lastActiveAt && lastActiveAt >= fifteenMinutesAgo;
+        
+        // User is online if active within last 15 minutes
+        let isCurrentlyOnline = false;
+        if (lastActiveAt && !isNaN(lastActiveAt.getTime())) {
+          const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
+          isCurrentlyOnline = lastActiveAt.getTime() > fifteenMinutesAgo.getTime();
+        }
         const isOnline = showOnlineStatus && isCurrentlyOnline;
 
         profiles.push({
@@ -320,7 +343,7 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
           photos: onboarding?.photos || [],
           verified: onboarding?.verificationOptions?.includes("identity") || false,
           values: onboarding?.values || [],
-          supportOrientation: onboarding?.supportOrientation || [],
+          supportOrientation: onboarding?.supportOrientation || '',
           ethnicity: onboarding?.ethnicity,
           relationshipStatus: onboarding?.relationshipStatus,
           children: onboarding?.children,

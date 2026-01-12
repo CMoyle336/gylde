@@ -94,22 +94,34 @@
         <div class="info-grid">
           <div class="info-item">
             <label class="field-label">Display Name</label>
-            <span class="info-value">{{ profile.displayName || 'Not set' }}</span>
+            @if (isEditing()) {
+              <mat-form-field appearance="outline">
+                <input matInput [(ngModel)]="editForm.displayName" placeholder="Your display name">
+              </mat-form-field>
+            } @else {
+              <span class="info-value">{{ profile.displayName || 'Not set' }}</span>
+            }
           </div>
 
           <div class="info-item">
             <label class="field-label">Location</label>
-            <span class="info-value">
-              @if (profile.onboarding; as onboarding) {
-                @if (onboarding.city) {
-                  {{ onboarding.city }}, {{ onboarding.country }}
+            @if (isEditing()) {
+              <mat-form-field appearance="outline">
+                <input matInput [(ngModel)]="editForm.city" placeholder="City, State/Province, Country">
+              </mat-form-field>
+            } @else {
+              <span class="info-value">
+                @if (profile.onboarding; as onboarding) {
+                  @if (onboarding.city) {
+                    {{ onboarding.city }}, {{ onboarding.country }}
+                  } @else {
+                    Not set
+                  }
                 } @else {
                   Not set
                 }
-              } @else {
-                Not set
-              }
-            </span>
+              </span>
+            }
           </div>
 
           <div class="info-item">
@@ -121,6 +133,30 @@
                 Not set
               }
             </span>
+          </div>
+
+          <div class="info-item">
+            <label class="field-label">Support orientation</label>
+            @if (isEditing()) {
+              <div class="chip-group">
+                @for (option of supportOrientationOptions; track option.value) {
+                  <button type="button"
+                          mat-stroked-button
+                          [class.selected]="editForm.supportOrientation === option.value"
+                          (click)="selectSupportOrientation(option.value)">
+                    {{ option.label }}
+                  </button>
+                }
+              </div>
+            } @else {
+              @if (profile.onboarding?.supportOrientation) {
+                <div class="tag-list">
+                  <span class="tag">{{ formatSupportOrientation(profile.onboarding?.supportOrientation) }}</span>
+                </div>
+              } @else {
+                <span class="info-value empty">Not set</span>
+              }
+            }
           </div>
         </div>
       </section>
@@ -214,7 +250,15 @@
                 }
               </div>
             } @else {
-              <span class="info-value">{{ formatConnectionTypes(profile.onboarding?.connectionTypes) }}</span>
+              @if (profile.onboarding?.connectionTypes?.length) {
+                <div class="tag-list">
+                  @for (type of profile.onboarding?.connectionTypes || []; track type) {
+                    <span class="tag">{{ getConnectionTypeLabel(type) }}</span>
+                  }
+                </div>
+              } @else {
+                <span class="info-value empty">Not set</span>
+              }
             }
           </div>
 
@@ -384,29 +428,6 @@
         </div>
       </section>
 
-      <!-- Values Section -->
-      <section class="info-section">
-        <h2>Values & Lifestyle</h2>
-        
-        <div class="info-grid">
-          <div class="info-item">
-            <label class="field-label">My values</label>
-            <mat-chip-set aria-label="Values">
-              @for (value of profile.onboarding?.values || []; track value) {
-                <mat-chip>{{ value }}</mat-chip>
-              }
-              @empty {
-                <span class="info-value">Not set</span>
-              }
-            </mat-chip-set>
-          </div>
-
-          <div class="info-item">
-            <label class="field-label">Lifestyle</label>
-            <span class="info-value">{{ profile.onboarding?.lifestyle || 'Not set' }}</span>
-          </div>
-        </div>
-      </section>
     </div>
   } @else {
     <div class="loading-state">

@@ -4,13 +4,13 @@ import { TranslateModule } from '@ngx-translate/core';
 import { OnboardingService } from '../onboarding.service';
 
 @Component({
-  selector: 'app-step-8-verification',
-  templateUrl: './step-8-verification.html',
+  selector: 'app-step-7-verification',
+  templateUrl: './step-7-verification.html',
   styleUrls: ['./step-shared.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [FormsModule, TranslateModule],
 })
-export class Step8VerificationComponent {
+export class Step7VerificationComponent {
   protected readonly onboarding = inject(OnboardingService);
 
   protected readonly verificationOptions = [

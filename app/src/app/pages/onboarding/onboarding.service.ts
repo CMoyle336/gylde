@@ -12,9 +12,7 @@ const INITIAL_DATA: OnboardingData = {
   ageRangeMin: 18,
   ageRangeMax: 65,
   connectionTypes: [],
-  supportOrientation: [],
-  values: [],
-  lifestyle: '',
+  supportOrientation: '',
   idealRelationship: '',
   supportMeaning: '',
   photos: [],
@@ -28,7 +26,7 @@ export class OnboardingService {
   private readonly _currentStep = signal(1);
   private readonly _data = signal<OnboardingData>({ ...INITIAL_DATA });
 
-  readonly totalSteps = 8;
+  readonly totalSteps = 7;
   readonly currentStep = this._currentStep.asReadonly();
   readonly data = this._data.asReadonly();
 
@@ -52,12 +50,10 @@ export class OnboardingService {
       case 4:
         return true; // Optional step
       case 5:
-        return data.values.length > 0 && data.lifestyle !== '';
-      case 6:
         return data.idealRelationship.trim().length >= 20;
-      case 7:
+      case 6:
         return data.photos.length >= 1;
-      case 8:
+      case 7:
         return true; // Optional step
       default:
         return false;

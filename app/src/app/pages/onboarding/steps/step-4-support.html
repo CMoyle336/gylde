@@ -11,11 +11,12 @@
     @for (option of supportOptions; track option.value) {
       <div class="option-item">
         <input 
-          type="checkbox" 
+          type="radio" 
+          name="supportOrientation"
           [id]="'support-' + option.value" 
           class="option-input"
           [checked]="isSelected(option.value)"
-          (change)="toggle(option.value)">
+          (change)="select(option.value)">
         <label [for]="'support-' + option.value" class="option-label">
           <span class="option-indicator"></span>
           <span class="option-text">{{ 'ONBOARDING.STEP_4.' + option.labelKey | translate }}</span>

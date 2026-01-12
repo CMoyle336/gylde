@@ -52,6 +52,7 @@ export class DiscoverComponent implements OnInit {
   // Discovery state from service
   protected readonly profiles = this.discoveryService.profiles;
   protected readonly loading = this.discoveryService.loading;
+  protected readonly initialized = this.discoveryService.initialized;
   protected readonly filters = this.discoveryService.filters;
   protected readonly sort = this.discoveryService.sort;
   protected readonly savedViews = this.discoveryService.savedViews;
@@ -62,8 +63,6 @@ export class DiscoverComponent implements OnInit {
 
   // Filter options from service
   protected readonly connectionTypeOptions = this.discoveryService.connectionTypeOptions;
-  protected readonly lifestyleOptions = this.discoveryService.lifestyleOptions;
-  protected readonly valuesOptions = this.discoveryService.valuesOptions;
   protected readonly ethnicityOptions = this.discoveryService.ethnicityOptions;
   protected readonly relationshipStatusOptions = this.discoveryService.relationshipStatusOptions;
   protected readonly childrenOptions = this.discoveryService.childrenOptions;

@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { TranslateModule } from '@ngx-translate/core';
@@ -8,6 +8,8 @@ import { FavoriteService } from '../../core/services/favorite.service';
 import { MessageService } from '../../core/services/message.service';
 import { ProfileCardComponent, ProfileCardData } from '../../components/profile-card';
 import { ProfileCardSkeletonComponent } from '../../components/profile-card-skeleton';
+
+const VALID_TABS: MatchTab[] = ['favorited-me', 'viewed-me', 'my-favorites', 'my-views'];
 
 @Component({
   selector: 'app-matches',
@@ -25,11 +27,13 @@ import { ProfileCardSkeletonComponent } from '../../components/profile-card-skel
 })
 export class MatchesComponent implements OnInit {
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly matchesService = inject(MatchesService);
   private readonly favoriteService = inject(FavoriteService);
   private readonly messageService = inject(MessageService);
 
   protected readonly loading = this.matchesService.loading;
+  protected readonly initialized = this.matchesService.initialized;
   protected readonly activeTab = this.matchesService.activeTab;
   protected readonly profiles = this.matchesService.profiles;
   protected readonly isEmpty = this.matchesService.isEmpty;
@@ -40,14 +44,44 @@ export class MatchesComponent implements OnInit {
   // Skeleton count for loading state
   protected readonly skeletonCards = Array.from({ length: 6 }, (_, i) => i);
 
-  ngOnInit(): void {
-    this.matchesService.loadBadgeCounts();
-    this.matchesService.loadProfiles();
-    this.favoriteService.loadFavorites();
+  async ngOnInit(): Promise<void> {
+    // Load badge counts first
+    await this.matchesService.loadBadgeCounts();
+    
+    // Read tab from query params
+    const tabParam = this.route.snapshot.queryParamMap.get('tab');
+    
+    // Priority: 1) URL query param, 2) service's remembered tab state
+    const initialTab: MatchTab = this.isValidTab(tabParam) 
+      ? tabParam 
+      : this.matchesService.activeTab();
+    
+    // Set initial tab (which resets its badge and loads profiles)
+    // Note: favoriteService.loadFavorites() is already called in ShellComponent
+    this.matchesService.setTab(initialTab);
+    
+    // Ensure URL has the tab param
+    if (tabParam !== initialTab) {
+      this.updateUrlWithTab(initialTab);
+    }
   }
 
   protected setTab(tab: MatchTab): void {
     this.matchesService.setTab(tab);
+    this.updateUrlWithTab(tab);
+  }
+
+  private isValidTab(tab: string | null): tab is MatchTab {
+    return tab !== null && VALID_TABS.includes(tab as MatchTab);
+  }
+
+  private updateUrlWithTab(tab: MatchTab): void {
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { tab },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
   }
 
   protected onViewProfile(profile: ProfileCardData): void {
@@ -79,7 +113,13 @@ export class MatchesComponent implements OnInit {
   }
 
   protected async onFavorite(profile: ProfileCardData): Promise<void> {
+    const wasUnfavorited = this.isFavorited(profile.uid);
     await this.favoriteService.toggleFavorite(profile.uid);
+    
+    // If we're on the my-favorites tab and just unfavorited, remove from view
+    if (wasUnfavorited && this.activeTab() === 'my-favorites') {
+      this.matchesService.removeProfile(profile.uid);
+    }
   }
 
   protected isFavorited(userId: string): boolean {

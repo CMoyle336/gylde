@@ -12,6 +12,7 @@ import { MessageService } from '../../core/services/message.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ActivityService } from '../../core/services/activity.service';
 import { ProfileSkeletonComponent } from './components';
+import { formatConnectionTypes as formatConnectionTypesUtil } from '../../core/constants/connection-types';
 
 @Component({
   selector: 'app-user-profile',
@@ -227,42 +228,32 @@ export class UserProfileComponent implements OnInit, OnDestroy {
   }
 
   protected formatConnectionTypes(types: string[] | undefined): string {
-    if (!types?.length) return '';
-    const labels: Record<string, string> = {
-      'intentional-dating': 'Intentional Dating',
-      'mentorship': 'Mentorship',
-      'lifestyle-aligned': 'Lifestyle Aligned',
-      'exploring': 'Exploring',
-    };
-    return types.map(t => labels[t] || t).join(', ');
-  }
-
-  protected formatLifestyle(lifestyle: string | undefined): string {
-    const labels: Record<string, string> = {
-      'luxury': 'Luxury',
-      'comfortable': 'Comfortable',
-      'modest': 'Modest',
-      'flexible': 'Flexible',
-    };
-    return lifestyle ? labels[lifestyle] || lifestyle : '';
+    return formatConnectionTypesUtil(types);
   }
 
   protected isOnline(): boolean {
     const p = this.profile();
-    if (!p?.settings?.privacy?.showOnlineStatus) return false;
-    if (!p.lastActiveAt) return false;
+    // Default to showing online status unless explicitly disabled
+    if (p?.settings?.privacy?.showOnlineStatus === false) return false;
+    if (!p?.lastActiveAt) return false;
     
-    const lastActive = (p.lastActiveAt as { toDate?: () => Date })?.toDate?.() || new Date(p.lastActiveAt as string);
+    const timestamp = p.lastActiveAt as { toDate?: () => Date };
+    const lastActive = timestamp?.toDate?.() || null;
+    if (!lastActive) return false;
+    
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-    return lastActive > fiveMinutesAgo;
+    return lastActive.getTime() > fiveMinutesAgo.getTime();
   }
 
   protected getLastActive(): string {
     const p = this.profile();
-    if (!p?.settings?.privacy?.showLastActive) return '';
-    if (!p.lastActiveAt) return '';
+    // Default to showing last active unless explicitly disabled
+    if (p?.settings?.privacy?.showLastActive === false) return '';
+    if (!p?.lastActiveAt) return '';
     
-    const lastActive = (p.lastActiveAt as { toDate?: () => Date })?.toDate?.() || new Date(p.lastActiveAt as string);
+    const timestamp = p.lastActiveAt as { toDate?: () => Date };
+    const lastActive = timestamp?.toDate?.() || null;
+    if (!lastActive) return '';
     const now = new Date();
     const diff = now.getTime() - lastActive.getTime();
     

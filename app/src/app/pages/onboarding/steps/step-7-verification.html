@@ -1,10 +1,10 @@
 <div class="step-header">
-  <h1 class="step-title">{{ 'ONBOARDING.STEP_8.TITLE' | translate }}</h1>
-  <p class="step-subtitle">{{ 'ONBOARDING.STEP_8.SUBTITLE' | translate }}</p>
+  <h1 class="step-title">{{ 'ONBOARDING.STEP_7.TITLE' | translate }}</h1>
+  <p class="step-subtitle">{{ 'ONBOARDING.STEP_7.SUBTITLE' | translate }}</p>
 </div>
 
 <div class="question-group">
-  <span class="question-label">{{ 'ONBOARDING.STEP_8.VERIFY_QUESTION' | translate }}</span>
+  <span class="question-label">{{ 'ONBOARDING.STEP_7.VERIFY_QUESTION' | translate }}</span>
   
   <div class="options-list">
     @for (option of verificationOptions; track option.value) {
@@ -22,9 +22,9 @@
               <span class="material-icons-outlined" style="vertical-align: middle; margin-right: 0.5rem; font-size: 1.25rem;">
                 {{ option.icon }}
               </span>
-              {{ 'ONBOARDING.STEP_8.' + option.labelKey | translate }}
+              {{ 'ONBOARDING.STEP_7.' + option.labelKey | translate }}
             </span>
-            <span class="option-description">{{ 'ONBOARDING.STEP_8.' + option.descKey | translate }}</span>
+            <span class="option-description">{{ 'ONBOARDING.STEP_7.' + option.descKey | translate }}</span>
           </span>
         </label>
       </div>
@@ -35,13 +35,13 @@
 <div class="info-box">
   <div class="info-box-title">
     <span class="material-icons-outlined">verified</span>
-    {{ 'ONBOARDING.STEP_8.BENEFITS_TITLE' | translate }}
+    {{ 'ONBOARDING.STEP_7.BENEFITS_TITLE' | translate }}
   </div>
   <ul class="info-box-list">
     @for (benefit of benefits; track benefit) {
       <li>
         <span class="material-icons-outlined">check</span>
-        {{ 'ONBOARDING.STEP_8.' + benefit | translate }}
+        {{ 'ONBOARDING.STEP_7.' + benefit | translate }}
       </li>
     }
   </ul>

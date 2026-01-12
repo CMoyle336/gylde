@@ -10,6 +10,7 @@ import {
   SearchRequest,
   SearchResponse,
 } from '../interfaces';
+import { ALL_CONNECTION_TYPES } from '../constants/connection-types';
 
 const DEFAULT_FILTERS: DiscoveryFilters = {
   minAge: 18,
@@ -19,8 +20,6 @@ const DEFAULT_FILTERS: DiscoveryFilters = {
   verifiedOnly: false,
   connectionTypes: [],
   supportOrientation: [],
-  lifestyle: [],
-  values: [],
   ethnicity: [],
   relationshipStatus: [],
   children: [],
@@ -47,6 +46,7 @@ export class DiscoveryService {
   // State signals
   private readonly _profiles = signal<DiscoverableProfile[]>([]);
   private readonly _loading = signal(false);
+  private readonly _initialized = signal(false); // Tracks if we've ever done a search
   private readonly _filters = signal<DiscoveryFilters>({ ...DEFAULT_FILTERS });
   private readonly _sort = signal<DiscoverySort>({ ...DEFAULT_SORT });
   private readonly _savedViews = signal<SavedView[]>([]);
@@ -58,6 +58,7 @@ export class DiscoveryService {
   // Public readonly signals
   readonly profiles = this._profiles.asReadonly();
   readonly loading = this._loading.asReadonly();
+  readonly initialized = this._initialized.asReadonly();
   readonly filters = this._filters.asReadonly();
   readonly sort = this._sort.asReadonly();
   readonly savedViews = this._savedViews.asReadonly();
@@ -75,8 +76,6 @@ export class DiscoveryService {
       filters.verifiedOnly ||
       filters.connectionTypes.length > 0 ||
       filters.supportOrientation.length > 0 ||
-      filters.lifestyle.length > 0 ||
-      filters.values.length > 0 ||
       filters.ethnicity.length > 0 ||
       filters.relationshipStatus.length > 0 ||
       filters.children.length > 0 ||
@@ -98,8 +97,6 @@ export class DiscoveryService {
     if (filters.verifiedOnly) count++;
     if (filters.connectionTypes.length > 0) count++;
     if (filters.supportOrientation.length > 0) count++;
-    if (filters.lifestyle.length > 0) count++;
-    if (filters.values.length > 0) count++;
     if (filters.ethnicity.length > 0) count++;
     if (filters.relationshipStatus.length > 0) count++;
     if (filters.children.length > 0) count++;
@@ -203,6 +200,7 @@ export class DiscoveryService {
       }
     } finally {
       this._loading.set(false);
+      this._initialized.set(true);
     }
   }
 
@@ -377,30 +375,7 @@ export class DiscoveryService {
     { value: 'nonbinary', label: 'Non-binary' },
   ];
 
-  readonly connectionTypeOptions = [
-    { value: 'intentional-dating', label: 'Intentional Dating' },
-    { value: 'long-term', label: 'Long-term Relationship' },
-    { value: 'mentorship', label: 'Mentorship' },
-    { value: 'lifestyle-aligned', label: 'Lifestyle Aligned' },
-    { value: 'exploring', label: 'Exploring' },
-  ];
-
-  readonly lifestyleOptions = [
-    { value: 'very-flexible', label: 'Very Flexible' },
-    { value: 'somewhat-flexible', label: 'Somewhat Flexible' },
-    { value: 'structured', label: 'Structured' },
-    { value: 'highly-demanding', label: 'Highly Demanding' },
-  ];
-
-  readonly valuesOptions = [
-    { value: 'ambition', label: 'Ambition' },
-    { value: 'generosity', label: 'Generosity' },
-    { value: 'independence', label: 'Independence' },
-    { value: 'emotional-maturity', label: 'Emotional Maturity' },
-    { value: 'growth', label: 'Growth & Learning' },
-    { value: 'stability', label: 'Stability' },
-    { value: 'adventure', label: 'Adventure' },
-  ];
+  readonly connectionTypeOptions = ALL_CONNECTION_TYPES;
 
   readonly ethnicityOptions = [
     'Asian', 'Black/African', 'Hispanic/Latino', 'Middle Eastern',

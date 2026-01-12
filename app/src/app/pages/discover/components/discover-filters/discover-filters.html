@@ -55,38 +55,6 @@
       </div>
     </div>
 
-    <!-- Values -->
-    <div class="filter-group wide">
-      <label class="filter-label">Values</label>
-      <div class="chip-select">
-        @for (option of valuesOptions(); track option.value) {
-          <button 
-            type="button"
-            class="filter-chip"
-            [class.selected]="isFilterSelected('values', option.value)"
-            (click)="toggleArrayFilter('values', option.value)">
-            {{ option.label }}
-          </button>
-        }
-      </div>
-    </div>
-
-    <!-- Lifestyle -->
-    <div class="filter-group">
-      <label class="filter-label">Lifestyle</label>
-      <div class="chip-select">
-        @for (option of lifestyleOptions(); track option.value) {
-          <button 
-            type="button"
-            class="filter-chip"
-            [class.selected]="isFilterSelected('lifestyle', option.value)"
-            (click)="toggleArrayFilter('lifestyle', option.value)">
-            {{ option.label }}
-          </button>
-        }
-      </div>
-    </div>
-
     <!-- Show More Filters Toggle -->
     <button type="button" class="show-more-btn" (click)="toggleAdvancedFilters()">
       <mat-icon>{{ showAdvancedFilters() ? 'expand_less' : 'expand_more' }}</mat-icon>

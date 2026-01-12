@@ -9,10 +9,9 @@ import { Step1EligibilityComponent } from './steps/step-1-eligibility';
 import { Step2IdentityComponent } from './steps/step-2-identity';
 import { Step3IntentComponent } from './steps/step-3-intent';
 import { Step4SupportComponent } from './steps/step-4-support';
-import { Step5ValuesComponent } from './steps/step-5-values';
-import { Step6PromptsComponent } from './steps/step-6-prompts';
-import { Step7PhotosComponent } from './steps/step-7-photos';
-import { Step8VerificationComponent } from './steps/step-8-verification';
+import { Step5PromptsComponent } from './steps/step-5-prompts';
+import { Step6PhotosComponent } from './steps/step-6-photos';
+import { Step7VerificationComponent } from './steps/step-7-verification';
 
 @Component({
   selector: 'app-onboarding',
@@ -25,10 +24,9 @@ import { Step8VerificationComponent } from './steps/step-8-verification';
     Step2IdentityComponent,
     Step3IntentComponent,
     Step4SupportComponent,
-    Step5ValuesComponent,
-    Step6PromptsComponent,
-    Step7PhotosComponent,
-    Step8VerificationComponent,
+    Step5PromptsComponent,
+    Step6PhotosComponent,
+    Step7VerificationComponent,
   ],
 })
 export class OnboardingComponent {
@@ -78,8 +76,6 @@ export class OnboardingComponent {
         ageRangeMax: data.ageRangeMax,
         connectionTypes: data.connectionTypes,
         supportOrientation: data.supportOrientation,
-        values: data.values,
-        lifestyle: data.lifestyle,
         idealRelationship: data.idealRelationship,
         photos: data.photos,
         verificationOptions: data.verificationOptions,

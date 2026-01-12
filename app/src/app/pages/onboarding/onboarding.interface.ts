@@ -27,19 +27,15 @@ export interface OnboardingData {
   connectionTypes: string[];
 
   // Step 4: Support Orientation
-  supportOrientation: string[];
+  supportOrientation: string;
 
-  // Step 5: Values & Lifestyle
-  values: string[];
-  lifestyle: string;
-
-  // Step 6: Open-Ended Prompts
+  // Step 5: Open-Ended Prompts
   idealRelationship: string;
   supportMeaning: string;
 
-  // Step 7: Photos
+  // Step 6: Photos
   photos: string[];
 
-  // Step 8: Verification
+  // Step 7: Verification
   verificationOptions: string[];
 }

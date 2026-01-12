@@ -16,13 +16,13 @@ interface UploadingPhoto {
 }
 
 @Component({
-  selector: 'app-step-7-photos',
-  templateUrl: './step-7-photos.html',
+  selector: 'app-step-6-photos',
+  templateUrl: './step-6-photos.html',
   styleUrls: ['./step-shared.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [TranslateModule],
 })
-export class Step7PhotosComponent {
+export class Step6PhotosComponent {
   protected readonly onboarding = inject(OnboardingService);
   private readonly imageUploadService = inject(ImageUploadService);
   
@@ -120,7 +120,6 @@ export class Step7PhotosComponent {
     this.uploadError.set(null);
 
     const currentPreviews = this.photoPreviews();
-    const currentUrls = this.onboarding.data().photos;
     const currentUploading = this.uploadingPhotos().length;
     const availableSlots = this.maxPhotos - currentPreviews.length - currentUploading;
 

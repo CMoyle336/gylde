@@ -191,30 +191,6 @@
           }
         </div>
 
-        <!-- My Values -->
-        <div class="profile-block">
-          <h3>My Values</h3>
-          @if (profile.onboarding?.values?.length) {
-            <div class="tag-list">
-              @for (value of profile.onboarding?.values || []; track value) {
-                <span class="tag">{{ value }}</span>
-              }
-            </div>
-          } @else {
-            <p class="empty-placeholder">Not specified</p>
-          }
-        </div>
-
-        <!-- Lifestyle -->
-        <div class="profile-block">
-          <h3>Lifestyle</h3>
-          @if (profile.onboarding?.lifestyle) {
-            <span class="tag accent">{{ formatLifestyle(profile.onboarding?.lifestyle) }}</span>
-          } @else {
-            <p class="empty-placeholder">Not specified</p>
-          }
-        </div>
-
         <!-- Personal Details -->
         <div class="profile-block details-grid">
           <h3>Details</h3>

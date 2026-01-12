@@ -218,11 +218,13 @@ export class MessageService {
       
       if (showOnlineStatus && userData.lastActiveAt) {
         const lastActive = this.toDate(userData.lastActiveAt);
-        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-        isOnline = lastActive > fiveMinutesAgo;
-        
-        if (showLastActive) {
-          lastActiveAt = lastActive;
+        if (lastActive) {
+          const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+          isOnline = lastActive.getTime() > fiveMinutesAgo.getTime();
+          
+          if (showLastActive) {
+            lastActiveAt = lastActive;
+          }
         }
       } else if (showLastActive && userData.lastActiveAt) {
         lastActiveAt = this.toDate(userData.lastActiveAt);
@@ -393,8 +395,10 @@ export class MessageService {
           
           if (data.imageTimer && data.imageViewedBy?.[currentUser.uid]) {
             imageViewedAt = this.toDate(data.imageViewedBy[currentUser.uid]);
-            const expiresAt = new Date(imageViewedAt.getTime() + data.imageTimer * 1000);
-            isImageExpired = new Date() > expiresAt;
+            if (imageViewedAt) {
+              const expiresAt = new Date(imageViewedAt.getTime() + data.imageTimer * 1000);
+              isImageExpired = new Date() > expiresAt;
+            }
           }
 
           // Calculate recipient viewing status for sender
@@ -407,10 +411,12 @@ export class MessageService {
             const recipientUid = Object.keys(data.imageViewedBy || {}).find(uid => uid !== currentUser.uid);
             if (recipientUid && data.imageViewedBy?.[recipientUid]) {
               recipientViewedAt = this.toDate(data.imageViewedBy[recipientUid]);
-              const expiresAt = new Date(recipientViewedAt.getTime() + data.imageTimer * 1000);
-              const now = new Date();
-              isRecipientViewing = now <= expiresAt;
-              recipientViewExpired = now > expiresAt;
+              if (recipientViewedAt) {
+                const expiresAt = new Date(recipientViewedAt.getTime() + data.imageTimer * 1000);
+                const now = new Date();
+                isRecipientViewing = now <= expiresAt;
+                recipientViewExpired = now > expiresAt;
+              }
             }
           }
 
@@ -418,7 +424,7 @@ export class MessageService {
             id: docSnapshot.id,
             content: data.deletedForAll ? '' : data.content,
             isOwn: data.senderId === currentUser.uid,
-            createdAt: this.toDate(data.createdAt),
+            createdAt: this.toDate(data.createdAt) || new Date(),
             read: data.read,
             type: data.deletedForAll ? 'system' : data.type,
             imageUrls: data.deletedForAll ? undefined : data.imageUrls,
@@ -760,13 +766,18 @@ export class MessageService {
 
   /**
    * Helper to convert Firestore timestamp to Date
+   * Returns null if the value cannot be converted
    */
-  private toDate(value: unknown): Date {
+  private toDate(value: unknown): Date | null {
     if (value instanceof Date) return value;
     if (value && typeof value === 'object' && 'toDate' in value) {
       return (value as { toDate: () => Date }).toDate();
     }
-    return new Date();
+    if (typeof value === 'string') {
+      const date = new Date(value);
+      if (!isNaN(date.getTime())) return date;
+    }
+    return null;
   }
 
   /**

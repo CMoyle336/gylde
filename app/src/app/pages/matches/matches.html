@@ -47,7 +47,7 @@
 
   <!-- Content -->
   <div class="matches-content">
-    @if (loading()) {
+    @if (loading() || !initialized()) {
       <!-- Loading Skeleton -->
       <div class="profile-grid">
         @for (i of skeletonCards; track i) {
@@ -55,7 +55,7 @@
         }
       </div>
     } @else if (isEmpty()) {
-      <!-- Empty State -->
+      <!-- Empty State (only shown after initialization) -->
       <div class="empty-state">
         <span class="material-icons-outlined empty-icon">{{ getEmptyIcon() }}</span>
         <p class="empty-message">{{ getEmptyMessage() }}</p>

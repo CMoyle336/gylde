@@ -33,8 +33,6 @@ export class DiscoverFiltersComponent {
   // Inputs
   readonly filters = input.required<DiscoveryFilters>();
   readonly connectionTypeOptions = input.required<FilterOption[]>();
-  readonly lifestyleOptions = input.required<FilterOption[]>();
-  readonly valuesOptions = input.required<FilterOption[]>();
   readonly ethnicityOptions = input.required<string[]>();
   readonly relationshipStatusOptions = input.required<string[]>();
   readonly childrenOptions = input.required<string[]>();

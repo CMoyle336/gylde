@@ -93,8 +93,6 @@
     <app-discover-filters
       [filters]="filters()"
       [connectionTypeOptions]="connectionTypeOptions"
-      [lifestyleOptions]="lifestyleOptions"
-      [valuesOptions]="valuesOptions"
       [ethnicityOptions]="ethnicityOptions"
       [relationshipStatusOptions]="relationshipStatusOptions"
       [childrenOptions]="childrenOptions"
@@ -110,7 +108,7 @@
   }
 
   <!-- Loading State -->
-  @if (loading() && profiles().length === 0) {
+  @if (!initialized() || (loading() && profiles().length === 0)) {
     <!-- Skeleton Loading State -->
     <div class="profile-grid">
       @for (i of skeletonCards; track i) {
@@ -118,7 +116,7 @@
       }
     </div>
   } @else if (profiles().length === 0) {
-    <!-- Empty State -->
+    <!-- Empty State (only shown after initialization) -->
     <div class="empty-state">
       <mat-icon class="empty-icon">search_off</mat-icon>
       <h3>No profiles found</h3>

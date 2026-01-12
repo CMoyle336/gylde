@@ -20,14 +20,12 @@ export interface DiscoverableProfile {
   showOnlineStatus: boolean; // Whether user allows their online status to be shown
   showLastActive: boolean; // Whether user allows their last active timestamp to be shown
   genderIdentity: string;
-  lifestyle: string;
   connectionTypes: string[];
   idealRelationship: string;
   photoURL: string | null; // The designated profile photo
   photos: string[];
   verified: boolean;
-  values: string[];
-  supportOrientation: string[];
+  supportOrientation: string;
   // Secondary profile fields
   ethnicity?: string;
   relationshipStatus?: string;
@@ -52,10 +50,6 @@ export interface DiscoveryFilters {
   // Connection preferences
   connectionTypes: string[];
   supportOrientation: string[];
-
-  // Lifestyle & Values
-  lifestyle: string[];
-  values: string[];
 
   // Secondary profile fields
   ethnicity: string[];

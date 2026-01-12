@@ -12,13 +12,19 @@ import { UserProfileService } from '../../core/services/user-profile.service';
 import { ImageUploadService } from '../../core/services/image-upload.service';
 import { AuthService } from '../../core/services/auth.service';
 import { OnboardingProfile } from '../../core/interfaces';
+import { ALL_CONNECTION_TYPES, getConnectionTypeLabel, SUPPORT_ORIENTATION_OPTIONS, getSupportOrientationLabel } from '../../core/constants/connection-types';
 
 interface EditForm {
+  // Basic info
+  displayName: string;
+  city: string;
+  // Dating preferences
   genderIdentity: string;
   interestedIn: string[];
   ageRangeMin: number;
   ageRangeMax: number;
   connectionTypes: string[];
+  supportOrientation: string;
   idealRelationship: string;
   supportMeaning: string;
   // Secondary profile info
@@ -101,11 +107,14 @@ export class ProfileComponent implements OnInit {
 
   // Edit form data
   protected editForm: EditForm = {
+    displayName: '',
+    city: '',
     genderIdentity: '',
     interestedIn: [],
     ageRangeMin: 18,
     ageRangeMax: 99,
     connectionTypes: [],
+    supportOrientation: '',
     idealRelationship: '',
     supportMeaning: '',
     height: '',
@@ -153,13 +162,9 @@ export class ProfileComponent implements OnInit {
     { value: 'nonbinary', label: 'Non-binary' },
   ];
 
-  protected readonly connectionTypeOptions = [
-    { value: 'intentional-dating', label: 'Intentional Dating' },
-    { value: 'long-term', label: 'Long-term Relationship' },
-    { value: 'mentorship', label: 'Mentorship' },
-    { value: 'lifestyle-aligned', label: 'Lifestyle Aligned' },
-    { value: 'exploring', label: 'Exploring' },
-  ];
+  protected readonly connectionTypeOptions = ALL_CONNECTION_TYPES;
+
+  protected readonly supportOrientationOptions = SUPPORT_ORIENTATION_OPTIONS;
 
   startEditing(): void {
     const profile = this.profile();
@@ -167,11 +172,14 @@ export class ProfileComponent implements OnInit {
 
     // Initialize form with current values
     this.editForm = {
+      displayName: profile.displayName || '',
+      city: profile.onboarding?.city ? `${profile.onboarding.city}, ${profile.onboarding.country || ''}`.trim() : '',
       genderIdentity: profile.onboarding?.genderIdentity || '',
       interestedIn: [...(profile.onboarding?.interestedIn || [])],
       ageRangeMin: profile.onboarding?.ageRangeMin || 18,
       ageRangeMax: profile.onboarding?.ageRangeMax || 99,
       connectionTypes: [...(profile.onboarding?.connectionTypes || [])],
+      supportOrientation: profile.onboarding?.supportOrientation || '',
       idealRelationship: profile.onboarding?.idealRelationship || '',
       supportMeaning: profile.onboarding?.supportMeaning || '',
       height: profile.onboarding?.height || '',
@@ -209,14 +217,22 @@ export class ProfileComponent implements OnInit {
       const photos = this.editablePhotos();
       const profilePhoto = this.profilePhotoUrl() || photos[0] || null;
 
+      // Parse city/country from combined input
+      const locationParts = this.editForm.city.split(',').map(s => s.trim());
+      const city = locationParts[0] || '';
+      const country = locationParts.slice(1).join(', ') || profile.onboarding.country || '';
+
       // Build updated onboarding data
       const updatedOnboarding: Partial<OnboardingProfile> = {
         ...profile.onboarding,
+        city,
+        country,
         genderIdentity: this.editForm.genderIdentity,
         interestedIn: this.editForm.interestedIn,
         ageRangeMin: this.editForm.ageRangeMin,
         ageRangeMax: this.editForm.ageRangeMax,
         connectionTypes: this.editForm.connectionTypes,
+        supportOrientation: this.editForm.supportOrientation,
         idealRelationship: this.editForm.idealRelationship,
         supportMeaning: this.editForm.supportMeaning,
         photos: photos,
@@ -233,8 +249,9 @@ export class ProfileComponent implements OnInit {
       if (this.editForm.education) updatedOnboarding.education = this.editForm.education;
       if (this.editForm.occupation) updatedOnboarding.occupation = this.editForm.occupation;
 
-      // Update profile
+      // Update profile (including displayName at the root level)
       await this.userProfileService.updateProfile({
+        displayName: this.editForm.displayName || profile.displayName,
         photoURL: profilePhoto,
         onboarding: updatedOnboarding as OnboardingProfile,
       });
@@ -430,6 +447,14 @@ export class ProfileComponent implements OnInit {
     }
   }
 
+  selectSupportOrientation(value: string): void {
+    this.editForm.supportOrientation = value;
+  }
+
+  formatSupportOrientation(value: string | undefined): string {
+    return getSupportOrientationLabel(value);
+  }
+
   // Formatting helpers
   formatBirthDate(dateStr: string): string {
     const date = new Date(dateStr);
@@ -459,13 +484,10 @@ export class ProfileComponent implements OnInit {
 
   formatConnectionTypes(types?: string[]): string {
     if (!types || types.length === 0) return 'Not set';
-    const labels: Record<string, string> = {
-      'intentional-dating': 'Intentional Dating',
-      'long-term': 'Long-term Relationship',
-      'mentorship': 'Mentorship',
-      'lifestyle-aligned': 'Lifestyle Aligned',
-      'exploring': 'Exploring',
-    };
-    return types.map(t => labels[t] || t).join(', ');
+    return types.map(t => getConnectionTypeLabel(t)).join(', ');
+  }
+
+  protected getConnectionTypeLabel(type: string): string {
+    return getConnectionTypeLabel(type);
   }
 }

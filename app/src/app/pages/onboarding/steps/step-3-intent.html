@@ -3,26 +3,43 @@
   <p class="step-subtitle">{{ 'ONBOARDING.STEP_3.SUBTITLE' | translate }}</p>
 </div>
 
+<!-- Relationship Goals -->
 <div class="question-group">
-  <span class="question-label">{{ 'ONBOARDING.STEP_3.CONNECTIONS_QUESTION' | translate }}</span>
-  <span class="question-hint">{{ 'ONBOARDING.STEP_3.CONNECTIONS_HINT' | translate }}</span>
+  <span class="question-label">{{ 'ONBOARDING.STEP_3.GOALS_QUESTION' | translate }}</span>
+  <span class="question-hint">{{ 'ONBOARDING.STEP_3.GOALS_HINT' | translate }}</span>
   
-  <div class="options-list">
-    @for (option of connectionOptions; track option.value) {
-      <div class="option-item">
-        <input 
-          type="checkbox" 
-          [id]="'connection-' + option.value" 
-          class="option-input"
-          [checked]="isSelected(option.value)"
-          (change)="toggle(option.value)">
-        <label [for]="'connection-' + option.value" class="option-label">
-          <span class="option-indicator"></span>
-          <span class="option-content">
-            <span class="option-text">{{ 'ONBOARDING.STEP_3.' + option.labelKey | translate }}</span>
-            <span class="option-description">{{ 'ONBOARDING.STEP_3.' + option.descKey | translate }}</span>
-          </span>
-        </label>
+  <div class="options-grid">
+    @for (option of goalOptions; track option.value) {
+      <div class="option-chip" [class.selected]="isSelected(option.value)" (click)="toggle(option.value)">
+        <span class="chip-label">{{ 'ONBOARDING.STEP_3.' + option.labelKey | translate }}</span>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- Relationship Style -->
+<div class="question-group">
+  <span class="question-label">{{ 'ONBOARDING.STEP_3.STYLE_QUESTION' | translate }}</span>
+  <span class="question-hint">{{ 'ONBOARDING.STEP_3.STYLE_HINT' | translate }}</span>
+  
+  <div class="options-grid">
+    @for (option of styleOptions; track option.value) {
+      <div class="option-chip" [class.selected]="isSelected(option.value)" (click)="toggle(option.value)">
+        <span class="chip-label">{{ 'ONBOARDING.STEP_3.' + option.labelKey | translate }}</span>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- Lifestyle Preferences -->
+<div class="question-group">
+  <span class="question-label">{{ 'ONBOARDING.STEP_3.LIFESTYLE_QUESTION' | translate }}</span>
+  <span class="question-hint">{{ 'ONBOARDING.STEP_3.LIFESTYLE_HINT' | translate }}</span>
+  
+  <div class="options-grid">
+    @for (option of lifestylePreferenceOptions; track option.value) {
+      <div class="option-chip" [class.selected]="isSelected(option.value)" (click)="toggle(option.value)">
+        <span class="chip-label">{{ 'ONBOARDING.STEP_3.' + option.labelKey | translate }}</span>
       </div>
     }
   </div>

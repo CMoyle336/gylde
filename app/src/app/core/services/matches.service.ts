@@ -9,8 +9,7 @@ import {
   orderBy,
   limit,
   getDocs,
-  doc,
-  getDoc,
+  documentId,
 } from '@angular/fire/firestore';
 import { AuthService } from './auth.service';
 import { UserProfile } from '../interfaces';
@@ -47,18 +46,42 @@ export class MatchesService {
   private readonly platformId = inject(PLATFORM_ID);
 
   private readonly _loading = signal(false);
+  private readonly _initialized = signal(false); // Tracks if we've ever loaded data
   private readonly _activeTab = signal<MatchTab>('favorited-me');
   private readonly _profiles = signal<MatchProfile[]>([]);
   private readonly _favoritedMeCount = signal(0);
   private readonly _viewedMeCount = signal(0);
+  
+  // Cache profiles per tab to avoid showing loading state on return navigation
+  private readonly _cachedProfiles = new Map<MatchTab, MatchProfile[]>();
 
   readonly loading = this._loading.asReadonly();
+  readonly initialized = this._initialized.asReadonly();
   readonly activeTab = this._activeTab.asReadonly();
   readonly profiles = this._profiles.asReadonly();
   readonly favoritedMeCount = this._favoritedMeCount.asReadonly();
   readonly viewedMeCount = this._viewedMeCount.asReadonly();
 
-  readonly isEmpty = computed(() => !this._loading() && this._profiles().length === 0);
+  readonly isEmpty = computed(() => this._initialized() && !this._loading() && this._profiles().length === 0);
+
+  /**
+   * Remove a profile from the current view and cache
+   * Used when unfavoriting from the my-favorites tab
+   */
+  removeProfile(userId: string): void {
+    const tab = this._activeTab();
+    
+    // Remove from current profiles
+    this._profiles.update(profiles => 
+      profiles.filter(p => p.uid !== userId)
+    );
+    
+    // Remove from cache for this tab
+    const cached = this._cachedProfiles.get(tab);
+    if (cached) {
+      this._cachedProfiles.set(tab, cached.filter(p => p.uid !== userId));
+    }
+  }
 
   /**
    * Set the active tab and load profiles for that tab
@@ -102,16 +125,27 @@ export class MatchesService {
 
   /**
    * Load profiles based on the current tab
+   * Shows loading state only if no cached data exists for the tab
    */
   async loadProfiles(): Promise<void> {
     const currentUser = this.authService.user();
     if (!currentUser) return;
 
-    this._loading.set(true);
-    this._profiles.set([]);
+    const tab = this._activeTab();
+    const cachedProfiles = this._cachedProfiles.get(tab);
+    
+    // If we have cached data, show it immediately (no loading state)
+    // and refresh silently in the background
+    if (cachedProfiles && cachedProfiles.length > 0) {
+      this._profiles.set(cachedProfiles);
+      // Don't show loading, just refresh in background
+    } else {
+      // No cached data, show loading state
+      this._loading.set(true);
+      this._profiles.set([]);
+    }
 
     try {
-      const tab = this._activeTab();
       let profiles: MatchProfile[] = [];
 
       switch (tab) {
@@ -129,11 +163,14 @@ export class MatchesService {
           break;
       }
 
+      // Update cache and current profiles
+      this._cachedProfiles.set(tab, profiles);
       this._profiles.set(profiles);
     } catch (error) {
       console.error('Error loading matches:', error);
     } finally {
       this._loading.set(false);
+      this._initialized.set(true);
     }
   }
 
@@ -300,7 +337,8 @@ export class MatchesService {
 
   /**
    * Load full user profiles from user IDs
-   * Uses parallel fetching to avoid N+1 query problem
+   * Uses batched queries with documentId() to minimize Firestore calls
+   * Firestore 'in' operator supports max 30 items, so we batch accordingly
    */
   private async loadUserProfiles(
     userIds: string[],
@@ -308,21 +346,39 @@ export class MatchesService {
   ): Promise<MatchProfile[]> {
     if (userIds.length === 0) return [];
 
-    // Fetch all user documents in parallel
-    const userRefs = userIds.map(userId => doc(this.firestore, 'users', userId));
-    const snapshots = await Promise.all(
-      userRefs.map(ref => getDoc(ref).catch(() => null))
-    );
+    // Deduplicate user IDs while preserving order
+    const uniqueUserIds = [...new Set(userIds)];
+    
+    // Batch into chunks of 30 (Firestore 'in' limit)
+    const BATCH_SIZE = 30;
+    const batches: string[][] = [];
+    for (let i = 0; i < uniqueUserIds.length; i += BATCH_SIZE) {
+      batches.push(uniqueUserIds.slice(i, i + BATCH_SIZE));
+    }
 
+    // Execute all batch queries in parallel
+    const usersRef = collection(this.firestore, 'users');
+    const batchPromises = batches.map(batch => {
+      const q = query(usersRef, where(documentId(), 'in', batch));
+      return getDocs(q);
+    });
+
+    const batchResults = await Promise.all(batchPromises);
+    
+    // Combine all results into a map for easy lookup
+    const userDataMap = new Map<string, UserProfile>();
+    for (const snapshot of batchResults) {
+      for (const docSnap of snapshot.docs) {
+        userDataMap.set(docSnap.id, docSnap.data() as UserProfile);
+      }
+    }
+
+    // Build profiles in the original order
     const profiles: MatchProfile[] = [];
 
-    for (let i = 0; i < snapshots.length; i++) {
-      const userSnap = snapshots[i];
-      const userId = userIds[i];
-
-      if (!userSnap?.exists()) continue;
-
-      const data = userSnap.data() as UserProfile;
+    for (const userId of uniqueUserIds) {
+      const data = userDataMap.get(userId);
+      if (!data) continue;
 
       // Skip hidden profiles
       if (data.settings?.privacy?.profileVisible === false) continue;
@@ -343,10 +399,21 @@ export class MatchesService {
       let isOnline = false;
       let lastActiveAt: Date | null = null;
       if (data.lastActiveAt) {
-        lastActiveAt = (data.lastActiveAt as { toDate?: () => Date })?.toDate?.() 
-          || new Date(data.lastActiveAt as string);
-        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-        isOnline = data.settings?.privacy?.showOnlineStatus !== false && lastActiveAt > fiveMinutesAgo;
+        // Convert Firestore timestamp to Date
+        const timestamp = data.lastActiveAt as { toDate?: () => Date };
+        lastActiveAt = timestamp?.toDate?.() || null;
+        
+        // Fallback for non-Timestamp formats
+        if (!lastActiveAt && typeof data.lastActiveAt === 'string') {
+          lastActiveAt = new Date(data.lastActiveAt);
+        }
+        
+        // Only mark as online if lastActiveAt is valid and within 5 minutes
+        if (lastActiveAt && !isNaN(lastActiveAt.getTime())) {
+          const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+          const showOnlineStatusPref = data.settings?.privacy?.showOnlineStatus !== false;
+          isOnline = showOnlineStatusPref && lastActiveAt.getTime() > fiveMinutesAgo.getTime();
+        }
       }
 
       const showOnlineStatus = data.settings?.privacy?.showOnlineStatus !== false;

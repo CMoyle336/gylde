@@ -4,13 +4,13 @@ import { TranslateModule } from '@ngx-translate/core';
 import { OnboardingService } from '../onboarding.service';
 
 @Component({
-  selector: 'app-step-6-prompts',
-  templateUrl: './step-6-prompts.html',
+  selector: 'app-step-5-prompts',
+  templateUrl: './step-5-prompts.html',
   styleUrls: ['./step-shared.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [FormsModule, TranslateModule],
 })
-export class Step6PromptsComponent {
+export class Step5PromptsComponent {
   protected readonly onboarding = inject(OnboardingService);
   protected readonly maxIdealChars = 500;
   protected readonly maxSupportChars = 300;
