@@ -72,7 +72,7 @@ interface SearchResult {
   genderIdentity: string;
   lifestyle: string;
   connectionTypes: string[];
-  idealRelationship: string;
+  tagline: string;
   photoURL: string | null; // The designated profile photo
   photos: string[];
   verified: boolean;
@@ -137,6 +137,16 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
       const currentUserDoc = await db.collection("users").doc(currentUserId).get();
       const currentUserData = currentUserDoc.data();
       const currentUserSupportOrientation = currentUserData?.onboarding?.supportOrientation as string | undefined;
+
+      // Fetch blocked users (both directions)
+      const [blockedSnapshot, blockedBySnapshot] = await Promise.all([
+        db.collection("users").doc(currentUserId).collection("blocks").get(),
+        db.collection("users").doc(currentUserId).collection("blockedBy").get(),
+      ]);
+      const blockedUserIds = new Set<string>([
+        ...blockedSnapshot.docs.map(d => d.id),
+        ...blockedBySnapshot.docs.map(d => d.id),
+      ]);
 
       // Determine compatible support orientations based on current user's preference
       // - "receiving" users should see "providing" or "either" profiles
@@ -295,6 +305,9 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
         // Stop once we have enough
         if (profiles.length >= pageLimit) break;
 
+        // Skip blocked users
+        if (blockedUserIds.has(doc.id)) continue;
+
         const data = doc.data();
         const onboarding = data.onboarding;
         
@@ -339,7 +352,7 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
           genderIdentity: onboarding?.genderIdentity,
           lifestyle: onboarding?.lifestyle,
           connectionTypes: onboarding?.connectionTypes || [],
-          idealRelationship: onboarding?.idealRelationship || "",
+          tagline: onboarding?.tagline || "",
           photoURL: data.photoURL || onboarding?.photos?.[0] || null,
           photos: onboarding?.photos || [],
           verified: onboarding?.verificationOptions?.includes("identity") || false,

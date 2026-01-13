@@ -4,6 +4,24 @@
 </div>
 
 <div class="question-group">
+  <label for="tagline" class="question-label">
+    {{ 'ONBOARDING.STEP_5.TAGLINE_QUESTION' | translate }}
+  </label>
+  <span class="question-hint">{{ 'ONBOARDING.STEP_5.TAGLINE_HINT' | translate }}</span>
+  
+  <input 
+    type="text"
+    id="tagline"
+    class="input-field"
+    [placeholder]="'ONBOARDING.STEP_5.TAGLINE_PLACEHOLDER' | translate"
+    [(ngModel)]="tagline"
+    [maxlength]="maxTaglineChars">
+  <span class="char-count" [class.warning]="taglineNearLimit()">
+    {{ 'ONBOARDING.STEP_5.CHAR_COUNT' | translate: { count: taglineCharCount(), max: maxTaglineChars } }}
+  </span>
+</div>
+
+<div class="question-group">
   <label for="ideal-relationship" class="question-label">
     {{ 'ONBOARDING.STEP_5.IDEAL_QUESTION' | translate }}
   </label>

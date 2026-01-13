@@ -15,6 +15,7 @@ import { MessageService } from '../../core/services/message.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ActivityService } from '../../core/services/activity.service';
 import { PhotoAccessService } from '../../core/services/photo-access.service';
+import { BlockService, BlockStatus } from '../../core/services/block.service';
 import { ProfileSkeletonComponent } from './components';
 import { formatConnectionTypes as formatConnectionTypesUtil } from '../../core/constants/connection-types';
 
@@ -42,6 +43,7 @@ export class UserProfileComponent implements OnInit, OnDestroy {
   private readonly authService = inject(AuthService);
   private readonly activityService = inject(ActivityService);
   private readonly photoAccessService = inject(PhotoAccessService);
+  private readonly blockService = inject(BlockService);
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly profile = signal<UserProfile | null>(null);
@@ -54,6 +56,11 @@ export class UserProfileComponent implements OnInit, OnDestroy {
   protected readonly photoAccess = signal<PhotoAccessSummary>({ hasAccess: false });
   protected readonly requestingAccess = signal(false);
   protected readonly photoPrivacyMap = signal<Map<string, boolean>>(new Map());
+
+  // Block state
+  protected readonly blockStatus = signal<BlockStatus>({ isBlocked: false, blockedByMe: false, blockedMe: false });
+  protected readonly showBlockDialog = signal(false);
+  protected readonly blockingUser = signal(false);
 
   // Real-time subscription cleanup
   private accessStatusUnsubscribe?: () => void;
@@ -158,6 +165,16 @@ export class UserProfileComponent implements OnInit, OnDestroy {
       this.loading.set(true);
       this.error.set(null);
 
+      // Check if this user is blocked (either direction)
+      const blockStatus = await this.blockService.checkBlockStatus(userId);
+      this.blockStatus.set(blockStatus);
+      
+      if (blockStatus.isBlocked) {
+        this.error.set('This profile is not available');
+        this.loading.set(false);
+        return;
+      }
+
       const userRef = doc(this.firestore, 'users', userId);
       const userSnap = await getDoc(userRef);
 
@@ -169,6 +186,13 @@ export class UserProfileComponent implements OnInit, OnDestroy {
 
       const userData = userSnap.data() as UserProfile;
       
+      // Check if account is disabled - disabled accounts should not be viewable
+      if (userData.settings?.account?.disabled === true) {
+        this.error.set('This profile is not available');
+        this.loading.set(false);
+        return;
+      }
+
       // Note: We do NOT check profileVisible here.
       // profileVisible only affects discover/search results.
       // Users can still view profiles they have direct links to
@@ -263,11 +287,6 @@ export class UserProfileComponent implements OnInit, OnDestroy {
   protected onReport(): void {
     // TODO: Implement report functionality
     console.log('Report user:', this.profile()?.uid);
-  }
-
-  protected onBlock(): void {
-    // TODO: Implement block functionality
-    console.log('Block user:', this.profile()?.uid);
   }
 
   protected async requestPhotoAccess(): Promise<void> {
@@ -421,5 +440,48 @@ export class UserProfileComponent implements OnInit, OnDestroy {
     if (days < 30) return `${Math.floor(days / 7)} weeks ago`;
     if (months < 12) return `${months} month${months > 1 ? 's' : ''} ago`;
     return `${years} year${years > 1 ? 's' : ''} ago`;
+  }
+
+  // Block user functionality
+  protected openBlockDialog(): void {
+    this.showBlockDialog.set(true);
+  }
+
+  protected closeBlockDialog(): void {
+    this.showBlockDialog.set(false);
+  }
+
+  protected async confirmBlockUser(): Promise<void> {
+    const p = this.profile();
+    if (!p) return;
+
+    this.blockingUser.set(true);
+    try {
+      const success = await this.blockService.blockUser(p.uid);
+      if (success) {
+        this.showBlockDialog.set(false);
+        // Navigate away since they can no longer see this profile
+        this.router.navigate(['/discover']);
+      }
+    } catch (error) {
+      console.error('Error blocking user:', error);
+    } finally {
+      this.blockingUser.set(false);
+    }
+  }
+
+  protected async unblockUser(): Promise<void> {
+    const p = this.profile();
+    if (!p) return;
+
+    this.blockingUser.set(true);
+    try {
+      await this.blockService.unblockUser(p.uid);
+      this.blockStatus.set({ isBlocked: false, blockedByMe: false, blockedMe: false });
+    } catch (error) {
+      console.error('Error unblocking user:', error);
+    } finally {
+      this.blockingUser.set(false);
+    }
   }
 }

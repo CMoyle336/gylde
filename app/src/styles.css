@@ -121,3 +121,17 @@ mat-progress-spinner svg,
 .mdc-circular-progress__spinner-layer {
   transform-origin: center center;
 }
+
+/* Blocked Users Dialog */
+.blocked-users-dialog-container .mat-mdc-dialog-surface {
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible;
+}
+
+/* Logout Confirmation Dialog */
+.logout-confirm-dialog-container .mat-mdc-dialog-surface {
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible;
+}

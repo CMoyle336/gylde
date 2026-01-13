@@ -10,9 +10,11 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { Router } from '@angular/router';
 import { Functions, httpsCallable } from '@angular/fire/functions';
+import { MatDialog } from '@angular/material/dialog';
 import { AuthService } from '../../core/services/auth.service';
 import { UserProfileService } from '../../core/services/user-profile.service';
 import { UserSettings } from '../../core/interfaces';
+import { BlockedUsersDialogComponent } from '../../components/blocked-users-dialog';
 
 @Component({
   selector: 'app-settings',
@@ -37,6 +39,7 @@ export class SettingsComponent implements OnInit {
   private readonly translateService = inject(TranslateService);
   private readonly router = inject(Router);
   private readonly functions = inject(Functions);
+  private readonly dialog = inject(MatDialog);
 
   // User info
   protected readonly userEmail = computed(() => this.authService.user()?.email || null);
@@ -66,6 +69,12 @@ export class SettingsComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadSettings();
+  }
+
+  protected openBlockedUsersDialog(): void {
+    this.dialog.open(BlockedUsersDialogComponent, {
+      panelClass: 'blocked-users-dialog-container',
+    });
   }
 
   private loadSettings(): void {

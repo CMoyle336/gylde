@@ -22,7 +22,7 @@ export interface DiscoverableProfile {
   showLocation: boolean; // Whether user allows their location to be shown
   genderIdentity: string;
   connectionTypes: string[];
-  idealRelationship: string;
+  tagline: string;
   photoURL: string | null; // The designated profile photo
   photos: string[];
   verified: boolean;

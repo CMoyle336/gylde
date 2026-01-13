@@ -225,6 +225,9 @@
     "STEP_5": {
       "TITLE": "In Your Own Words",
       "SUBTITLE": "Help others understand what you're looking for. Be authentic—it leads to better connections.",
+      "TAGLINE_QUESTION": "What's your tagline?",
+      "TAGLINE_PLACEHOLDER": "A short phrase that captures who you are...",
+      "TAGLINE_HINT": "This will be prominently displayed on your profile card.",
       "IDEAL_QUESTION": "What does an ideal relationship look like to you?",
       "IDEAL_PLACEHOLDER": "Describe the relationship you're hoping to build...",
       "IDEAL_HINT": "Be specific about what matters to you. This will appear on your profile.",
@@ -370,6 +373,14 @@
       "EMAIL": "Email address",
       "PASSWORD": "Password",
       "PASSWORD_DESC": "Change your password"
+    },
+    "BLOCKED": {
+      "TITLE": "Blocked Users",
+      "SUBTITLE": "Manage users you've blocked",
+      "MANAGE": "Manage blocked users",
+      "MANAGE_DESC": "View and unblock users you've blocked",
+      "EMPTY": "You haven't blocked anyone",
+      "UNBLOCK": "Unblock"
     },
     "DANGER": {
       "TITLE": "Danger Zone",

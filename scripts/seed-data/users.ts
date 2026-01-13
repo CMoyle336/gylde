@@ -121,6 +121,7 @@ export interface SeedUser {
     ageRangeMax: number;
     connectionTypes: string[];
     supportOrientation: string;
+    tagline: string;
     idealRelationship: string;
     supportMeaning: string;
     photos: string[];
@@ -346,6 +347,7 @@ export function generateUsers(count: number, seed?: number): SeedUser[] {
         ageRangeMax,
         connectionTypes: pickRandomMultiple(ALL_CONNECTION_TYPES, 2, 5),
         supportOrientation: pickRandom(SUPPORT_ORIENTATIONS),
+        tagline: faker.person.bio(),
         idealRelationship: faker.lorem.paragraph({ min: 1, max: 3 }),
         supportMeaning: faker.lorem.sentence({ min: 8, max: 20 }),
         photos,

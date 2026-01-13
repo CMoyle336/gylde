@@ -48,9 +48,9 @@
       }
     </div>
 
-    @if (profile().idealRelationship) {
+    @if (profile().tagline) {
       <p class="card-tagline">
-        {{ profile().idealRelationship!.slice(0, 100) }}{{ profile().idealRelationship!.length > 100 ? '...' : '' }}
+        {{ profile().tagline!.slice(0, 100) }}{{ profile().tagline!.length > 100 ? '...' : '' }}
       </p>
     }
 

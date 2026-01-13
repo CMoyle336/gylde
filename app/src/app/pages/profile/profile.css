@@ -460,6 +460,19 @@
   gap: 0.5rem;
 }
 
+.info-item.full-width {
+  grid-column: 1 / -1;
+}
+
+.info-item.full-width .full-width-field {
+  width: 100%;
+}
+
+.tagline-value {
+  font-style: italic;
+  font-size: 1rem;
+}
+
 .field-label {
   font-size: 0.75rem;
   font-weight: 600;

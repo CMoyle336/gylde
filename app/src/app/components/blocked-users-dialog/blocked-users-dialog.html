@@ -1,0 +1,50 @@
+<div class="blocked-users-dialog">
+  <header class="dialog-header">
+    <h2>Blocked Users</h2>
+    <button mat-icon-button class="close-btn" (click)="close()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </header>
+
+  <div class="dialog-content">
+    @if (loading()) {
+      <div class="loading-state">
+        <mat-spinner diameter="32"></mat-spinner>
+        <span>Loading blocked users...</span>
+      </div>
+    } @else if (blockedUsers().length === 0) {
+      <div class="empty-state">
+        <mat-icon>check_circle</mat-icon>
+        <p>You haven't blocked anyone</p>
+      </div>
+    } @else {
+      <div class="blocked-list">
+        @for (user of blockedUsers(); track user.uid) {
+          <div class="blocked-user-item">
+            <div class="user-info">
+              @if (user.photoURL) {
+                <img [src]="user.photoURL" [alt]="user.displayName" class="user-photo">
+              } @else {
+                <div class="user-photo placeholder">
+                  <mat-icon>person</mat-icon>
+                </div>
+              }
+              <span class="user-name">{{ user.displayName }}</span>
+            </div>
+            <button 
+              mat-stroked-button 
+              class="unblock-btn"
+              (click)="unblockUser(user.uid)"
+              [disabled]="unblockingUserId() === user.uid">
+              @if (unblockingUserId() === user.uid) {
+                <mat-spinner diameter="16"></mat-spinner>
+              } @else {
+                Unblock
+              }
+            </button>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>

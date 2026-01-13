@@ -183,26 +183,25 @@
       "PRIVATE": "Liever privé houden"
     },
     "STEP_5": {
-      "TITLE": "Waarden & levensstijl",
-      "SUBTITLE": "Wat is het belangrijkst voor jou? Dit helpt ons echt compatibele matches te vinden.",
-      "VALUES_QUESTION": "Welke waarden zijn het belangrijkst voor jou in een relatie?",
-      "VALUES_HINT": "Selecteer maximaal 3",
-      "VALUE_AMBITION": "Ambitie",
-      "VALUE_GENEROSITY": "Vrijgevigheid",
-      "VALUE_INDEPENDENCE": "Onafhankelijkheid",
-      "VALUE_EMOTIONAL_MATURITY": "Emotionele volwassenheid",
-      "VALUE_GROWTH": "Groei en leren",
-      "VALUE_STABILITY": "Stabiliteit",
-      "VALUE_ADVENTURE": "Avontuur",
-      "LIFESTYLE_QUESTION": "Hoe zou je je huidige levensstijl beschrijven?",
-      "LIFESTYLE_VERY_FLEXIBLE": "Zeer flexibel",
-      "LIFESTYLE_SOMEWHAT_FLEXIBLE": "Enigszins flexibel",
-      "LIFESTYLE_STRUCTURED": "Gestructureerd",
-      "LIFESTYLE_HIGHLY_DEMANDING": "Zeer veeleisend"
+      "TITLE": "In je eigen woorden",
+      "SUBTITLE": "Help anderen te begrijpen wat je zoekt. Wees authentiek—het leidt tot betere verbindingen.",
+      "TAGLINE_QUESTION": "Wat is je tagline?",
+      "TAGLINE_PLACEHOLDER": "Een korte zin die beschrijft wie je bent...",
+      "TAGLINE_HINT": "Dit wordt prominent weergegeven op je profielkaart.",
+      "IDEAL_QUESTION": "Hoe ziet een ideale relatie eruit voor jou?",
+      "IDEAL_PLACEHOLDER": "Beschrijf de relatie die je hoopt op te bouwen...",
+      "IDEAL_HINT": "Wees specifiek over wat belangrijk is voor jou. Dit verschijnt op je profiel.",
+      "SUPPORT_QUESTION": "Wat betekent je ondersteund voelen in een relatie voor jou?",
+      "SUPPORT_PLACEHOLDER": "Deel wat ondersteuning voor jou betekent...",
+      "SUPPORT_HINT": "Optioneel, maar helpt matches je perspectief te begrijpen.",
+      "CHAR_COUNT": "{{count}} / {{max}} karakters"
     },
     "STEP_6": {
       "TITLE": "In je eigen woorden",
       "SUBTITLE": "Help anderen te begrijpen wat je zoekt. Wees authentiek—het leidt tot betere verbindingen.",
+      "TAGLINE_QUESTION": "Wat is je tagline?",
+      "TAGLINE_PLACEHOLDER": "Een korte zin die beschrijft wie je bent...",
+      "TAGLINE_HINT": "Dit wordt prominent weergegeven op je profielkaart.",
       "IDEAL_QUESTION": "Hoe ziet een ideale relatie eruit voor jou?",
       "IDEAL_PLACEHOLDER": "Beschrijf de relatie die je hoopt op te bouwen...",
       "IDEAL_HINT": "Wees specifiek over wat belangrijk is voor jou. Dit verschijnt op je profiel.",
@@ -348,6 +347,14 @@
       "EMAIL": "E-mailadres",
       "PASSWORD": "Wachtwoord",
       "PASSWORD_DESC": "Wijzig je wachtwoord"
+    },
+    "BLOCKED": {
+      "TITLE": "Geblokkeerde gebruikers",
+      "SUBTITLE": "Beheer gebruikers die je hebt geblokkeerd",
+      "MANAGE": "Beheer geblokkeerde gebruikers",
+      "MANAGE_DESC": "Bekijk en deblokkeer gebruikers die je hebt geblokkeerd",
+      "EMPTY": "Je hebt niemand geblokkeerd",
+      "UNBLOCK": "Deblokkeren"
     },
     "DANGER": {
       "TITLE": "Gevarenzone",

@@ -215,6 +215,27 @@
       </div>
     </section>
 
+    <!-- Blocked Users -->
+    <section class="settings-section">
+      <div class="section-header">
+        <mat-icon>block</mat-icon>
+        <div>
+          <h2>{{ 'SETTINGS.BLOCKED.TITLE' | translate }}</h2>
+          <p>{{ 'SETTINGS.BLOCKED.SUBTITLE' | translate }}</p>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <div class="setting-item clickable" (click)="openBlockedUsersDialog()">
+          <div class="setting-info">
+            <span class="setting-label">{{ 'SETTINGS.BLOCKED.MANAGE' | translate }}</span>
+            <span class="setting-description">{{ 'SETTINGS.BLOCKED.MANAGE_DESC' | translate }}</span>
+          </div>
+          <mat-icon class="chevron">chevron_right</mat-icon>
+        </div>
+      </div>
+    </section>
+
     <!-- Danger Zone -->
     <section class="settings-section danger-zone">
       <div class="section-header">

@@ -10,6 +10,7 @@ export * from "./images";
 export * from "./photos";
 export * from "./profile-views";
 export * from "./accounts";
+export * from "./blocks";
 
 // Future function modules:
 // export * from "./matches";

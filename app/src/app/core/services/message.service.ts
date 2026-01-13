@@ -484,6 +484,16 @@ export class MessageService {
 
     if (!currentUser || !activeConversation || (!hasText && !hasImages)) return;
 
+    // Check if recipient's account is disabled
+    const otherUserId = activeConversation.otherUser?.uid;
+    if (otherUserId) {
+      const recipientDisabled = await this.isUserDisabled(otherUserId);
+      if (recipientDisabled) {
+        console.warn('Cannot send message: recipient account is disabled');
+        return;
+      }
+    }
+
     this._sending.set(true);
 
     // Clear typing status when sending
@@ -869,6 +879,22 @@ export class MessageService {
     if (days === 1) return 'yesterday';
     if (days < 7) return `${days}d ago`;
     return `${Math.floor(days / 7)}w ago`;
+  }
+
+  /**
+   * Check if a user's account is disabled
+   */
+  private async isUserDisabled(userId: string): Promise<boolean> {
+    try {
+      const userRef = doc(this.firestore, 'users', userId);
+      const userSnap = await getDoc(userRef);
+      if (!userSnap.exists()) return true; // Treat non-existent as disabled
+      const userData = userSnap.data() as { settings?: { account?: { disabled?: boolean } } };
+      return userData?.settings?.account?.disabled === true;
+    } catch (error) {
+      console.error('Error checking user disabled status:', error);
+      return false; // Allow messaging on error to avoid blocking
+    }
   }
 
   /**

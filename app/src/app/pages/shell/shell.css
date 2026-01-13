@@ -123,6 +123,8 @@
 .sidebar-profile-wrapper {
   position: relative;
   border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
 }
 
 .sidebar-profile {
@@ -130,7 +132,8 @@
   align-items: center;
   gap: 0.875rem;
   padding: 1.25rem;
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   background: transparent;
   border: none;
   cursor: pointer;
@@ -145,95 +148,6 @@
 .sidebar.collapsed .sidebar-profile {
   justify-content: center;
   padding: 1rem 0.75rem;
-}
-
-.profile-chevron {
-  margin-left: auto;
-  color: var(--color-text-muted);
-  font-size: 1.25rem;
-  transition: transform 0.2s ease;
-}
-
-.sidebar.collapsed .profile-chevron {
-  display: none;
-}
-
-/* Material Menu Styling */
-::ng-deep .mat-mdc-menu-panel.profile-menu {
-  --mat-menu-container-color: #1e1a2d;
-  min-width: 200px;
-  border: 1px solid rgba(201, 169, 98, 0.2);
-  border-radius: 12px;
-  box-shadow: 
-    0 4px 6px -1px rgba(0, 0, 0, 0.3),
-    0 10px 15px -3px rgba(0, 0, 0, 0.4),
-    0 20px 25px -5px rgba(0, 0, 0, 0.3);
-  overflow: hidden;
-  backdrop-filter: blur(10px);
-}
-
-::ng-deep .profile-menu .mat-mdc-menu-content {
-  padding: 6px;
-}
-
-::ng-deep .profile-menu .mat-mdc-menu-item {
-  color: rgba(255, 255, 255, 0.85);
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 0.875rem;
-  font-weight: 500;
-  height: 42px;
-  border-radius: 8px;
-  margin: 2px 0;
-  padding: 0 12px;
-  transition: all 0.2s ease;
-  letter-spacing: 0.01em;
-  text-decoration: none;
-}
-
-::ng-deep .profile-menu .mat-mdc-menu-item .mat-mdc-menu-item-text {
-  display: flex !important;
-  align-items: center;
-  gap: 10px;
-}
-
-::ng-deep .profile-menu .mat-mdc-menu-item .material-icons-outlined {
-  font-size: 1.125rem;
-  line-height: 1;
-  color: rgba(255, 255, 255, 0.5);
-  transition: all 0.2s ease;
-}
-
-::ng-deep .profile-menu .mat-mdc-menu-item:hover {
-  background: linear-gradient(135deg, rgba(201, 169, 98, 0.15) 0%, rgba(201, 169, 98, 0.08) 100%);
-  color: #fff;
-}
-
-::ng-deep .profile-menu .mat-mdc-menu-item:hover .material-icons-outlined {
-  color: #c9a962;
-  transform: scale(1.05);
-}
-
-::ng-deep .profile-menu mat-divider {
-  margin: 6px 8px;
-  border-color: rgba(255, 255, 255, 0.08);
-}
-
-::ng-deep .profile-menu .logout-menu-item {
-  color: #fb7185;
-}
-
-::ng-deep .profile-menu .logout-menu-item .material-icons-outlined {
-  color: #fb7185;
-}
-
-::ng-deep .profile-menu .logout-menu-item:hover {
-  background: linear-gradient(135deg, rgba(251, 113, 133, 0.15) 0%, rgba(251, 113, 133, 0.08) 100%);
-  color: #fda4af;
-}
-
-::ng-deep .profile-menu .logout-menu-item:hover .material-icons-outlined {
-  color: #fda4af;
-  transform: scale(1.05);
 }
 
 .profile-avatar {
@@ -316,6 +230,37 @@
 .completion-text {
   font-size: 0.75rem;
   color: var(--color-text-muted);
+}
+
+/* Logout Icon Button */
+.logout-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin-right: 0.75rem;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.logout-icon-btn:hover {
+  background: rgba(239, 83, 80, 0.1);
+  border-color: rgba(239, 83, 80, 0.3);
+  color: #ef5350;
+}
+
+.logout-icon-btn .material-icons-outlined {
+  font-size: 1.125rem;
+}
+
+.sidebar.collapsed .logout-icon-btn {
+  display: none;
 }
 
 /* Sidebar Content (scrollable area) */
@@ -734,7 +679,7 @@
 
 /* Collapse Button */
 .sidebar-collapse {
-  padding: 0.75rem 1.25rem;
+  padding: 0.75rem 1rem;
   border-top: 1px solid var(--color-border);
   flex-shrink: 0;
   margin-top: auto;
@@ -747,22 +692,42 @@
 .collapse-btn {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 0.75rem;
   width: 100%;
-  height: 36px;
+  height: 40px;
+  padding: 0 0.75rem;
   background: transparent;
-  border: 1px solid var(--color-border);
+  border: none;
   border-radius: 8px;
   color: var(--color-text-muted);
   cursor: pointer;
   transition: all 0.2s ease;
-  flex-shrink: 0;
+  font-size: 0.875rem;
 }
 
 .collapse-btn:hover {
   background: var(--color-bg-hover);
   color: var(--color-text-primary);
-  border-color: var(--color-text-muted);
+}
+
+.collapse-btn .material-icons-outlined {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.collapse-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar.collapsed .collapse-btn {
+  justify-content: center;
+  padding: 0;
+}
+
+.sidebar.collapsed .collapse-label {
+  display: none;
 }
 
 /* ============================================

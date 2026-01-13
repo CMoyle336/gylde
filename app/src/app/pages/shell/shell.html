@@ -20,10 +20,10 @@
 
     <!-- User Profile Section -->
     <div class="sidebar-profile-wrapper">
-      <button 
-        type="button" 
+      <a 
+        routerLink="/profile"
         class="sidebar-profile"
-        [matMenuTriggerFor]="profileMenu"
+        (click)="onNavItemClick()"
         [matTooltip]="currentUser()?.displayName || 'Your Profile'"
         [matTooltipDisabled]="sidenavExpanded()"
         matTooltipPosition="right">
@@ -43,25 +43,15 @@
             <span class="completion-text">{{ profileCompletion() }}%</span>
           </div>
         </div>
-        <span class="material-icons-outlined profile-chevron">expand_more</span>
+      </a>
+      <button 
+        type="button" 
+        class="logout-icon-btn"
+        (click)="confirmLogout()"
+        matTooltip="Logout"
+        matTooltipPosition="right">
+        <span class="material-icons-outlined">logout</span>
       </button>
-
-      <!-- Material Menu -->
-      <mat-menu #profileMenu="matMenu" class="profile-menu">
-        <a mat-menu-item routerLink="/profile" (click)="onNavItemClick()">
-          <span class="material-icons-outlined">person</span>
-          <span>View Profile</span>
-        </a>
-        <a mat-menu-item routerLink="/settings" (click)="onNavItemClick()">
-          <span class="material-icons-outlined">settings</span>
-          <span>Settings</span>
-        </a>
-        <mat-divider></mat-divider>
-        <button mat-menu-item class="logout-menu-item" (click)="onLogout()">
-          <span class="material-icons-outlined">logout</span>
-          <span>Logout</span>
-        </button>
-      </mat-menu>
     </div>
 
     <!-- Sidebar Content (scrollable) -->
@@ -172,16 +162,17 @@
       </div>
     </div>
 
-    <!-- Collapse/Expand Button - Absolute Bottom -->
+    <!-- Collapse/Expand Button -->
     <div class="sidebar-collapse">
       <button 
         type="button" 
         class="collapse-btn" 
         (click)="isMobile() ? toggleSidenav() : toggleSidenavExpanded()"
         [matTooltip]="sidenavExpanded() ? 'Collapse sidebar' : 'Expand sidebar'"
-        [matTooltipDisabled]="isMobile()"
+        [matTooltipDisabled]="isMobile() || sidenavExpanded()"
         matTooltipPosition="right">
         <span class="material-icons-outlined">{{ (isMobile() || sidenavExpanded()) ? 'chevron_left' : 'chevron_right' }}</span>
+        <span class="collapse-label">{{ sidenavExpanded() ? 'Collapse' : 'Expand' }}</span>
       </button>
     </div>
   </mat-sidenav>

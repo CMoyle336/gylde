@@ -4,9 +4,36 @@ import { Router, CanActivateFn } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { UserProfileService } from '../services/user-profile.service';
 
+/**
+ * Helper to check if user's account is disabled and sign them out if so
+ */
+async function checkAndHandleDisabledAccount(
+  authService: AuthService,
+  userProfileService: UserProfileService,
+  router: Router
+): Promise<boolean> {
+  const user = authService.user();
+  if (!user) return false;
+
+  let profile = userProfileService.profile();
+  if (!profile) {
+    profile = await userProfileService.loadUserProfile(user.uid);
+  }
+
+  if (profile?.settings?.account?.disabled === true) {
+    // Account is disabled - sign out and redirect to home
+    await authService.signOutUser();
+    router.navigate(['/']);
+    return true; // Account is disabled
+  }
+
+  return false; // Account is not disabled
+}
+
 export const authGuard: CanActivateFn = async () => {
   const platformId = inject(PLATFORM_ID);
   const authService = inject(AuthService);
+  const userProfileService = inject(UserProfileService);
   const router = inject(Router);
 
   // Skip guard on server - let client handle auth
@@ -17,12 +44,18 @@ export const authGuard: CanActivateFn = async () => {
   // Wait for auth to initialize on page refresh
   await authService.waitForAuthReady();
 
-  if (authService.isAuthenticated()) {
-    return true;
+  if (!authService.isAuthenticated()) {
+    router.navigate(['/']);
+    return false;
   }
 
-  router.navigate(['/']);
-  return false;
+  // Check if account is disabled
+  const isDisabled = await checkAndHandleDisabledAccount(authService, userProfileService, router);
+  if (isDisabled) {
+    return false;
+  }
+
+  return true;
 };
 
 /**
@@ -102,6 +135,13 @@ export const onboardingCompleteGuard: CanActivateFn = async () => {
     profile = await userProfileService.loadUserProfile(user.uid);
   }
 
+  // Check if account is disabled
+  if (profile?.settings?.account?.disabled === true) {
+    await authService.signOutUser();
+    router.navigate(['/']);
+    return false;
+  }
+
   if (profile?.onboardingCompleted) {
     return true;
   }
@@ -143,6 +183,13 @@ export const onboardingIncompleteGuard: CanActivateFn = async () => {
   let profile = userProfileService.profile();
   if (!profile) {
     profile = await userProfileService.loadUserProfile(user.uid);
+  }
+
+  // Check if account is disabled
+  if (profile?.settings?.account?.disabled === true) {
+    await authService.signOutUser();
+    router.navigate(['/']);
+    return false;
   }
 
   if (!profile || !profile.onboardingCompleted) {

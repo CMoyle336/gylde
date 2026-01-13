@@ -620,6 +620,14 @@
   height: 1.125rem;
 }
 
+.profile-tagline {
+  margin: 0.75rem 0 0;
+  font-size: 1rem;
+  font-style: italic;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
 /* Action Buttons */
 .action-buttons {
   display: flex;
@@ -821,4 +829,76 @@
   .details {
     grid-template-columns: 1fr;
   }
+}
+
+/* ============================================
+   BLOCK USER DIALOG
+   ============================================ */
+
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.dialog {
+  background: var(--color-bg-elevated);
+  border-radius: 16px;
+  padding: 1.5rem;
+  max-width: 400px;
+  width: 100%;
+  border: 1px solid var(--color-border);
+}
+
+.dialog h3 {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem;
+  color: var(--color-text-primary);
+}
+
+.dialog p {
+  font-size: 0.9375rem;
+  color: var(--color-text-muted);
+  margin: 0 0 0.75rem;
+  line-height: 1.5;
+}
+
+.block-effects {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.5rem;
+}
+
+.block-effects li {
+  padding: 0.5rem 0;
+  padding-left: 1.5rem;
+  position: relative;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.block-effects li:last-child {
+  border-bottom: none;
+}
+
+.block-effects li::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  color: var(--color-accent);
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1rem;
 }

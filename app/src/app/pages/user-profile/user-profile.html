@@ -195,6 +195,9 @@
                 {{ city }}, {{ profile.onboarding?.country }}
               </div>
             }
+            @if (profile.onboarding?.tagline; as tagline) {
+              <p class="profile-tagline">{{ tagline }}</p>
+            }
           </div>
 
           <!-- Action Buttons -->
@@ -222,7 +225,7 @@
                 <mat-icon>flag</mat-icon>
                 Report User
               </button>
-              <button mat-menu-item (click)="onBlock()">
+              <button mat-menu-item (click)="openBlockDialog()">
                 <mat-icon>block</mat-icon>
                 Block User
               </button>
@@ -334,3 +337,34 @@
     </div>
   }
 </div>
+
+<!-- Block User Confirmation Dialog -->
+@if (showBlockDialog()) {
+  <div class="dialog-overlay" (click)="closeBlockDialog()">
+    <div class="dialog block-dialog" (click)="$event.stopPropagation()">
+      <h3>Block {{ profile()?.displayName || 'User' }}?</h3>
+      <p>Blocking this user means:</p>
+      <ul class="block-effects">
+        <li>You won't see each other in Discover or Matches</li>
+        <li>You can't send messages (existing chat preserved)</li>
+        <li>All activity history between you will be deleted</li>
+        <li>This action can be undone later</li>
+      </ul>
+
+      <div class="dialog-actions">
+        <button mat-button (click)="closeBlockDialog()">Cancel</button>
+        <button 
+          mat-flat-button 
+          color="warn" 
+          (click)="confirmBlockUser()" 
+          [disabled]="blockingUser()">
+          @if (blockingUser()) {
+            <mat-spinner diameter="20"></mat-spinner>
+          } @else {
+            Block User
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}

@@ -108,6 +108,9 @@ export interface OnboardingProfile {
   // Step 4: Support Orientation
   supportOrientation: string;
 
+  // Tagline - short phrase displayed on profile card and profile page
+  tagline?: string;
+
   // Step 5: Open-Ended Prompts
   idealRelationship: string;
   supportMeaning?: string;

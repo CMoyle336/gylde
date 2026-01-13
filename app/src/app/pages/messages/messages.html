@@ -357,46 +357,53 @@
         }
 
         <!-- Input Row -->
-        <div class="chat-input">
-          <!-- Hidden file input -->
-          <input 
-            #fileInput
-            type="file" 
-            accept="image/*" 
-            multiple 
-            hidden 
-            (change)="onFilesSelected($event)">
-          
-          <!-- Image upload button -->
-          <button 
-            type="button" 
-            class="attach-btn"
-            (click)="openImagePicker()"
-            [disabled]="sending()"
-            aria-label="Attach images">
-            <span class="material-icons-outlined">image</span>
-          </button>
+        @if (isOtherUserBlocked()) {
+          <div class="blocked-notice">
+            <span class="material-icons-outlined">block</span>
+            <span>You cannot send messages to this user</span>
+          </div>
+        } @else {
+          <div class="chat-input">
+            <!-- Hidden file input -->
+            <input 
+              #fileInput
+              type="file" 
+              accept="image/*" 
+              multiple 
+              hidden 
+              (change)="onFilesSelected($event)">
+            
+            <!-- Image upload button -->
+            <button 
+              type="button" 
+              class="attach-btn"
+              (click)="openImagePicker()"
+              [disabled]="sending()"
+              aria-label="Attach images">
+              <span class="material-icons-outlined">image</span>
+            </button>
 
-          <input
-            #messageInputEl
-            type="text"
-            placeholder="Type a message..."
-            [value]="messageInput()"
-            (input)="messageInput.set($any($event.target).value); onInput()"
-            (keydown)="onKeyDown($event)"
-            [disabled]="sending()">
-          <button 
-            type="button"
-            class="send-btn"
-            [disabled]="!canSend() || sending()"
-            (click)="send()">
-            @if (sending()) {
-              <div class="spinner"></div>
-            } @else {
-              <span class="material-icons-outlined">send</span>
-            }
-          </button>
-        </div>
+            <input
+              #messageInputEl
+              type="text"
+              placeholder="Type a message..."
+              [value]="messageInput()"
+              (input)="messageInput.set($any($event.target).value); onInput()"
+              (keydown)="onKeyDown($event)"
+              [disabled]="sending()">
+            <button 
+              type="button"
+              class="send-btn"
+              [disabled]="!canSend() || sending()"
+              (click)="send()">
+              @if (sending()) {
+                <div class="spinner"></div>
+              } @else {
+                <span class="material-icons-outlined">send</span>
+              }
+            </button>
+          </div>
+        }
       </footer>
     } @else {
       <!-- No chat selected (desktop only) -->

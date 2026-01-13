@@ -12,6 +12,7 @@ import {
   documentId,
 } from '@angular/fire/firestore';
 import { AuthService } from './auth.service';
+import { BlockService } from './block.service';
 import { UserProfile } from '../interfaces';
 
 export interface MatchProfile {
@@ -30,7 +31,7 @@ export interface MatchProfile {
   interactionDate: Date; // When the favorite/view happened
   // Additional fields for profile card
   connectionTypes: string[];
-  idealRelationship: string;
+  tagline: string;
   photos: string[];
 }
 
@@ -44,6 +45,7 @@ const STORAGE_KEY_PREFIX = 'matches_last_viewed_';
 export class MatchesService {
   private readonly firestore = inject(Firestore);
   private readonly authService = inject(AuthService);
+  private readonly blockService = inject(BlockService);
   private readonly platformId = inject(PLATFORM_ID);
 
   private readonly _loading = signal(false);
@@ -398,7 +400,13 @@ export class MatchesService {
     if (userIds.length === 0) return [];
 
     // Deduplicate user IDs while preserving order
-    const uniqueUserIds = [...new Set(userIds)];
+    let uniqueUserIds = [...new Set(userIds)];
+
+    // Filter out blocked users
+    const blockedIds = this.blockService.blockedUserIds();
+    uniqueUserIds = uniqueUserIds.filter(id => !blockedIds.has(id));
+    
+    if (uniqueUserIds.length === 0) return [];
     
     // Batch into chunks of 30 (Firestore 'in' limit)
     const BATCH_SIZE = 30;
@@ -430,6 +438,9 @@ export class MatchesService {
     for (const userId of uniqueUserIds) {
       const data = userDataMap.get(userId);
       if (!data) continue;
+
+      // Skip disabled accounts - they should not appear anywhere
+      if (data.settings?.account?.disabled === true) continue;
 
       // Note: We intentionally do NOT filter by profileVisible here.
       // profileVisible only affects discover/search results.
@@ -488,7 +499,7 @@ export class MatchesService {
         lastActiveAt: showLastActive ? lastActiveAt : null,
         interactionDate: interactionDates.get(userId) || new Date(),
         connectionTypes: data.onboarding?.connectionTypes || [],
-        idealRelationship: data.onboarding?.idealRelationship || '',
+        tagline: data.onboarding?.tagline || '',
       });
     }
 

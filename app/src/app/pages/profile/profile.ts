@@ -23,6 +23,7 @@ interface EditForm {
   // Basic info
   displayName: string;
   city: string;
+  tagline: string; // Short phrase for profile
   // Dating preferences
   genderIdentity: string;
   interestedIn: string[];
@@ -160,6 +161,7 @@ export class ProfileComponent implements OnInit {
   protected editForm: EditForm = {
     displayName: '',
     city: '',
+    tagline: '',
     genderIdentity: '',
     interestedIn: [],
     ageRangeMin: 18,
@@ -225,6 +227,7 @@ export class ProfileComponent implements OnInit {
     this.editForm = {
       displayName: profile.displayName || '',
       city: profile.onboarding?.city ? `${profile.onboarding.city}, ${profile.onboarding.country || ''}`.trim() : '',
+      tagline: profile.onboarding?.tagline || '',
       genderIdentity: profile.onboarding?.genderIdentity || '',
       interestedIn: [...(profile.onboarding?.interestedIn || [])],
       ageRangeMin: profile.onboarding?.ageRangeMin || 18,
@@ -278,6 +281,7 @@ export class ProfileComponent implements OnInit {
         ...profile.onboarding,
         city,
         country,
+        tagline: this.editForm.tagline,
         genderIdentity: this.editForm.genderIdentity,
         interestedIn: this.editForm.interestedIn,
         ageRangeMin: this.editForm.ageRangeMin,

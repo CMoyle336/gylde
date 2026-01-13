@@ -3,6 +3,7 @@ import {
   Component,
   inject,
   signal,
+  computed,
   OnInit,
   OnDestroy,
   effect,
@@ -16,6 +17,7 @@ import { NgOptimizedImage } from '@angular/common';
 import { CdkScrollable, ScrollingModule } from '@angular/cdk/scrolling';
 import { MatMenuModule } from '@angular/material/menu';
 import { MessageService, ConversationFilter } from '../../core/services/message.service';
+import { BlockService } from '../../core/services/block.service';
 import { ConversationDisplay, MessageDisplay } from '../../core/interfaces';
 
 interface ImagePreview {
@@ -43,6 +45,7 @@ export class MessagesComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly messageService = inject(MessageService);
+  private readonly blockService = inject(BlockService);
 
   @ViewChild(CdkScrollable) scrollable!: CdkScrollable;
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
@@ -87,6 +90,13 @@ export class MessagesComponent implements OnInit, OnDestroy {
   protected readonly otherUserStatus = this.messageService.otherUserStatus;
   protected readonly totalUnreadCount = this.messageService.totalUnreadCount;
   protected readonly archivedCount = this.messageService.archivedCount;
+  
+  // Check if the other user in the active conversation is blocked
+  protected readonly isOtherUserBlocked = computed(() => {
+    const convo = this.activeConversation();
+    if (!convo?.otherUser?.uid) return false;
+    return this.blockService.isUserBlocked(convo.otherUser.uid);
+  });
 
   constructor() {
     // Watch for conversations to load, then open the one from route if specified

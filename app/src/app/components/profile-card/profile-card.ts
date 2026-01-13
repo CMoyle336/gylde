@@ -21,7 +21,7 @@ export interface ProfileCardData {
   showLastActive?: boolean;
   lastActiveAt?: Date | null;
   connectionTypes?: string[];
-  idealRelationship?: string;
+  tagline?: string; // Short phrase displayed on card
   interactionDate?: Date; // For matches page - when the interaction happened
 }
 

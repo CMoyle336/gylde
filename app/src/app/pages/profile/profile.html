@@ -122,6 +122,20 @@
         <h2>Basic Info</h2>
         
         <div class="info-grid">
+          <div class="info-item full-width">
+            <label class="field-label">Tagline</label>
+            @if (isEditing()) {
+              <mat-form-field appearance="outline" class="full-width-field">
+                <input matInput [(ngModel)]="editForm.tagline" placeholder="A short phrase about you..." maxlength="100">
+                <mat-hint align="end">{{ editForm.tagline.length }}/100</mat-hint>
+              </mat-form-field>
+            } @else {
+              <span class="info-value tagline-value" [class.empty]="!profile.onboarding?.tagline">
+                {{ profile.onboarding?.tagline || 'Not set' }}
+              </span>
+            }
+          </div>
+
           <div class="info-item">
             <label class="field-label">Display Name</label>
             @if (isEditing()) {

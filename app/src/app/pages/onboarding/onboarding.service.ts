@@ -13,6 +13,7 @@ const INITIAL_DATA: OnboardingData = {
   ageRangeMax: 65,
   connectionTypes: [],
   supportOrientation: '',
+  tagline: '',
   idealRelationship: '',
   supportMeaning: '',
   photos: [],
