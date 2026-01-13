@@ -51,6 +51,11 @@ const EDUCATION_OPTIONS = [
   "Bachelor's degree", "Master's degree", 'Doctorate', 'Trade school'
 ];
 
+const INCOME_OPTIONS = [
+  'Under $50,000', '$50,000 - $100,000', '$100,000 - $150,000', '$150,000 - $200,000',
+  '$200,000 - $300,000', '$300,000 - $500,000', '$500,000 - $1,000,000', 'Over $1,000,000'
+];
+
 const VERIFICATION_OPTIONS = ['identity', 'photo', 'income'];
 
 // Cities in Michigan area for realistic location clustering
@@ -137,6 +142,7 @@ export interface SeedUser {
     drinker?: string;
     education?: string;
     occupation?: string;
+    income?: string;
   };
 }
 
@@ -363,6 +369,7 @@ export function generateUsers(count: number, seed?: number): SeedUser[] {
         ...(Math.random() > 0.4 && { drinker: pickRandom(DRINKING_OPTIONS) }),
         ...(Math.random() > 0.3 && { education: pickRandom(EDUCATION_OPTIONS) }),
         ...(Math.random() > 0.3 && { occupation: faker.person.jobTitle() }),
+        ...(Math.random() > 0.4 && { income: pickRandom(INCOME_OPTIONS) }),
       },
     };
 

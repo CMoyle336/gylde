@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal, OnInit, OnDestroy, computed, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { distinctUntilChanged, map } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -17,7 +18,7 @@ import { ActivityService } from '../../core/services/activity.service';
 import { PhotoAccessService } from '../../core/services/photo-access.service';
 import { BlockService, BlockStatus } from '../../core/services/block.service';
 import { ProfileSkeletonComponent } from './components';
-import { formatConnectionTypes as formatConnectionTypesUtil } from '../../core/constants/connection-types';
+import { formatConnectionTypes as formatConnectionTypesUtil, getSupportOrientationLabel } from '../../core/constants/connection-types';
 
 @Component({
   selector: 'app-user-profile',
@@ -135,9 +136,12 @@ export class UserProfileComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     // Subscribe to route param changes to handle navigation between different user profiles
     this.route.paramMap
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(params => {
-        const userId = params.get('userId');
+      .pipe(
+        map(params => params.get('userId')),
+        distinctUntilChanged(),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe(userId => {
         if (userId) {
           // Reset state when navigating to a different profile
           this.selectedPhotoIndex.set(0);
@@ -360,6 +364,10 @@ export class UserProfileComponent implements OnInit, OnDestroy {
 
   protected formatConnectionTypes(types: string[] | undefined): string {
     return formatConnectionTypesUtil(types);
+  }
+
+  protected formatSupportOrientation(value: string | undefined): string {
+    return getSupportOrientationLabel(value);
   }
 
   protected isOnline(): boolean {

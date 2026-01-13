@@ -85,13 +85,17 @@ service cloud.firestore {
       // ------------------------------------------
       match /activities/{activityId} {
         // Owner can read their own activities
-        allow read: if isOwner(userId);
+        // Users can also read activities where they are the fromUserId (to update their own view activity)
+        allow read: if isOwner(userId) 
+          || (isAuthenticated() && resource.data.fromUserId == request.auth.uid);
         
         // Activities are created by Cloud Functions
-        // Users can only update (mark as read) or delete their own
+        // Users can only update (mark as read) their own activities
+        // OR update activities they created (as fromUserId) - for view activity updates
         allow create: if false; // Cloud Functions only
         allow update: if isOwner(userId) 
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read'])
+          || (isAuthenticated() && resource.data.fromUserId == request.auth.uid);
         allow delete: if isOwner(userId);
       }
       
@@ -173,7 +177,8 @@ service cloud.firestore {
         && request.resource.data.viewedUserId != request.auth.uid; // Can't view yourself
       
       // Users can update their own views (to update timestamp)
-      allow update: if isAuthenticated() 
+      allow update: if isAuthenticated()
+        && resource.data != null
         && request.auth.uid == resource.data.viewerId
         && request.resource.data.viewerId == resource.data.viewerId // Can't change viewer
         && request.resource.data.viewedUserId == resource.data.viewedUserId; // Can't change viewed

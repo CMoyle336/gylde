@@ -267,6 +267,18 @@
           }
         </div>
 
+        <!-- Support Orientation -->
+        <div class="profile-block">
+          <h3>Support Orientation</h3>
+          @if (profile.onboarding?.supportOrientation) {
+            <div class="tag-list">
+              <span class="tag">{{ formatSupportOrientation(profile.onboarding?.supportOrientation) }}</span>
+            </div>
+          } @else {
+            <p class="empty-placeholder">Not specified</p>
+          }
+        </div>
+
         <!-- Personal Details -->
         <div class="profile-block details-grid">
           <h3>Details</h3>
@@ -317,6 +329,12 @@
               <span class="detail-label">Occupation</span>
               <span class="detail-value" [class.empty]="!profile.onboarding?.occupation">
                 {{ profile.onboarding?.occupation || 'Not specified' }}
+              </span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Income</span>
+              <span class="detail-value" [class.empty]="!profile.onboarding?.income">
+                {{ profile.onboarding?.income || 'Not specified' }}
               </span>
             </div>
             <div class="detail-item">

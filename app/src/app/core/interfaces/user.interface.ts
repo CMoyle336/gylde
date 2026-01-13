@@ -132,4 +132,5 @@ export interface OnboardingProfile {
   drinker?: string;
   education?: string;
   occupation?: string;
+  income?: string; // e.g., "$100,000 - $150,000"
 }

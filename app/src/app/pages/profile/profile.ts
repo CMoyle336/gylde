@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, ElementRef, OnInit, ViewChild, effect, inject, signal, computed } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, OnInit, OnDestroy, ViewChild, effect, inject, signal, computed, PLATFORM_ID, viewChild } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -13,11 +14,14 @@ import { UserProfileService } from '../../core/services/user-profile.service';
 import { ImageUploadService } from '../../core/services/image-upload.service';
 import { AuthService } from '../../core/services/auth.service';
 import { PhotoAccessService } from '../../core/services/photo-access.service';
-import { OnboardingProfile } from '../../core/interfaces';
+import { PlacesService, PlaceSuggestion } from '../../core/services/places.service';
+import { OnboardingProfile, GeoLocation } from '../../core/interfaces';
 import { Photo } from '../../core/interfaces/photo.interface';
 import { ALL_CONNECTION_TYPES, getConnectionTypeLabel, SUPPORT_ORIENTATION_OPTIONS, getSupportOrientationLabel } from '../../core/constants/connection-types';
 import { MAX_PHOTOS_PER_USER } from '../../core/constants/app-config';
 import { PhotoAccessDialogComponent } from '../../components/photo-access-dialog';
+
+type LocationStatus = 'idle' | 'detecting' | 'success' | 'error';
 
 interface EditForm {
   // Basic info
@@ -43,6 +47,7 @@ interface EditForm {
   drinker: string;
   education: string;
   occupation: string;
+  income: string;
 }
 
 interface UploadingPhoto {
@@ -69,16 +74,34 @@ interface UploadingPhoto {
     MatTooltipModule,
   ],
 })
-export class ProfileComponent implements OnInit {
+export class ProfileComponent implements OnInit, OnDestroy {
   private readonly userProfileService = inject(UserProfileService);
   private readonly imageUploadService = inject(ImageUploadService);
   private readonly authService = inject(AuthService);
   private readonly photoAccessService = inject(PhotoAccessService);
+  private readonly placesService = inject(PlacesService);
+  private readonly platformId = inject(PLATFORM_ID);
   private readonly dialog = inject(MatDialog);
 
   protected readonly uploadError = signal<string | null>(null);
 
   @ViewChild('photoInput') photoInput!: ElementRef<HTMLInputElement>;
+
+  // Location autocomplete
+  private readonly cityInputRef = viewChild<ElementRef<HTMLInputElement>>('cityInput');
+  protected readonly locationStatus = signal<LocationStatus>('idle');
+  protected readonly locationMessage = signal<string | null>(null);
+  protected readonly cityInputValue = signal('');
+  protected readonly suggestions = signal<PlaceSuggestion[]>([]);
+  protected readonly showSuggestions = signal(false);
+  protected readonly isSearchingLocation = signal(false);
+  protected readonly highlightedIndex = signal(-1);
+  private searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+  private clickOutsideHandler = (e: MouseEvent) => this.onClickOutside(e);
+  
+  // Store location data for saving
+  private pendingLocation: GeoLocation | null = null;
+  private pendingCountry: string = '';
 
   protected readonly profile = this.userProfileService.profile;
   protected readonly isEditing = signal(false);
@@ -155,6 +178,20 @@ export class ProfileComponent implements OnInit {
       }
       this.photoPrivacy.set(privacyMap);
     }
+
+    // Add click outside listener for autocomplete
+    if (isPlatformBrowser(this.platformId)) {
+      document.addEventListener('click', this.clickOutsideHandler);
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (isPlatformBrowser(this.platformId)) {
+      document.removeEventListener('click', this.clickOutsideHandler);
+    }
+    if (this.searchDebounceTimer) {
+      clearTimeout(this.searchDebounceTimer);
+    }
   }
 
   // Edit form data
@@ -179,6 +216,7 @@ export class ProfileComponent implements OnInit {
     drinker: '',
     education: '',
     occupation: '',
+    income: '',
   };
 
   // Options for secondary profile fields
@@ -208,6 +246,12 @@ export class ProfileComponent implements OnInit {
     'Master\'s degree', 'Doctorate', 'Trade school', 'Prefer not to say'
   ];
 
+  protected readonly incomeOptions = [
+    'Under $50,000', '$50,000 - $100,000', '$100,000 - $150,000', '$150,000 - $200,000',
+    '$200,000 - $300,000', '$300,000 - $500,000', '$500,000 - $1,000,000', 'Over $1,000,000',
+    'Prefer not to say'
+  ];
+
   // Options for form fields (values must match onboarding data)
   protected readonly genderOptions = [
     { value: 'women', label: 'Women' },
@@ -223,10 +267,20 @@ export class ProfileComponent implements OnInit {
     const profile = this.profile();
     if (!profile) return;
 
+    // Initialize city input value for autocomplete
+    const cityDisplay = profile.onboarding?.city 
+      ? `${profile.onboarding.city}, ${profile.onboarding.country || ''}`.trim().replace(/, $/, '')
+      : '';
+    this.cityInputValue.set(cityDisplay);
+    
+    // Store existing location data
+    this.pendingLocation = profile.onboarding?.location || null;
+    this.pendingCountry = profile.onboarding?.country || '';
+
     // Initialize form with current values
     this.editForm = {
       displayName: profile.displayName || '',
-      city: profile.onboarding?.city ? `${profile.onboarding.city}, ${profile.onboarding.country || ''}`.trim() : '',
+      city: profile.onboarding?.city || '',
       tagline: profile.onboarding?.tagline || '',
       genderIdentity: profile.onboarding?.genderIdentity || '',
       interestedIn: [...(profile.onboarding?.interestedIn || [])],
@@ -245,6 +299,7 @@ export class ProfileComponent implements OnInit {
       drinker: profile.onboarding?.drinker || '',
       education: profile.onboarding?.education || '',
       occupation: profile.onboarding?.occupation || '',
+      income: profile.onboarding?.income || '',
     };
 
     // Photos are already synced via effect
@@ -258,6 +313,15 @@ export class ProfileComponent implements OnInit {
       this.editablePhotos.set([...(profile.onboarding?.photos || [])]);
       this.profilePhotoUrl.set(profile.photoURL || null);
     }
+    
+    // Reset location state
+    this.suggestions.set([]);
+    this.showSuggestions.set(false);
+    this.locationStatus.set('idle');
+    this.locationMessage.set(null);
+    this.pendingLocation = null;
+    this.pendingCountry = '';
+    
     this.isEditing.set(false);
   }
 
@@ -271,16 +335,17 @@ export class ProfileComponent implements OnInit {
       const photos = this.editablePhotos();
       const profilePhoto = this.profilePhotoUrl() || photos[0] || null;
 
-      // Parse city/country from combined input
-      const locationParts = this.editForm.city.split(',').map(s => s.trim());
-      const city = locationParts[0] || '';
-      const country = locationParts.slice(1).join(', ') || profile.onboarding.country || '';
+      // Use the city from editForm (set by autocomplete)
+      const city = this.editForm.city || profile.onboarding.city || '';
+      const country = this.pendingCountry || profile.onboarding.country || '';
+      const location = this.pendingLocation || profile.onboarding.location;
 
       // Build updated onboarding data
       const updatedOnboarding: Partial<OnboardingProfile> = {
         ...profile.onboarding,
         city,
         country,
+        ...(location && { location }),
         tagline: this.editForm.tagline,
         genderIdentity: this.editForm.genderIdentity,
         interestedIn: this.editForm.interestedIn,
@@ -303,6 +368,7 @@ export class ProfileComponent implements OnInit {
       if (this.editForm.drinker) updatedOnboarding.drinker = this.editForm.drinker;
       if (this.editForm.education) updatedOnboarding.education = this.editForm.education;
       if (this.editForm.occupation) updatedOnboarding.occupation = this.editForm.occupation;
+      if (this.editForm.income) updatedOnboarding.income = this.editForm.income;
 
       // Update profile (including displayName at the root level)
       await this.userProfileService.updateProfile({
@@ -590,5 +656,206 @@ export class ProfileComponent implements OnInit {
 
   protected getConnectionTypeLabel(type: string): string {
     return getConnectionTypeLabel(type);
+  }
+
+  // ============================================
+  // Location Autocomplete Methods
+  // ============================================
+
+  /**
+   * Handle input changes - trigger autocomplete search
+   */
+  protected onLocationInputChange(value: string): void {
+    this.cityInputValue.set(value);
+    this.highlightedIndex.set(-1);
+
+    // Clear previous timer
+    if (this.searchDebounceTimer) {
+      clearTimeout(this.searchDebounceTimer);
+    }
+
+    if (!value.trim()) {
+      this.suggestions.set([]);
+      this.showSuggestions.set(false);
+      return;
+    }
+
+    // Debounce search
+    this.searchDebounceTimer = setTimeout(() => {
+      this.searchPlaces(value);
+    }, 300);
+  }
+
+  /**
+   * Search for places matching the input
+   */
+  private async searchPlaces(query: string): Promise<void> {
+    this.isSearchingLocation.set(true);
+
+    try {
+      const results = await this.placesService.getSuggestions(query);
+      this.suggestions.set(results);
+      this.showSuggestions.set(results.length > 0);
+    } catch (error) {
+      console.error('Failed to search places:', error);
+      this.suggestions.set([]);
+    } finally {
+      this.isSearchingLocation.set(false);
+    }
+  }
+
+  /**
+   * Handle selecting a suggestion
+   */
+  protected async selectSuggestion(suggestion: PlaceSuggestion): Promise<void> {
+    this.showSuggestions.set(false);
+    this.cityInputValue.set(suggestion.description);
+    this.isSearchingLocation.set(true);
+
+    try {
+      const details = await this.placesService.getPlaceDetails(suggestion.placeId);
+
+      if (details) {
+        // Store the location data for saving
+        this.editForm.city = details.city;
+        this.pendingCountry = details.countryCode;
+        this.pendingLocation = details.location;
+        
+        this.locationStatus.set('success');
+        this.locationMessage.set(null);
+      }
+    } catch (error) {
+      console.error('Failed to get place details:', error);
+    } finally {
+      this.isSearchingLocation.set(false);
+    }
+  }
+
+  /**
+   * Handle keyboard navigation in autocomplete
+   */
+  protected onLocationKeyDown(event: KeyboardEvent): void {
+    const suggestionsList = this.suggestions();
+
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        this.highlightedIndex.update((i) =>
+          i < suggestionsList.length - 1 ? i + 1 : 0
+        );
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        this.highlightedIndex.update((i) =>
+          i > 0 ? i - 1 : suggestionsList.length - 1
+        );
+        break;
+      case 'Enter':
+        event.preventDefault();
+        const idx = this.highlightedIndex();
+        if (idx >= 0 && idx < suggestionsList.length) {
+          this.selectSuggestion(suggestionsList[idx]);
+        }
+        break;
+      case 'Escape':
+        this.showSuggestions.set(false);
+        this.highlightedIndex.set(-1);
+        break;
+    }
+  }
+
+  /**
+   * Show suggestions on focus if we have results
+   */
+  protected onLocationInputFocus(): void {
+    if (this.suggestions().length > 0) {
+      this.showSuggestions.set(true);
+    }
+  }
+
+  /**
+   * Handle click outside to close suggestions
+   */
+  private onClickOutside(event: MouseEvent): void {
+    const inputEl = this.cityInputRef()?.nativeElement;
+    if (inputEl && !inputEl.contains(event.target as Node)) {
+      // Also check if clicking on the suggestions list
+      const target = event.target as HTMLElement;
+      if (!target.closest('.suggestions-list')) {
+        this.showSuggestions.set(false);
+      }
+    }
+  }
+
+  /**
+   * Request browser geolocation and reverse geocode to get city
+   */
+  protected requestGeolocation(): void {
+    if (!navigator.geolocation) {
+      this.locationStatus.set('error');
+      this.locationMessage.set('Geolocation is not supported by your browser');
+      return;
+    }
+
+    this.locationStatus.set('detecting');
+    this.locationMessage.set(null);
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const location: GeoLocation = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        };
+
+        // Reverse geocode to get city info
+        const result = await this.placesService.reverseGeocode(
+          location.latitude,
+          location.longitude
+        );
+
+        if (result) {
+          // Update form and pending location data
+          this.editForm.city = result.city;
+          this.pendingCountry = result.countryCode;
+          this.pendingLocation = result.location;
+          
+          // Update UI
+          this.cityInputValue.set(result.description);
+          this.locationStatus.set('success');
+          this.locationMessage.set('Location detected!');
+          
+          // Clear message after 3 seconds
+          setTimeout(() => {
+            if (this.locationStatus() === 'success') {
+              this.locationMessage.set(null);
+            }
+          }, 3000);
+        } else {
+          this.locationStatus.set('error');
+          this.locationMessage.set('Could not determine your city. Please type it manually.');
+        }
+      },
+      (error) => {
+        this.locationStatus.set('error');
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            this.locationMessage.set('Location access denied');
+            break;
+          case error.POSITION_UNAVAILABLE:
+            this.locationMessage.set('Location unavailable');
+            break;
+          case error.TIMEOUT:
+            this.locationMessage.set('Location request timed out');
+            break;
+          default:
+            this.locationMessage.set('Could not detect location');
+        }
+      },
+      {
+        enableHighAccuracy: false,
+        timeout: 10000,
+        maximumAge: 300000,
+      }
+    );
   }
 }

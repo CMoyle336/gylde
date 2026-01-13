@@ -150,9 +150,83 @@
           <div class="info-item">
             <label class="field-label">Location</label>
             @if (isEditing()) {
-              <mat-form-field appearance="outline">
-                <input matInput [(ngModel)]="editForm.city" placeholder="City, State/Province, Country">
-              </mat-form-field>
+              <div class="location-autocomplete-wrapper">
+                <!-- Location Status Message -->
+                @if (locationMessage()) {
+                  <div class="location-status" [class]="locationStatus()">
+                    @if (locationStatus() === 'detecting') {
+                      <span class="location-spinner"></span>
+                    } @else if (locationStatus() === 'success') {
+                      <mat-icon>check_circle</mat-icon>
+                    } @else if (locationStatus() === 'error') {
+                      <mat-icon>error_outline</mat-icon>
+                    }
+                    <span>{{ locationMessage() }}</span>
+                  </div>
+                }
+                
+                <div class="location-input-row">
+                  <div class="autocomplete-container">
+                    <div class="input-wrapper">
+                      <mat-icon class="input-icon">location_on</mat-icon>
+                      <input 
+                        #cityInput
+                        type="text"
+                        class="location-input"
+                        [class.searching]="isSearchingLocation()"
+                        placeholder="Start typing a city..."
+                        [value]="cityInputValue()"
+                        (input)="onLocationInputChange($any($event.target).value)"
+                        (keydown)="onLocationKeyDown($event)"
+                        (focus)="onLocationInputFocus()"
+                        autocomplete="off"
+                        role="combobox"
+                        aria-autocomplete="list"
+                        [attr.aria-expanded]="showSuggestions()"
+                        aria-haspopup="listbox">
+                      @if (isSearchingLocation()) {
+                        <span class="input-spinner"></span>
+                      }
+                    </div>
+                    
+                    <!-- Autocomplete Suggestions Dropdown -->
+                    @if (showSuggestions()) {
+                      <ul class="suggestions-list" role="listbox">
+                        @for (suggestion of suggestions(); track suggestion.placeId; let i = $index) {
+                          <li 
+                            class="suggestion-item"
+                            [class.highlighted]="highlightedIndex() === i"
+                            role="option"
+                            [attr.aria-selected]="highlightedIndex() === i"
+                            (click)="selectSuggestion(suggestion)"
+                            (mouseenter)="highlightedIndex.set(i)">
+                            <mat-icon class="suggestion-icon">place</mat-icon>
+                            <span class="suggestion-text">
+                              <span class="suggestion-main">{{ suggestion.mainText }}</span>
+                              <span class="suggestion-secondary">{{ suggestion.secondaryText }}</span>
+                            </span>
+                          </li>
+                        }
+                      </ul>
+                    }
+                  </div>
+                  
+                  <!-- Geolocation Button -->
+                  <button 
+                    type="button" 
+                    class="geolocation-btn"
+                    [class.detecting]="locationStatus() === 'detecting'"
+                    [disabled]="locationStatus() === 'detecting'"
+                    (click)="requestGeolocation()"
+                    matTooltip="Use my current location">
+                    @if (locationStatus() === 'detecting') {
+                      <span class="btn-spinner"></span>
+                    } @else {
+                      <mat-icon>my_location</mat-icon>
+                    }
+                  </button>
+                </div>
+              </div>
             } @else {
               <span class="info-value">
                 @if (profile.onboarding; as onboarding) {
@@ -179,29 +253,6 @@
             </span>
           </div>
 
-          <div class="info-item">
-            <label class="field-label">Support orientation</label>
-            @if (isEditing()) {
-              <div class="chip-group">
-                @for (option of supportOrientationOptions; track option.value) {
-                  <button type="button"
-                          mat-stroked-button
-                          [class.selected]="editForm.supportOrientation === option.value"
-                          (click)="selectSupportOrientation(option.value)">
-                    {{ option.label }}
-                  </button>
-                }
-              </div>
-            } @else {
-              @if (profile.onboarding?.supportOrientation) {
-                <div class="tag-list">
-                  <span class="tag">{{ formatSupportOrientation(profile.onboarding?.supportOrientation) }}</span>
-                </div>
-              } @else {
-                <span class="info-value empty">Not set</span>
-              }
-            }
-          </div>
         </div>
       </section>
 
@@ -210,6 +261,7 @@
         <h2>Dating Preferences</h2>
         
         <div class="info-grid">
+          <!-- Row 1: Identity and Age Range -->
           <div class="info-item">
             <label class="field-label">I identify as</label>
             @if (isEditing()) {
@@ -223,24 +275,6 @@
               </mat-form-field>
             } @else {
               <span class="info-value">{{ formatGender(profile.onboarding?.genderIdentity) }}</span>
-            }
-          </div>
-
-          <div class="info-item">
-            <label class="field-label">Interested in</label>
-            @if (isEditing()) {
-              <div class="chip-group">
-                @for (option of genderOptions; track option.value) {
-                  <button type="button"
-                          mat-stroked-button
-                          [class.selected]="editForm.interestedIn.includes(option.value)"
-                          (click)="toggleInterest(option.value)">
-                    {{ option.label }}
-                  </button>
-                }
-              </div>
-            } @else {
-              <span class="info-value">{{ formatInterests(profile.onboarding?.interestedIn) }}</span>
             }
           </div>
 
@@ -270,6 +304,50 @@
                   Not set
                 }
               </span>
+            }
+          </div>
+
+          <!-- Row 2: Interested in - full width for horizontal chips -->
+          <div class="info-item full-width">
+            <label class="field-label">Interested in</label>
+            @if (isEditing()) {
+              <div class="chip-group">
+                @for (option of genderOptions; track option.value) {
+                  <button type="button"
+                          mat-stroked-button
+                          [class.selected]="editForm.interestedIn.includes(option.value)"
+                          (click)="toggleInterest(option.value)">
+                    {{ option.label }}
+                  </button>
+                }
+              </div>
+            } @else {
+              <span class="info-value">{{ formatInterests(profile.onboarding?.interestedIn) }}</span>
+            }
+          </div>
+
+          <!-- Row 3: Support orientation - full width for horizontal chips -->
+          <div class="info-item full-width">
+            <label class="field-label">Support orientation</label>
+            @if (isEditing()) {
+              <div class="chip-group">
+                @for (option of supportOrientationOptions; track option.value) {
+                  <button type="button"
+                          mat-stroked-button
+                          [class.selected]="editForm.supportOrientation === option.value"
+                          (click)="selectSupportOrientation(option.value)">
+                    {{ option.label }}
+                  </button>
+                }
+              </div>
+            } @else {
+              @if (profile.onboarding?.supportOrientation) {
+                <div class="tag-list">
+                  <span class="tag">{{ formatSupportOrientation(profile.onboarding?.supportOrientation) }}</span>
+                </div>
+              } @else {
+                <span class="info-value empty">Not set</span>
+              }
             }
           </div>
         </div>
@@ -467,6 +545,22 @@
               </mat-form-field>
             } @else {
               <span class="info-value">{{ profile.onboarding?.occupation || 'Not set' }}</span>
+            }
+          </div>
+
+          <div class="info-item">
+            <label class="field-label">Income</label>
+            @if (isEditing()) {
+              <mat-form-field appearance="outline">
+                <mat-select [(ngModel)]="editForm.income" placeholder="Select...">
+                  <mat-option value="">Not specified</mat-option>
+                  @for (option of incomeOptions; track option) {
+                    <mat-option [value]="option">{{ option }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            } @else {
+              <span class="info-value">{{ profile.onboarding?.income || 'Not set' }}</span>
             }
           </div>
         </div>
