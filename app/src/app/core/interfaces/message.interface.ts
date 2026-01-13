@@ -64,6 +64,7 @@ export interface ConversationDisplay {
   lastMessageTime: Date | null;
   unreadCount: number;
   isArchived: boolean;
+  isBlocked?: boolean;
 }
 
 /**

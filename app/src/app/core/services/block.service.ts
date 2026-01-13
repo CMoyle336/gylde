@@ -1,5 +1,6 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, inject, signal, DestroyRef } from '@angular/core';
 import { Functions, httpsCallable } from '@angular/fire/functions';
+import { Firestore, collection, onSnapshot, Unsubscribe } from '@angular/fire/firestore';
 import { AuthService } from './auth.service';
 
 export interface BlockStatus {
@@ -19,18 +20,27 @@ export interface BlockedUsersResult {
 })
 export class BlockService {
   private readonly functions = inject(Functions);
+  private readonly firestore = inject(Firestore);
   private readonly authService = inject(AuthService);
 
   // Cache of blocked user IDs for filtering
   private readonly _blockedUserIds = signal<Set<string>>(new Set());
+  private readonly _blockedByMe = signal<Set<string>>(new Set());
+  private readonly _blockedMe = signal<Set<string>>(new Set());
   private readonly _loading = signal(false);
   private _initialized = false;
 
+  // Real-time subscription handles
+  private blocksUnsubscribe: Unsubscribe | null = null;
+  private blockedByUnsubscribe: Unsubscribe | null = null;
+
   readonly blockedUserIds = this._blockedUserIds.asReadonly();
+  readonly blockedByMe = this._blockedByMe.asReadonly();
+  readonly blockedMe = this._blockedMe.asReadonly();
   readonly loading = this._loading.asReadonly();
 
   /**
-   * Load all blocked users for the current user
+   * Load all blocked users for the current user and set up real-time subscriptions
    * Should be called on app init after auth
    */
   async loadBlockedUsers(): Promise<void> {
@@ -41,17 +51,76 @@ export class BlockService {
 
     this._loading.set(true);
     try {
+      // Initial load via Cloud Function
       const getBlockedUsersFn = httpsCallable<void, BlockedUsersResult>(
         this.functions,
         'getBlockedUsers'
       );
       const result = await getBlockedUsersFn();
+      this._blockedByMe.set(new Set(result.data.blockedByMe));
+      this._blockedMe.set(new Set(result.data.blockedMe));
       this._blockedUserIds.set(new Set(result.data.blockedUserIds));
+      
+      // Set up real-time subscriptions for immediate updates
+      this.setupRealtimeSubscriptions(user.uid);
+      
       this._initialized = true;
     } catch (error) {
       console.error('Error loading blocked users:', error);
     } finally {
       this._loading.set(false);
+    }
+  }
+
+  /**
+   * Set up real-time subscriptions for block changes
+   */
+  private setupRealtimeSubscriptions(userId: string): void {
+    // Clean up any existing subscriptions
+    this.cleanupSubscriptions();
+
+    // Subscribe to users I've blocked (users/{me}/blocks)
+    const blocksRef = collection(this.firestore, `users/${userId}/blocks`);
+    this.blocksUnsubscribe = onSnapshot(blocksRef, (snapshot) => {
+      const blockedByMe = new Set<string>();
+      snapshot.forEach(doc => blockedByMe.add(doc.id));
+      this._blockedByMe.set(blockedByMe);
+      this.updateCombinedBlockedUsers();
+    }, (error) => {
+      console.error('Error in blocks subscription:', error);
+    });
+
+    // Subscribe to users who blocked me (users/{me}/blockedBy)
+    const blockedByRef = collection(this.firestore, `users/${userId}/blockedBy`);
+    this.blockedByUnsubscribe = onSnapshot(blockedByRef, (snapshot) => {
+      const blockedMe = new Set<string>();
+      snapshot.forEach(doc => blockedMe.add(doc.id));
+      this._blockedMe.set(blockedMe);
+      this.updateCombinedBlockedUsers();
+    }, (error) => {
+      console.error('Error in blockedBy subscription:', error);
+    });
+  }
+
+  /**
+   * Update the combined set of all blocked users (bidirectional)
+   */
+  private updateCombinedBlockedUsers(): void {
+    const combined = new Set([...this._blockedByMe(), ...this._blockedMe()]);
+    this._blockedUserIds.set(combined);
+  }
+
+  /**
+   * Clean up real-time subscriptions
+   */
+  private cleanupSubscriptions(): void {
+    if (this.blocksUnsubscribe) {
+      this.blocksUnsubscribe();
+      this.blocksUnsubscribe = null;
+    }
+    if (this.blockedByUnsubscribe) {
+      this.blockedByUnsubscribe();
+      this.blockedByUnsubscribe = null;
     }
   }
 
@@ -141,7 +210,10 @@ export class BlockService {
    * Reset the service (call on logout)
    */
   reset(): void {
+    this.cleanupSubscriptions();
     this._blockedUserIds.set(new Set());
+    this._blockedByMe.set(new Set());
+    this._blockedMe.set(new Set());
     this._initialized = false;
   }
 }

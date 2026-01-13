@@ -62,6 +62,7 @@
             class="conversation-item"
             [class.active]="activeConversation()?.id === conversation.id"
             [class.unread]="conversation.unreadCount > 0"
+            [class.blocked]="conversation.isBlocked"
             (click)="openConversation(conversation)">
             <div class="conversation-avatar">
               @if (conversation.otherUser.photoURL) {
@@ -69,13 +70,23 @@
               } @else {
                 <span class="material-icons-outlined avatar-placeholder">person</span>
               }
-              @if (conversation.unreadCount > 0) {
+              @if (conversation.isBlocked) {
+                <span class="blocked-indicator" title="Blocked">
+                  <span class="material-icons-outlined">block</span>
+                </span>
+              } @else if (conversation.unreadCount > 0) {
                 <span class="unread-indicator">{{ conversation.unreadCount > 9 ? '9+' : conversation.unreadCount }}</span>
               }
             </div>
             <div class="conversation-info">
               <span class="conversation-name">{{ conversation.otherUser.displayName || 'Unknown' }}</span>
-              <span class="conversation-preview">{{ conversation.lastMessage || 'New chat' }}</span>
+              <span class="conversation-preview">
+                @if (conversation.isBlocked) {
+                  <span class="blocked-text">Blocked</span>
+                } @else {
+                  {{ conversation.lastMessage || 'New chat' }}
+                }
+              </span>
             </div>
             <span class="conversation-time">{{ formatTime(conversation.lastMessageTime) }}</span>
           </button>

@@ -20,6 +20,7 @@ import {
 } from '@angular/fire/firestore';
 import { AuthService } from './auth.service';
 import { StorageService } from './storage.service';
+import { BlockService } from './block.service';
 import {
   Message,
   Conversation,
@@ -37,6 +38,7 @@ export class MessageService {
   private readonly firestore = inject(Firestore);
   private readonly storageService = inject(StorageService);
   private readonly authService = inject(AuthService);
+  private readonly blockService = inject(BlockService);
 
   private readonly _conversations = signal<ConversationDisplay[]>([]);
   private readonly _activeConversation = signal<ConversationDisplay | null>(null);
@@ -63,19 +65,31 @@ export class MessageService {
   readonly conversationFilter = this._conversationFilter.asReadonly();
   readonly otherUserStatus = this._otherUserStatus.asReadonly();
 
-  // Filtered conversations based on current filter
+  // Filtered conversations based on current filter and block status
   readonly filteredConversations = computed(() => {
     const convos = this._conversations();
     const filter = this._conversationFilter();
+    const blockedUserIds = this.blockService.blockedUserIds();
     
+    // First filter by archive/unread status
+    let filtered: ConversationDisplay[];
     switch (filter) {
       case 'unread':
-        return convos.filter(c => c.unreadCount > 0 && !c.isArchived);
+        filtered = convos.filter(c => c.unreadCount > 0 && !c.isArchived);
+        break;
       case 'archived':
-        return convos.filter(c => c.isArchived);
+        filtered = convos.filter(c => c.isArchived);
+        break;
       default: // 'all'
-        return convos.filter(c => !c.isArchived);
+        filtered = convos.filter(c => !c.isArchived);
     }
+    
+    // Then filter out blocked users (but keep the conversation visible so they can access chat history)
+    // We mark blocked conversations differently rather than hiding them completely
+    return filtered.map(c => ({
+      ...c,
+      isBlocked: c.otherUser?.uid ? blockedUserIds.has(c.otherUser.uid) : false,
+    }));
   });
 
   // Count of archived conversations for badge
@@ -114,6 +128,7 @@ export class MessageService {
       where('participants', 'array-contains', currentUser.uid),
       orderBy('updatedAt', 'desc')
     );
+
 
     this.conversationsUnsubscribe = onSnapshot(
       q,

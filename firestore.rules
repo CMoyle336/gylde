@@ -3,6 +3,8 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+
+
     // ============================================
     // HELPER FUNCTIONS
     // ============================================
@@ -73,8 +75,10 @@ service cloud.firestore {
       // Managed exclusively by Cloud Functions
       // ------------------------------------------
       match /blockedBy/{blockerUserId} {
-        // Users should not be able to see who blocked them
-        allow read: if false;
+        // Owner can read their own blockedBy to enable real-time UI updates
+        // (they know they're blocked when messaging/viewing is disabled, but 
+        // this allows the UI to update immediately without refreshing)
+        allow read: if isOwner(userId);
         // All writes handled by Cloud Functions
         allow write: if false;
       }
