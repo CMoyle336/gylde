@@ -55,6 +55,10 @@ export class MessageService {
   private userStatusUnsubscribe: Unsubscribe | null = null;
   private typingTimeout: ReturnType<typeof setTimeout> | null = null;
   private lastTypingUpdate = 0;
+  
+  // Guard to prevent duplicate markConversationAsRead calls
+  private markingAsReadConversationId: string | null = null;
+  private lastMarkedAsReadTime = 0;
 
   readonly conversations = this._conversations.asReadonly();
   readonly activeConversation = this._activeConversation.asReadonly();
@@ -210,6 +214,9 @@ export class MessageService {
     this._isOtherUserTyping.set(false);
     this._otherUserStatus.set(null);
     this.unsubscribeFromMessages();
+    
+    // Reset markAsRead guard
+    this.markingAsReadConversationId = null;
   }
 
   /**
@@ -763,10 +770,32 @@ export class MessageService {
 
   /**
    * Mark all messages in a conversation as read
+   * Includes guards to prevent duplicate/cascading calls
    */
   private async markConversationAsRead(conversationId: string): Promise<void> {
     const currentUser = this.authService.user();
     if (!currentUser) return;
+
+    const now = Date.now();
+    
+    // Guard: prevent duplicate calls for the same conversation within 2 seconds
+    if (
+      this.markingAsReadConversationId === conversationId &&
+      now - this.lastMarkedAsReadTime < 2000
+    ) {
+      return;
+    }
+
+    // Check if there's actually something to mark as read
+    const conversation = this._conversations().find(c => c.id === conversationId);
+    if (conversation && conversation.unreadCount === 0) {
+      // Already marked as read, skip the update
+      return;
+    }
+
+    // Set the guard
+    this.markingAsReadConversationId = conversationId;
+    this.lastMarkedAsReadTime = now;
 
     try {
       // Update conversation unread count
@@ -784,11 +813,12 @@ export class MessageService {
       );
       
       const snapshot = await getDocs(unreadQuery);
-      const updatePromises = snapshot.docs.map(docSnapshot => 
-        updateDoc(docSnapshot.ref, { read: true })
-      );
-      
-      await Promise.all(updatePromises);
+      if (snapshot.docs.length > 0) {
+        const updatePromises = snapshot.docs.map(docSnapshot => 
+          updateDoc(docSnapshot.ref, { read: true })
+        );
+        await Promise.all(updatePromises);
+      }
     } catch (error) {
       console.error('Error marking conversation as read:', error);
     }
