@@ -243,22 +243,29 @@ export const checkBlockStatus = onCall(async (request) => {
 
 async function deleteActivityBetweenUsers(userId1: string, userId2: string): Promise<void> {
   // Delete activities where either user is the sender
-  const activitiesRef = db.collection("users").doc(userId1).collection("activity");
+  // Note: Collection is "activities" (plural), not "activity"
+  const activitiesRef = db.collection("users").doc(userId1).collection("activities");
   const query1 = activitiesRef.where("fromUserId", "==", userId2);
   const snapshot1 = await query1.get();
   
-  const batch1 = db.batch();
-  snapshot1.docs.forEach(doc => batch1.delete(doc.ref));
-  await batch1.commit();
+  if (!snapshot1.empty) {
+    const batch1 = db.batch();
+    snapshot1.docs.forEach(doc => batch1.delete(doc.ref));
+    await batch1.commit();
+    logger.info(`Deleted ${snapshot1.size} activities for ${userId1} from ${userId2}`);
+  }
 
   // Delete activities in the other direction
-  const activitiesRef2 = db.collection("users").doc(userId2).collection("activity");
+  const activitiesRef2 = db.collection("users").doc(userId2).collection("activities");
   const query2 = activitiesRef2.where("fromUserId", "==", userId1);
   const snapshot2 = await query2.get();
   
-  const batch2 = db.batch();
-  snapshot2.docs.forEach(doc => batch2.delete(doc.ref));
-  await batch2.commit();
+  if (!snapshot2.empty) {
+    const batch2 = db.batch();
+    snapshot2.docs.forEach(doc => batch2.delete(doc.ref));
+    await batch2.commit();
+    logger.info(`Deleted ${snapshot2.size} activities for ${userId2} from ${userId1}`);
+  }
 
   logger.info(`Deleted activity records between ${userId1} and ${userId2}`);
 }
