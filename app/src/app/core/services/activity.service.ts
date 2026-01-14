@@ -43,6 +43,10 @@ export class ActivityService implements OnDestroy {
   private pendingToastActivities: Activity[] = [];
   private toastDebounceTimeout: ReturnType<typeof setTimeout> | null = null;
   private readonly TOAST_DEBOUNCE_MS = 500;
+  
+  // Debounce profile view recording to prevent duplicate requests
+  private pendingProfileViewPromise: Promise<void> | null = null;
+  private lastRecordedProfileView: { userId: string; timestamp: number } | null = null;
 
   private readonly _activities = signal<ActivityDisplay[]>([]);
   private readonly _unreadCount = signal<number>(0);
@@ -228,11 +232,39 @@ export class ActivityService implements OnDestroy {
    * Activity creation is handled by a Firebase trigger (onProfileViewCreated).
    * Uses a single document per viewer-viewed pair for efficiency.
    * Respects the user's activity.createOnView setting.
+   * Debounces to prevent duplicate requests within the same page load.
    */
   async recordProfileView(viewedUserId: string): Promise<void> {
     const currentUser = this.authService.user();
     if (!currentUser || currentUser.uid === viewedUserId) return;
 
+    // Debounce: skip if we already recorded this view in the last 5 seconds
+    const now = Date.now();
+    if (this.lastRecordedProfileView?.userId === viewedUserId && 
+        (now - this.lastRecordedProfileView.timestamp) < 5000) {
+      return;
+    }
+
+    // If already recording this view, return the pending promise
+    if (this.pendingProfileViewPromise) {
+      return this.pendingProfileViewPromise;
+    }
+
+    this.pendingProfileViewPromise = this.doRecordProfileView(viewedUserId, currentUser)
+      .finally(() => {
+        this.pendingProfileViewPromise = null;
+      });
+
+    return this.pendingProfileViewPromise;
+  }
+
+  /**
+   * Internal method to actually record the profile view
+   */
+  private async doRecordProfileView(
+    viewedUserId: string,
+    currentUser: { uid: string; displayName: string | null; photoURL: string | null }
+  ): Promise<void> {
     try {
       // Check if current user has profile view activity creation enabled
       const profile = await this.userProfileService.getCurrentUserProfile();
@@ -268,15 +300,11 @@ export class ActivityService implements OnDestroy {
         });
         
         // Only trigger activity update if last view was more than an hour ago
-        // (The trigger won't fire on update, only on create, so we handle this differently)
         if (lastViewTime <= hourAgo) {
-          // For views older than an hour, we need to update the activity too
-          // This is handled by manually updating the activity
           await this.updateViewActivity(viewedUserId, currentUser);
         }
       } else {
         // Create new profile view record
-        // Activity creation is handled by onProfileViewCreated trigger
         await addDoc(viewsRef, {
           viewerId: currentUser.uid,
           viewerName: currentUser.displayName || 'Someone',
@@ -285,6 +313,9 @@ export class ActivityService implements OnDestroy {
           viewedAt: serverTimestamp(),
         });
       }
+
+      // Mark as recorded to prevent duplicate calls
+      this.lastRecordedProfileView = { userId: viewedUserId, timestamp: Date.now() };
     } catch (error) {
       console.error('Error recording profile view:', error);
     }

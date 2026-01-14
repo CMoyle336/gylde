@@ -12,6 +12,9 @@ export class UserProfileService {
 
   private readonly _profile = signal<UserProfile | null>(null);
   private readonly _loading = signal(false);
+  
+  // Promise cache to prevent duplicate fetches when multiple callers request profile simultaneously
+  private loadingPromise: Promise<UserProfile | null> | null = null;
 
   readonly profile = this._profile.asReadonly();
   readonly loading = this._loading.asReadonly();
@@ -157,6 +160,7 @@ export class UserProfileService {
 
   /**
    * Get the current user's profile, loading it if not already loaded.
+   * Uses a promise cache to prevent duplicate fetches when called concurrently.
    */
   async getCurrentUserProfile(): Promise<UserProfile | null> {
     // Return cached profile if available
@@ -165,10 +169,19 @@ export class UserProfileService {
       return cachedProfile;
     }
 
+    // If already loading, return the existing promise
+    if (this.loadingPromise) {
+      return this.loadingPromise;
+    }
+
     // Load profile if user is authenticated
     const user = this.authService.user();
     if (user) {
-      return this.loadUserProfile(user.uid);
+      // Cache the promise to prevent duplicate concurrent fetches
+      this.loadingPromise = this.loadUserProfile(user.uid).finally(() => {
+        this.loadingPromise = null;
+      });
+      return this.loadingPromise;
     }
 
     return null;
