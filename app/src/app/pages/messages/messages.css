@@ -561,15 +561,17 @@
 
 /* Chat options & Message actions menu styling */
 ::ng-deep .mat-mdc-menu-panel {
-  --mat-menu-container-color: var(--bg-elevated, #252030);
+  --mat-menu-container-color: var(--color-bg-elevated);
+  background: var(--color-bg-elevated) !important;
   border-radius: 12px !important;
-  border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-lg) !important;
   overflow: hidden;
 }
 
 ::ng-deep .mat-mdc-menu-content {
   padding: 0.5rem !important;
+  background: var(--color-bg-elevated) !important;
 }
 
 ::ng-deep .mat-mdc-menu-item {
@@ -579,24 +581,25 @@
   min-height: 44px;
   padding: 0 1rem;
   font-size: 0.875rem;
-  color: var(--text-primary, #f5f3f0);
+  color: var(--color-text-primary) !important;
   border-radius: 8px;
   margin: 0 !important;
 }
 
 ::ng-deep .mat-mdc-menu-item:hover {
-  background: var(--bg-hover, rgba(255, 255, 255, 0.05)) !important;
+  background: var(--color-bg-hover) !important;
 }
 
 ::ng-deep .mat-mdc-menu-item .mat-mdc-menu-item-text {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  color: var(--color-text-primary);
 }
 
 ::ng-deep .mat-mdc-menu-item .material-icons-outlined {
   font-size: 1.25rem;
-  color: var(--text-muted);
+  color: var(--color-text-muted);
   width: 24px;
   text-align: center;
 }

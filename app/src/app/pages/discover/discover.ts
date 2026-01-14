@@ -69,6 +69,9 @@ export class DiscoverComponent implements OnInit {
   protected readonly smokerOptions = this.discoveryService.smokerOptions;
   protected readonly drinkerOptions = this.discoveryService.drinkerOptions;
   protected readonly educationOptions = this.discoveryService.educationOptions;
+  protected readonly heightOptions = this.discoveryService.heightOptions;
+  protected readonly incomeOptions = this.discoveryService.incomeOptions;
+  protected readonly supportOrientationOptions = this.discoveryService.supportOrientationOptions;
   protected readonly distanceOptions = this.discoveryService.distanceOptions;
   protected readonly sortOptions = this.discoveryService.sortOptions;
 

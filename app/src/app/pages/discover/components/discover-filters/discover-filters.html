@@ -95,6 +95,42 @@
   <!-- Advanced Filters -->
   @if (showAdvancedFilters()) {
     <div class="filters-row advanced-filters">
+      <!-- Support Orientation -->
+      <div class="filter-group">
+        <label class="filter-label">Support Style</label>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-select multiple [value]="filters().supportOrientation" (selectionChange)="updateFilter('supportOrientation', $event.value)">
+            @for (option of supportOrientationOptions(); track option.value) {
+              <mat-option [value]="option.value">{{ option.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <!-- Height -->
+      <div class="filter-group">
+        <label class="filter-label">Height</label>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-select multiple [value]="filters().height" (selectionChange)="updateFilter('height', $event.value)">
+            @for (option of heightOptions(); track option) {
+              <mat-option [value]="option">{{ option }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <!-- Income -->
+      <div class="filter-group">
+        <label class="filter-label">Income</label>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-select multiple [value]="filters().income" (selectionChange)="updateFilter('income', $event.value)">
+            @for (option of incomeOptions(); track option) {
+              <mat-option [value]="option">{{ option }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
       <!-- Ethnicity -->
       <div class="filter-group">
         <label class="filter-label">Ethnicity</label>

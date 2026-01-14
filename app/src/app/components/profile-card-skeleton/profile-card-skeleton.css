@@ -1,10 +1,15 @@
 :host {
-  --color-bg-secondary: #1a1720;
-  --color-bg-elevated: #252030;
-  --color-border: rgba(255, 255, 255, 0.08);
+  /* Inherits from global CSS variables in styles.css */
+  /* Shimmer highlight color - adapts to theme */
+  --shimmer-highlight: rgba(255, 255, 255, 0.08);
   
   display: block;
   min-width: 0;
+}
+
+/* Light mode: use darker shimmer for better visibility */
+:host-context([data-theme="light"]) {
+  --shimmer-highlight: rgba(0, 0, 0, 0.06);
 }
 
 .profile-card.skeleton {
@@ -25,7 +30,7 @@
   background: linear-gradient(
     90deg,
     var(--color-bg-elevated) 0%,
-    rgba(255, 255, 255, 0.05) 50%,
+    var(--shimmer-highlight) 50%,
     var(--color-bg-elevated) 100%
   );
   background-size: 200% 100%;
@@ -53,7 +58,7 @@
   background: linear-gradient(
     90deg,
     var(--color-bg-elevated) 0%,
-    rgba(255, 255, 255, 0.05) 50%,
+    var(--shimmer-highlight) 50%,
     var(--color-bg-elevated) 100%
   );
   background-size: 200% 100%;
@@ -97,7 +102,7 @@
   background: linear-gradient(
     90deg,
     var(--color-bg-elevated) 0%,
-    rgba(255, 255, 255, 0.05) 50%,
+    var(--shimmer-highlight) 50%,
     var(--color-bg-elevated) 100%
   );
   background-size: 200% 100%;
@@ -119,7 +124,7 @@
   background: linear-gradient(
     90deg,
     var(--color-bg-elevated) 0%,
-    rgba(255, 255, 255, 0.05) 50%,
+    var(--shimmer-highlight) 50%,
     var(--color-bg-elevated) 100%
   );
   background-size: 200% 100%;

@@ -262,4 +262,104 @@ body {
   // Datepicker overrides
   --mat-datepicker-calendar-container-background-color: var(--color-bg-secondary);
   --mat-datepicker-calendar-container-text-color: var(--color-text-primary);
+  --mat-datepicker-calendar-date-text-color: var(--color-text-primary);
+  --mat-datepicker-calendar-body-label-text-color: var(--color-text-secondary);
+  --mat-datepicker-calendar-period-button-text-color: var(--color-text-primary);
+  --mat-datepicker-calendar-navigation-button-icon-color: var(--color-text-secondary);
+  --mat-datepicker-toggle-icon-color: var(--color-text-muted);
+}
+
+/* ============================================
+   LIGHT MODE FORM FIELD FIXES
+   Force input text colors for light mode
+   ============================================ */
+
+[data-theme="light"] {
+  // Form field input text - these need !important to override the hardcoded dark theme values
+  .mat-mdc-form-field {
+    --mdc-outlined-text-field-input-text-color: var(--color-text-primary);
+    --mdc-filled-text-field-input-text-color: var(--color-text-primary);
+    --mdc-outlined-text-field-label-text-color: var(--color-text-muted);
+    --mdc-filled-text-field-label-text-color: var(--color-text-muted);
+    --mdc-outlined-text-field-caret-color: var(--color-accent);
+    --mdc-filled-text-field-caret-color: var(--color-accent);
+    --mdc-outlined-text-field-focus-label-text-color: var(--color-accent);
+    --mdc-filled-text-field-focus-label-text-color: var(--color-accent);
+  }
+  
+  // Select dropdown text
+  .mat-mdc-select {
+    --mat-select-trigger-text-color: var(--color-text-primary);
+    --mat-select-placeholder-text-color: var(--color-text-muted);
+    --mat-select-enabled-arrow-color: var(--color-text-muted);
+    --mat-select-focused-arrow-color: var(--color-accent);
+  }
+  
+  // Force input text color for all input elements
+  .mat-mdc-input-element,
+  .mat-mdc-form-field input,
+  .mat-mdc-form-field textarea {
+    color: var(--color-text-primary) !important;
+    caret-color: var(--color-accent);
+    
+    &::placeholder {
+      color: var(--color-text-muted);
+    }
+  }
+  
+  // Select trigger text
+  .mat-mdc-select-value-text {
+    color: var(--color-text-primary);
+  }
+  
+  // Option text in dropdowns
+  .mat-mdc-option {
+    --mat-option-label-text-color: var(--color-text-primary);
+  }
+  
+  // Autocomplete panel
+  .mat-mdc-autocomplete-panel {
+    background: var(--color-bg-secondary);
+    
+    .mat-mdc-option {
+      color: var(--color-text-primary);
+    }
+  }
+  
+  // Slide toggle label text
+  .mat-mdc-slide-toggle {
+    --mdc-switch-selected-handle-color: var(--color-accent);
+    --mdc-switch-selected-track-color: var(--color-accent-glow);
+    --mdc-switch-selected-hover-handle-color: var(--color-accent-light);
+    --mdc-switch-selected-focus-handle-color: var(--color-accent-light);
+    --mdc-switch-selected-pressed-handle-color: var(--color-accent);
+    --mdc-switch-unselected-handle-color: var(--color-text-muted);
+    --mdc-switch-unselected-track-color: var(--color-border);
+    --mat-slide-toggle-label-text-color: var(--color-text-primary);
+    
+    .mdc-label,
+    label {
+      color: var(--color-text-primary) !important;
+    }
+  }
+  
+  // Checkbox label text
+  .mat-mdc-checkbox {
+    --mat-checkbox-label-text-color: var(--color-text-primary);
+    
+    .mdc-label,
+    label {
+      color: var(--color-text-primary) !important;
+    }
+  }
+  
+  // Radio button label text
+  .mat-mdc-radio-button {
+    --mat-radio-label-text-color: var(--color-text-primary);
+    
+    .mdc-label,
+    label {
+      color: var(--color-text-primary) !important;
+    }
+  }
 }

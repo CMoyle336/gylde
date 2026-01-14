@@ -26,6 +26,8 @@ const DEFAULT_FILTERS: DiscoveryFilters = {
   smoker: [],
   drinker: [],
   education: [],
+  height: [],
+  income: [],
   onlineNow: false,
   activeRecently: false,
 };
@@ -82,6 +84,8 @@ export class DiscoveryService {
       filters.smoker.length > 0 ||
       filters.drinker.length > 0 ||
       filters.education.length > 0 ||
+      filters.height.length > 0 ||
+      filters.income.length > 0 ||
       filters.onlineNow ||
       filters.activeRecently
     );
@@ -103,6 +107,8 @@ export class DiscoveryService {
     if (filters.smoker.length > 0) count++;
     if (filters.drinker.length > 0) count++;
     if (filters.education.length > 0) count++;
+    if (filters.height.length > 0) count++;
+    if (filters.income.length > 0) count++;
     if (filters.onlineNow) count++;
     if (filters.activeRecently) count++;
 
@@ -401,6 +407,22 @@ export class DiscoveryService {
   readonly educationOptions = [
     'High school', 'Some college', 'Associate degree', "Bachelor's degree",
     "Master's degree", 'Doctorate', 'Trade school',
+  ];
+
+  readonly heightOptions = [
+    "Under 5'0\"", "5'0\" - 5'3\"", "5'4\" - 5'6\"", "5'7\" - 5'9\"",
+    "5'10\" - 6'0\"", "6'1\" - 6'3\"", "Over 6'3\"",
+  ];
+
+  readonly incomeOptions = [
+    'Under $50,000', '$50,000 - $100,000', '$100,000 - $150,000',
+    '$150,000 - $250,000', '$250,000 - $500,000', '$500,000+', 'Prefer not to say',
+  ];
+
+  readonly supportOrientationOptions = [
+    { value: 'provider', label: 'Provider' },
+    { value: 'receiver', label: 'Receiver' },
+    { value: 'flexible', label: 'Flexible' },
   ];
 
   readonly distanceOptions = [

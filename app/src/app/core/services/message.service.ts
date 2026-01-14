@@ -193,8 +193,12 @@ export class MessageService {
     this.subscribeToMessages(conversation.id);
     this.subscribeToTypingStatus(conversation.id);
     
-    // Subscribe to other user's online status
-    if (conversation.otherUser?.uid) {
+    // Subscribe to other user's online status (only if not blocked)
+    // Don't show online status if either user has blocked the other
+    const isBlocked = conversation.isBlocked || 
+      (conversation.otherUser?.uid && this.blockService.isUserBlocked(conversation.otherUser.uid));
+    
+    if (conversation.otherUser?.uid && !isBlocked) {
       this.subscribeToUserStatus(conversation.otherUser.uid);
     }
     
@@ -225,9 +229,21 @@ export class MessageService {
   private subscribeToUserStatus(userId: string): void {
     this.unsubscribeFromUserStatus();
 
+    // Don't subscribe if user is blocked
+    if (this.blockService.isUserBlocked(userId)) {
+      this._otherUserStatus.set(null);
+      return;
+    }
+
     const userRef = doc(this.firestore, 'users', userId);
     
     this.userStatusUnsubscribe = onSnapshot(userRef, (snapshot) => {
+      // Check block status on each update (in case it changes)
+      if (this.blockService.isUserBlocked(userId)) {
+        this._otherUserStatus.set(null);
+        return;
+      }
+      
       if (!snapshot.exists()) {
         this._otherUserStatus.set(null);
         return;

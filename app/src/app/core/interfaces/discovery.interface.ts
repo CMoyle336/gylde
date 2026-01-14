@@ -59,6 +59,8 @@ export interface DiscoveryFilters {
   smoker: string[];
   drinker: string[];
   education: string[];
+  height: string[];
+  income: string[];
 
   // Activity filters
   onlineNow: boolean;

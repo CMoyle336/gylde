@@ -112,13 +112,13 @@
                 <span class="material-icons-outlined">person</span>
               </div>
             }
-            @if (otherUserStatus()?.isOnline) {
+            @if (otherUserStatus()?.isOnline && !activeConversation()?.isBlocked && !isOtherUserBlocked()) {
               <span class="online-dot"></span>
             }
           </div>
           <div class="chat-user-info">
             <span class="chat-user-name">{{ activeConversation()!.otherUser.displayName || 'Unknown' }}</span>
-            @if (getStatusText()) {
+            @if (getStatusText() && !activeConversation()?.isBlocked && !isOtherUserBlocked()) {
               <span class="chat-user-status" [class.online]="otherUserStatus()?.isOnline">
                 {{ getStatusText() }}
               </span>

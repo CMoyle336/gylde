@@ -44,6 +44,9 @@ export class DiscoverFiltersComponent {
   readonly smokerOptions = input.required<string[]>();
   readonly drinkerOptions = input.required<string[]>();
   readonly educationOptions = input.required<string[]>();
+  readonly heightOptions = input.required<string[]>();
+  readonly incomeOptions = input.required<string[]>();
+  readonly supportOrientationOptions = input.required<FilterOption[]>();
   readonly distanceOptions = input.required<DistanceOption[]>();
 
   // Connection type groups for organized display
