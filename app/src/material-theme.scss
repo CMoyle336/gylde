@@ -81,8 +81,9 @@ html {
 
 // Outlined form field background (not available as a token)
 .mat-mdc-form-field.mat-form-field-appearance-outline .mat-mdc-text-field-wrapper {
-  background-color: #252030;
+  background-color: var(--color-bg-elevated);
   border-radius: 4px;
+  transition: background-color 0.2s ease;
 }
 
 // Datepicker specific overrides
@@ -176,10 +177,89 @@ html {
 }
 
 body {
-  // Use dark surface colors
-  background-color: #0d0b0e;
-  color: #f5f3f0;
+  // Use CSS variables for theme switching
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
   font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   margin: 0;
   height: 100%;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+// ============================================
+// LIGHT THEME OVERRIDES
+// Override Material component colors for light mode
+// ============================================
+
+[data-theme="light"] {
+  // Update color scheme for light mode
+  color-scheme: light;
+  
+  // Material component overrides using CSS custom properties
+  --mat-app-background-color: var(--color-bg-primary);
+  --mat-app-text-color: var(--color-text-primary);
+  
+  // Primary color overrides
+  --mdc-filled-button-container-color: var(--color-accent);
+  --mdc-filled-button-label-text-color: var(--color-bg-primary);
+  --mdc-protected-button-label-text-color: var(--color-accent);
+  --mat-text-button-state-layer-color: var(--color-accent);
+  
+  // Form field overrides
+  --mdc-outlined-text-field-outline-color: var(--color-border);
+  --mdc-outlined-text-field-hover-outline-color: var(--color-accent);
+  --mdc-outlined-text-field-focus-outline-color: var(--color-accent);
+  --mdc-outlined-text-field-label-text-color: var(--color-text-muted);
+  --mdc-outlined-text-field-hover-label-text-color: var(--color-accent);
+  --mdc-outlined-text-field-focus-label-text-color: var(--color-accent);
+  --mdc-outlined-text-field-input-text-color: var(--color-text-primary);
+  --mdc-filled-text-field-container-color: var(--color-bg-elevated);
+  --mdc-filled-text-field-input-text-color: var(--color-text-primary);
+  
+  // Select/dropdown overrides
+  --mat-select-panel-background-color: var(--color-bg-secondary);
+  --mat-option-selected-state-layer-color: var(--color-accent-glow);
+  --mat-option-hover-state-layer-color: var(--color-bg-hover);
+  --mat-option-label-text-color: var(--color-text-primary);
+  
+  // Dialog overrides
+  --mdc-dialog-container-color: var(--color-bg-secondary);
+  --mdc-dialog-subhead-color: var(--color-text-primary);
+  --mdc-dialog-supporting-text-color: var(--color-text-secondary);
+  
+  // Menu overrides
+  --mat-menu-container-color: var(--color-bg-elevated);
+  --mat-menu-item-label-text-color: var(--color-text-primary);
+  --mat-menu-item-hover-state-layer-color: var(--color-bg-hover);
+  
+  // Icon button overrides
+  --mdc-icon-button-icon-color: var(--color-text-muted);
+  
+  // Snackbar/toast overrides
+  --mdc-snackbar-container-color: var(--color-bg-secondary);
+  --mdc-snackbar-supporting-text-color: var(--color-text-primary);
+  
+  // Slide toggle overrides
+  --mdc-switch-selected-handle-color: var(--color-accent);
+  --mdc-switch-selected-track-color: var(--color-accent-glow);
+  --mdc-switch-unselected-handle-color: var(--color-text-muted);
+  --mdc-switch-unselected-track-color: var(--color-border);
+  
+  // Checkbox/radio overrides
+  --mdc-checkbox-selected-checkmark-color: var(--color-bg-primary);
+  --mdc-checkbox-selected-focus-icon-color: var(--color-accent);
+  --mdc-checkbox-selected-hover-icon-color: var(--color-accent);
+  --mdc-checkbox-selected-icon-color: var(--color-accent);
+  --mdc-checkbox-unselected-icon-color: var(--color-text-muted);
+  
+  // Tooltip overrides
+  --mdc-plain-tooltip-container-color: var(--color-bg-elevated);
+  --mdc-plain-tooltip-supporting-text-color: var(--color-text-primary);
+  
+  // Progress spinner
+  --mdc-circular-progress-active-indicator-color: var(--color-accent);
+  
+  // Datepicker overrides
+  --mat-datepicker-calendar-container-background-color: var(--color-bg-secondary);
+  --mat-datepicker-calendar-container-text-color: var(--color-text-primary);
 }

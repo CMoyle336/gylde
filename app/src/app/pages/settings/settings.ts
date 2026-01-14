@@ -13,6 +13,7 @@ import { Functions, httpsCallable } from '@angular/fire/functions';
 import { MatDialog } from '@angular/material/dialog';
 import { AuthService } from '../../core/services/auth.service';
 import { UserProfileService } from '../../core/services/user-profile.service';
+import { ThemeService } from '../../core/services/theme.service';
 import { UserSettings } from '../../core/interfaces';
 import { BlockedUsersDialogComponent } from '../../components/blocked-users-dialog';
 
@@ -40,9 +41,13 @@ export class SettingsComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly functions = inject(Functions);
   private readonly dialog = inject(MatDialog);
+  protected readonly themeService = inject(ThemeService);
 
   // User info
   protected readonly userEmail = computed(() => this.authService.user()?.email || null);
+  
+  // Theme
+  protected readonly isDarkMode = computed(() => this.themeService.theme() === 'dark');
 
   // Settings state
   protected readonly settings = signal<UserSettings>({});

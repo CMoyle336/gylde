@@ -1,13 +1,7 @@
 :host {
-  --color-bg-primary: #0d0b0e;
-  --color-bg-secondary: #1a1720;
-  --color-bg-elevated: #252030;
-  --color-bg-hover: #2d2838;
-  --color-text-primary: #f5f3f0;
-  --color-text-muted: #6b6777;
-  --color-accent: #d4af37;
-  --color-accent-hover: #e5c358;
-  --color-border: rgba(255, 255, 255, 0.08);
+  /* Inherits from global CSS variables in styles.css */
+  /* Alias for matches-specific naming */
+  --color-accent-hover: var(--color-accent-light);
 
   display: flex;
   flex-direction: column;

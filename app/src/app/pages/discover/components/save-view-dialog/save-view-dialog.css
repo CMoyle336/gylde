@@ -1,11 +1,5 @@
 :host {
-  --color-bg-primary: #0d0b0e;
-  --color-bg-secondary: #1a1720;
-  --color-bg-elevated: #252030;
-  --color-text-primary: #f5f3f0;
-  --color-text-secondary: #a8a4b0;
-  --color-border: rgba(255, 255, 255, 0.08);
-  
+  /* Inherits from global CSS variables in styles.css */
   display: block;
 }
 

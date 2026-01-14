@@ -1,14 +1,8 @@
 :host {
-  --color-bg-primary: #0d0b0e;
-  --color-bg-elevated: #1a1720;
-  --color-bg-card: #252030;
-  --color-accent: #c9a962;
-  --color-text-primary: #f5f3f0;
-  --color-text-muted: #6b6777;
-  --color-border: rgba(255, 255, 255, 0.08);
-  --color-danger: #e57373;
-  --color-success: #81c784;
-  --font-display: 'Outfit', system-ui, sans-serif;
+  /* Inherits from global CSS variables in styles.css */
+  /* Alias for settings-specific naming */
+  --color-bg-card: var(--color-bg-elevated);
+  --color-danger: var(--color-error);
   
   display: block;
   width: 100%;

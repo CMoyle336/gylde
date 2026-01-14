@@ -361,11 +361,8 @@
       "SUBTITLE": "Customize your experience",
       "LANGUAGE": "Language",
       "LANGUAGE_DESC": "Choose your preferred language",
-      "THEME": "Theme",
-      "THEME_DESC": "Choose your preferred theme",
-      "THEME_LIGHT": "Light",
-      "THEME_DARK": "Dark",
-      "THEME_SYSTEM": "System"
+      "DARK_MODE": "Dark mode",
+      "DARK_MODE_DESC": "Switch between light and dark themes"
     },
     "ACCOUNT": {
       "TITLE": "Account",

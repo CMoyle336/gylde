@@ -3,18 +3,17 @@
    ============================================ */
 
 :host {
-  --bg-primary: #0d0b0e;
-  --bg-secondary: #1a1720;
-  --bg-elevated: #252030;
-  --bg-hover: #2d2838;
-  --accent: #c9a962;
-  --accent-light: #e8d5a3;
-  --text-primary: #f5f3f0;
-  --text-secondary: #a8a4b0;
-  --text-muted: #6b6777;
-  --border: rgba(255, 255, 255, 0.08);
-  --font-display: 'Outfit', system-ui, sans-serif;
-  --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
+  /* Alias global CSS variables for backwards compatibility */
+  --bg-primary: var(--color-bg-primary);
+  --bg-secondary: var(--color-bg-secondary);
+  --bg-elevated: var(--color-bg-elevated);
+  --bg-hover: var(--color-bg-hover);
+  --accent: var(--color-accent);
+  --accent-light: var(--color-accent-light);
+  --text-primary: var(--color-text-primary);
+  --text-secondary: var(--color-text-secondary);
+  --text-muted: var(--color-text-muted);
+  --border: var(--color-border);
   
   display: block;
   height: 100%;

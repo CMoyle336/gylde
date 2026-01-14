@@ -170,18 +170,13 @@
 
         <div class="setting-item">
           <div class="setting-info">
-            <span class="setting-label">{{ 'SETTINGS.PREFERENCES.THEME' | translate }}</span>
-            <span class="setting-description">{{ 'SETTINGS.PREFERENCES.THEME_DESC' | translate }}</span>
+            <span class="setting-label">{{ 'SETTINGS.PREFERENCES.DARK_MODE' | translate }}</span>
+            <span class="setting-description">{{ 'SETTINGS.PREFERENCES.DARK_MODE_DESC' | translate }}</span>
           </div>
-          <mat-form-field appearance="outline" class="setting-select">
-            <mat-select
-              [value]="settings().preferences?.theme ?? 'dark'"
-              (selectionChange)="updateSetting('preferences', 'theme', $event.value)">
-              <mat-option value="light">{{ 'SETTINGS.PREFERENCES.THEME_LIGHT' | translate }}</mat-option>
-              <mat-option value="dark">{{ 'SETTINGS.PREFERENCES.THEME_DARK' | translate }}</mat-option>
-              <mat-option value="system">{{ 'SETTINGS.PREFERENCES.THEME_SYSTEM' | translate }}</mat-option>
-            </mat-select>
-          </mat-form-field>
+          <mat-slide-toggle
+            [checked]="isDarkMode()"
+            (change)="themeService.toggleTheme()">
+          </mat-slide-toggle>
         </div>
       </div>
     </section>

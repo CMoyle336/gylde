@@ -1,5 +1,76 @@
 /* You can add global styles to this file, and also import other style files */
 
+/* ============================================
+   THEME VARIABLES
+   Global CSS custom properties for theming
+   ============================================ */
+
+:root {
+  /* Dark Theme (Default) */
+  --color-bg-primary: #0d0b0e;
+  --color-bg-secondary: #1a1720;
+  --color-bg-elevated: #252030;
+  --color-bg-hover: #2d2838;
+  --color-accent: #c9a962;
+  --color-accent-light: #e8d5a3;
+  --color-accent-glow: rgba(201, 169, 98, 0.3);
+  --color-text-primary: #f5f3f0;
+  --color-text-secondary: #a8a4b0;
+  --color-text-muted: #6b6777;
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-strong: rgba(255, 255, 255, 0.15);
+  --color-error: #e57373;
+  --color-success: #81c784;
+  --color-warning: #ffb74d;
+  --color-info: #64b5f6;
+  
+  /* Semantic colors */
+  --color-online: #22c55e;
+  --color-favorite: #f472b6;
+  --color-message: #60a5fa;
+  --color-view: #a78bfa;
+  --color-match: #e91e63;
+  
+  /* Shadows */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+  
+  /* Typography */
+  --font-display: 'Outfit', system-ui, sans-serif;
+  --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
+  
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.2s ease;
+  --transition-slow: 0.3s ease;
+}
+
+/* Light Theme */
+[data-theme="light"] {
+  --color-bg-primary: #f5f3f0;
+  --color-bg-secondary: #ffffff;
+  --color-bg-elevated: #ebe8e3;
+  --color-bg-hover: #e0dcd5;
+  --color-accent: #a88b3d;
+  --color-accent-light: #c9a962;
+  --color-accent-glow: rgba(168, 139, 61, 0.2);
+  --color-text-primary: #1a1720;
+  --color-text-secondary: #4a4654;
+  --color-text-muted: #7a7682;
+  --color-border: rgba(0, 0, 0, 0.08);
+  --color-border-strong: rgba(0, 0, 0, 0.15);
+  --color-error: #d32f2f;
+  --color-success: #388e3c;
+  --color-warning: #f57c00;
+  --color-info: #1976d2;
+  
+  /* Shadows - lighter for light theme */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
 /* Global Reset & Base Styles */
 *,
 *::before,
@@ -16,12 +87,13 @@ html {
 
 body {
   min-height: 100vh;
-  background-color: #0d0b0e;
-  color: #f5f3f0;
-  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color var(--transition-normal), color var(--transition-normal);
 }
 
 img,
@@ -51,41 +123,41 @@ a {
 
 /* Focus visible for accessibility */
 :focus-visible {
-  outline: 2px solid #c9a962;
+  outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
 
 /* Selection styling */
 ::selection {
-  background: rgba(201, 169, 98, 0.3);
-  color: #f5f3f0;
+  background: var(--color-accent-glow);
+  color: var(--color-text-primary);
 }
 
 /* Activity Toast Notifications */
 .mat-mdc-snack-bar-container.activity-toast {
-  --mdc-snackbar-container-color: #1a1720;
-  --mdc-snackbar-supporting-text-color: #f5f3f0;
-  --mat-snack-bar-button-color: #c9a962;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  --mdc-snackbar-container-color: var(--color-bg-secondary);
+  --mdc-snackbar-supporting-text-color: var(--color-text-primary);
+  --mat-snack-bar-button-color: var(--color-accent);
+  border: 1px solid var(--color-border-strong);
   border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--shadow-lg);
 }
 
 .mat-mdc-snack-bar-container.activity-toast-favorite {
-  border-left: 3px solid #ffc107;
+  border-left: 3px solid var(--color-warning);
 }
 
 .mat-mdc-snack-bar-container.activity-toast-match {
-  border-left: 3px solid #c9a962;
-  --mdc-snackbar-container-color: rgba(201, 169, 98, 0.15);
+  border-left: 3px solid var(--color-accent);
+  --mdc-snackbar-container-color: var(--color-accent-glow);
 }
 
 .mat-mdc-snack-bar-container.activity-toast-message {
-  border-left: 3px solid #2196f3;
+  border-left: 3px solid var(--color-info);
 }
 
 .mat-mdc-snack-bar-container.activity-toast-view {
-  border-left: 3px solid #6b6777;
+  border-left: 3px solid var(--color-text-muted);
 }
 
 

@@ -1,29 +1,12 @@
 /* ============================================
    USER PROFILE PAGE STYLES
+   Inherits from global CSS variables in styles.css
    ============================================ */
 
 :host {
   display: block;
-  overflow-x: hidden;
-  
-  --color-bg-primary: #0d0b0e;
-  --color-bg-secondary: #1a1720;
-  --color-bg-elevated: #252030;
-  --color-bg-hover: #2d2838;
-  --color-accent: #c9a962;
-  --color-accent-light: #e8d5a3;
-  --color-text-primary: #f5f3f0;
-  --color-text-secondary: #a8a4b0;
-  --color-text-muted: #6b6777;
-  --color-border: rgba(255, 255, 255, 0.08);
-  --color-error: #e57373;
-  --color-success: #81c784;
-  
-  --font-display: 'Outfit', system-ui, sans-serif;
-  --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
-
-  display: block;
   height: 100%;
+  overflow-x: hidden;
   overflow-y: auto;
   background: var(--color-bg-primary);
   color: var(--color-text-primary);
