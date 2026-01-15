@@ -167,11 +167,11 @@
               <span class="stat-value">{{ formatProfileAge() }}</span>
             </div>
           </div>
-          <div class="stat-item" [class.verified]="profile.isVerified">
-            <mat-icon>{{ profile.isVerified ? 'verified' : 'shield' }}</mat-icon>
+          <div class="stat-item" [class.verified]="profile.identityVerified">
+            <mat-icon>{{ profile.identityVerified ? 'verified' : 'shield' }}</mat-icon>
             <div class="stat-content">
               <span class="stat-label">Verification</span>
-              <span class="stat-value">{{ profile.isVerified ? 'Verified' : 'Not verified' }}</span>
+              <span class="stat-value">{{ profile.identityVerified ? 'Verified' : 'Not verified' }}</span>
             </div>
           </div>
         </div>

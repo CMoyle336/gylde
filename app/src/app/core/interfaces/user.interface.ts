@@ -25,7 +25,9 @@ export interface UserProfile {
   // These are maintained by Cloud Function triggers
   sortableLastActive?: unknown | null; // null if user hides activity, otherwise same as lastActiveAt
   isSearchable?: boolean; // true if profile is visible and account is active
-  isVerified?: boolean; // true if identity verification completed
+  identityVerified?: boolean; // true if identity verification completed
+  identityVerificationSessionId?: string; // Veriff session ID for tracking
+  identityVerificationStatus?: 'pending' | 'approved' | 'declined' | 'cancelled'; // Verification status
   geohash?: string | null; // encoded location for distance-based queries
   isElite?: boolean; // true if user has Elite subscription (for badge display)
   

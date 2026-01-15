@@ -1,0 +1,337 @@
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.dialog {
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 2rem;
+  max-width: 480px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.dialog-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.dialog-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.dialog-title mat-icon {
+  color: var(--color-accent);
+  font-size: 1.75rem;
+  width: 1.75rem;
+  height: 1.75rem;
+}
+
+.dialog-title h2 {
+  color: var(--color-text-primary);
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.close-btn {
+  background: transparent;
+  border: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+  color: var(--color-text-primary);
+  background: var(--color-bg-secondary);
+}
+
+.dialog-content {
+  margin-bottom: 1.5rem;
+}
+
+.intro-text {
+  color: var(--color-text-secondary);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+.benefits-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.5rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.benefit-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.benefit-item mat-icon {
+  color: var(--color-success);
+  font-size: 1.25rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+.benefit-item span {
+  color: var(--color-text-primary);
+  font-size: 0.9375rem;
+}
+
+.veriff-container {
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg-hover);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+#veriff-root.hidden {
+  display: none;
+}
+
+/* Override Veriff SDK styles to match our theme */
+#veriff-root {
+  width: 100%;
+}
+
+.veriff-container ::ng-deep .veriff-container,
+.veriff-container ::ng-deep form.veriff-container {
+  background: transparent !important;
+  padding: 0 !important;
+  max-width: 100% !important;
+}
+
+/* Submit button styling */
+.veriff-container ::ng-deep .veriff-submit,
+.veriff-container ::ng-deep button[type="submit"],
+.veriff-container ::ng-deep input[type="submit"] {
+  background: var(--color-accent) !important;
+  background-color: var(--color-accent) !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  padding: 0.875rem 1.5rem !important;
+  height: auto !important;
+  min-height: 48px !important;
+  font-size: 1rem !important;
+  cursor: pointer !important;
+  border: none !important;
+  color: #000 !important;
+  width: 100% !important;
+  transition: all 0.2s ease !important;
+}
+
+.veriff-container ::ng-deep .veriff-submit:hover,
+.veriff-container ::ng-deep button[type="submit"]:hover,
+.veriff-container ::ng-deep input[type="submit"]:hover {
+  opacity: 0.9 !important;
+  transform: translateY(-1px) !important;
+  background: var(--color-accent) !important;
+}
+
+/* Input field styling */
+.veriff-container ::ng-deep .veriff-text,
+.veriff-container ::ng-deep input[type="text"] {
+  background: var(--color-bg-primary) !important;
+  background-color: var(--color-bg-primary) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: 8px !important;
+  color: var(--color-text-primary) !important;
+  padding: 0.75rem 1rem !important;
+  font-size: 1rem !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.veriff-container ::ng-deep .veriff-text::placeholder {
+  color: var(--color-text-muted) !important;
+}
+
+/* Label styling */
+.veriff-container ::ng-deep .veriff-label,
+.veriff-container ::ng-deep label {
+  color: var(--color-text-secondary) !important;
+  font-size: 0.875rem !important;
+  margin-bottom: 0.5rem !important;
+  display: block !important;
+}
+
+/* Description text styling */
+.veriff-container ::ng-deep .veriff-description,
+.veriff-container ::ng-deep p {
+  color: var(--color-text-muted) !important;
+  font-size: 0.75rem !important;
+  text-align: center !important;
+  margin-top: 1rem !important;
+}
+
+.veriff-container ::ng-deep .veriff-description a,
+.veriff-container ::ng-deep p a {
+  color: var(--color-accent) !important;
+  text-decoration: none !important;
+}
+
+.veriff-container ::ng-deep .veriff-description a:hover,
+.veriff-container ::ng-deep p a:hover {
+  text-decoration: underline !important;
+}
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 2rem;
+}
+
+.loading-state span {
+  color: var(--color-text-secondary);
+  font-size: 0.9375rem;
+}
+
+.error-message {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  color: #ef4444;
+  font-size: 0.875rem;
+}
+
+.success-state {
+  text-align: center;
+  padding: 1.5rem 1rem 0.5rem;
+}
+
+.success-state mat-icon {
+  font-size: 3rem;
+  width: 3rem;
+  height: 3rem;
+  color: var(--color-success);
+  margin-bottom: 0.75rem;
+}
+
+.success-state h3 {
+  color: var(--color-text-primary);
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+}
+
+.success-state p {
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.pending-state {
+  text-align: center;
+  padding: 1.5rem 1rem 0.5rem;
+}
+
+.pending-state mat-icon {
+  font-size: 3rem;
+  width: 3rem;
+  height: 3rem;
+  color: var(--color-warning);
+  margin-bottom: 0.75rem;
+}
+
+.pending-state h3 {
+  color: var(--color-text-primary);
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+}
+
+.pending-state p {
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.privacy-note {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  text-align: center;
+  margin-top: 1rem;
+  line-height: 1.5;
+}
+
+.privacy-note a {
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+.privacy-note a:hover {
+  text-decoration: underline;
+}
+
+/* API key missing warning */
+.api-key-warning {
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.api-key-warning mat-icon {
+  color: #fbbf24;
+  font-size: 1.25rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+}
+
+.api-key-warning span {
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}

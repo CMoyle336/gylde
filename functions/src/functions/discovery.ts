@@ -78,7 +78,7 @@ interface SearchResult {
   tagline: string;
   photoURL: string | null; // The designated profile photo
   photos: string[];
-  verified: boolean;
+  identityVerified: boolean;
   values: string[];
   supportOrientation: string;
   trustScore: number; // 0-100 trust score (from private subcollection)
@@ -207,7 +207,7 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
 
       // 6. Verified only filter
       if (filters.verifiedOnly) {
-        query = query.where("isVerified", "==", true);
+        query = query.where("identityVerified", "==", true);
       }
 
       // 7. Secondary profile filters (using denormalized fields)
@@ -387,7 +387,7 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
           tagline: onboarding?.tagline || "",
           photoURL: data.photoURL || onboarding?.photos?.[0] || null,
           photos: onboarding?.photos || [],
-          verified: onboarding?.verificationOptions?.includes("identity") || false,
+          identityVerified: data.identityVerified === true,
           values: onboarding?.values || [],
           supportOrientation: onboarding?.supportOrientation || '',
           trustScore, // From private subcollection

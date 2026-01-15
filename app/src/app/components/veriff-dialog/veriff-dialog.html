@@ -1,0 +1,92 @@
+<div class="dialog-overlay" (click)="close()">
+  <div class="dialog" (click)="$event.stopPropagation()">
+    <div class="dialog-header">
+      <div class="dialog-title">
+        <mat-icon>verified_user</mat-icon>
+        <h2>Verify Your Identity</h2>
+      </div>
+      <button class="close-btn" (click)="close()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <div class="dialog-content">
+      @if (!apiKeyConfigured) {
+        <div class="api-key-warning">
+          <mat-icon>warning</mat-icon>
+          <span>
+            Identity verification is not yet configured. 
+            Please add your Veriff API key in the environment configuration.
+          </span>
+        </div>
+      } @else if (verificationStatus() === 'pending') {
+        <div class="pending-state">
+          <mat-icon>hourglass_top</mat-icon>
+          <h3>Verification In Progress</h3>
+          <p>
+            Your identity verification is being reviewed. 
+            We'll update your trust score once it's complete.
+          </p>
+        </div>
+      } @else if (verificationStatus() === 'success') {
+        <div class="success-state">
+          <mat-icon>check_circle</mat-icon>
+          <h3>Identity Verified!</h3>
+          <p>
+            Your identity has been verified and your trust score has been updated.
+          </p>
+        </div>
+      } @else {
+        <p class="intro-text">
+          Complete identity verification to earn 20 trust points and show others 
+          you're a real person. This quick process takes just a few minutes.
+        </p>
+
+        <ul class="benefits-list">
+          <li class="benefit-item">
+            <mat-icon>check</mat-icon>
+            <span>Increases your visibility in search results</span>
+          </li>
+          <li class="benefit-item">
+            <mat-icon>check</mat-icon>
+            <span>Shows a verified badge on your profile</span>
+          </li>
+          <li class="benefit-item">
+            <mat-icon>check</mat-icon>
+            <span>Builds trust with potential connections</span>
+          </li>
+        </ul>
+
+        @if (error()) {
+          <div class="error-message">{{ error() }}</div>
+        }
+
+        <div class="veriff-container">
+          @if (loading()) {
+            <div class="loading-state">
+              <mat-spinner diameter="32"></mat-spinner>
+              <span>Initializing verification...</span>
+            </div>
+          }
+          <!-- Always render veriff-root, hide when loading -->
+          <div id="veriff-root" [class.hidden]="loading()"></div>
+        </div>
+
+        <p class="privacy-note">
+          Your ID information is processed securely by 
+          <a href="https://www.veriff.com" target="_blank" rel="noopener">Veriff</a> 
+          and is not stored by us. 
+          <a href="/privacy" target="_blank">Privacy Policy</a>
+        </p>
+      }
+    </div>
+
+    <div class="dialog-actions">
+      @if (verificationStatus() === 'success' || verificationStatus() === 'pending') {
+        <button mat-flat-button color="primary" (click)="close()">Close</button>
+      } @else {
+        <button mat-button (click)="close()">Cancel</button>
+      }
+    </div>
+  </div>
+</div>

@@ -85,7 +85,7 @@ export const TRUST_TASK_DEFINITIONS: TrustTaskDefinition[] = [
     name: "Verify Identity",
     description: "Complete identity verification to prove you are who you say you are",
     points: 20,
-    check: (data) => data.onboarding?.verificationOptions?.includes("identity") || false,
+    check: (data) => data.identityVerified === true,
   },
   {
     id: "email_confirmed",

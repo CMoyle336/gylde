@@ -14,8 +14,7 @@ export interface ProfileCardData {
   country?: string | null;
   photos?: string[];
   photoURL?: string | null; // Fallback for single photo
-  verified?: boolean;
-  isVerified?: boolean; // Alternative property name
+  identityVerified?: boolean;
   isOnline?: boolean;
   showOnlineStatus?: boolean;
   showLastActive?: boolean;
@@ -53,7 +52,7 @@ export class ProfileCardComponent {
 
   protected get isVerified(): boolean {
     const p = this.profile();
-    return p.verified || p.isVerified || false;
+    return p.identityVerified || false;
   }
 
   protected onMessage(): void {

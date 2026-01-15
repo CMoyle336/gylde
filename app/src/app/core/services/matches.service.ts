@@ -22,7 +22,7 @@ export interface MatchProfile {
   age: number | null;
   city: string | null;
   country: string | null;
-  isVerified: boolean;
+  identityVerified: boolean;
   isOnline: boolean;
   showOnlineStatus: boolean;
   showLastActive: boolean;
@@ -491,7 +491,7 @@ export class MatchesService {
         age,
         city: showLocation ? (data.onboarding?.city || null) : null,
         country: showLocation ? (data.onboarding?.country || null) : null,
-        isVerified: data.isVerified || false,
+        identityVerified: data.identityVerified || false,
         isOnline: showOnlineStatus ? isOnline : false,
         showOnlineStatus,
         showLastActive,

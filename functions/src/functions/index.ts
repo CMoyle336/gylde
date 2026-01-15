@@ -11,6 +11,7 @@ export * from "./photos";
 export * from "./profile-views";
 export * from "./accounts";
 export * from "./blocks";
+export * from "./verification";
 
 // Future function modules:
 // export * from "./matches";

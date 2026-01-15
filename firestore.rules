@@ -33,11 +33,17 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       
       // Only the owner can write to their own profile
-      // Protected fields (trustScore, subscription, isElite) can only be set by Cloud Functions
+      // Protected fields can only be set by Cloud Functions (admin SDK bypasses rules)
       allow create: if isOwner(userId)
-        && !request.resource.data.keys().hasAny(['trustScore', 'subscription', 'isElite']);
+        && !request.resource.data.keys().hasAny([
+          'trustScore', 'subscription', 'isElite',
+          'identityVerified', 'identityVerificationStatus', 'identityVerificationCompletedAt'
+        ]);
       allow update: if isOwner(userId)
-        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['trustScore', 'subscription', 'isElite']);
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+          'trustScore', 'subscription', 'isElite',
+          'identityVerified', 'identityVerificationStatus', 'identityVerificationCompletedAt'
+        ]);
       allow delete: if false; // Deletion handled via Cloud Functions
       
       // ------------------------------------------

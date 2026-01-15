@@ -11,4 +11,9 @@ export const environment = {
     measurementId: 'G-ETS6XP4QJ9',
   },
   googleMapsApiKey: 'AIzaSyC6M7RmuWYXJaIkoqSLBa8zY189JMzqvNI', // TODO: Add your Google Maps API key
+
+  // Veriff Identity Verification
+  veriff: {
+    apiKey: '', // TODO: Add your production Veriff API key
+  },
 };

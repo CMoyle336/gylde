@@ -5,7 +5,7 @@
  * Denormalized fields maintained by these triggers:
  * - sortableLastActive: null if user hides activity, otherwise lastActiveAt
  * - isSearchable: false if profile hidden, account disabled, or scheduled for deletion
- * - isVerified: true if identity verification completed
+ * - identityVerified: true if identity verification completed (via Veriff)
  * - geohash: encoded location for distance-based queries
  * 
  * Private data maintained:
@@ -163,8 +163,8 @@ function calculateDenormalizedFields(data: FirebaseFirestore.DocumentData) {
   // Searchability: profile is visible AND not disabled AND not scheduled for deletion
   const isSearchable = profileVisible && !isDisabled && !isScheduledForDeletion && data.onboardingCompleted === true;
 
-  // Verification status
-  const isVerified = data.onboarding?.verificationOptions?.includes("identity") || false;
+  // Verification status - use the identityVerified field set by Veriff webhook
+  const identityVerified = data.identityVerified === true;
 
   // Sortable last active - only set if user allows showing last active time
   const lastActiveAt = data.lastActiveAt as Timestamp | undefined;
@@ -179,7 +179,7 @@ function calculateDenormalizedFields(data: FirebaseFirestore.DocumentData) {
   // Note: trustScore is stored ONLY in users/{uid}/private/data for security
   // It is not written to the public user document
 
-  return { isSearchable, isVerified, sortableLastActive, geohash };
+  return { isSearchable, identityVerified, sortableLastActive, geohash };
 }
 
 /**
@@ -200,13 +200,13 @@ export const onUserCreated = onDocumentCreated(
       return;
     }
 
-    const { isSearchable, isVerified, sortableLastActive, geohash } = calculateDenormalizedFields(data);
+    const { isSearchable, identityVerified, sortableLastActive, geohash } = calculateDenormalizedFields(data);
     const trustData = calculateTrustData(data);
 
     // Update public denormalized fields on user document
     await db.collection("users").doc(userId).update({
       isSearchable,
-      isVerified,
+      identityVerified,
       sortableLastActive,
       geohash,
     });
@@ -230,7 +230,7 @@ export const onUserCreated = onDocumentCreated(
 
     logger.info(`Set denormalized fields for new user ${userId}:`, { 
       isSearchable, 
-      isVerified, 
+      identityVerified, 
       trustScore: trustData.score,
       earnedPoints: trustData.earnedPoints,
       maxScore: trustData.maxScore,
@@ -264,7 +264,7 @@ export const onUserUpdated = onDocumentUpdated(
     // Get current values from public document
     const current = {
       isSearchable: afterData.isSearchable,
-      isVerified: afterData.isVerified,
+      identityVerified: afterData.identityVerified,
       sortableLastActive: afterData.sortableLastActive,
       geohash: afterData.geohash,
     };
@@ -276,8 +276,8 @@ export const onUserUpdated = onDocumentUpdated(
       publicUpdates.isSearchable = expected.isSearchable;
     }
 
-    if (expected.isVerified !== current.isVerified) {
-      publicUpdates.isVerified = expected.isVerified;
+    if (expected.identityVerified !== current.identityVerified) {
+      publicUpdates.identityVerified = expected.identityVerified;
     }
 
     // Check sortableLastActive

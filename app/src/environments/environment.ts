@@ -17,4 +17,10 @@ export const environment = {
 
   googleMapsApiKey: 'AIzaSyAYYyJaYZmU8JTpDewuHLaNW6Vo7NvJzME',
   // googleMapsApiKey: 'AIzaSyC6M7RmuWYXJaIkoqSLBa8zY189JMzqvNI', // TODO: Add your Google Maps API key
+
+  // Veriff Identity Verification
+  // Get your API key at: https://station.veriff.com/
+  veriff: {
+    apiKey: 'f7236cc5-6816-44be-9af4-5914a8067e82', // TODO: Add your Veriff API key
+  },
 };

@@ -1,9 +1,10 @@
-import { ChangeDetectionStrategy, Component, inject, computed } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, computed, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { SubscriptionService } from '../../core/services/subscription.service';
+import { VeriffDialogComponent } from '../../components/veriff-dialog';
 import { 
   TrustCategory,
   TrustCategoryDefinition,
@@ -42,6 +43,7 @@ interface TrustCategoryDisplay extends TrustCategoryDefinition {
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
+    VeriffDialogComponent,
   ],
 })
 export class TrustComponent {
@@ -111,10 +113,28 @@ export class TrustComponent {
     return TRUST_TASK_UI.length;
   });
 
+  // Veriff identity verification dialog
+  protected readonly showVeriffDialog = signal(false);
+
   protected onTaskAction(task: TrustTaskDisplay): void {
+    // Special handling for identity verification
+    if (task.id === 'identity_verified') {
+      this.showVeriffDialog.set(true);
+      return;
+    }
+
     if (task.route) {
       this.router.navigate([task.route]);
     }
+  }
+
+  protected onVeriffClosed(): void {
+    this.showVeriffDialog.set(false);
+  }
+
+  protected onVerificationStarted(sessionId: string): void {
+    console.log('Verification session started:', sessionId);
+    // Session ID is already stored in user profile by the dialog component
   }
 
   protected getStrokeDasharray(score: number): string {

@@ -153,3 +153,11 @@
     </div>
   }
 </div>
+
+<!-- Veriff Identity Verification Dialog -->
+@if (showVeriffDialog()) {
+  <app-veriff-dialog
+    (closed)="onVeriffClosed()"
+    (verificationStarted)="onVerificationStarted($event)"
+  />
+}
