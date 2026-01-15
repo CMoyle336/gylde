@@ -195,9 +195,19 @@ export class AuthService {
       return false;
     }
 
-    await currentUser.reload();
-    this._user.set(this.mapUser(currentUser));
-    return currentUser.emailVerified;
+    try {
+      await currentUser.reload();
+      // Check if user is still signed in after reload
+      if (this.auth.currentUser) {
+        this._user.set(this.mapUser(this.auth.currentUser));
+        return this.auth.currentUser.emailVerified;
+      }
+      return false;
+    } catch (error) {
+      // If reload fails (e.g., network issue), return cached state
+      console.debug('[Auth] Email verification check failed, using cached state');
+      return currentUser.emailVerified;
+    }
   }
 
   /**

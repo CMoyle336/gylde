@@ -2,6 +2,7 @@
  * Message-related Cloud Functions
  */
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
+import { FieldValue } from "firebase-admin/firestore";
 import { db } from "../config/firebase";
 import { ActivityService } from "../services";
 import * as logger from "firebase-functions/logger";
@@ -67,6 +68,12 @@ export const onMessageCreated = onDocumentCreated(
         senderPhoto,
         `/messages/${conversationId}` // Link to the conversation
       );
+
+      // Update sender's last message timestamp for trust score calculation
+      // This tracks that the user has recent conversation activity
+      await db.collection("users").doc(senderId).update({
+        lastMessageSentAt: FieldValue.serverTimestamp(),
+      });
 
       logger.info(`Message activity upserted for ${recipientId} from ${senderName}`);
     } catch (error) {

@@ -94,7 +94,9 @@ export class SettingsComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadSettings();
-    this.syncEmailVerificationStatus();
+    // Sync email verification status after a short delay to avoid race conditions
+    // and only if the user has an email but it's not yet verified in Firestore
+    setTimeout(() => this.syncEmailVerificationStatus(), 500);
   }
 
   /**
@@ -103,19 +105,31 @@ export class SettingsComponent implements OnInit {
    */
   private async syncEmailVerificationStatus(): Promise<void> {
     try {
-      // Get current verification status from Firebase Auth
-      const isVerified = await this.authService.checkEmailVerified();
       const profile = this.userProfileService.profile();
       
+      // Skip if no profile or already verified in Firestore
+      if (!profile || profile.emailVerified === true) {
+        return;
+      }
+      
+      // Skip if no email
+      if (!this.userEmail()) {
+        return;
+      }
+      
+      // Check Firebase Auth status (this refreshes the user)
+      const isVerified = await this.authService.checkEmailVerified();
+      
       // If Firebase Auth says verified but Firestore doesn't have it, update Firestore
-      if (isVerified && profile && profile.emailVerified !== true) {
+      if (isVerified) {
         await this.userProfileService.updateProfile({
           emailVerified: true,
         });
         console.log('[Settings] Synced email verification status to Firestore');
       }
     } catch (error) {
-      console.error('[Settings] Failed to sync email verification status:', error);
+      // Silently ignore errors - this is a background sync
+      console.debug('[Settings] Email verification sync skipped:', error);
     }
   }
 

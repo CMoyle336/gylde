@@ -29,6 +29,11 @@ export const onFavoriteCreated = onDocumentCreated(
     logger.info(`User ${fromUserId} favorited user ${toUserId} (private: ${isPrivate})`);
 
     try {
+      // Increment the user's favorites count (for trust score calculation)
+      await db.collection("users").doc(fromUserId).update({
+        favoritesCount: FieldValue.increment(1),
+      });
+
       // Get the user's display info
       const fromUser = await UserService.getDisplayInfo(fromUserId);
 
@@ -76,6 +81,11 @@ export const onFavoriteDeleted = onDocumentDeleted(
     logger.info(`User ${fromUserId} unfavorited user ${toUserId}`);
 
     try {
+      // Decrement the user's favorites count (for trust score calculation)
+      await db.collection("users").doc(fromUserId).update({
+        favoritesCount: FieldValue.increment(-1),
+      });
+
       // Delete the favorite activity
       await ActivityService.deleteActivities(toUserId, "favorite", fromUserId);
 

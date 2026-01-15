@@ -169,33 +169,41 @@ export const TRUST_TASK_DEFINITIONS: TrustTaskDefinition[] = [
     id: "personal_details",
     category: "profile",
     name: "Complete Personal Details",
-    description: "Fill in occupation, education, and lifestyle details",
+    description: "Fill in at least 3 personal details (height, ethnicity, lifestyle, etc.)",
     points: 5,
     check: (data) => {
-      const onboarding = data.onboarding;
+      const onboarding = data.onboarding || {};
       // At least 3 of these fields should be filled
       const fields = [
-        onboarding?.occupation,
-        onboarding?.education,
-        onboarding?.smoker,
-        onboarding?.drinker,
-        onboarding?.height,
-        onboarding?.ethnicity,
+        onboarding.height,
+        onboarding.weight,
+        onboarding.ethnicity,
+        onboarding.relationshipStatus,
+        onboarding.children,
+        onboarding.smoker,
+        onboarding.drinker,
+        onboarding.education,
+        onboarding.occupation,
+        onboarding.income,
       ];
-      const filledCount = fields.filter(Boolean).length;
+      const filledCount = fields.filter(v => v && v !== '').length;
       return filledCount >= 3;
     },
     getValue: (data) => {
-      const onboarding = data.onboarding;
+      const onboarding = data.onboarding || {};
       const fields = [
-        onboarding?.occupation,
-        onboarding?.education,
-        onboarding?.smoker,
-        onboarding?.drinker,
-        onboarding?.height,
-        onboarding?.ethnicity,
+        onboarding.height,
+        onboarding.weight,
+        onboarding.ethnicity,
+        onboarding.relationshipStatus,
+        onboarding.children,
+        onboarding.smoker,
+        onboarding.drinker,
+        onboarding.education,
+        onboarding.occupation,
+        onboarding.income,
       ];
-      return fields.filter(Boolean).length;
+      return fields.filter(v => v && v !== '').length;
     },
   },
   {
@@ -239,10 +247,19 @@ export const TRUST_TASK_DEFINITIONS: TrustTaskDefinition[] = [
     id: "recent_conversations",
     category: "activity",
     name: "Start Conversations",
-    description: "Have at least one conversation with activity in the last 7 days",
+    description: "Send a message within the last 7 days",
     points: 5,
-    check: (data) => (data.recentConversationCount || 0) >= 1,
-    getValue: (data) => data.recentConversationCount || 0,
+    check: (data) => {
+      const lastMessageSentAt = data.lastMessageSentAt as Timestamp | undefined;
+      if (!lastMessageSentAt) return false;
+      const lastMessageDate = lastMessageSentAt.toDate();
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      return lastMessageDate > sevenDaysAgo;
+    },
+    getValue: (data) => {
+      const lastMessageSentAt = data.lastMessageSentAt as Timestamp | undefined;
+      return lastMessageSentAt?.toDate()?.toISOString();
+    },
   },
   {
     id: "profile_visible",
