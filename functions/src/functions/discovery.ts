@@ -40,10 +40,13 @@ interface SearchFilters {
   // Activity filters
   onlineNow?: boolean; // Active within last 15 minutes
   activeRecently?: boolean; // Active within last 24 hours
+
+  // Trust score filter (read from private subcollection)
+  minTrustScore?: number; // 0-100, minimum trust score required
 }
 
 interface SearchSort {
-  field: "distance" | "lastActive" | "newest" | "age";
+  field: "distance" | "lastActive" | "newest" | "age" | "trustScore";
   direction: "asc" | "desc";
 }
 
@@ -78,6 +81,7 @@ interface SearchResult {
   verified: boolean;
   values: string[];
   supportOrientation: string;
+  trustScore: number; // 0-100 trust score (from private subcollection)
   // Secondary fields
   ethnicity?: string;
   relationshipStatus?: string;
@@ -298,15 +302,43 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
       // === EXECUTE QUERY ===
       const snapshot = await query.get();
 
+      // === FETCH TRUST SCORES FROM PRIVATE SUBCOLLECTION ===
+      // Batch fetch trust scores for all matched profiles
+      const userIds = snapshot.docs.map(doc => doc.id).filter(id => !blockedUserIds.has(id));
+      const trustScoreMap = new Map<string, number>();
+      
+      // Fetch in batches of 10 (Firestore limit for parallel reads)
+      const batchSize = 10;
+      for (let i = 0; i < userIds.length; i += batchSize) {
+        const batch = userIds.slice(i, i + batchSize);
+        const trustDocs = await Promise.all(
+          batch.map(uid => 
+            db.collection("users").doc(uid).collection("private").doc("data").get()
+          )
+        );
+        trustDocs.forEach((doc, idx) => {
+          const trustScore = doc.exists ? (doc.data()?.trustScore ?? 0) : 0;
+          trustScoreMap.set(batch[idx], trustScore);
+        });
+      }
+
       // === TRANSFORM RESULTS ===
       const profiles: SearchResult[] = [];
       
       for (const doc of snapshot.docs) {
-        // Stop once we have enough
+        // Stop once we have enough (accounting for filtering)
         if (profiles.length >= pageLimit) break;
 
         // Skip blocked users
         if (blockedUserIds.has(doc.id)) continue;
+
+        // Get trust score from map
+        const trustScore = trustScoreMap.get(doc.id) ?? 0;
+
+        // Apply minTrustScore filter (done in memory since it's from private subcollection)
+        if (filters.minTrustScore && trustScore < filters.minTrustScore) {
+          continue;
+        }
 
         const data = doc.data();
         const onboarding = data.onboarding;
@@ -358,6 +390,7 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
           verified: onboarding?.verificationOptions?.includes("identity") || false,
           values: onboarding?.values || [],
           supportOrientation: onboarding?.supportOrientation || '',
+          trustScore, // From private subcollection
           ethnicity: onboarding?.ethnicity,
           relationshipStatus: onboarding?.relationshipStatus,
           children: onboarding?.children,
@@ -374,6 +407,15 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
           const distA = a.distance ?? Infinity;
           const distB = b.distance ?? Infinity;
           return sort.direction === "asc" ? distA - distB : distB - distA;
+        });
+      }
+
+      // For trustScore sorting, sort in memory (since trust scores come from private subcollection)
+      if (sort.field === "trustScore") {
+        profiles.sort((a, b) => {
+          return sort.direction === "asc" 
+            ? a.trustScore - b.trustScore 
+            : b.trustScore - a.trustScore;
         });
       }
 

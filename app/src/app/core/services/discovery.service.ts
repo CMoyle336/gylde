@@ -446,6 +446,7 @@ export class DiscoveryService {
     { value: { field: 'age', direction: 'desc' }, label: 'Age (Oldest)' },
   ];
 
+  // Trust score options for filtering (Cloud Function reads from private subcollection)
   readonly trustScoreOptions: { value: number; label: string }[] = [
     { value: 0, label: 'Any trust score' },
     { value: 25, label: '25% or higher' },

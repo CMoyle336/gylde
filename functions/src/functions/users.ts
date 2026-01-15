@@ -7,11 +7,23 @@
  * - isSearchable: false if profile hidden, account disabled, or scheduled for deletion
  * - isVerified: true if identity verification completed
  * - geohash: encoded location for distance-based queries
+ * 
+ * Private data maintained:
+ * - trustScore: calculated from trust tasks
+ * - subscription: tier and status
+ * - tasks: individual trust task completion status
  */
 import { onDocumentUpdated, onDocumentCreated } from "firebase-functions/v2/firestore";
 import { db } from "../config/firebase";
 import { Timestamp } from "firebase-admin/firestore";
 import * as logger from "firebase-functions/logger";
+import { 
+  TRUST_TASK_DEFINITIONS, 
+  TrustData, 
+  TrustTask, 
+  TrustCategory,
+  getPointsPerCategory,
+} from "../types/trust.types";
 
 /**
  * Generate a geohash for a lat/lng coordinate
@@ -58,47 +70,81 @@ function encodeGeohash(latitude: number, longitude: number, precision: number = 
 }
 
 /**
- * Calculate trust score based on user profile data
- * Score breakdown (100 points max):
- * - Verification: 30 points (identity verified)
- * - Photos: 25 points (profile photo: 10, 3+ photos: 10, 5+ photos: 5)
- * - Profile Details: 25 points (tagline: 5, about: 5, occupation: 5, education: 5, lifestyle: 5)
- * - Activity: 20 points (active recently: 10, profile visible: 10)
+ * Calculate complete trust data based on user profile
+ * Returns TrustData with score, tasks, and category breakdowns
  */
-function calculateTrustScore(data: FirebaseFirestore.DocumentData): number {
-  const onboarding = data.onboarding || {};
-  const photos = onboarding.photos || [];
-  const privacySettings = data.settings?.privacy || {};
-  let earned = 0;
+function calculateTrustData(data: FirebaseFirestore.DocumentData, existingTasks?: Record<string, TrustTask>): TrustData {
+  const now = Timestamp.now();
+  const tasks: Record<string, TrustTask> = {};
+  const categoryPoints = getPointsPerCategory();
+  
+  // Initialize category stats
+  const categories: Record<TrustCategory, {
+    maxPoints: number;
+    earnedPoints: number;
+    completedTasks: number;
+    totalTasks: number;
+  }> = {
+    verification: { maxPoints: categoryPoints.verification, earnedPoints: 0, completedTasks: 0, totalTasks: 0 },
+    photos: { maxPoints: categoryPoints.photos, earnedPoints: 0, completedTasks: 0, totalTasks: 0 },
+    profile: { maxPoints: categoryPoints.profile, earnedPoints: 0, completedTasks: 0, totalTasks: 0 },
+    activity: { maxPoints: categoryPoints.activity, earnedPoints: 0, completedTasks: 0, totalTasks: 0 },
+  };
 
-  // Verification (30 points)
-  if (onboarding.verificationOptions?.includes("identity")) {
-    earned += 30;
+  let earnedPoints = 0;
+  let maxScore = 0;
+
+  // Evaluate each task
+  for (const taskDef of TRUST_TASK_DEFINITIONS) {
+    const completed = taskDef.check(data);
+    const value = taskDef.getValue ? taskDef.getValue(data) : undefined;
+    const existingTask = existingTasks?.[taskDef.id];
+    
+    // Determine completedAt timestamp
+    let completedAt: Timestamp | null = null;
+    if (completed) {
+      if (existingTask?.completed && existingTask.completedAt) {
+        // Keep existing timestamp if task was already completed
+        completedAt = existingTask.completedAt;
+      } else {
+        // New completion - use current timestamp
+        completedAt = now;
+      }
+    }
+
+    // Build task object - only include value if defined (Firestore doesn't accept undefined)
+    const taskData: TrustTask = {
+      completed,
+      completedAt,
+    };
+    if (value !== undefined) {
+      taskData.value = value;
+    }
+    tasks[taskDef.id] = taskData;
+
+    // Update category stats
+    categories[taskDef.category].totalTasks++;
+    if (completed) {
+      earnedPoints += taskDef.points;
+      categories[taskDef.category].earnedPoints += taskDef.points;
+      categories[taskDef.category].completedTasks++;
+    }
+    maxScore += taskDef.points;
   }
 
-  // Photos (25 points)
-  if (data.photoURL) earned += 10;
-  if (photos.length >= 3) earned += 10;
-  if (photos.length >= 5) earned += 5;
+  // Calculate percentage score (0-100)
+  const score = maxScore > 0 ? Math.round((earnedPoints / maxScore) * 100) : 0;
 
-  // Profile Details (25 points)
-  if (onboarding.tagline && onboarding.tagline.length > 0) earned += 5;
-  if (onboarding.idealRelationship && onboarding.idealRelationship.length > 50) earned += 5;
-  if (onboarding.occupation) earned += 5;
-  if (onboarding.education) earned += 5;
-  if (onboarding.smoker && onboarding.drinker) earned += 5;
-
-  // Activity (20 points)
-  const lastActiveAt = data.lastActiveAt as Timestamp | undefined;
-  if (lastActiveAt) {
-    const lastActiveDate = lastActiveAt.toDate();
-    const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
-    if (lastActiveDate > threeDaysAgo) earned += 10;
-  }
-  if (privacySettings.profileVisible !== false) earned += 10;
-
-  return earned;
+  return {
+    score,
+    lastCalculatedAt: now,
+    maxScore,
+    earnedPoints,
+    tasks,
+    categories,
+  };
 }
+
 
 /**
  * Calculate denormalized fields based on user data
@@ -130,10 +176,10 @@ function calculateDenormalizedFields(data: FirebaseFirestore.DocumentData) {
     ? encodeGeohash(location.latitude, location.longitude, 9)
     : null;
 
-  // Trust score (stored in private subcollection, but calculated here)
-  const trustScore = calculateTrustScore(data);
+  // Note: trustScore is stored ONLY in users/{uid}/private/data for security
+  // It is not written to the public user document
 
-  return { isSearchable, isVerified, sortableLastActive, geohash, trustScore };
+  return { isSearchable, isVerified, sortableLastActive, geohash };
 }
 
 /**
@@ -154,7 +200,8 @@ export const onUserCreated = onDocumentCreated(
       return;
     }
 
-    const { isSearchable, isVerified, sortableLastActive, geohash, trustScore } = calculateDenormalizedFields(data);
+    const { isSearchable, isVerified, sortableLastActive, geohash } = calculateDenormalizedFields(data);
+    const trustData = calculateTrustData(data);
 
     // Update public denormalized fields on user document
     await db.collection("users").doc(userId).update({
@@ -166,17 +213,29 @@ export const onUserCreated = onDocumentCreated(
 
     // Store sensitive data in private subcollection (only user can read, only functions can write)
     await db.collection("users").doc(userId).collection("private").doc("data").set({
-      trustScore,
+      // Trust data
+      trustScore: trustData.score,
+      trust: trustData,
+      
+      // Subscription data
       subscription: {
         tier: "free",
         status: "active",
         currentPeriodEnd: null,
         cancelAtPeriodEnd: false,
       },
+      
       updatedAt: Timestamp.now(),
     });
 
-    logger.info(`Set denormalized fields for new user ${userId}:`, { isSearchable, isVerified, trustScore, geohash: geohash?.substring(0, 4) });
+    logger.info(`Set denormalized fields for new user ${userId}:`, { 
+      isSearchable, 
+      isVerified, 
+      trustScore: trustData.score,
+      earnedPoints: trustData.earnedPoints,
+      maxScore: trustData.maxScore,
+      geohash: geohash?.substring(0, 4),
+    });
   }
 );
 
@@ -240,15 +299,27 @@ export const onUserUpdated = onDocumentUpdated(
       await db.collection("users").doc(userId).update(publicUpdates);
     }
 
-    // Check trust score in private subcollection
+    // Update trust data in private subcollection
     const privateDocRef = db.collection("users").doc(userId).collection("private").doc("data");
     const privateDoc = await privateDocRef.get();
-    const currentTrustScore = privateDoc.exists ? privateDoc.data()?.trustScore : null;
+    const existingData = privateDoc.exists ? privateDoc.data() : null;
+    const existingTrustScore = existingData?.trustScore ?? null;
+    const existingTasks = existingData?.trust?.tasks as Record<string, TrustTask> | undefined;
 
-    if (expected.trustScore !== currentTrustScore) {
-      logger.info(`Updating trust score for user ${userId}: ${currentTrustScore} -> ${expected.trustScore}`);
+    // Calculate new trust data, preserving completedAt timestamps for already-completed tasks
+    const trustData = calculateTrustData(afterData, existingTasks);
+
+    // Only update if score changed or this is a new document
+    if (trustData.score !== existingTrustScore || !privateDoc.exists) {
+      logger.info(`Updating trust data for user ${userId}: ${existingTrustScore} -> ${trustData.score}`, {
+        earnedPoints: trustData.earnedPoints,
+        maxScore: trustData.maxScore,
+        completedTasks: Object.values(trustData.tasks).filter(t => t.completed).length,
+      });
+      
       await privateDocRef.set({
-        trustScore: expected.trustScore,
+        trustScore: trustData.score,
+        trust: trustData,
         updatedAt: Timestamp.now(),
       }, { merge: true });
     }

@@ -27,7 +27,7 @@ export interface DiscoverableProfile {
   photos: string[];
   verified: boolean;
   supportOrientation: string;
-  trustScore: number; // 0-100 trust score
+  trustScore: number; // 0-100 trust score (fetched from private data by Cloud Function)
   // Secondary profile fields
   ethnicity?: string;
   relationshipStatus?: string;
@@ -67,7 +67,7 @@ export interface DiscoveryFilters {
   onlineNow: boolean;
   activeRecently: boolean;
 
-  // Trust score filter
+  // Trust score filter (Cloud Function reads from private subcollection)
   minTrustScore: number; // 0-100, minimum trust score required
 }
 

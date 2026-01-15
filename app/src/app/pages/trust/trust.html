@@ -98,7 +98,7 @@
               <span class="material-icons-outlined">{{ category.icon }}</span>
             </div>
             <div class="category-info">
-              <h2 class="category-title">{{ category.title }}</h2>
+              <h2 class="category-title">{{ category.name }}</h2>
               <div class="category-progress">
                 <div class="progress-bar">
                   <div 
@@ -122,21 +122,21 @@
                   }
                 </div>
                 <div class="task-content">
-                  <div class="task-header">
-                    <span class="task-title">{{ task.title }}</span>
-                    <span class="task-points" [class.earned]="task.completed">
-                      +{{ task.points }} pts
-                    </span>
-                  </div>
+                  <span class="task-title">{{ task.name }}</span>
                   <p class="task-description">{{ task.description }}</p>
                 </div>
-                @if (!task.completed && task.action) {
-                  <button 
-                    class="task-action-btn"
-                    (click)="onTaskAction(task)">
-                    {{ task.action }}
-                  </button>
-                }
+                <div class="task-actions">
+                  <span class="task-points" [class.earned]="task.completed">
+                    +{{ task.points }} pts
+                  </span>
+                  @if (!task.completed && task.action) {
+                    <button 
+                      class="task-action-btn"
+                      (click)="onTaskAction(task)">
+                      {{ task.action }}
+                    </button>
+                  }
+                </div>
               </li>
             }
           </ul>

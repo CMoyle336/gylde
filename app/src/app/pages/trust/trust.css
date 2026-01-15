@@ -354,7 +354,7 @@
 
 .task-item {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 1rem;
   padding: 1.25rem 1.5rem;
   border-bottom: 1px solid var(--color-border);
@@ -397,17 +397,18 @@
   min-width: 0;
 }
 
-.task-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
+.task-title {
+  display: block;
+  font-weight: 500;
+  color: var(--color-text-primary);
   margin-bottom: 0.25rem;
 }
 
-.task-title {
-  font-weight: 500;
-  color: var(--color-text-primary);
+.task-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-shrink: 0;
 }
 
 .task-item.completed .task-title {
@@ -444,8 +445,6 @@
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
-  flex-shrink: 0;
-  align-self: center;
 }
 
 .task-action-btn:hover {
@@ -518,11 +517,16 @@
   .task-item {
     padding: 1rem;
     flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .task-actions {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.5rem;
   }
 
   .task-action-btn {
-    margin-top: 0.75rem;
-    margin-left: 48px;
-    width: calc(100% - 48px);
+    width: auto;
   }
 }
