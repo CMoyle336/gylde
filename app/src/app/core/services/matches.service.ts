@@ -1,31 +1,19 @@
 import { Injectable, inject, signal, computed, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { FirestoreService } from './firestore.service';
+import {
+  Firestore,
+  collection,
+  collectionGroup,
+  query,
+  where,
+  orderBy,
+  limit,
+  getDocs,
+  documentId,
+} from '@angular/fire/firestore';
 import { AuthService } from './auth.service';
 import { BlockService } from './block.service';
 import { UserProfile } from '../interfaces';
-
-interface FavoriteDoc {
-  id?: string;
-  fromUserId: string;
-  toUserId?: string;
-  odTargetUserId?: string; // Legacy format
-  private?: boolean;
-  createdAt: unknown;
-}
-
-interface ProfileViewDoc {
-  id?: string;
-  viewerId: string;
-  viewedUserId: string;
-  viewedAt: unknown;
-}
-
-interface MatchDoc {
-  id?: string;
-  users: string[];
-  createdAt: unknown;
-}
 
 export interface MatchProfile {
   uid: string;
@@ -55,7 +43,7 @@ const STORAGE_KEY_PREFIX = 'matches_last_viewed_';
   providedIn: 'root',
 })
 export class MatchesService {
-  private readonly firestoreService = inject(FirestoreService);
+  private readonly firestore = inject(Firestore);
   private readonly authService = inject(AuthService);
   private readonly blockService = inject(BlockService);
   private readonly platformId = inject(PLATFORM_ID);
@@ -217,17 +205,17 @@ export class MatchesService {
   private async countNewFavoritedMe(currentUserId: string): Promise<number> {
     const lastViewed = this.getLastViewedTime('favorited-me');
     
-    const favorites = await this.firestoreService.queryCollectionGroup<FavoriteDoc>(
-      'favorites',
-      [
-        this.firestoreService.whereEqual('toUserId', currentUserId),
-        this.firestoreService.whereGreaterThan('createdAt', lastViewed),
-        this.firestoreService.limitTo(100),
-      ]
+    const favoritesRef = collectionGroup(this.firestore, 'favorites');
+    const q = query(
+      favoritesRef,
+      where('toUserId', '==', currentUserId),
+      where('createdAt', '>', lastViewed),
+      limit(100)
     );
 
+    const snapshot = await getDocs(q);
     // Filter out private favorites client-side (Firestore doesn't support multiple inequality filters on different fields)
-    const nonPrivateFavorites = favorites.filter(f => f.private !== true);
+    const nonPrivateFavorites = snapshot.docs.filter(d => d.data()['private'] !== true);
     return nonPrivateFavorites.length;
   }
 
@@ -237,17 +225,17 @@ export class MatchesService {
   private async countNewViewedMe(currentUserId: string): Promise<number> {
     const lastViewed = this.getLastViewedTime('viewed-me');
     
-    const views = await this.firestoreService.getCollection<ProfileViewDoc>(
-      'profileViews',
-      [
-        this.firestoreService.whereEqual('viewedUserId', currentUserId),
-        this.firestoreService.whereGreaterThan('viewedAt', lastViewed),
-        this.firestoreService.limitTo(100),
-      ]
+    const viewsRef = collection(this.firestore, 'profileViews');
+    const q = query(
+      viewsRef,
+      where('viewedUserId', '==', currentUserId),
+      where('viewedAt', '>', lastViewed),
+      limit(100)
     );
 
+    const snapshot = await getDocs(q);
     // Deduplicate by viewerId
-    const uniqueViewers = new Set(views.map(v => v.viewerId));
+    const uniqueViewers = new Set(snapshot.docs.map(d => d.data()['viewerId']));
     return uniqueViewers.size;
   }
 
@@ -255,27 +243,30 @@ export class MatchesService {
    * Load users that the current user has matched with (mutual favorites)
    */
   private async loadMyMatches(currentUserId: string): Promise<MatchProfile[]> {
-    const matches = await this.firestoreService.getCollection<MatchDoc>(
-      'matches',
-      [
-        this.firestoreService.whereArrayContains('users', currentUserId),
-        this.firestoreService.orderByField('createdAt', 'desc'),
-        this.firestoreService.limitTo(50),
-      ]
+    const matchesRef = collection(this.firestore, 'matches');
+    const q = query(
+      matchesRef,
+      where('users', 'array-contains', currentUserId),
+      orderBy('createdAt', 'desc'),
+      limit(50)
     );
+
+    const snapshot = await getDocs(q);
     
     // Extract the other user's ID from each match
     const userIds: string[] = [];
     const interactionDates = new Map<string, Date>();
     
-    matches.forEach(match => {
-      const otherUserId = match.users.find(uid => uid !== currentUserId);
+    snapshot.docs.forEach(d => {
+      const data = d.data();
+      const users = data['users'] as string[];
+      const otherUserId = users.find(uid => uid !== currentUserId);
       
       if (otherUserId) {
         userIds.push(otherUserId);
         interactionDates.set(
           otherUserId,
-          (match.createdAt as { toDate?: () => Date })?.toDate?.() || new Date()
+          data['createdAt']?.toDate?.() || new Date()
         );
       }
     });
@@ -290,23 +281,24 @@ export class MatchesService {
   private async loadFavoritedMe(currentUserId: string): Promise<MatchProfile[]> {
     // Query all users' favorites subcollections for documents where toUserId matches current user
     // This requires a collection group query on 'favorites'
-    const favorites = await this.firestoreService.queryCollectionGroup<FavoriteDoc>(
-      'favorites',
-      [
-        this.firestoreService.whereEqual('toUserId', currentUserId),
-        this.firestoreService.whereNotEqual('private', true), // Exclude private favorites
-        this.firestoreService.orderByField('private', 'asc'), // Required for != query
-        this.firestoreService.orderByField('createdAt', 'desc'),
-        this.firestoreService.limitTo(50),
-      ]
+    const favoritesRef = collectionGroup(this.firestore, 'favorites');
+    const q = query(
+      favoritesRef,
+      where('toUserId', '==', currentUserId),
+      where('private', '!=', true), // Exclude private favorites
+      orderBy('private'), // Required for != query
+      orderBy('createdAt', 'desc'),
+      limit(50)
     );
 
-    const userIds = favorites.map(f => f.fromUserId);
+    const snapshot = await getDocs(q);
+    const userIds = snapshot.docs.map(d => d.data()['fromUserId'] as string);
     const interactionDates = new Map<string, Date>();
-    favorites.forEach(f => {
+    snapshot.docs.forEach(d => {
+      const data = d.data();
       interactionDates.set(
-        f.fromUserId,
-        (f.createdAt as { toDate?: () => Date })?.toDate?.() || new Date()
+        data['fromUserId'],
+        data['createdAt']?.toDate?.() || new Date()
       );
     });
 
@@ -317,21 +309,22 @@ export class MatchesService {
    * Load users who have viewed the current user's profile
    */
   private async loadViewedMe(currentUserId: string): Promise<MatchProfile[]> {
-    const views = await this.firestoreService.getCollection<ProfileViewDoc>(
-      'profileViews',
-      [
-        this.firestoreService.whereEqual('viewedUserId', currentUserId),
-        this.firestoreService.orderByField('viewedAt', 'desc'),
-        this.firestoreService.limitTo(50),
-      ]
+    const viewsRef = collection(this.firestore, 'profileViews');
+    const q = query(
+      viewsRef,
+      where('viewedUserId', '==', currentUserId),
+      orderBy('viewedAt', 'desc'),
+      limit(50)
     );
 
-    const userIds = views.map(v => v.viewerId);
+    const snapshot = await getDocs(q);
+    const userIds = snapshot.docs.map(d => d.data()['viewerId'] as string);
     const interactionDates = new Map<string, Date>();
-    views.forEach(v => {
+    snapshot.docs.forEach(d => {
+      const data = d.data();
       interactionDates.set(
-        v.viewerId,
-        (v.viewedAt as { toDate?: () => Date })?.toDate?.() || new Date()
+        data['viewerId'],
+        data['viewedAt']?.toDate?.() || new Date()
       );
     });
 
@@ -344,25 +337,22 @@ export class MatchesService {
    * Load users that the current user has favorited
    */
   private async loadMyFavorites(currentUserId: string): Promise<MatchProfile[]> {
-    const favorites = await this.firestoreService.getCollection<FavoriteDoc>(
-      `users/${currentUserId}/favorites`,
-      [
-        this.firestoreService.orderByField('createdAt', 'desc'),
-        this.firestoreService.limitTo(50),
-      ]
-    );
+    const favoritesRef = collection(this.firestore, `users/${currentUserId}/favorites`);
+    const q = query(favoritesRef, orderBy('createdAt', 'desc'), limit(50));
 
+    const snapshot = await getDocs(q);
     const interactionDates = new Map<string, Date>();
     const userIds: string[] = [];
     
-    favorites.forEach(f => {
+    snapshot.docs.forEach(d => {
+      const data = d.data();
       // Support both old format (odTargetUserId) and new format (toUserId)
-      const targetUserId = f.toUserId || f.odTargetUserId;
+      const targetUserId = data['toUserId'] || data['odTargetUserId'];
       if (targetUserId) {
         userIds.push(targetUserId);
         interactionDates.set(
           targetUserId,
-          (f.createdAt as { toDate?: () => Date })?.toDate?.() || new Date()
+          data['createdAt']?.toDate?.() || new Date()
         );
       }
     });
@@ -374,21 +364,22 @@ export class MatchesService {
    * Load users that the current user has viewed
    */
   private async loadMyViews(currentUserId: string): Promise<MatchProfile[]> {
-    const views = await this.firestoreService.getCollection<ProfileViewDoc>(
-      'profileViews',
-      [
-        this.firestoreService.whereEqual('viewerId', currentUserId),
-        this.firestoreService.orderByField('viewedAt', 'desc'),
-        this.firestoreService.limitTo(50),
-      ]
+    const viewsRef = collection(this.firestore, 'profileViews');
+    const q = query(
+      viewsRef,
+      where('viewerId', '==', currentUserId),
+      orderBy('viewedAt', 'desc'),
+      limit(50)
     );
 
-    const userIds = views.map(v => v.viewedUserId);
+    const snapshot = await getDocs(q);
+    const userIds = snapshot.docs.map(d => d.data()['viewedUserId'] as string);
     const interactionDates = new Map<string, Date>();
-    views.forEach(v => {
+    snapshot.docs.forEach(d => {
+      const data = d.data();
       interactionDates.set(
-        v.viewedUserId,
-        (v.viewedAt as { toDate?: () => Date })?.toDate?.() || new Date()
+        data['viewedUserId'],
+        data['viewedAt']?.toDate?.() || new Date()
       );
     });
 
@@ -425,23 +416,19 @@ export class MatchesService {
     }
 
     // Execute all batch queries in parallel
-    const batchPromises = batches.map(batch => 
-      this.firestoreService.getCollection<UserProfile>(
-        'users',
-        [this.firestoreService.whereIn(this.firestoreService.documentId(), batch)]
-      )
-    );
+    const usersRef = collection(this.firestore, 'users');
+    const batchPromises = batches.map(batch => {
+      const q = query(usersRef, where(documentId(), 'in', batch));
+      return getDocs(q);
+    });
 
     const batchResults = await Promise.all(batchPromises);
     
     // Combine all results into a map for easy lookup
     const userDataMap = new Map<string, UserProfile>();
-    for (const users of batchResults) {
-      for (const user of users) {
-        const userId = (user as unknown as { id: string }).id;
-        if (userId) {
-          userDataMap.set(userId, user);
-        }
+    for (const snapshot of batchResults) {
+      for (const docSnap of snapshot.docs) {
+        userDataMap.set(docSnap.id, docSnap.data() as UserProfile);
       }
     }
 
