@@ -1,0 +1,360 @@
+<div class="ai-panel">
+  <!-- Header -->
+  <div class="panel-header">
+    <div class="header-title">
+      <mat-icon>auto_awesome</mat-icon>
+      <span>AI Assist</span>
+    </div>
+    <div class="header-actions">
+      <button 
+        mat-icon-button 
+        (click)="refresh()" 
+        [disabled]="isLoading()"
+        matTooltip="Refresh suggestions">
+        <mat-icon>refresh</mat-icon>
+      </button>
+      <button 
+        mat-icon-button 
+        (click)="close()"
+        matTooltip="Close panel">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="panel-tabs">
+    @for (tab of tabs; track tab.id) {
+      <button 
+        class="tab-btn"
+        [class.active]="activeTab() === tab.id"
+        [class.has-alert]="tab.id === 'safety' && hasSafetyFlags()"
+        (click)="setActiveTab(tab.id)">
+        <mat-icon>{{ tab.icon }}</mat-icon>
+        <span>{{ tab.label }}</span>
+        @if (tab.id === 'safety' && hasSafetyFlags()) {
+          <span class="alert-dot"></span>
+        }
+      </button>
+    }
+  </div>
+
+  <!-- Tab Content -->
+  <div class="panel-content">
+    @if (isLoading()) {
+      <div class="loading-state">
+        <mat-spinner diameter="32"></mat-spinner>
+        <span>Thinking...</span>
+      </div>
+    } @else if (error()) {
+      <div class="error-state">
+        <mat-icon>error_outline</mat-icon>
+        <p>{{ error() }}</p>
+        <button mat-stroked-button (click)="refresh()">Try again</button>
+      </div>
+    } @else {
+      <!-- Reply Tab -->
+      @if (activeTab() === 'reply') {
+        <div class="tab-reply">
+          <!-- User Voice Slider -->
+          <div class="voice-control">
+            <label>Writing style</label>
+            <div class="voice-slider-row">
+              <span class="voice-label-start">My style</span>
+              <mat-slider min="0" max="2" step="1" discrete>
+                <input 
+                  matSliderThumb 
+                  [value]="getUserVoiceValue()" 
+                  (valueChange)="setUserVoice($event)">
+              </mat-slider>
+              <span class="voice-label-end">Polished</span>
+            </div>
+          </div>
+
+          <!-- Tone Filter -->
+          <div class="tone-filter">
+            <label>Tone</label>
+            <div class="tone-chips">
+              @if (selectedTone()) {
+                <button class="tone-chip active" (click)="clearToneFilter()">
+                  <mat-icon>{{ getToneIcon(selectedTone()!) }}</mat-icon>
+                  {{ getToneLabel(selectedTone()!) }}
+                  <mat-icon class="clear-icon">close</mat-icon>
+                </button>
+              } @else {
+                @for (tone of toneOptions; track tone.id) {
+                  <button 
+                    class="tone-chip"
+                    [matTooltip]="tone.description"
+                    (click)="selectTone(tone.id)">
+                    <mat-icon>{{ tone.icon }}</mat-icon>
+                    {{ tone.label }}
+                  </button>
+                }
+              }
+            </div>
+          </div>
+
+          <!-- Suggestions List -->
+          @if (context?.isEmptyThread) {
+            <!-- Conversation Starters -->
+            <div class="starters-section">
+              <h4>Conversation starters</h4>
+              
+              @if (starterIdeas().length > 0) {
+                <div class="starter-ideas">
+                  <p class="section-hint">Ideas to kick things off:</p>
+                  <ul>
+                    @for (idea of starterIdeas(); track idea) {
+                      <li>{{ idea }}</li>
+                    }
+                  </ul>
+                </div>
+              }
+
+              @if (starterMessages().length > 0) {
+                <div class="ready-messages">
+                  <p class="section-hint">Ready to send:</p>
+                  @for (msg of starterMessages(); track msg.id) {
+                    <div class="suggestion-card">
+                      <p class="suggestion-text">{{ msg.text }}</p>
+                      <div class="suggestion-meta">
+                        <span class="tone-badge">
+                          <mat-icon>{{ getToneIcon(msg.tone) }}</mat-icon>
+                          {{ getToneLabel(msg.tone) }}
+                        </span>
+                      </div>
+                      <div class="suggestion-actions">
+                        <button mat-stroked-button (click)="insertSuggestion(msg)">
+                          <mat-icon>add</mat-icon>
+                          Insert
+                        </button>
+                        <button mat-icon-button (click)="copySuggestion(msg)" [matTooltip]="copiedId() === msg.id ? 'Copied!' : 'Copy'">
+                          <mat-icon>{{ copiedId() === msg.id ? 'check' : 'content_copy' }}</mat-icon>
+                        </button>
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+
+              @if (starterIdeas().length === 0 && starterMessages().length === 0) {
+                <button mat-flat-button color="primary" (click)="fetchReplySuggestions()">
+                  <mat-icon>auto_awesome</mat-icon>
+                  Get conversation starters
+                </button>
+              }
+            </div>
+          } @else {
+            <!-- Reply Suggestions -->
+            <div class="suggestions-list">
+              @if (replySuggestions().length > 0) {
+                @for (suggestion of replySuggestions(); track suggestion.id) {
+                  <div class="suggestion-card">
+                    <p class="suggestion-text">{{ suggestion.text }}</p>
+                    <div class="suggestion-meta">
+                      <span class="tone-badge">
+                        <mat-icon>{{ getToneIcon(suggestion.tone) }}</mat-icon>
+                        {{ getToneLabel(suggestion.tone) }}
+                      </span>
+                      @if (suggestion.explanation) {
+                        <button class="why-btn" matTooltip="{{ suggestion.explanation }}">
+                          Why this?
+                        </button>
+                      }
+                    </div>
+                    <div class="suggestion-actions">
+                      <button mat-stroked-button (click)="insertSuggestion(suggestion)">
+                        <mat-icon>add</mat-icon>
+                        Insert
+                      </button>
+                      <button mat-icon-button (click)="copySuggestion(suggestion)" [matTooltip]="copiedId() === suggestion.id ? 'Copied!' : 'Copy'">
+                        <mat-icon>{{ copiedId() === suggestion.id ? 'check' : 'content_copy' }}</mat-icon>
+                      </button>
+                      <button mat-icon-button [matMenuTriggerFor]="modifyMenu" matTooltip="Modify">
+                        <mat-icon>tune</mat-icon>
+                      </button>
+                      <mat-menu #modifyMenu="matMenu">
+                        <button mat-menu-item (click)="getMoreLikeThis(suggestion)">
+                          <mat-icon>content_copy</mat-icon>
+                          <span>More like this</span>
+                        </button>
+                        <button mat-menu-item (click)="makeItShorter(suggestion)">
+                          <mat-icon>short_text</mat-icon>
+                          <span>Shorter</span>
+                        </button>
+                        <button mat-menu-item (click)="makeItMorePlayful(suggestion)">
+                          <mat-icon>sentiment_very_satisfied</mat-icon>
+                          <span>More playful</span>
+                        </button>
+                        <button mat-menu-item (click)="makeItMoreDirect(suggestion)">
+                          <mat-icon>arrow_forward</mat-icon>
+                          <span>More direct</span>
+                        </button>
+                      </mat-menu>
+                    </div>
+                  </div>
+                }
+              } @else {
+                <div class="empty-suggestions">
+                  <mat-icon>lightbulb</mat-icon>
+                  <p>Get AI-powered reply suggestions based on your conversation</p>
+                  <button mat-flat-button color="primary" (click)="fetchReplySuggestions()">
+                    <mat-icon>auto_awesome</mat-icon>
+                    Get suggestions
+                  </button>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Rewrite Tab -->
+      @if (activeTab() === 'rewrite') {
+        <div class="tab-rewrite">
+          @if (!context?.userDraft) {
+            <div class="empty-state">
+              <mat-icon>edit_note</mat-icon>
+              <p>Type a message first, then come back here to rewrite it with a different tone</p>
+            </div>
+          } @else {
+            <div class="original-text">
+              <label>Your draft</label>
+              <p>"{{ context?.userDraft }}"</p>
+            </div>
+
+            <div class="rewrite-tone">
+              <label>Rewrite as</label>
+              <div class="tone-chips">
+                @for (tone of toneOptions; track tone.id) {
+                  <button 
+                    class="tone-chip"
+                    [class.active]="rewriteTone() === tone.id"
+                    [matTooltip]="tone.description"
+                    (click)="setRewriteTone(tone.id)">
+                    <mat-icon>{{ tone.icon }}</mat-icon>
+                    {{ tone.label }}
+                  </button>
+                }
+              </div>
+            </div>
+
+            @if (rewriteVariants().length > 0) {
+              <div class="rewrite-variants">
+                @for (variant of rewriteVariants(); track variant.id) {
+                  <div class="suggestion-card">
+                    <p class="suggestion-text">{{ variant.text }}</p>
+                    <p class="change-summary">{{ variant.changeSummary }}</p>
+                    <div class="suggestion-actions">
+                      <button mat-stroked-button (click)="insertText.emit(variant.text)">
+                        <mat-icon>add</mat-icon>
+                        Use this
+                      </button>
+                    </div>
+                  </div>
+                }
+              </div>
+            } @else {
+              <button mat-flat-button color="primary" (click)="fetchRewrite()">
+                <mat-icon>auto_fix_high</mat-icon>
+                Rewrite my message
+              </button>
+            }
+          }
+        </div>
+      }
+
+      <!-- Coach Tab -->
+      @if (activeTab() === 'coach') {
+        <div class="tab-coach">
+          @if (toneInsight()) {
+            <div class="insight-card">
+              <div class="insight-header">
+                <h4>Tone reading</h4>
+                <mat-icon [matTooltip]="'Confidence: ' + toneInsight()!.confidence">
+                  {{ getConfidenceIcon(toneInsight()!.confidence) }}
+                </mat-icon>
+              </div>
+              <div class="tone-label">
+                {{ toneInsight()!.displayLabel }}
+              </div>
+              <p class="insight-explanation">{{ toneInsight()!.explanation }}</p>
+            </div>
+
+            @if (nextMoveAdvice()) {
+              <div class="advice-card">
+                <h4>Suggested next move</h4>
+                <p class="advice-text">{{ nextMoveAdvice()!.advice }}</p>
+                <p class="advice-reasoning">{{ nextMoveAdvice()!.reasoning }}</p>
+              </div>
+            }
+          } @else {
+            <div class="empty-state">
+              <mat-icon>psychology</mat-icon>
+              <p>Get insights on the tone and intent of messages in your conversation</p>
+              <button mat-flat-button color="primary" (click)="fetchCoachInsights()">
+                <mat-icon>visibility</mat-icon>
+                Analyze conversation
+              </button>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Safety Tab -->
+      @if (activeTab() === 'safety') {
+        <div class="tab-safety">
+          @if (safetyAlerts().length > 0) {
+            @for (alert of safetyAlerts(); track alert.flag) {
+              <div class="safety-alert" [class]="'severity-' + alert.severity">
+                <div class="alert-header">
+                  <mat-icon [style.color]="getSeverityColor(alert.severity)">warning</mat-icon>
+                  <span class="alert-label">{{ alert.displayLabel }}</span>
+                </div>
+                <p class="alert-explanation">{{ alert.explanation }}</p>
+                
+                <div class="recommended-actions">
+                  <h5>Recommended actions:</h5>
+                  <ul>
+                    @for (action of alert.recommendedActions; track action) {
+                      <li>{{ action }}</li>
+                    }
+                  </ul>
+                </div>
+
+                @if (alert.boundaryDraft) {
+                  <div class="boundary-draft">
+                    <p class="draft-label">Suggested response:</p>
+                    <p class="draft-text">"{{ alert.boundaryDraft.text }}"</p>
+                    <button mat-stroked-button (click)="insertSuggestion(alert.boundaryDraft)">
+                      <mat-icon>add</mat-icon>
+                      Use this response
+                    </button>
+                  </div>
+                }
+              </div>
+            }
+            
+            <button mat-stroked-button class="dismiss-btn" (click)="dismissSafetyAlert()">
+              <mat-icon>check</mat-icon>
+              Dismiss alerts
+            </button>
+          } @else {
+            <div class="all-clear">
+              <mat-icon>verified_user</mat-icon>
+              <h4>All clear</h4>
+              <p>No safety concerns detected in this conversation</p>
+            </div>
+          }
+        </div>
+      }
+    }
+  </div>
+
+  <!-- Footer hint -->
+  <div class="panel-footer">
+    <mat-icon>info</mat-icon>
+    <span>AI suggestions are private. Only you can see them.</span>
+  </div>
+</div>

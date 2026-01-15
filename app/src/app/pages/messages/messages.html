@@ -1,4 +1,4 @@
-<div class="messages-layout">
+<div class="messages-layout" [class.ai-panel-open]="isAiPanelOpen()">
   <!-- Conversation List -->
   <aside class="conversation-list" [class.hidden-on-mobile]="activeConversation()">
     <!-- List Header with Tabs -->
@@ -384,6 +384,21 @@
               hidden 
               (change)="onFilesSelected($event)">
             
+            <!-- AI Assist button (Elite only) -->
+            <button 
+              type="button" 
+              class="ai-assist-btn"
+              [class.active]="isAiPanelOpen()"
+              [class.has-access]="hasAiAccess()"
+              (click)="toggleAiAssist()"
+              [disabled]="sending()"
+              aria-label="AI Assist">
+              <span class="material-icons-outlined">auto_awesome</span>
+              @if (!hasAiAccess()) {
+                <span class="elite-badge">Elite</span>
+              }
+            </button>
+            
             <!-- Image upload button -->
             <button 
               type="button" 
@@ -425,6 +440,17 @@
       </div>
     }
   </main>
+
+  <!-- AI Assist Panel -->
+  @if (isAiPanelOpen() && activeConversation()) {
+    <aside class="ai-assist-sidebar">
+      <app-ai-assist-panel
+        [context]="aiAssistContext()"
+        (insertText)="onAiInsertText($event)"
+        (closed)="onAiPanelClosed()">
+      </app-ai-assist-panel>
+    </aside>
+  }
 </div>
 
 <!-- Image Gallery Lightbox -->

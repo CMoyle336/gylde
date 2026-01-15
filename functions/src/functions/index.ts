@@ -12,6 +12,7 @@ export * from "./profile-views";
 export * from "./accounts";
 export * from "./blocks";
 export * from "./verification";
+export * from "./ai-chat";
 
 // Future function modules:
 // export * from "./matches";

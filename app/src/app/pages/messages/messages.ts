@@ -18,7 +18,11 @@ import { CdkScrollable, ScrollingModule } from '@angular/cdk/scrolling';
 import { MatMenuModule } from '@angular/material/menu';
 import { MessageService, ConversationFilter } from '../../core/services/message.service';
 import { BlockService } from '../../core/services/block.service';
+import { SubscriptionService } from '../../core/services/subscription.service';
+import { AiChatService } from '../../core/services/ai-chat.service';
+import { UserProfileService } from '../../core/services/user-profile.service';
 import { ConversationDisplay, MessageDisplay } from '../../core/interfaces';
+import { AiAssistPanelComponent, AiAssistContext } from '../../components/ai-assist-panel';
 
 interface ImagePreview {
   file: File;
@@ -39,13 +43,16 @@ interface GalleryState {
   templateUrl: './messages.html',
   styleUrl: './messages.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, ScrollingModule, MatMenuModule, NgOptimizedImage],
+  imports: [FormsModule, ScrollingModule, MatMenuModule, NgOptimizedImage, AiAssistPanelComponent],
 })
 export class MessagesComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly messageService = inject(MessageService);
   private readonly blockService = inject(BlockService);
+  private readonly subscriptionService = inject(SubscriptionService);
+  protected readonly aiChatService = inject(AiChatService);
+  private readonly userProfileService = inject(UserProfileService);
 
   @ViewChild(CdkScrollable) scrollable!: CdkScrollable;
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
@@ -96,6 +103,33 @@ export class MessagesComponent implements OnInit, OnDestroy {
     const convo = this.activeConversation();
     if (!convo?.otherUser?.uid) return false;
     return this.blockService.isUserBlocked(convo.otherUser.uid);
+  });
+
+  // AI Assist panel state
+  protected readonly isAiPanelOpen = this.aiChatService.isOpen;
+  protected readonly hasAiAccess = this.aiChatService.hasAccess;
+
+  // Computed context for AI assist panel
+  protected readonly aiAssistContext = computed((): AiAssistContext | null => {
+    const convo = this.activeConversation();
+    if (!convo) return null;
+
+    const userProfile = this.userProfileService.profile();
+    
+    return {
+      conversationId: convo.id,
+      recipientId: convo.otherUser.uid,
+      recipientProfile: {
+        displayName: convo.otherUser.displayName || undefined,
+      },
+      userProfile: userProfile ? {
+        displayName: userProfile.displayName || undefined,
+        tagline: userProfile.onboarding?.tagline,
+      } : undefined,
+      recentMessages: this.messages(),
+      userDraft: this.messageInput(),
+      isEmptyThread: this.messages().length === 0,
+    };
   });
 
   constructor() {
@@ -659,5 +693,37 @@ export class MessagesComponent implements OnInit, OnDestroy {
       element.scrollTop = element.scrollHeight;
       this.isNearBottom = true;
     }
+  }
+
+  // ============================================
+  // AI ASSIST
+  // ============================================
+
+  /**
+   * Toggle the AI assist panel
+   */
+  protected toggleAiAssist(): void {
+    this.aiChatService.toggle();
+  }
+
+  /**
+   * Handle text insertion from AI assist panel
+   */
+  protected onAiInsertText(text: string): void {
+    this.messageInput.set(text);
+    // Focus the input
+    setTimeout(() => {
+      this.messageInputEl?.nativeElement?.focus();
+    }, 0);
+  }
+
+  /**
+   * Handle AI panel close
+   */
+  protected onAiPanelClosed(): void {
+    // Optional: focus back on message input
+    setTimeout(() => {
+      this.messageInputEl?.nativeElement?.focus();
+    }, 0);
   }
 }
