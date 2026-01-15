@@ -77,13 +77,13 @@ export function getSubscriptionCapabilities(tier: SubscriptionTier): Subscriptio
     default:
       return {
         canMessage: false,
-        canVerifyProfile: false,
+        canVerifyProfile: true, // Free users can verify their identity
         hasAIAssistant: false,
         hasVirtualPhone: false,
         hasPriorityVisibility: false,
         canSeeWhoViewedProfile: true,
         maxPhotos: 5,
-        canAccessPrivatePhotos: false,
+        canAccessPrivatePhotos: false, // Only paid tiers can request/view private photos
       };
   }
 }
@@ -104,8 +104,9 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
       { id: 'favorites', label: 'Save favorites', included: true },
       { id: 'photos', label: 'Upload up to 5 photos', included: true },
       { id: 'views', label: 'See who viewed you', included: true },
+      { id: 'verify', label: 'Verify your profile', included: true },
       { id: 'messaging', label: 'Send messages', included: false },
-      { id: 'verify', label: 'Verify your profile', included: false },
+      { id: 'private-photos', label: 'Request & view private photos', included: false },
       { id: 'ai', label: 'AI assistant', included: false },
       { id: 'phone', label: 'Virtual phone number', included: false },
     ],
@@ -123,8 +124,9 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
       { id: 'favorites', label: 'Save favorites', included: true },
       { id: 'photos', label: 'Upload up to 8 photos', included: true },
       { id: 'views', label: 'See who viewed you', included: true },
+      { id: 'verify', label: 'Verify your profile', included: true },
       { id: 'messaging', label: 'Send unlimited messages', included: true, highlight: true },
-      { id: 'verify', label: 'Verify your profile', included: true, highlight: true },
+      { id: 'private-photos', label: 'Request & view private photos', included: true, highlight: true },
       { id: 'ai', label: 'AI assistant', included: false },
       { id: 'phone', label: 'Virtual phone number', included: false },
     ],
@@ -141,8 +143,9 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
       { id: 'favorites', label: 'Save favorites', included: true },
       { id: 'photos', label: 'Upload up to 10 photos', included: true },
       { id: 'views', label: 'See who viewed you', included: true },
-      { id: 'messaging', label: 'Send unlimited messages', included: true },
       { id: 'verify', label: 'Verify your profile', included: true },
+      { id: 'messaging', label: 'Send unlimited messages', included: true },
+      { id: 'private-photos', label: 'Request & view private photos', included: true },
       { id: 'priority', label: 'Priority in search results', included: true },
       { id: 'ai', label: 'AI assistant for profile & chat', included: true, highlight: true },
       { id: 'phone', label: 'Virtual phone number', included: true, highlight: true },

@@ -10,6 +10,7 @@ const db = getFirestore();
 
 /**
  * Request access to view a user's private photos
+ * Requires a paid subscription (Connect or Elite tier)
  */
 export const requestPhotoAccess = onCall(async (request) => {
   const { auth, data } = request;
@@ -29,10 +30,25 @@ export const requestPhotoAccess = onCall(async (request) => {
     throw new HttpsError("invalid-argument", "Cannot request access to your own photos");
   }
 
-  // Get requester's profile info
-  const requesterDoc = await db.collection("users").doc(requesterId).get();
+  // Get requester's profile info and subscription status
+  const [requesterDoc, privateDataDoc] = await Promise.all([
+    db.collection("users").doc(requesterId).get(),
+    db.collection("users").doc(requesterId).collection("private").doc("data").get(),
+  ]);
+
   if (!requesterDoc.exists) {
     throw new HttpsError("not-found", "Your profile was not found");
+  }
+
+  // Check subscription - only plus/elite can request private photos
+  const privateData = privateDataDoc.data();
+  const subscriptionTier = privateData?.subscription?.tier || "free";
+  
+  if (subscriptionTier === "free") {
+    throw new HttpsError(
+      "permission-denied",
+      "Upgrade to Connect or Elite to request private photos"
+    );
   }
 
   const requesterData = requesterDoc.data();

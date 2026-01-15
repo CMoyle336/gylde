@@ -17,6 +17,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { ActivityService } from '../../core/services/activity.service';
 import { PhotoAccessService } from '../../core/services/photo-access.service';
 import { BlockService, BlockStatus } from '../../core/services/block.service';
+import { SubscriptionService } from '../../core/services/subscription.service';
 import { ProfileSkeletonComponent } from './components';
 import { formatConnectionTypes as formatConnectionTypesUtil, getSupportOrientationLabel } from '../../core/constants/connection-types';
 
@@ -45,6 +46,7 @@ export class UserProfileComponent implements OnInit, OnDestroy {
   private readonly activityService = inject(ActivityService);
   private readonly photoAccessService = inject(PhotoAccessService);
   private readonly blockService = inject(BlockService);
+  private readonly subscriptionService = inject(SubscriptionService);
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly profile = signal<UserProfile | null>(null);
@@ -304,6 +306,11 @@ export class UserProfileComponent implements OnInit, OnDestroy {
   protected async requestPhotoAccess(): Promise<void> {
     const p = this.profile();
     if (!p) return;
+
+    // Check if user has subscription capability to request private photos
+    if (!this.subscriptionService.canPerformAction('canAccessPrivatePhotos', true)) {
+      return; // Upgrade dialog is shown automatically
+    }
 
     this.requestingAccess.set(true);
     try {
