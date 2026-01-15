@@ -45,6 +45,10 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/trust/trust').then((m) => m.TrustComponent),
       },
       {
+        path: 'subscription',
+        loadComponent: () => import('./pages/subscription/subscription').then((m) => m.SubscriptionComponent),
+      },
+      {
         path: 'user/:userId',
         loadComponent: () => import('./pages/user-profile/user-profile').then((m) => m.UserProfileComponent),
       },

@@ -9,3 +9,4 @@ export * from './favorite.service';
 export * from './activity.service';
 export * from './message.service';
 export * from './theme.service';
+export * from './subscription.service';

@@ -1,0 +1,100 @@
+<div class="subscription-page">
+  <!-- Header -->
+  <header class="subscription-header">
+    <button class="back-btn" (click)="goBack()">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <div class="header-content">
+      <h1>Choose Your Plan</h1>
+      <p>Unlock the full Gylde experience</p>
+    </div>
+  </header>
+
+  <!-- Billing Toggle -->
+  <div class="billing-toggle">
+    <button 
+      class="toggle-option" 
+      [class.active]="billingPeriod() === 'monthly'"
+      (click)="billingPeriod.set('monthly')">
+      Monthly
+    </button>
+    <button 
+      class="toggle-option" 
+      [class.active]="billingPeriod() === 'yearly'"
+      (click)="billingPeriod.set('yearly')">
+      Yearly
+      <span class="savings-badge">Save {{ savingsPercent() }}%</span>
+    </button>
+  </div>
+
+  <!-- Plans Grid -->
+  <div class="plans-grid">
+    @for (plan of plans; track plan.id) {
+      <div 
+        class="plan-card" 
+        [class.highlighted]="plan.highlighted"
+        [class.current]="isCurrentPlan(plan.id)">
+        
+        @if (plan.highlighted) {
+          <div class="popular-badge">Most Popular</div>
+        }
+
+        <div class="plan-header">
+          <div class="plan-icon">
+            <mat-icon>{{ plan.badge }}</mat-icon>
+          </div>
+          <h2 class="plan-name">{{ plan.name }}</h2>
+          <p class="plan-tagline">{{ plan.tagline }}</p>
+        </div>
+
+        <div class="plan-price">
+          <span class="price-amount">{{ getPrice(plan) }}</span>
+          <span class="price-period">{{ getBillingLabel(plan) }}</span>
+        </div>
+
+        <ul class="plan-features">
+          @for (feature of plan.features; track feature.id) {
+            <li [class.included]="feature.included" [class.highlight]="feature.highlight">
+              <mat-icon>{{ feature.included ? 'check_circle' : 'cancel' }}</mat-icon>
+              <span>{{ feature.label }}</span>
+            </li>
+          }
+        </ul>
+
+        <button 
+          class="plan-cta"
+          [class.current]="isCurrentPlan(plan.id)"
+          [class.upgrade]="canUpgrade(plan.id)"
+          [disabled]="isCurrentPlan(plan.id)"
+          (click)="selectPlan(plan)">
+          {{ getButtonLabel(plan.id) }}
+        </button>
+      </div>
+    }
+  </div>
+
+  <!-- FAQ / Info Section -->
+  <div class="info-section">
+    <div class="info-card">
+      <mat-icon>security</mat-icon>
+      <div>
+        <h3>Secure Payments</h3>
+        <p>All transactions are processed securely through Stripe.</p>
+      </div>
+    </div>
+    <div class="info-card">
+      <mat-icon>autorenew</mat-icon>
+      <div>
+        <h3>Cancel Anytime</h3>
+        <p>No commitment. Cancel your subscription at any time.</p>
+      </div>
+    </div>
+    <div class="info-card">
+      <mat-icon>support_agent</mat-icon>
+      <div>
+        <h3>24/7 Support</h3>
+        <p>Our support team is here to help whenever you need.</p>
+      </div>
+    </div>
+  </div>
+</div>

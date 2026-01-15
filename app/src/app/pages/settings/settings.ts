@@ -14,6 +14,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { AuthService } from '../../core/services/auth.service';
 import { UserProfileService } from '../../core/services/user-profile.service';
 import { ThemeService } from '../../core/services/theme.service';
+import { SubscriptionService } from '../../core/services/subscription.service';
 import { UserSettings } from '../../core/interfaces';
 import { BlockedUsersDialogComponent } from '../../components/blocked-users-dialog';
 
@@ -42,6 +43,7 @@ export class SettingsComponent implements OnInit {
   private readonly functions = inject(Functions);
   private readonly dialog = inject(MatDialog);
   protected readonly themeService = inject(ThemeService);
+  protected readonly subscriptionService = inject(SubscriptionService);
 
   // User info
   protected readonly userEmail = computed(() => this.authService.user()?.email || null);
@@ -81,6 +83,10 @@ export class SettingsComponent implements OnInit {
     this.dialog.open(BlockedUsersDialogComponent, {
       panelClass: 'blocked-users-dialog-container',
     });
+  }
+
+  protected goToSubscription(): void {
+    this.router.navigate(['/subscription']);
   }
 
   private loadSettings(): void {

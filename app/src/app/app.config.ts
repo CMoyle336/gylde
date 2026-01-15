@@ -12,8 +12,6 @@ import { routes } from './app.routes';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { environment } from '../environments/environment';
 
-setLogLevel(environment.firestoreLogLevel as LogLevel);
-
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
@@ -37,6 +35,10 @@ export const appConfig: ApplicationConfig = {
     }),
     provideFirestore(() => {
       const firestore = getFirestore();
+      // Set log level inside injection context to avoid hydration warnings
+      if (environment.firestoreLogLevel) {
+        setLogLevel(environment.firestoreLogLevel as LogLevel);
+      }
       if (environment.useEmulators) {
         connectFirestoreEmulator(firestore, 'localhost', 8080);
       }

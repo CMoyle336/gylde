@@ -4,6 +4,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { UserProfileService } from '../../core/services/user-profile.service';
+import { SubscriptionService } from '../../core/services/subscription.service';
 import { UserProfile } from '../../core/interfaces';
 
 interface TrustTask {
@@ -40,18 +41,24 @@ interface TrustCategory {
 export class TrustComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly userProfileService = inject(UserProfileService);
+  protected readonly subscriptionService = inject(SubscriptionService);
 
   protected readonly loading = signal(true);
   protected readonly profile = signal<UserProfile | null>(null);
   protected readonly categories = signal<TrustCategory[]>([]);
 
-  // Trust score is calculated by Cloud Functions and stored on the profile
+  // Elite members get 100% trust score automatically
+  protected readonly isElite = this.subscriptionService.isElite;
+
+  // Trust score - Elite members always get 100
   protected readonly trustScore = computed(() => {
+    if (this.isElite()) return 100;
     return this.profile()?.trustScore ?? 0;
   });
 
   protected readonly trustLevel = computed(() => {
     const score = this.trustScore();
+    if (this.isElite()) return { label: 'Elite', color: '#c9a962' };
     if (score >= 90) return { label: 'Excellent', color: '#10b981' };
     if (score >= 70) return { label: 'Good', color: '#c9a962' };
     if (score >= 50) return { label: 'Fair', color: '#f59e0b' };
@@ -267,5 +274,9 @@ export class TrustComponent implements OnInit {
     const circumference = 2 * Math.PI * 54; // radius = 54
     const filled = (score / 100) * circumference;
     return `${filled} ${circumference}`;
+  }
+
+  protected goToSubscription(): void {
+    this.router.navigate(['/subscription']);
   }
 }

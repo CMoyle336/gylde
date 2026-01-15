@@ -1,0 +1,46 @@
+<div class="upgrade-dialog">
+  <!-- Close button -->
+  <button class="close-btn" (click)="close()">
+    <mat-icon>close</mat-icon>
+  </button>
+
+  <!-- Feature Icon & Message -->
+  <div class="feature-header">
+    <div class="feature-icon">
+      <mat-icon>{{ featureInfo.icon }}</mat-icon>
+    </div>
+    <h2>{{ featureInfo.title }}</h2>
+    <p>{{ featureInfo.description }}</p>
+  </div>
+
+  <!-- Quick Plan Options -->
+  <div class="quick-plans">
+    @for (plan of plans; track plan.id) {
+      <div class="quick-plan" [class.highlighted]="plan.highlighted">
+        <div class="plan-info">
+          <mat-icon>{{ plan.badge }}</mat-icon>
+          <div>
+            <span class="plan-name">{{ plan.name }}</span>
+            <span class="plan-price">{{ formatPrice(plan.yearlyPrice / 12) }}/mo</span>
+          </div>
+        </div>
+        <span class="plan-tagline">{{ plan.tagline }}</span>
+      </div>
+    }
+  </div>
+
+  <!-- Actions -->
+  <div class="dialog-actions">
+    <button class="secondary-btn" (click)="close()">Maybe Later</button>
+    <button class="primary-btn" (click)="goToSubscription()">
+      View Plans
+      <mat-icon>arrow_forward</mat-icon>
+    </button>
+  </div>
+
+  <!-- Trust message -->
+  <p class="trust-message">
+    <mat-icon>lock</mat-icon>
+    Cancel anytime. Secure payment via Stripe.
+  </p>
+</div>

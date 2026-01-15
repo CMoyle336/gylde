@@ -5,6 +5,46 @@
   </header>
 
   <div class="settings-content">
+    <!-- Subscription Section -->
+    <section class="settings-section subscription-section">
+      <div class="section-header">
+        <mat-icon>workspace_premium</mat-icon>
+        <div>
+          <h2>{{ 'SETTINGS.SUBSCRIPTION.TITLE' | translate }}</h2>
+          <p>{{ 'SETTINGS.SUBSCRIPTION.SUBTITLE' | translate }}</p>
+        </div>
+      </div>
+
+      <div class="settings-group">
+        <div class="subscription-status">
+          <div class="current-plan">
+            <div class="plan-badge" [class.elite]="subscriptionService.isElite()" [class.plus]="subscriptionService.currentTier() === 'plus'">
+              <mat-icon>{{ subscriptionService.getTierBadge(subscriptionService.currentTier()) }}</mat-icon>
+              <span class="plan-name">{{ subscriptionService.getTierDisplayName(subscriptionService.currentTier()) }}</span>
+            </div>
+            <span class="plan-status">
+              @if (subscriptionService.currentTier() === 'free') {
+                Free plan
+              } @else {
+                Active subscription
+              }
+            </span>
+          </div>
+          <button 
+            class="manage-btn" 
+            (click)="goToSubscription()"
+            [class.upgrade]="subscriptionService.currentTier() === 'free'">
+            @if (subscriptionService.currentTier() === 'free') {
+              Upgrade
+            } @else {
+              Manage Plan
+            }
+            <mat-icon>arrow_forward</mat-icon>
+          </button>
+        </div>
+      </div>
+    </section>
+
     <!-- Privacy Settings -->
     <section class="settings-section">
       <div class="section-header">

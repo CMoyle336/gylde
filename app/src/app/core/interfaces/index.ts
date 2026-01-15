@@ -9,3 +9,4 @@ export * from './discovery.interface';
 export * from './storage.interface';
 export * from './activity.interface';
 export * from './message.interface';
+export * from './subscription.interface';

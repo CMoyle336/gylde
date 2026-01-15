@@ -13,6 +13,7 @@ import { ActivityService } from '../../core/services/activity.service';
 import { MessageService } from '../../core/services/message.service';
 import { MatchesService } from '../../core/services/matches.service';
 import { BlockService } from '../../core/services/block.service';
+import { SubscriptionService } from '../../core/services/subscription.service';
 import { ActivityDisplay } from '../../core/interfaces';
 import { PhotoAccessDialogComponent } from '../../components/photo-access-dialog';
 
@@ -40,6 +41,7 @@ export class ShellComponent implements OnInit, OnDestroy {
   private readonly messageService = inject(MessageService);
   private readonly matchesService = inject(MatchesService);
   private readonly blockService = inject(BlockService);
+  private readonly subscriptionService = inject(SubscriptionService);
   private readonly translateService = inject(TranslateService);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly dialog = inject(MatDialog);
@@ -104,6 +106,9 @@ export class ShellComponent implements OnInit, OnDestroy {
     
     // Load trust score from profile
     this.loadTrustScore();
+    
+    // Load subscription status
+    this.subscriptionService.loadSubscription();
   }
 
   private async loadUserLanguage(): Promise<void> {

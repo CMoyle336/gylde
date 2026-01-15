@@ -322,6 +322,10 @@
   "SETTINGS": {
     "TITLE": "Settings",
     "SUBTITLE": "Manage your account, privacy, and preferences",
+    "SUBSCRIPTION": {
+      "TITLE": "Subscription",
+      "SUBTITLE": "Manage your plan and billing"
+    },
     "ACTIVITY": {
       "TITLE": "Activity Settings",
       "SUBTITLE": "Control what activities are shared with other users",

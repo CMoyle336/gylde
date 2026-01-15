@@ -4,6 +4,7 @@
 
 import { GeoLocation } from './geo.interface';
 import { Photo } from './photo.interface';
+import { UserSubscription } from './subscription.interface';
 
 /**
  * Main user profile document structure
@@ -24,6 +25,7 @@ export interface UserProfile {
   isVerified?: boolean; // true if identity verification completed
   geohash?: string | null; // encoded location for distance-based queries
   trustScore?: number; // 0-100 trust score calculated by Cloud Functions
+  subscription?: UserSubscription; // Subscription tier and status
   
   onboardingCompleted: boolean;
 

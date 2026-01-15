@@ -151,6 +151,114 @@
   color: var(--color-accent);
 }
 
+/* Elite Badge */
+.elite-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-light));
+  color: var(--color-bg-primary);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.elite-badge .material-icons-outlined {
+  font-size: 1rem;
+}
+
+/* Elite Upsell */
+.elite-upsell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  background: linear-gradient(135deg, rgba(201, 169, 98, 0.15) 0%, rgba(201, 169, 98, 0.05) 100%);
+  border: 1px solid var(--color-accent);
+  border-radius: 16px;
+}
+
+.upsell-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.upsell-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-light));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.upsell-icon .material-icons-outlined {
+  font-size: 1.75rem;
+  color: var(--color-bg-primary);
+}
+
+.upsell-text h3 {
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 0.25rem;
+}
+
+.upsell-text p {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.upsell-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.5rem;
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-light));
+  border: none;
+  border-radius: 10px;
+  color: var(--color-bg-primary);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.upsell-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.upsell-btn .material-icons-outlined {
+  font-size: 1.125rem;
+}
+
+@media (max-width: 768px) {
+  .elite-upsell {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .upsell-content {
+    flex-direction: column;
+  }
+
+  .upsell-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
 /* Categories Section */
 .categories-section {
   display: flex;
