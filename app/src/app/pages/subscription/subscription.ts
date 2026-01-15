@@ -20,35 +20,35 @@ export class SubscriptionComponent {
   protected readonly subscriptionService = inject(SubscriptionService);
 
   protected readonly plans = SUBSCRIPTION_PLANS;
-  protected readonly billingPeriod = signal<'monthly' | 'yearly'>('yearly');
+  protected readonly billingPeriod = signal<'monthly' | 'quarterly'>('quarterly');
   protected readonly currentTier = this.subscriptionService.currentTier;
 
   protected readonly savingsPercent = computed(() => {
-    // Calculate savings for yearly vs monthly
+    // Calculate savings for quarterly vs monthly
     const plusPlan = this.plans.find(p => p.id === 'plus');
-    if (!plusPlan) return 0;
-    const monthlyTotal = plusPlan.price * 12;
-    const yearlyTotal = plusPlan.yearlyPrice;
-    return Math.round((1 - yearlyTotal / monthlyTotal) * 100);
+    if (!plusPlan || plusPlan.monthlyPrice === 0) return 0;
+    const monthlyTotal = plusPlan.monthlyPrice * 3;
+    const quarterlyTotal = plusPlan.quarterlyPrice;
+    return Math.round((1 - quarterlyTotal / monthlyTotal) * 100);
   });
 
   protected toggleBillingPeriod(): void {
-    this.billingPeriod.update(p => p === 'monthly' ? 'yearly' : 'monthly');
+    this.billingPeriod.update(p => p === 'monthly' ? 'quarterly' : 'monthly');
   }
 
   protected getPrice(plan: SubscriptionPlan): string {
-    if (plan.price === 0) return 'Free';
+    if (plan.monthlyPrice === 0) return 'Free';
     
-    if (this.billingPeriod() === 'yearly') {
-      const monthlyFromYearly = plan.yearlyPrice / 12;
-      return this.subscriptionService.formatPrice(monthlyFromYearly);
+    if (this.billingPeriod() === 'quarterly') {
+      const monthlyFromQuarterly = plan.quarterlyPrice / 3;
+      return this.subscriptionService.formatPrice(monthlyFromQuarterly);
     }
-    return this.subscriptionService.formatPrice(plan.price);
+    return this.subscriptionService.formatPrice(plan.monthlyPrice);
   }
 
   protected getBillingLabel(plan: SubscriptionPlan): string {
-    if (plan.price === 0) return 'Forever';
-    return this.billingPeriod() === 'yearly' ? '/mo billed yearly' : '/month';
+    if (plan.monthlyPrice === 0) return 'Forever';
+    return this.billingPeriod() === 'quarterly' ? '/mo billed quarterly' : '/month';
   }
 
   protected isCurrentPlan(tier: SubscriptionTier): boolean {

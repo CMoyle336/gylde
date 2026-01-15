@@ -20,10 +20,15 @@ const FEATURE_MESSAGES: Record<keyof SubscriptionCapabilities, { title: string; 
     description: 'Upgrade to Connect or Elite to verify your profile and build trust with other members.',
     icon: 'verified_user',
   },
-  hasEliteBadge: {
-    title: 'Get the Elite Badge',
-    description: 'Upgrade to Elite for an exclusive badge and stand out from the crowd.',
-    icon: 'workspace_premium',
+  hasAIAssistant: {
+    title: 'Unlock AI Assistant',
+    description: 'Upgrade to Elite for an AI assistant that helps craft your profile and suggests conversation starters.',
+    icon: 'auto_awesome',
+  },
+  hasVirtualPhone: {
+    title: 'Get a Virtual Phone Number',
+    description: 'Upgrade to Elite for a private virtual phone number to protect your real number while dating.',
+    icon: 'phone_android',
   },
   hasPriorityVisibility: {
     title: 'Priority Visibility',

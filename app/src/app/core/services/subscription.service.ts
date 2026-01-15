@@ -189,11 +189,11 @@ export class SubscriptionService {
   }
 
   /**
-   * Format monthly price from yearly total
+   * Format monthly price from quarterly total
    */
-  formatMonthlyFromYearly(yearlyCents: number): string {
-    if (yearlyCents === 0) return 'Free';
-    const monthly = yearlyCents / 12 / 100;
+  formatMonthlyFromQuarterly(quarterlyCents: number): string {
+    if (quarterlyCents === 0) return 'Free';
+    const monthly = quarterlyCents / 3 / 100;
     return `$${monthly.toFixed(2)}`;
   }
 }

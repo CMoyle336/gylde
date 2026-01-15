@@ -20,9 +20,9 @@
     </button>
     <button 
       class="toggle-option" 
-      [class.active]="billingPeriod() === 'yearly'"
-      (click)="billingPeriod.set('yearly')">
-      Yearly
+      [class.active]="billingPeriod() === 'quarterly'"
+      (click)="billingPeriod.set('quarterly')">
+      3 Months
       <span class="savings-badge">Save {{ savingsPercent() }}%</span>
     </button>
   </div>

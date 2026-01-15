@@ -8,8 +8,8 @@ export interface SubscriptionPlan {
   id: SubscriptionTier;
   name: string;
   tagline: string;
-  price: number; // Monthly price in cents
-  yearlyPrice: number; // Yearly price in cents (for annual billing)
+  monthlyPrice: number; // Monthly price in cents
+  quarterlyPrice: number; // 3-month price in cents (total, not per month)
   features: SubscriptionFeature[];
   highlighted?: boolean; // For UI emphasis
   badge?: string; // Icon name for the tier
@@ -38,7 +38,8 @@ export interface UserSubscription {
 export interface SubscriptionCapabilities {
   canMessage: boolean;
   canVerifyProfile: boolean;
-  hasEliteBadge: boolean;
+  hasAIAssistant: boolean;
+  hasVirtualPhone: boolean;
   hasPriorityVisibility: boolean;
   canSeeWhoViewedProfile: boolean;
   maxPhotos: number;
@@ -54,7 +55,8 @@ export function getSubscriptionCapabilities(tier: SubscriptionTier): Subscriptio
       return {
         canMessage: true,
         canVerifyProfile: true,
-        hasEliteBadge: true,
+        hasAIAssistant: true,
+        hasVirtualPhone: true,
         hasPriorityVisibility: true,
         canSeeWhoViewedProfile: true,
         maxPhotos: 10,
@@ -64,7 +66,8 @@ export function getSubscriptionCapabilities(tier: SubscriptionTier): Subscriptio
       return {
         canMessage: true,
         canVerifyProfile: true,
-        hasEliteBadge: false,
+        hasAIAssistant: false,
+        hasVirtualPhone: false,
         hasPriorityVisibility: false,
         canSeeWhoViewedProfile: true,
         maxPhotos: 8,
@@ -75,9 +78,10 @@ export function getSubscriptionCapabilities(tier: SubscriptionTier): Subscriptio
       return {
         canMessage: false,
         canVerifyProfile: false,
-        hasEliteBadge: false,
+        hasAIAssistant: false,
+        hasVirtualPhone: false,
         hasPriorityVisibility: false,
-        canSeeWhoViewedProfile: false,
+        canSeeWhoViewedProfile: true,
         maxPhotos: 5,
         canAccessPrivatePhotos: false,
       };
@@ -92,55 +96,56 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     id: 'free',
     name: 'Explorer',
     tagline: 'Browse and discover',
-    price: 0,
-    yearlyPrice: 0,
+    monthlyPrice: 0,
+    quarterlyPrice: 0,
     badge: 'explore',
     features: [
       { id: 'browse', label: 'Browse unlimited profiles', included: true },
       { id: 'favorites', label: 'Save favorites', included: true },
       { id: 'photos', label: 'Upload up to 5 photos', included: true },
+      { id: 'views', label: 'See who viewed you', included: true },
       { id: 'messaging', label: 'Send messages', included: false },
       { id: 'verify', label: 'Verify your profile', included: false },
-      { id: 'views', label: 'See who viewed you', included: false },
-      { id: 'priority', label: 'Priority visibility', included: false },
-      { id: 'trust', label: 'Elite trust score', included: false },
+      { id: 'ai', label: 'AI assistant', included: false },
+      { id: 'phone', label: 'Virtual phone number', included: false },
     ],
   },
   {
     id: 'plus',
     name: 'Connect',
     tagline: 'Start meaningful conversations',
-    price: 2999, // $29.99/month
-    yearlyPrice: 23988, // $19.99/month billed annually
+    monthlyPrice: 2999, // $29.99/month
+    quarterlyPrice: 7497, // $74.97 for 3 months ($24.99/month)
     badge: 'chat_bubble',
     highlighted: true,
     features: [
       { id: 'browse', label: 'Browse unlimited profiles', included: true },
       { id: 'favorites', label: 'Save favorites', included: true },
       { id: 'photos', label: 'Upload up to 8 photos', included: true },
+      { id: 'views', label: 'See who viewed you', included: true },
       { id: 'messaging', label: 'Send unlimited messages', included: true, highlight: true },
       { id: 'verify', label: 'Verify your profile', included: true, highlight: true },
-      { id: 'views', label: 'See who viewed you', included: true },
-      { id: 'priority', label: 'Priority visibility', included: false },
-      { id: 'trust', label: 'Elite trust score', included: false },
+      { id: 'ai', label: 'AI assistant', included: false },
+      { id: 'phone', label: 'Virtual phone number', included: false },
     ],
   },
   {
     id: 'elite',
     name: 'Elite',
-    tagline: 'Maximum visibility & status',
-    price: 4999, // $49.99/month
-    yearlyPrice: 35988, // $29.99/month billed annually
-    badge: 'workspace_premium',
+    tagline: 'AI-powered dating experience',
+    monthlyPrice: 7999, // $79.99/month
+    quarterlyPrice: 17997, // $179.97 for 3 months ($59.99/month)
+    badge: 'auto_awesome',
     features: [
       { id: 'browse', label: 'Browse unlimited profiles', included: true },
       { id: 'favorites', label: 'Save favorites', included: true },
       { id: 'photos', label: 'Upload up to 10 photos', included: true },
+      { id: 'views', label: 'See who viewed you', included: true },
       { id: 'messaging', label: 'Send unlimited messages', included: true },
       { id: 'verify', label: 'Verify your profile', included: true },
-      { id: 'views', label: 'See who viewed you', included: true },
-      { id: 'priority', label: 'Priority in search results', included: true, highlight: true },
-      { id: 'badge', label: 'Exclusive Elite badge', included: true, highlight: true },
+      { id: 'priority', label: 'Priority in search results', included: true },
+      { id: 'ai', label: 'AI assistant for profile & chat', included: true, highlight: true },
+      { id: 'phone', label: 'Virtual phone number', included: true, highlight: true },
     ],
   },
 ];

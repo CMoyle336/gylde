@@ -39,24 +39,16 @@
 
         <div class="hero-info">
           <h1 class="hero-title">Your Trust Score</h1>
-          <div class="trust-badges">
-            <div class="trust-level" [style.color]="trustLevel().color">
-              <span class="material-icons-outlined">{{ 
-                trustScore() >= 70 ? 'verified' : 
-                trustScore() >= 50 ? 'shield' : 'security' 
-              }}</span>
-              {{ trustLevel().label }}
-            </div>
-            @if (isElite()) {
-              <div class="elite-badge">
-                <span class="material-icons-outlined">workspace_premium</span>
-                <span>Elite</span>
-              </div>
-            }
+          <div class="trust-level" [style.color]="trustLevel().color">
+            <span class="material-icons-outlined">{{ 
+              trustScore() >= 70 ? 'verified' : 
+              trustScore() >= 50 ? 'shield' : 'security' 
+            }}</span>
+            {{ trustLevel().label }}
           </div>
           <p class="hero-description">
             @if (isElite()) {
-              As an Elite member, you appear first in search results and have an exclusive badge on your profile.
+              As an Elite member, you have access to AI assistance for your profile and conversations, plus a private virtual phone number.
             } @else {
               Your trust score helps others feel confident connecting with you. 
               Complete the tasks below to increase your score and build trust.
@@ -75,11 +67,11 @@
       <div class="elite-upsell">
         <div class="upsell-content">
           <div class="upsell-icon">
-            <span class="material-icons-outlined">workspace_premium</span>
+            <span class="material-icons-outlined">auto_awesome</span>
           </div>
           <div class="upsell-text">
-            <h3>Stand out from the crowd</h3>
-            <p>Upgrade to Elite for priority visibility in search results and an exclusive Elite badge.</p>
+            <h3>Get AI-powered dating help</h3>
+            <p>Upgrade to Elite for an AI assistant that helps craft your profile, suggests conversation starters, and a private virtual phone number.</p>
           </div>
         </div>
         <button class="upsell-btn" (click)="goToSubscription()">
