@@ -80,98 +80,200 @@
           </button>
         </div>
       } @else {
-        <form class="auth-form" (ngSubmit)="onSubmit()">
-          @if (authError() || localError()) {
-            <div class="error-message" role="alert">
-              <span class="material-icons-outlined">error</span>
-              {{ authError() || localError() }}
-            </div>
-          }
-
-          @if (mode() === 'signup') {
-            <div class="form-group">
-              <label for="displayName">{{ 'AUTH.FIELDS.NAME' | translate }}</label>
-              <input
-                type="text"
-                id="displayName"
-                [ngModel]="displayName()"
-                (ngModelChange)="displayName.set($event)"
-                name="displayName"
-                [placeholder]="'AUTH.FIELDS.NAME_PLACEHOLDER' | translate"
-                autocomplete="name"
-              />
-            </div>
-          }
-
-          <div class="form-group">
-            <label for="email">{{ 'AUTH.FIELDS.EMAIL' | translate }}</label>
-            <input
-              type="email"
-              id="email"
-              [ngModel]="email()"
-              (ngModelChange)="email.set($event)"
-              name="email"
-              [placeholder]="'AUTH.FIELDS.EMAIL_PLACEHOLDER' | translate"
-              autocomplete="email"
-              required
-            />
-          </div>
-
-          @if (mode() !== 'reset') {
-            <div class="form-group">
-              <label for="password">{{ 'AUTH.FIELDS.PASSWORD' | translate }}</label>
-              <input
-                type="password"
-                id="password"
-                [ngModel]="password()"
-                (ngModelChange)="password.set($event)"
-                name="password"
-                [placeholder]="'AUTH.FIELDS.PASSWORD_PLACEHOLDER' | translate"
-                [autocomplete]="mode() === 'signup' ? 'new-password' : 'current-password'"
-                required
-              />
-            </div>
-          }
-
-          @if (mode() === 'signup') {
-            <div class="form-group">
-              <label for="confirmPassword">{{ 'AUTH.FIELDS.CONFIRM_PASSWORD' | translate }}</label>
-              <input
-                type="password"
-                id="confirmPassword"
-                [ngModel]="confirmPassword()"
-                (ngModelChange)="confirmPassword.set($event)"
-                name="confirmPassword"
-                [placeholder]="'AUTH.FIELDS.CONFIRM_PASSWORD_PLACEHOLDER' | translate"
-                autocomplete="new-password"
-                required
-              />
-            </div>
-          }
-
-          @if (mode() === 'login') {
+        <!-- Login Method Toggle (only for login mode) -->
+        @if (mode() === 'login') {
+          <div class="login-method-toggle">
             <button 
               type="button" 
-              class="forgot-password-link"
-              (click)="setMode('reset')">
-              {{ 'AUTH.LOGIN.FORGOT_PASSWORD' | translate }}
+              class="method-btn"
+              [class.active]="loginMethod() === 'email'"
+              (click)="setLoginMethod('email')">
+              <span class="material-icons-outlined">email</span>
+              {{ 'AUTH.METHOD.EMAIL' | translate }}
             </button>
-          }
+            <button 
+              type="button" 
+              class="method-btn"
+              [class.active]="loginMethod() === 'phone'"
+              (click)="setLoginMethod('phone')">
+              <span class="material-icons-outlined">phone</span>
+              {{ 'AUTH.METHOD.PHONE' | translate }}
+            </button>
+          </div>
+        }
 
-          <button 
-            type="submit" 
-            class="btn-primary submit-btn"
-            [disabled]="submitting()">
-            @if (submitting()) {
-              <span class="spinner"></span>
+        @if (authError() || localError()) {
+          <div class="error-message" role="alert">
+            <span class="material-icons-outlined">error</span>
+            {{ authError() || localError() }}
+          </div>
+        }
+
+        <!-- Phone Login Flow -->
+        @if (mode() === 'login' && loginMethod() === 'phone') {
+          <div class="phone-login-form">
+            @if (phoneStep() === 'input') {
+              <div class="form-group">
+                <label for="phoneNumber">{{ 'AUTH.FIELDS.PHONE' | translate }}</label>
+                <input
+                  type="tel"
+                  id="phoneNumber"
+                  [ngModel]="phoneNumber()"
+                  (ngModelChange)="phoneNumber.set($event)"
+                  name="phoneNumber"
+                  placeholder="+1 555 123 4567"
+                  autocomplete="tel"
+                />
+                <span class="field-hint">{{ 'AUTH.FIELDS.PHONE_HINT' | translate }}</span>
+              </div>
+
+              <button 
+                type="button" 
+                id="phone-signin-btn"
+                class="btn-primary submit-btn"
+                [disabled]="submitting()"
+                (click)="onSendPhoneCode()">
+                @if (submitting()) {
+                  <span class="spinner"></span>
+                }
+                {{ 'AUTH.PHONE.SEND_CODE' | translate }}
+              </button>
             }
-            @switch (mode()) {
-              @case ('login') { {{ 'AUTH.LOGIN.SUBMIT' | translate }} }
-              @case ('signup') { {{ 'AUTH.SIGNUP.SUBMIT' | translate }} }
-              @case ('reset') { {{ 'AUTH.RESET.SUBMIT' | translate }} }
+
+            @if (phoneStep() === 'verify') {
+              <p class="code-sent-text">
+                {{ 'AUTH.PHONE.CODE_SENT' | translate }} <strong>{{ phoneNumber() }}</strong>
+              </p>
+
+              @if (isEmulator) {
+                <div class="emulator-hint">
+                  <span class="material-icons-outlined">info</span>
+                  <span>{{ 'AUTH.PHONE.EMULATOR_HINT' | translate }}</span>
+                </div>
+              }
+
+              <div class="form-group">
+                <label for="verificationCode">{{ 'AUTH.FIELDS.VERIFICATION_CODE' | translate }}</label>
+                <input
+                  type="text"
+                  id="verificationCode"
+                  [ngModel]="verificationCode()"
+                  (ngModelChange)="verificationCode.set($event)"
+                  name="verificationCode"
+                  placeholder="123456"
+                  maxlength="6"
+                  autocomplete="one-time-code"
+                />
+              </div>
+
+              <button 
+                type="button" 
+                class="btn-primary submit-btn"
+                [disabled]="submitting()"
+                (click)="onVerifyPhoneCode()">
+                @if (submitting()) {
+                  <span class="spinner"></span>
+                }
+                {{ 'AUTH.PHONE.VERIFY' | translate }}
+              </button>
+
+              <button 
+                type="button" 
+                class="resend-link"
+                (click)="onResendCode()"
+                [disabled]="submitting()">
+                {{ 'AUTH.PHONE.RESEND' | translate }}
+              </button>
             }
-          </button>
-        </form>
+          </div>
+        } @else {
+          <!-- Email/Password Form -->
+          <form class="auth-form" (ngSubmit)="onSubmit()">
+            @if (mode() === 'signup') {
+              <div class="form-group">
+                <label for="displayName">{{ 'AUTH.FIELDS.NAME' | translate }}</label>
+                <input
+                  type="text"
+                  id="displayName"
+                  [ngModel]="displayName()"
+                  (ngModelChange)="displayName.set($event)"
+                  name="displayName"
+                  [placeholder]="'AUTH.FIELDS.NAME_PLACEHOLDER' | translate"
+                  autocomplete="name"
+                />
+              </div>
+            }
+
+            <div class="form-group">
+              <label for="email">{{ 'AUTH.FIELDS.EMAIL' | translate }}</label>
+              <input
+                type="email"
+                id="email"
+                [ngModel]="email()"
+                (ngModelChange)="email.set($event)"
+                name="email"
+                [placeholder]="'AUTH.FIELDS.EMAIL_PLACEHOLDER' | translate"
+                autocomplete="email"
+                required
+              />
+            </div>
+
+            @if (mode() !== 'reset') {
+              <div class="form-group">
+                <label for="password">{{ 'AUTH.FIELDS.PASSWORD' | translate }}</label>
+                <input
+                  type="password"
+                  id="password"
+                  [ngModel]="password()"
+                  (ngModelChange)="password.set($event)"
+                  name="password"
+                  [placeholder]="'AUTH.FIELDS.PASSWORD_PLACEHOLDER' | translate"
+                  [autocomplete]="mode() === 'signup' ? 'new-password' : 'current-password'"
+                  required
+                />
+              </div>
+            }
+
+            @if (mode() === 'signup') {
+              <div class="form-group">
+                <label for="confirmPassword">{{ 'AUTH.FIELDS.CONFIRM_PASSWORD' | translate }}</label>
+                <input
+                  type="password"
+                  id="confirmPassword"
+                  [ngModel]="confirmPassword()"
+                  (ngModelChange)="confirmPassword.set($event)"
+                  name="confirmPassword"
+                  [placeholder]="'AUTH.FIELDS.CONFIRM_PASSWORD_PLACEHOLDER' | translate"
+                  autocomplete="new-password"
+                  required
+                />
+              </div>
+            }
+
+            @if (mode() === 'login') {
+              <button 
+                type="button" 
+                class="forgot-password-link"
+                (click)="setMode('reset')">
+                {{ 'AUTH.LOGIN.FORGOT_PASSWORD' | translate }}
+              </button>
+            }
+
+            <button 
+              type="submit" 
+              class="btn-primary submit-btn"
+              [disabled]="submitting()">
+              @if (submitting()) {
+                <span class="spinner"></span>
+              }
+              @switch (mode()) {
+                @case ('login') { {{ 'AUTH.LOGIN.SUBMIT' | translate }} }
+                @case ('signup') { {{ 'AUTH.SIGNUP.SUBMIT' | translate }} }
+                @case ('reset') { {{ 'AUTH.RESET.SUBMIT' | translate }} }
+              }
+            </button>
+          </form>
+        }
 
         @if (mode() !== 'reset') {
           <div class="divider">

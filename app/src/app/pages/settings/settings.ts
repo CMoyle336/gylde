@@ -47,6 +47,7 @@ export class SettingsComponent implements OnInit {
 
   // User info
   protected readonly userEmail = computed(() => this.authService.user()?.email || null);
+  protected readonly isEmailVerified = computed(() => this.authService.user()?.emailVerified ?? false);
   
   // Theme
   protected readonly isDarkMode = computed(() => this.themeService.theme() === 'dark');
@@ -66,17 +67,56 @@ export class SettingsComponent implements OnInit {
   protected readonly showDeleteAccountDialog = signal(false);
   protected readonly showDisableAccountDialog = signal(false);
   protected readonly showLogoutDialog = signal(false);
+  protected readonly showPhoneDialog = signal(false);
+  protected readonly showVerifyEmailDialog = signal(false);
   protected readonly dialogLoading = signal(false);
   protected readonly dialogError = signal<string | null>(null);
   protected readonly dialogSuccess = signal<string | null>(null);
+
+  // Phone verification state
+  protected readonly phoneVerificationStep = signal<'input' | 'verify' | 'success'>('input');
+  protected readonly userPhoneNumber = computed(() => {
+    // Check Firebase Auth first, then fall back to profile (for emulator mode)
+    const authPhone = this.authService.getPhoneNumber();
+    if (authPhone) return authPhone;
+    
+    const profile = this.userProfileService.profile();
+    return profile?.phoneNumber || null;
+  });
+  protected readonly isEmulator = this.authService.isUsingEmulator();
 
   // Dialog form values
   protected newEmail = '';
   protected currentPassword = '';
   protected deleteConfirmation = '';
+  protected phoneNumber = '';
+  protected verificationCode = '';
 
   ngOnInit(): void {
     this.loadSettings();
+    this.syncEmailVerificationStatus();
+  }
+
+  /**
+   * Sync email verification status from Firebase Auth to Firestore
+   * This ensures the trust score is recalculated when email is verified
+   */
+  private async syncEmailVerificationStatus(): Promise<void> {
+    try {
+      // Get current verification status from Firebase Auth
+      const isVerified = await this.authService.checkEmailVerified();
+      const profile = this.userProfileService.profile();
+      
+      // If Firebase Auth says verified but Firestore doesn't have it, update Firestore
+      if (isVerified && profile && profile.emailVerified !== true) {
+        await this.userProfileService.updateProfile({
+          emailVerified: true,
+        });
+        console.log('[Settings] Synced email verification status to Firestore');
+      }
+    } catch (error) {
+      console.error('[Settings] Failed to sync email verification status:', error);
+    }
   }
 
   protected openBlockedUsersDialog(): void {
@@ -175,6 +215,52 @@ export class SettingsComponent implements OnInit {
     this.showResetPasswordDialog.set(true);
   }
 
+  openVerifyEmail(): void {
+    this.dialogError.set(null);
+    this.dialogSuccess.set(null);
+    this.showVerifyEmailDialog.set(true);
+  }
+
+  async sendEmailVerification(): Promise<void> {
+    this.dialogLoading.set(true);
+    this.dialogError.set(null);
+    this.dialogSuccess.set(null);
+
+    try {
+      await this.authService.sendEmailVerification();
+      this.dialogSuccess.set(this.translateService.instant('SETTINGS.DIALOGS.VERIFY_EMAIL_SENT'));
+    } catch (error: any) {
+      console.error('Failed to send verification email:', error);
+      if (error?.code === 'auth/too-many-requests') {
+        this.dialogError.set(this.translateService.instant('SETTINGS.DIALOGS.TOO_MANY_REQUESTS'));
+      } else {
+        const authError = this.authService.error();
+        this.dialogError.set(authError || error?.message || 'Failed to send verification email.');
+      }
+    } finally {
+      this.dialogLoading.set(false);
+    }
+  }
+
+  async checkEmailVerification(): Promise<void> {
+    this.dialogLoading.set(true);
+    this.dialogError.set(null);
+
+    try {
+      const verified = await this.authService.checkEmailVerified();
+      if (verified) {
+        this.dialogSuccess.set(this.translateService.instant('SETTINGS.DIALOGS.EMAIL_VERIFIED_SUCCESS'));
+      } else {
+        this.dialogError.set(this.translateService.instant('SETTINGS.DIALOGS.EMAIL_NOT_YET_VERIFIED'));
+      }
+    } catch (error: any) {
+      console.error('Failed to check email verification:', error);
+      this.dialogError.set('Failed to check verification status.');
+    } finally {
+      this.dialogLoading.set(false);
+    }
+  }
+
   openDeleteAccount(): void {
     this.deleteConfirmation = '';
     this.currentPassword = '';
@@ -188,12 +274,18 @@ export class SettingsComponent implements OnInit {
     this.showDeleteAccountDialog.set(false);
     this.showDisableAccountDialog.set(false);
     this.showLogoutDialog.set(false);
+    this.showPhoneDialog.set(false);
+    this.showVerifyEmailDialog.set(false);
     this.dialogLoading.set(false);
     this.dialogError.set(null);
     this.dialogSuccess.set(null);
     this.newEmail = '';
     this.currentPassword = '';
     this.deleteConfirmation = '';
+    this.phoneNumber = '';
+    this.verificationCode = '';
+    this.phoneVerificationStep.set('input');
+    this.authService.cleanupRecaptcha();
   }
 
   openDisableAccount(): void {
@@ -372,5 +464,114 @@ export class SettingsComponent implements OnInit {
   async confirmLogout(): Promise<void> {
     await this.authService.signOutUser();
     this.router.navigate(['/']);
+  }
+
+  // Phone verification
+  openPhoneDialog(): void {
+    this.phoneNumber = '';
+    this.verificationCode = '';
+    this.phoneVerificationStep.set('input');
+    this.dialogError.set(null);
+    this.showPhoneDialog.set(true);
+    
+    // Initialize reCAPTCHA after dialog opens
+    setTimeout(() => {
+      this.authService.initRecaptcha('send-code-btn');
+    }, 100);
+  }
+
+  async sendVerificationCode(): Promise<void> {
+    if (!this.phoneNumber) {
+      this.dialogError.set('Please enter your phone number');
+      return;
+    }
+
+    // Ensure phone number starts with + for E.164 format
+    let formattedPhone = this.phoneNumber.trim();
+    if (!formattedPhone.startsWith('+')) {
+      this.dialogError.set('Please include your country code (e.g., +1 for US)');
+      return;
+    }
+
+    this.dialogLoading.set(true);
+    this.dialogError.set(null);
+
+    try {
+      await this.authService.sendPhoneVerificationCode(formattedPhone);
+      this.phoneVerificationStep.set('verify');
+    } catch (error: any) {
+      console.error('Failed to send verification code:', error);
+      // Display the error from auth service, or extract from Firebase error
+      const authError = this.authService.error();
+      if (authError) {
+        this.dialogError.set(authError);
+      } else {
+        this.dialogError.set(error?.message || 'Failed to send verification code. Please try again.');
+      }
+    } finally {
+      this.dialogLoading.set(false);
+    }
+  }
+
+  async confirmVerificationCode(): Promise<void> {
+    if (!this.verificationCode.trim()) {
+      this.dialogError.set('Please enter the verification code');
+      return;
+    }
+    
+    if (this.verificationCode.length !== 6) {
+      this.dialogError.set('Please enter the 6-digit code');
+      return;
+    }
+
+    this.dialogLoading.set(true);
+    this.dialogError.set(null);
+
+    try {
+      await this.authService.confirmPhoneVerification(this.verificationCode);
+      
+      // Update user profile with verified phone number
+      // In emulator mode, use the pending phone number since Firebase Auth won't be updated
+      const phoneNumber = this.authService.getPhoneNumber() || 
+                          (this.isEmulator ? this.authService.getPendingPhoneNumber() : null);
+      
+      if (phoneNumber) {
+        await this.userProfileService.updateProfile({
+          phoneNumber,
+          phoneNumberVerified: true,
+        });
+      }
+      
+      this.phoneVerificationStep.set('success');
+    } catch (error: any) {
+      console.error('Failed to verify code:', error);
+      // Handle specific Firebase error codes
+      if (error?.code === 'auth/invalid-verification-code') {
+        this.dialogError.set('Invalid verification code. Please try again.');
+      } else if (error?.code === 'auth/account-exists-with-different-credential') {
+        this.dialogError.set('This phone number is already linked to another account.');
+      } else if (error?.code === 'auth/credential-already-in-use') {
+        this.dialogError.set('This phone number is already in use by another account.');
+      } else {
+        // Display the error from auth service, or extract from Firebase error
+        const authError = this.authService.error();
+        this.dialogError.set(authError || error?.message || 'Failed to verify code. Please try again.');
+      }
+    } finally {
+      this.dialogLoading.set(false);
+    }
+  }
+
+  async resendCode(): Promise<void> {
+    this.verificationCode = '';
+    this.dialogError.set(null);
+    
+    // Re-initialize reCAPTCHA and send code again
+    this.authService.cleanupRecaptcha();
+    this.phoneVerificationStep.set('input');
+    
+    setTimeout(() => {
+      this.authService.initRecaptcha('send-code-btn');
+    }, 100);
   }
 }

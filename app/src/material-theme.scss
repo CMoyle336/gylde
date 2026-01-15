@@ -206,9 +206,10 @@ body {
   --mat-text-button-state-layer-color: var(--color-accent);
   
   // Form field overrides
-  --mdc-outlined-text-field-outline-color: var(--color-border);
+  --mdc-outlined-text-field-outline-color: rgba(0, 0, 0, 0.23);
   --mdc-outlined-text-field-hover-outline-color: var(--color-accent);
   --mdc-outlined-text-field-focus-outline-color: var(--color-accent);
+  --mdc-outlined-text-field-disabled-outline-color: rgba(0, 0, 0, 0.12);
   --mdc-outlined-text-field-label-text-color: var(--color-text-muted);
   --mdc-outlined-text-field-hover-label-text-color: var(--color-accent);
   --mdc-outlined-text-field-focus-label-text-color: var(--color-accent);
@@ -361,5 +362,31 @@ body {
     label {
       color: var(--color-text-primary) !important;
     }
+  }
+  
+  // Outlined form field border fix - ensure visible borders in light mode
+  .mat-mdc-form-field.mat-form-field-appearance-outline {
+    .mdc-notched-outline__leading,
+    .mdc-notched-outline__notch,
+    .mdc-notched-outline__trailing {
+      border-color: rgba(0, 0, 0, 0.23) !important;
+    }
+    
+    &:hover .mdc-notched-outline__leading,
+    &:hover .mdc-notched-outline__notch,
+    &:hover .mdc-notched-outline__trailing {
+      border-color: var(--color-accent) !important;
+    }
+    
+    &.mat-focused .mdc-notched-outline__leading,
+    &.mat-focused .mdc-notched-outline__notch,
+    &.mat-focused .mdc-notched-outline__trailing {
+      border-color: var(--color-accent) !important;
+    }
+  }
+  
+  // Form field wrapper background
+  .mat-mdc-form-field.mat-form-field-appearance-outline .mat-mdc-text-field-wrapper {
+    background-color: var(--color-bg-elevated);
   }
 }

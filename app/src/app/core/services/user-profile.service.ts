@@ -19,7 +19,12 @@ export class UserProfileService {
   readonly profile = this._profile.asReadonly();
   readonly loading = this._loading.asReadonly();
 
-  async createUserProfile(uid: string, email: string | null, displayName: string | null): Promise<void> {
+  async createUserProfile(
+    uid: string, 
+    email: string | null, 
+    displayName: string | null,
+    additionalData?: Partial<UserProfile>
+  ): Promise<void> {
     const profile: UserProfile = {
       uid,
       email,
@@ -28,6 +33,7 @@ export class UserProfileService {
       createdAt: new Date(),
       updatedAt: new Date(),
       onboardingCompleted: false,
+      ...additionalData,
     };
 
     await this.firestoreService.setDocument('users', uid, profile);

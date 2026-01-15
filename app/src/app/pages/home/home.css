@@ -70,8 +70,8 @@
 }
 
 .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.15);
+  background: var(--color-bg-hover);
+  border-color: var(--color-border-strong);
 }
 
 .btn-large {
@@ -108,8 +108,8 @@
 }
 
 .btn-secondary-sm:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.15);
+  background: var(--color-bg-hover);
+  border-color: var(--color-border-strong);
 }
 
 /* ============================================
@@ -123,7 +123,7 @@
   right: 0;
   z-index: 100;
   padding: 1rem 0;
-  background: rgba(13, 11, 14, 0.85);
+  background: var(--header-bg, rgba(13, 11, 14, 0.85));
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--color-border);
 }
@@ -200,7 +200,7 @@
   position: fixed;
   inset: 0;
   top: 72px;
-  background: rgba(0, 0, 0, 0.6);
+  background: var(--overlay-bg, rgba(0, 0, 0, 0.6));
   backdrop-filter: blur(4px);
   z-index: 99;
   animation: fade-in 0.2s ease;

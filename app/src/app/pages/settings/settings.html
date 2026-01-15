@@ -235,7 +235,50 @@
         <div class="setting-item clickable" (click)="openChangeEmail()">
           <div class="setting-info">
             <span class="setting-label">{{ 'SETTINGS.ACCOUNT.EMAIL' | translate }}</span>
-            <span class="setting-description">{{ userEmail() || 'Not set' }}</span>
+            <span class="setting-description email-description">
+              @if (userEmail()) {
+                @if (isEmailVerified()) {
+                  <span class="email-verified">
+                    <mat-icon class="verified-icon">verified</mat-icon>
+                    {{ userEmail() }}
+                  </span>
+                } @else {
+                  <span class="email-unverified">
+                    {{ userEmail() }}
+                    <span class="unverified-badge">{{ 'SETTINGS.ACCOUNT.UNVERIFIED' | translate }}</span>
+                  </span>
+                }
+              } @else {
+                {{ 'SETTINGS.ACCOUNT.NOT_SET' | translate }}
+              }
+            </span>
+          </div>
+          <mat-icon class="chevron">chevron_right</mat-icon>
+        </div>
+
+        @if (userEmail() && !isEmailVerified()) {
+          <div class="setting-item clickable verify-email-item" (click)="openVerifyEmail()">
+            <div class="setting-info">
+              <span class="setting-label">{{ 'SETTINGS.ACCOUNT.VERIFY_EMAIL' | translate }}</span>
+              <span class="setting-description">{{ 'SETTINGS.ACCOUNT.VERIFY_EMAIL_DESC' | translate }}</span>
+            </div>
+            <mat-icon class="chevron action-icon">mail</mat-icon>
+          </div>
+        }
+
+        <div class="setting-item clickable" (click)="openPhoneDialog()">
+          <div class="setting-info">
+            <span class="setting-label">{{ 'SETTINGS.ACCOUNT.PHONE' | translate }}</span>
+            <span class="setting-description phone-description">
+              @if (userPhoneNumber()) {
+                <span class="phone-verified">
+                  <mat-icon class="verified-icon">verified</mat-icon>
+                  {{ userPhoneNumber() }}
+                </span>
+              } @else {
+                {{ 'SETTINGS.ACCOUNT.PHONE_DESC' | translate }}
+              }
+            </span>
           </div>
           <mat-icon class="chevron">chevron_right</mat-icon>
         </div>
@@ -498,6 +541,152 @@
         <button mat-flat-button color="warn" (click)="confirmLogout()">
           {{ 'SETTINGS.DIALOGS.LOGOUT_BUTTON' | translate }}
         </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Phone Verification Dialog -->
+@if (showPhoneDialog()) {
+  <div class="dialog-overlay" (click)="closeDialogs()">
+    <div class="dialog phone-dialog" (click)="$event.stopPropagation()">
+      <h3>{{ 'SETTINGS.DIALOGS.PHONE_TITLE' | translate }}</h3>
+      
+      @if (phoneVerificationStep() === 'input') {
+        <div class="phone-privacy-notice">
+          <mat-icon>lock</mat-icon>
+          <p>{{ 'SETTINGS.DIALOGS.PHONE_PRIVACY' | translate }}</p>
+        </div>
+
+        <div class="phone-benefit">
+          <mat-icon>phonelink_lock</mat-icon>
+          <p>{{ 'SETTINGS.DIALOGS.PHONE_BENEFIT' | translate }}</p>
+        </div>
+        
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>{{ 'SETTINGS.DIALOGS.PHONE_LABEL' | translate }}</mat-label>
+          <input 
+            matInput 
+            type="tel" 
+            [(ngModel)]="phoneNumber" 
+            placeholder="+1 555 123 4567"
+            [disabled]="dialogLoading()">
+          <mat-hint>{{ 'SETTINGS.DIALOGS.PHONE_HINT' | translate }}</mat-hint>
+        </mat-form-field>
+
+        <!-- Invisible reCAPTCHA container -->
+        <div id="recaptcha-container"></div>
+      }
+
+      @if (phoneVerificationStep() === 'verify') {
+        <p class="code-sent-message">
+          {{ 'SETTINGS.DIALOGS.CODE_SENT' | translate }} <strong>{{ phoneNumber }}</strong>
+        </p>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>{{ 'SETTINGS.DIALOGS.VERIFICATION_CODE' | translate }}</mat-label>
+          <input 
+            matInput 
+            type="text" 
+            [(ngModel)]="verificationCode" 
+            placeholder="123456"
+            maxlength="6"
+            [disabled]="dialogLoading()">
+        </mat-form-field>
+
+        <button mat-button class="resend-btn" (click)="resendCode()" [disabled]="dialogLoading()">
+          {{ 'SETTINGS.DIALOGS.RESEND_CODE' | translate }}
+        </button>
+      }
+
+      @if (phoneVerificationStep() === 'success') {
+        <div class="success-state">
+          <mat-icon class="success-icon">check_circle</mat-icon>
+          <p>{{ 'SETTINGS.DIALOGS.PHONE_VERIFIED' | translate }}</p>
+        </div>
+      }
+
+      @if (dialogError()) {
+        <p class="error-message">{{ dialogError() }}</p>
+      }
+
+      <div class="dialog-actions">
+        <button mat-button (click)="closeDialogs()">
+          {{ phoneVerificationStep() === 'success' ? ('SETTINGS.DIALOGS.CLOSE' | translate) : ('SETTINGS.DIALOGS.CANCEL' | translate) }}
+        </button>
+        
+        @if (phoneVerificationStep() === 'input') {
+          <button 
+            mat-flat-button 
+            color="primary" 
+            id="send-code-btn"
+            (click)="sendVerificationCode()" 
+            [disabled]="dialogLoading()">
+            @if (dialogLoading()) {
+              <mat-spinner diameter="20"></mat-spinner>
+            } @else {
+              {{ 'SETTINGS.DIALOGS.SEND_CODE' | translate }}
+            }
+          </button>
+        }
+
+        @if (phoneVerificationStep() === 'verify') {
+          <button 
+            mat-flat-button 
+            color="primary" 
+            (click)="confirmVerificationCode()" 
+            [disabled]="dialogLoading()">
+            @if (dialogLoading()) {
+              <mat-spinner diameter="20"></mat-spinner>
+            } @else {
+              {{ 'SETTINGS.DIALOGS.VERIFY' | translate }}
+            }
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Verify Email Dialog -->
+@if (showVerifyEmailDialog()) {
+  <div class="dialog-overlay" (click)="closeDialogs()">
+    <div class="dialog" (click)="$event.stopPropagation()">
+      <h3>{{ 'SETTINGS.DIALOGS.VERIFY_EMAIL_TITLE' | translate }}</h3>
+      
+      @if (!dialogSuccess()) {
+        <p>{{ 'SETTINGS.DIALOGS.VERIFY_EMAIL_DESC' | translate }}</p>
+        <p class="email-display">{{ userEmail() }}</p>
+      }
+
+      @if (dialogError()) {
+        <p class="error-message">{{ dialogError() }}</p>
+      }
+
+      @if (dialogSuccess()) {
+        <div class="success-state">
+          <mat-icon class="success-icon">mark_email_read</mat-icon>
+          <p>{{ dialogSuccess() }}</p>
+        </div>
+      }
+
+      <div class="dialog-actions">
+        @if (dialogSuccess()) {
+          <button mat-flat-button color="primary" (click)="closeDialogs()">
+            {{ 'SETTINGS.DIALOGS.CLOSE' | translate }}
+          </button>
+        } @else {
+          <button mat-button (click)="closeDialogs()">
+            {{ 'SETTINGS.DIALOGS.CANCEL' | translate }}
+          </button>
+          <button mat-flat-button color="primary" (click)="sendEmailVerification()" [disabled]="dialogLoading()">
+            @if (dialogLoading()) {
+              <mat-spinner diameter="20"></mat-spinner>
+            } @else {
+              {{ 'SETTINGS.DIALOGS.SEND_VERIFICATION' | translate }}
+            }
+          </button>
+        }
       </div>
     </div>
   </div>

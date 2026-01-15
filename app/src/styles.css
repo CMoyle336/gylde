@@ -65,6 +65,10 @@
   --color-warning: #f57c00;
   --color-info: #1976d2;
   
+  /* Header background for light mode */
+  --header-bg: rgba(255, 255, 255, 0.9);
+  --overlay-bg: rgba(0, 0, 0, 0.3);
+  
   /* Shadows - lighter for light theme */
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
   --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.1);

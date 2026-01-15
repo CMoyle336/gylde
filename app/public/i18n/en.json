@@ -372,8 +372,14 @@
       "TITLE": "Account",
       "SUBTITLE": "Manage your account settings",
       "EMAIL": "Email address",
+      "UNVERIFIED": "Unverified",
+      "NOT_SET": "Not set",
+      "VERIFY_EMAIL": "Verify your email",
+      "VERIFY_EMAIL_DESC": "Confirm your email address to secure your account",
       "PASSWORD": "Password",
       "PASSWORD_DESC": "Change your password",
+      "PHONE": "Phone number",
+      "PHONE_DESC": "Add and verify your phone number",
       "LOGOUT": "Sign out",
       "LOGOUT_DESC": "Sign out of your account"
     },
@@ -419,7 +425,26 @@
       "DELETE_BUTTON": "Delete My Account",
       "LOGOUT_TITLE": "Sign Out",
       "LOGOUT_DESC": "Are you sure you want to sign out?",
-      "LOGOUT_BUTTON": "Sign Out"
+      "LOGOUT_BUTTON": "Sign Out",
+      "PHONE_TITLE": "Add Phone Number",
+      "PHONE_PRIVACY": "Your phone number is private and will never be shared with other members or displayed on your profile.",
+      "PHONE_BENEFIT": "Adding your phone number allows you to sign in with just your phone—no password needed.",
+      "PHONE_LABEL": "Phone number",
+      "PHONE_HINT": "Include your country code (e.g., +1 for US)",
+      "SEND_CODE": "Send Code",
+      "CODE_SENT": "We sent a 6-digit code to",
+      "VERIFICATION_CODE": "Verification code",
+      "VERIFY": "Verify",
+      "RESEND_CODE": "Didn't receive it? Resend code",
+      "PHONE_VERIFIED": "Your phone number has been verified!",
+      "VERIFY_EMAIL_TITLE": "Verify Email Address",
+      "VERIFY_EMAIL_DESC": "We'll send a verification link to your email address. Click the link to verify your email.",
+      "SEND_VERIFICATION": "Send Verification Email",
+      "CHECK_VERIFICATION": "I've Verified",
+      "VERIFY_EMAIL_SENT": "Verification email sent! Check your inbox and click the link to verify.",
+      "EMAIL_VERIFIED_SUCCESS": "Your email has been verified!",
+      "EMAIL_NOT_YET_VERIFIED": "Email not yet verified. Please click the link in the email we sent you.",
+      "TOO_MANY_REQUESTS": "Too many requests. Please wait a few minutes before trying again."
     }
   },
   "AUTH": {
@@ -453,7 +478,21 @@
       "PASSWORD": "Password",
       "PASSWORD_PLACEHOLDER": "At least 6 characters",
       "CONFIRM_PASSWORD": "Confirm Password",
-      "CONFIRM_PASSWORD_PLACEHOLDER": "Enter password again"
+      "CONFIRM_PASSWORD_PLACEHOLDER": "Enter password again",
+      "PHONE": "Phone Number",
+      "PHONE_HINT": "Include country code (e.g., +1 for US)",
+      "VERIFICATION_CODE": "Verification Code"
+    },
+    "METHOD": {
+      "EMAIL": "Email",
+      "PHONE": "Phone"
+    },
+    "PHONE": {
+      "SEND_CODE": "Send Code",
+      "CODE_SENT": "We sent a code to",
+      "VERIFY": "Verify & Sign In",
+      "RESEND": "Didn't receive it? Resend code",
+      "EMULATOR_HINT": "Dev mode: Use code 123456"
     },
     "DISABLED": {
       "TITLE": "Account Disabled",

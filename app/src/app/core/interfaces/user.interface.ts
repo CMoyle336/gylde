@@ -14,6 +14,9 @@ export interface UserProfile {
   email: string | null;
   displayName: string | null;
   photoURL: string | null;
+  emailVerified?: boolean; // Whether email has been verified (synced from Firebase Auth)
+  phoneNumber?: string | null; // User's verified phone number (E.164 format)
+  phoneNumberVerified?: boolean; // Whether phone number has been verified
   createdAt: unknown;
   updatedAt: unknown;
   lastActiveAt?: unknown; // Timestamp of last user activity

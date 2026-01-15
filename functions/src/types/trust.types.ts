@@ -101,7 +101,7 @@ export const TRUST_TASK_DEFINITIONS: TrustTaskDefinition[] = [
     name: "Verify Phone",
     description: "Add and verify your phone number",
     points: 5,
-    check: (data) => data.phoneVerified === true,
+    check: (data) => data.phoneNumberVerified === true,
   },
 
   // ===== PHOTOS (20 points) =====

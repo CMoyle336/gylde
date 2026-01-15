@@ -15,6 +15,7 @@ import { UserProfileService } from '../../core/services/user-profile.service';
 import { AuthResult, UserProfile } from '../../core/interfaces';
 
 type AuthMode = 'login' | 'signup' | 'reset' | 'disabled';
+type LoginMethod = 'email' | 'phone';
 
 @Component({
   selector: 'app-auth-modal',
@@ -34,14 +35,19 @@ export class AuthModalComponent {
   readonly authenticated = output<AuthResult>();
 
   protected readonly mode = signal<AuthMode>('login');
+  protected readonly loginMethod = signal<LoginMethod>('email');
   protected readonly email = signal('');
   protected readonly password = signal('');
   protected readonly confirmPassword = signal('');
   protected readonly displayName = signal('');
+  protected readonly phoneNumber = signal('');
+  protected readonly verificationCode = signal('');
+  protected readonly phoneStep = signal<'input' | 'verify'>('input');
   protected readonly submitting = signal(false);
   protected readonly localError = signal<string | null>(null);
   protected readonly resetSent = signal(false);
   protected readonly enablingAccount = signal(false);
+  protected readonly isEmulator = this.authService.isUsingEmulator();
 
   // Store profile temporarily for disabled account flow
   private disabledProfile: UserProfile | null = null;
@@ -62,6 +68,21 @@ export class AuthModalComponent {
     this.localError.set(null);
     this.authService.clearError();
     this.resetSent.set(false);
+    this.phoneStep.set('input');
+  }
+
+  protected setLoginMethod(method: LoginMethod): void {
+    this.loginMethod.set(method);
+    this.localError.set(null);
+    this.authService.clearError();
+    this.phoneStep.set('input');
+    
+    // Initialize reCAPTCHA for phone login
+    if (method === 'phone') {
+      setTimeout(() => {
+        this.authService.initRecaptcha('phone-signin-btn');
+      }, 100);
+    }
   }
 
   protected async onSubmit(): Promise<void> {
@@ -132,6 +153,96 @@ export class AuthModalComponent {
     } finally {
       this.submitting.set(false);
     }
+  }
+
+  protected async onSendPhoneCode(): Promise<void> {
+    const phone = this.phoneNumber().trim();
+    
+    if (!phone) {
+      this.localError.set('Please enter your phone number.');
+      return;
+    }
+    
+    if (!phone.startsWith('+')) {
+      this.localError.set('Please include your country code (e.g., +1 for US).');
+      return;
+    }
+    
+    this.submitting.set(true);
+    this.localError.set(null);
+    this.authService.clearError();
+    
+    try {
+      await this.authService.sendPhoneSignInCode(phone);
+      this.phoneStep.set('verify');
+    } catch (error) {
+      console.error('Failed to send phone code:', error);
+    } finally {
+      this.submitting.set(false);
+    }
+  }
+
+  protected async onVerifyPhoneCode(): Promise<void> {
+    const code = this.verificationCode().trim();
+    
+    if (!code) {
+      this.localError.set('Please enter the verification code.');
+      return;
+    }
+    
+    if (code.length !== 6) {
+      this.localError.set('Please enter the 6-digit code.');
+      return;
+    }
+    
+    this.submitting.set(true);
+    this.localError.set(null);
+    
+    try {
+      const user = await this.authService.confirmPhoneSignIn(code);
+      
+      if (user) {
+        // Check if profile exists
+        let profile = await this.userProfileService.loadUserProfile(user.uid);
+        
+        if (!profile) {
+          // New phone user - create profile
+          await this.userProfileService.createUserProfile(
+            user.uid, 
+            null, // no email for phone users
+            null, // no display name yet
+            {
+              phoneNumber: this.phoneNumber(),
+              phoneNumberVerified: true,
+            }
+          );
+          this.authenticated.emit({ isNewUser: true });
+        } else {
+          // Check if account is disabled
+          if (profile.settings?.account?.disabled) {
+            this.disabledProfile = profile;
+            this.mode.set('disabled');
+            return;
+          }
+          this.authenticated.emit({ isNewUser: !profile.onboardingCompleted });
+        }
+      }
+    } catch (error) {
+      console.error('Failed to verify phone code:', error);
+    } finally {
+      this.submitting.set(false);
+    }
+  }
+
+  protected onResendCode(): void {
+    this.phoneStep.set('input');
+    this.verificationCode.set('');
+    this.localError.set(null);
+    this.authService.cleanupRecaptcha();
+    
+    setTimeout(() => {
+      this.authService.initRecaptcha('phone-signin-btn');
+    }, 100);
   }
 
   protected async onGoogleSignIn(): Promise<void> {
@@ -214,8 +325,13 @@ export class AuthModalComponent {
     this.password.set('');
     this.confirmPassword.set('');
     this.displayName.set('');
+    this.phoneNumber.set('');
+    this.verificationCode.set('');
+    this.phoneStep.set('input');
+    this.loginMethod.set('email');
     this.localError.set(null);
     this.resetSent.set(false);
     this.authService.clearError();
+    this.authService.cleanupRecaptcha();
   }
 }
