@@ -38,7 +38,7 @@ export interface UserSubscription {
 export interface SubscriptionCapabilities {
   canMessage: boolean;
   canVerifyProfile: boolean;
-  hasEliteTrustScore: boolean;
+  hasEliteBadge: boolean;
   hasPriorityVisibility: boolean;
   canSeeWhoViewedProfile: boolean;
   maxPhotos: number;
@@ -54,7 +54,7 @@ export function getSubscriptionCapabilities(tier: SubscriptionTier): Subscriptio
       return {
         canMessage: true,
         canVerifyProfile: true,
-        hasEliteTrustScore: true,
+        hasEliteBadge: true,
         hasPriorityVisibility: true,
         canSeeWhoViewedProfile: true,
         maxPhotos: 10,
@@ -64,7 +64,7 @@ export function getSubscriptionCapabilities(tier: SubscriptionTier): Subscriptio
       return {
         canMessage: true,
         canVerifyProfile: true,
-        hasEliteTrustScore: false,
+        hasEliteBadge: false,
         hasPriorityVisibility: false,
         canSeeWhoViewedProfile: true,
         maxPhotos: 8,
@@ -75,7 +75,7 @@ export function getSubscriptionCapabilities(tier: SubscriptionTier): Subscriptio
       return {
         canMessage: false,
         canVerifyProfile: false,
-        hasEliteTrustScore: false,
+        hasEliteBadge: false,
         hasPriorityVisibility: false,
         canSeeWhoViewedProfile: false,
         maxPhotos: 5,
@@ -128,10 +128,10 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
   {
     id: 'elite',
     name: 'Elite',
-    tagline: 'Maximum trust & visibility',
+    tagline: 'Maximum visibility & status',
     price: 4999, // $49.99/month
     yearlyPrice: 35988, // $29.99/month billed annually
-    badge: 'verified',
+    badge: 'workspace_premium',
     features: [
       { id: 'browse', label: 'Browse unlimited profiles', included: true },
       { id: 'favorites', label: 'Save favorites', included: true },
@@ -140,7 +140,7 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
       { id: 'verify', label: 'Verify your profile', included: true },
       { id: 'views', label: 'See who viewed you', included: true },
       { id: 'priority', label: 'Priority in search results', included: true, highlight: true },
-      { id: 'trust', label: 'Automatic 100% trust score', included: true, highlight: true },
+      { id: 'badge', label: 'Exclusive Elite badge', included: true, highlight: true },
     ],
   },
 ];

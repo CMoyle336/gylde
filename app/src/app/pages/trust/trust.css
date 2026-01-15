@@ -114,13 +114,19 @@
   margin: 0 0 0.75rem;
 }
 
+.trust-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
 .trust-level {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
   font-size: 1.125rem;
   font-weight: 600;
-  margin-bottom: 1rem;
 }
 
 .trust-level .material-icons-outlined {

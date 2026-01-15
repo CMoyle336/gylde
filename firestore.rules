@@ -33,8 +33,11 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       
       // Only the owner can write to their own profile
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
+      // Protected fields (trustScore, subscription, isElite) can only be set by Cloud Functions
+      allow create: if isOwner(userId)
+        && !request.resource.data.keys().hasAny(['trustScore', 'subscription', 'isElite']);
+      allow update: if isOwner(userId)
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['trustScore', 'subscription', 'isElite']);
       allow delete: if false; // Deletion handled via Cloud Functions
       
       // ------------------------------------------
@@ -148,6 +151,18 @@ service cloud.firestore {
         // Granted user can also read to verify their access
         allow read: if isOwner(userId) || isOwner(grantedUserId);
         // Writes handled by Cloud Functions
+        allow write: if false;
+      }
+      
+      // ------------------------------------------
+      // PRIVATE SUBCOLLECTION
+      // Contains sensitive data: trustScore, subscription
+      // Only the owner can read; only Cloud Functions can write
+      // ------------------------------------------
+      match /private/{docId} {
+        // Only the owner can read their own private data
+        allow read: if isOwner(userId);
+        // All writes handled by Cloud Functions (admin SDK bypasses rules)
         allow write: if false;
       }
     }

@@ -24,8 +24,10 @@ export interface UserProfile {
   isSearchable?: boolean; // true if profile is visible and account is active
   isVerified?: boolean; // true if identity verification completed
   geohash?: string | null; // encoded location for distance-based queries
-  trustScore?: number; // 0-100 trust score calculated by Cloud Functions
-  subscription?: UserSubscription; // Subscription tier and status
+  isElite?: boolean; // true if user has Elite subscription (for badge display)
+  
+  // NOTE: trustScore and subscription are stored in users/{uid}/private/data
+  // for security - only the user can read them, only Cloud Functions can write
   
   onboardingCompleted: boolean;
 

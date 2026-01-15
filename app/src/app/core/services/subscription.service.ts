@@ -1,8 +1,7 @@
-import { Injectable, inject, signal, computed } from '@angular/core';
+import { Injectable, inject, signal, computed, DestroyRef } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { Router } from '@angular/router';
 import { AuthService } from './auth.service';
-import { UserProfileService } from './user-profile.service';
 import { FirestoreService } from './firestore.service';
 import {
   SubscriptionTier,
@@ -12,22 +11,34 @@ import {
   SUBSCRIPTION_PLANS,
 } from '../interfaces/subscription.interface';
 
+/**
+ * Private user data structure (stored in users/{uid}/private/data)
+ */
+interface PrivateUserData {
+  trustScore: number;
+  subscription: UserSubscription;
+  updatedAt?: unknown;
+}
+
 @Injectable({
   providedIn: 'root',
 })
 export class SubscriptionService {
   private readonly authService = inject(AuthService);
-  private readonly userProfileService = inject(UserProfileService);
   private readonly firestoreService = inject(FirestoreService);
   private readonly dialog = inject(MatDialog);
   private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
 
-  // Current subscription state
+  // Current subscription state - loaded from private subcollection
   private readonly _subscription = signal<UserSubscription | null>(null);
+  private readonly _trustScore = signal<number>(0);
   private readonly _loading = signal(false);
+  private unsubscribe: (() => void) | null = null;
 
   // Public signals
   readonly subscription = this._subscription.asReadonly();
+  readonly trustScore = this._trustScore.asReadonly();
   readonly loading = this._loading.asReadonly();
 
   readonly currentTier = computed<SubscriptionTier>(() => {
@@ -54,34 +65,61 @@ export class SubscriptionService {
 
   readonly plans = SUBSCRIPTION_PLANS;
 
+  constructor() {
+    this.destroyRef.onDestroy(() => {
+      this.cleanup();
+    });
+  }
+
   /**
-   * Load user's subscription from their profile
+   * Initialize real-time subscription to private user data
+   * This should be called after authentication
    */
-  async loadSubscription(): Promise<void> {
+  initialize(): void {
     const user = this.authService.user();
     if (!user) {
       this._subscription.set(null);
+      this._trustScore.set(0);
       return;
     }
 
+    this.subscribeToPrivateData(user.uid);
+  }
+
+  private subscribeToPrivateData(userId: string): void {
+    this.cleanup();
     this._loading.set(true);
-    try {
-      const profile = await this.userProfileService.getCurrentUserProfile();
-      if (profile?.subscription) {
-        this._subscription.set(profile.subscription as UserSubscription);
-      } else {
-        // Default to free tier
-        this._subscription.set({
-          tier: 'free',
-          status: 'active',
-        });
+
+    // Subscribe to real-time updates on private data
+    this.unsubscribe = this.firestoreService.subscribeToDocument<PrivateUserData>(
+      `users/${userId}/private`,
+      'data',
+      (data) => {
+        if (data) {
+          this._subscription.set(data.subscription ?? { tier: 'free', status: 'active' });
+          this._trustScore.set(data.trustScore ?? 0);
+        } else {
+          // Private doc doesn't exist yet - default to free
+          this._subscription.set({ tier: 'free', status: 'active' });
+          this._trustScore.set(0);
+        }
+        this._loading.set(false);
       }
-    } catch (error) {
-      console.error('Error loading subscription:', error);
-      this._subscription.set({ tier: 'free', status: 'active' });
-    } finally {
-      this._loading.set(false);
+    );
+  }
+
+  private cleanup(): void {
+    if (this.unsubscribe) {
+      this.unsubscribe();
+      this.unsubscribe = null;
     }
+  }
+
+  /**
+   * @deprecated Use initialize() instead for real-time updates
+   */
+  async loadSubscription(): Promise<void> {
+    this.initialize();
   }
 
   /**

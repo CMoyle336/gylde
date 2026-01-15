@@ -73,6 +73,7 @@ export class DiscoverComponent implements OnInit {
   protected readonly incomeOptions = this.discoveryService.incomeOptions;
   protected readonly supportOrientationOptions = this.discoveryService.supportOrientationOptions;
   protected readonly distanceOptions = this.discoveryService.distanceOptions;
+  protected readonly trustScoreOptions = this.discoveryService.trustScoreOptions;
   protected readonly sortOptions = this.discoveryService.sortOptions;
 
   protected readonly favoritedUserIds = this.favoriteService.favoritedUserIds;

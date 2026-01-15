@@ -130,7 +130,7 @@ function calculateDenormalizedFields(data: FirebaseFirestore.DocumentData) {
     ? encodeGeohash(location.latitude, location.longitude, 9)
     : null;
 
-  // Trust score
+  // Trust score (stored in private subcollection, but calculated here)
   const trustScore = calculateTrustScore(data);
 
   return { isSearchable, isVerified, sortableLastActive, geohash, trustScore };
@@ -138,7 +138,7 @@ function calculateDenormalizedFields(data: FirebaseFirestore.DocumentData) {
 
 /**
  * Trigger when a user document is created
- * Sets initial denormalized fields
+ * Sets initial denormalized fields and creates private data document
  */
 export const onUserCreated = onDocumentCreated(
   {
@@ -156,12 +156,24 @@ export const onUserCreated = onDocumentCreated(
 
     const { isSearchable, isVerified, sortableLastActive, geohash, trustScore } = calculateDenormalizedFields(data);
 
+    // Update public denormalized fields on user document
     await db.collection("users").doc(userId).update({
       isSearchable,
       isVerified,
       sortableLastActive,
       geohash,
+    });
+
+    // Store sensitive data in private subcollection (only user can read, only functions can write)
+    await db.collection("users").doc(userId).collection("private").doc("data").set({
       trustScore,
+      subscription: {
+        tier: "free",
+        status: "active",
+        currentPeriodEnd: null,
+        cancelAtPeriodEnd: false,
+      },
+      updatedAt: Timestamp.now(),
     });
 
     logger.info(`Set denormalized fields for new user ${userId}:`, { isSearchable, isVerified, trustScore, geohash: geohash?.substring(0, 4) });
@@ -190,24 +202,23 @@ export const onUserUpdated = onDocumentUpdated(
     // Calculate expected values
     const expected = calculateDenormalizedFields(afterData);
 
-    // Get current values
+    // Get current values from public document
     const current = {
       isSearchable: afterData.isSearchable,
       isVerified: afterData.isVerified,
       sortableLastActive: afterData.sortableLastActive,
       geohash: afterData.geohash,
-      trustScore: afterData.trustScore,
     };
 
-    // Determine what needs to be updated
-    const updates: Record<string, unknown> = {};
+    // Determine what needs to be updated on public document
+    const publicUpdates: Record<string, unknown> = {};
 
     if (expected.isSearchable !== current.isSearchable) {
-      updates.isSearchable = expected.isSearchable;
+      publicUpdates.isSearchable = expected.isSearchable;
     }
 
     if (expected.isVerified !== current.isVerified) {
-      updates.isVerified = expected.isVerified;
+      publicUpdates.isVerified = expected.isVerified;
     }
 
     // Check sortableLastActive
@@ -215,23 +226,31 @@ export const onUserUpdated = onDocumentUpdated(
     const expectedSortableMillis = (expected.sortableLastActive as Timestamp)?.toMillis?.() || null;
     
     if (currentSortableMillis !== expectedSortableMillis) {
-      updates.sortableLastActive = expected.sortableLastActive;
+      publicUpdates.sortableLastActive = expected.sortableLastActive;
     }
 
     // Check geohash
     if (expected.geohash !== current.geohash) {
-      updates.geohash = expected.geohash;
+      publicUpdates.geohash = expected.geohash;
     }
 
-    // Check trust score
-    if (expected.trustScore !== current.trustScore) {
-      updates.trustScore = expected.trustScore;
+    // Update public document if there are changes
+    if (Object.keys(publicUpdates).length > 0) {
+      logger.info(`Updating public denormalized fields for user ${userId}:`, publicUpdates);
+      await db.collection("users").doc(userId).update(publicUpdates);
     }
 
-    // Only update if there are changes
-    if (Object.keys(updates).length > 0) {
-      logger.info(`Updating denormalized fields for user ${userId}:`, updates);
-      await db.collection("users").doc(userId).update(updates);
+    // Check trust score in private subcollection
+    const privateDocRef = db.collection("users").doc(userId).collection("private").doc("data");
+    const privateDoc = await privateDocRef.get();
+    const currentTrustScore = privateDoc.exists ? privateDoc.data()?.trustScore : null;
+
+    if (expected.trustScore !== currentTrustScore) {
+      logger.info(`Updating trust score for user ${userId}: ${currentTrustScore} -> ${expected.trustScore}`);
+      await privateDocRef.set({
+        trustScore: expected.trustScore,
+        updatedAt: Timestamp.now(),
+      }, { merge: true });
     }
   }
 );

@@ -20,9 +20,9 @@ const FEATURE_MESSAGES: Record<keyof SubscriptionCapabilities, { title: string; 
     description: 'Upgrade to Connect or Elite to verify your profile and build trust with other members.',
     icon: 'verified_user',
   },
-  hasEliteTrustScore: {
-    title: 'Get 100% Trust Score',
-    description: 'Upgrade to Elite for an automatic 100% trust score and maximum visibility.',
+  hasEliteBadge: {
+    title: 'Get the Elite Badge',
+    description: 'Upgrade to Elite for an exclusive badge and stand out from the crowd.',
     icon: 'workspace_premium',
   },
   hasPriorityVisibility: {

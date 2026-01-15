@@ -39,33 +39,33 @@
 
         <div class="hero-info">
           <h1 class="hero-title">Your Trust Score</h1>
-          <div class="trust-level" [style.color]="trustLevel().color">
-            <span class="material-icons-outlined">{{ 
-              isElite() ? 'workspace_premium' :
-              trustScore() >= 70 ? 'verified' : 
-              trustScore() >= 50 ? 'shield' : 'security' 
-            }}</span>
-            {{ trustLevel().label }}
-          </div>
-          @if (isElite()) {
-            <p class="hero-description">
-              As an Elite member, you have a guaranteed 100% trust score. 
-              You appear first in search results and have maximum visibility.
-            </p>
-            <div class="elite-badge">
-              <span class="material-icons-outlined">verified</span>
-              <span>Elite Member</span>
+          <div class="trust-badges">
+            <div class="trust-level" [style.color]="trustLevel().color">
+              <span class="material-icons-outlined">{{ 
+                trustScore() >= 70 ? 'verified' : 
+                trustScore() >= 50 ? 'shield' : 'security' 
+              }}</span>
+              {{ trustLevel().label }}
             </div>
-          } @else {
-            <p class="hero-description">
+            @if (isElite()) {
+              <div class="elite-badge">
+                <span class="material-icons-outlined">workspace_premium</span>
+                <span>Elite</span>
+              </div>
+            }
+          </div>
+          <p class="hero-description">
+            @if (isElite()) {
+              As an Elite member, you appear first in search results and have an exclusive badge on your profile.
+            } @else {
               Your trust score helps others feel confident connecting with you. 
               Complete the tasks below to increase your score and build trust.
-            </p>
-            <div class="progress-summary">
-              <span class="material-icons-outlined">task_alt</span>
-              <span>{{ completedTasks() }} of {{ totalTasks() }} tasks completed</span>
-            </div>
-          }
+            }
+          </p>
+          <div class="progress-summary">
+            <span class="material-icons-outlined">task_alt</span>
+            <span>{{ completedTasks() }} of {{ totalTasks() }} tasks completed</span>
+          </div>
         </div>
       </div>
     </div>
@@ -78,8 +78,8 @@
             <span class="material-icons-outlined">workspace_premium</span>
           </div>
           <div class="upsell-text">
-            <h3>Skip the grind. Get 100% instantly.</h3>
-            <p>Upgrade to Elite for an automatic 100% trust score, priority visibility, and more.</p>
+            <h3>Stand out from the crowd</h3>
+            <p>Upgrade to Elite for priority visibility in search results and an exclusive Elite badge.</p>
           </div>
         </div>
         <button class="upsell-btn" (click)="goToSubscription()">

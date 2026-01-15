@@ -27,6 +27,7 @@ export interface DiscoverableProfile {
   photos: string[];
   verified: boolean;
   supportOrientation: string;
+  trustScore: number; // 0-100 trust score
   // Secondary profile fields
   ethnicity?: string;
   relationshipStatus?: string;
@@ -65,13 +66,16 @@ export interface DiscoveryFilters {
   // Activity filters
   onlineNow: boolean;
   activeRecently: boolean;
+
+  // Trust score filter
+  minTrustScore: number; // 0-100, minimum trust score required
 }
 
 /**
  * Sorting options for discovery
  */
 export interface DiscoverySort {
-  field: 'distance' | 'lastActive' | 'newest' | 'age';
+  field: 'distance' | 'lastActive' | 'newest' | 'age' | 'trustScore';
   direction: 'asc' | 'desc';
 }
 

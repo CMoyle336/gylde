@@ -47,18 +47,14 @@ export class TrustComponent implements OnInit {
   protected readonly profile = signal<UserProfile | null>(null);
   protected readonly categories = signal<TrustCategory[]>([]);
 
-  // Elite members get 100% trust score automatically
+  // Elite members get a badge, not automatic trust score
   protected readonly isElite = this.subscriptionService.isElite;
 
-  // Trust score - Elite members always get 100
-  protected readonly trustScore = computed(() => {
-    if (this.isElite()) return 100;
-    return this.profile()?.trustScore ?? 0;
-  });
+  // Trust score is calculated by Cloud Functions and stored in private subcollection
+  protected readonly trustScore = this.subscriptionService.trustScore;
 
   protected readonly trustLevel = computed(() => {
     const score = this.trustScore();
-    if (this.isElite()) return { label: 'Elite', color: '#c9a962' };
     if (score >= 90) return { label: 'Excellent', color: '#10b981' };
     if (score >= 70) return { label: 'Good', color: '#c9a962' };
     if (score >= 50) return { label: 'Fair', color: '#f59e0b' };

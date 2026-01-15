@@ -49,7 +49,8 @@ export class ShellComponent implements OnInit, OnDestroy {
   // Message state
   protected readonly messageUnreadCount = this.messageService.totalUnreadCount;
   protected readonly activeConversation = this.messageService.activeConversation;
-  protected readonly trustScore = signal(0);
+  // Trust score from private subcollection (via subscription service)
+  protected readonly trustScore = this.subscriptionService.trustScore;
   
   // Sidebar state - initialize from localStorage
   protected readonly sidenavOpen = signal(false);
@@ -104,11 +105,8 @@ export class ShellComponent implements OnInit, OnDestroy {
     // Load user's language preference
     this.loadUserLanguage();
     
-    // Load trust score from profile
-    this.loadTrustScore();
-    
-    // Load subscription status
-    this.subscriptionService.loadSubscription();
+    // Initialize subscription service (loads trust score + subscription from private subcollection)
+    this.subscriptionService.initialize();
   }
 
   private async loadUserLanguage(): Promise<void> {
@@ -120,17 +118,6 @@ export class ShellComponent implements OnInit, OnDestroy {
       }
     } catch (error) {
       console.error('Error loading user language:', error);
-    }
-  }
-
-  private async loadTrustScore(): Promise<void> {
-    try {
-      const profile = await this.userProfileService.getCurrentUserProfile();
-      // Trust score is calculated by Cloud Functions and stored on the user document
-      this.trustScore.set(profile?.trustScore ?? 0);
-    } catch (error) {
-      console.error('Error loading trust score:', error);
-      this.trustScore.set(0);
     }
   }
 
