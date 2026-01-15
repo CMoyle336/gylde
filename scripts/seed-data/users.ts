@@ -102,6 +102,14 @@ export interface SeedUser {
   photoURL: string | null;
   onboardingCompleted: boolean;
   lastActiveAt: Date;
+  
+  // Verification status fields
+  emailVerified: boolean;
+  phoneNumber: string | null;
+  phoneNumberVerified: boolean;
+  identityVerified: boolean;
+  identityVerificationStatus: 'pending' | 'approved' | 'declined' | null;
+  
   settings: {
     privacy: {
       showOnlineStatus: boolean;
@@ -321,6 +329,22 @@ export function generateUsers(count: number, seed?: number): SeedUser[] {
       lastActiveAt = new Date(now - faker.number.int({ min: 7 * 24 * 60 * 60 * 1000, max: 30 * 24 * 60 * 60 * 1000 }));
     }
 
+    // Generate verification statuses
+    // ~70% of users have verified email
+    const emailVerified = Math.random() > 0.3;
+    // ~40% of users have verified phone
+    const hasPhoneVerified = Math.random() > 0.6;
+    // Generate E.164 format phone number
+    const phoneNumber = hasPhoneVerified 
+      ? `+1${faker.string.numeric(10)}` 
+      : null;
+    // ~30% of users have completed identity verification
+    const identityRoll = Math.random();
+    const identityVerified = identityRoll > 0.7;
+    const identityVerificationStatus: 'pending' | 'approved' | 'declined' | null = 
+      identityVerified ? 'approved' : 
+      (identityRoll > 0.5 ? 'pending' : null);
+
     const user: SeedUser = {
       uid,
       email,
@@ -329,6 +353,14 @@ export function generateUsers(count: number, seed?: number): SeedUser[] {
       photoURL: photos[0],
       onboardingCompleted: true,
       lastActiveAt,
+      
+      // Verification fields
+      emailVerified,
+      phoneNumber,
+      phoneNumberVerified: hasPhoneVerified,
+      identityVerified,
+      identityVerificationStatus,
+      
       settings: {
         privacy: {
           showOnlineStatus: Math.random() > 0.1, // 90% show online status

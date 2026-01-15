@@ -150,7 +150,8 @@ async function seedAuthUsers(auth: ReturnType<typeof getAuth>, users: SeedUser[]
         password: user.password,
         displayName: user.displayName,
         photoURL: user.photoURL || undefined,
-        emailVerified: true,
+        emailVerified: user.emailVerified,
+        phoneNumber: user.phoneNumber || undefined,
       });
       created++;
     } catch (error: any) {
@@ -226,7 +227,6 @@ async function seedFirestoreUsers(db: FirebaseFirestore.Firestore, users: SeedUs
       const profileVisible = settings?.privacy?.profileVisible !== false;
       
       const isSearchable = profileVisible && user.onboardingCompleted;
-      const isVerified = user.onboarding.verificationOptions?.includes('identity') || false;
       const sortableLastActive = showLastActive ? user.lastActiveAt : null;
       
       const location = user.onboarding.location;
@@ -244,9 +244,20 @@ async function seedFirestoreUsers(db: FirebaseFirestore.Firestore, users: SeedUs
         lastActiveAt: user.lastActiveAt,
         sortableLastActive,
         isSearchable,
-        isVerified,
         geohash,
         onboardingCompleted: user.onboardingCompleted,
+        
+        // Verification fields (new data model)
+        emailVerified: user.emailVerified,
+        phoneNumber: user.phoneNumber,
+        phoneNumberVerified: user.phoneNumberVerified,
+        identityVerified: user.identityVerified,
+        identityVerificationStatus: user.identityVerificationStatus,
+        
+        // Activity tracking fields (will be updated by favorites/messages seeding)
+        favoritesCount: 0,  // Will be updated after seeding favorites
+        lastMessageSentAt: null,  // Will be updated after seeding messages
+        
         onboarding: {
           ...user.onboarding,
           photoDetails: user.onboarding.photoDetails,
@@ -270,6 +281,9 @@ async function seedFavorites(
   const batchSize = 500;
   let totalCreated = 0;
 
+  // Track favorites count per user
+  const favoritesCountMap = new Map<string, number>();
+
   for (let i = 0; i < favorites.length; i += batchSize) {
     const batch = db.batch();
     const batchFavorites = favorites.slice(i, i + batchSize);
@@ -283,13 +297,37 @@ async function seedFavorites(
         createdAt: fav.createdAt,
         private: false, // Default to public favorites in seed data
       });
+      
+      // Track count for this user
+      const currentCount = favoritesCountMap.get(fav.odUserId) || 0;
+      favoritesCountMap.set(fav.odUserId, currentCount + 1);
     }
     
     await batch.commit();
     totalCreated += batchFavorites.length;
   }
 
-  console.log(`  ✓ Created ${totalCreated} favorites (and favoritedBy references)`);
+  console.log(`  ✓ Created ${totalCreated} favorites`);
+  
+  // Update favoritesCount on user profiles
+  const userIds = Array.from(favoritesCountMap.keys());
+  let countsUpdated = 0;
+  
+  for (let i = 0; i < userIds.length; i += batchSize) {
+    const batch = db.batch();
+    const batchUserIds = userIds.slice(i, i + batchSize);
+    
+    for (const userId of batchUserIds) {
+      const count = favoritesCountMap.get(userId) || 0;
+      const userRef = db.collection('users').doc(userId);
+      batch.update(userRef, { favoritesCount: count });
+    }
+    
+    await batch.commit();
+    countsUpdated += batchUserIds.length;
+  }
+  
+  console.log(`  ✓ Updated favoritesCount for ${countsUpdated} users`);
 }
 
 async function seedProfileViews(
@@ -409,7 +447,10 @@ async function seedConversations(
 
   console.log(`  ✓ Created ${conversationsCreated} conversations`);
 
-  // Seed messages
+  // Track lastMessageSentAt per user (most recent message sent)
+  const lastMessageSentMap = new Map<string, Date>();
+  
+  // Seed messages and track last sent timestamps
   let messagesCreated = 0;
 
   for (let i = 0; i < messages.length; i += batchSize) {
@@ -424,6 +465,12 @@ async function seedConversations(
         createdAt: msg.createdAt,
         read: msg.read,
       });
+      
+      // Track the most recent message sent by each user
+      const existingDate = lastMessageSentMap.get(msg.odSenderId);
+      if (!existingDate || msg.createdAt > existingDate) {
+        lastMessageSentMap.set(msg.odSenderId, msg.createdAt);
+      }
     }
     
     await batch.commit();
@@ -431,6 +478,28 @@ async function seedConversations(
   }
 
   console.log(`  ✓ Created ${messagesCreated} messages`);
+  
+  // Update lastMessageSentAt on user profiles
+  const userIds = Array.from(lastMessageSentMap.keys());
+  let timestampsUpdated = 0;
+  
+  for (let i = 0; i < userIds.length; i += batchSize) {
+    const batch = db.batch();
+    const batchUserIds = userIds.slice(i, i + batchSize);
+    
+    for (const userId of batchUserIds) {
+      const lastMessageSentAt = lastMessageSentMap.get(userId);
+      if (lastMessageSentAt) {
+        const userRef = db.collection('users').doc(userId);
+        batch.update(userRef, { lastMessageSentAt });
+      }
+    }
+    
+    await batch.commit();
+    timestampsUpdated += batchUserIds.length;
+  }
+  
+  console.log(`  ✓ Updated lastMessageSentAt for ${timestampsUpdated} users`);
 }
 
 async function seedPhotoAccessRequests(
@@ -503,27 +572,34 @@ async function seedPhotoAccessRequests(
 // ============================================================================
 
 function printLoginCredentials(users: SeedUser[]) {
-  console.log('\n' + '='.repeat(60));
+  console.log('\n' + '='.repeat(80));
   console.log('📋 TEST LOGIN CREDENTIALS');
-  console.log('='.repeat(60));
+  console.log('='.repeat(80));
   console.log('\nAll passwords: password123\n');
-  console.log('Email                          | Name                    | Support');
-  console.log('-'.repeat(60));
+  console.log('Email                          | Name                    | Support   | Verified');
+  console.log('-'.repeat(80));
   
   // Show first 10 users
   const displayUsers = users.slice(0, 10);
   for (const user of displayUsers) {
     const email = user.email.padEnd(30);
     const name = user.displayName.padEnd(23);
-    const support = user.onboarding.supportOrientation;
-    console.log(`${email} | ${name} | ${support}`);
+    const support = user.onboarding.supportOrientation.padEnd(9);
+    const verified = [
+      user.emailVerified ? '✉' : '',
+      user.phoneNumberVerified ? '📱' : '',
+      user.identityVerified ? '🆔' : '',
+    ].join('') || '-';
+    console.log(`${email} | ${name} | ${support} | ${verified}`);
   }
   
   if (users.length > 10) {
     console.log(`... and ${users.length - 10} more users`);
   }
   
-  console.log('='.repeat(60));
+  console.log('-'.repeat(80));
+  console.log('Verification legend: ✉ = Email, 📱 = Phone, 🆔 = Identity');
+  console.log('='.repeat(80));
 }
 
 async function clearAuthUsers(auth: ReturnType<typeof getAuth>) {
