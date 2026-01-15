@@ -2,31 +2,25 @@ import { Injectable, inject, signal, OnDestroy, PLATFORM_ID } from '@angular/cor
 import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { 
-  Firestore, 
-  collection, 
-  query, 
-  where, 
-  orderBy, 
-  limit, 
-  getDocs, 
-  addDoc, 
-  updateDoc,
-  doc,
-  writeBatch,
-  serverTimestamp,
-  Unsubscribe 
-} from '@angular/fire/firestore';
+import { Unsubscribe } from '@angular/fire/firestore';
 import { FirestoreService } from './firestore.service';
 import { AuthService } from './auth.service';
 import { UserProfileService } from './user-profile.service';
 import { Activity, ActivityDisplay } from '../interfaces';
 
+interface ProfileView {
+  id?: string;
+  viewerId: string;
+  viewerName: string;
+  viewerPhoto: string | null;
+  viewedUserId: string;
+  viewedAt: unknown;
+}
+
 @Injectable({
   providedIn: 'root',
 })
 export class ActivityService implements OnDestroy {
-  private readonly firestore = inject(Firestore);
   private readonly firestoreService = inject(FirestoreService);
   private readonly authService = inject(AuthService);
   private readonly userProfileService = inject(UserProfileService);
@@ -209,19 +203,22 @@ export class ActivityService implements OnDestroy {
 
     try {
       // Query for all unread activities
-      const activitiesRef = collection(this.firestore, `users/${currentUser.uid}/activities`);
-      const unreadQuery = query(activitiesRef, where('read', '==', false));
-      const snapshot = await getDocs(unreadQuery);
+      const collectionPath = `users/${currentUser.uid}/activities`;
+      const unreadActivities = await this.firestoreService.getCollection<Activity>(
+        collectionPath,
+        [this.firestoreService.whereEqual('read', false)]
+      );
 
-      if (snapshot.empty) return;
+      if (unreadActivities.length === 0) return;
 
       // Use batch write to update all at once
-      const batch = writeBatch(this.firestore);
-      snapshot.docs.forEach(docSnapshot => {
-        batch.update(docSnapshot.ref, { read: true });
-      });
+      const updates = unreadActivities.map(activity => ({
+        collection: collectionPath,
+        docId: activity.id!,
+        data: { read: true },
+      }));
 
-      await batch.commit();
+      await this.firestoreService.batchUpdate(updates);
     } catch (error) {
       console.error('Failed to mark all activities as read:', error);
     }
@@ -275,26 +272,24 @@ export class ActivityService implements OnDestroy {
         return;
       }
 
-      const viewsRef = collection(this.firestore, 'profileViews');
-      
       // Check if we already have a view record from this user to this profile
-      const existingViewQuery = query(
-        viewsRef,
-        where('viewerId', '==', currentUser.uid),
-        where('viewedUserId', '==', viewedUserId),
-        limit(1)
+      const existingViews = await this.firestoreService.getCollection<ProfileView>(
+        'profileViews',
+        [
+          this.firestoreService.whereEqual('viewerId', currentUser.uid),
+          this.firestoreService.whereEqual('viewedUserId', viewedUserId),
+          this.firestoreService.limitTo(1),
+        ]
       );
       
-      const existingSnapshot = await getDocs(existingViewQuery);
-      
-      if (!existingSnapshot.empty) {
-        const existingDoc = existingSnapshot.docs[0];
-        const lastViewTime = existingDoc.data()['viewedAt']?.toDate?.() || new Date(0);
+      if (existingViews.length > 0) {
+        const existingView = existingViews[0];
+        const lastViewTime = (existingView.viewedAt as { toDate?: () => Date })?.toDate?.() || new Date(0);
         const hourAgo = new Date(Date.now() - 60 * 60 * 1000);
         
         // Always update the timestamp
-        await updateDoc(existingDoc.ref, {
-          viewedAt: serverTimestamp(),
+        await this.firestoreService.updateDocument('profileViews', existingView.id!, {
+          viewedAt: this.firestoreService.getServerTimestamp(),
           viewerName: currentUser.displayName || 'Someone',
           viewerPhoto: currentUser.photoURL,
         });
@@ -305,12 +300,12 @@ export class ActivityService implements OnDestroy {
         }
       } else {
         // Create new profile view record
-        await addDoc(viewsRef, {
+        await this.firestoreService.addDocument('profileViews', {
           viewerId: currentUser.uid,
           viewerName: currentUser.displayName || 'Someone',
           viewerPhoto: currentUser.photoURL,
           viewedUserId: viewedUserId,
-          viewedAt: serverTimestamp(),
+          viewedAt: this.firestoreService.getServerTimestamp(),
         });
       }
 
@@ -329,18 +324,19 @@ export class ActivityService implements OnDestroy {
     currentUser: { uid: string; displayName: string | null; photoURL: string | null }
   ): Promise<void> {
     try {
-      const activitiesRef = collection(this.firestore, `users/${viewedUserId}/activities`);
-      const activityQuery = query(
-        activitiesRef,
-        where('fromUserId', '==', currentUser.uid),
-        where('type', '==', 'view'),
-        limit(1)
+      const collectionPath = `users/${viewedUserId}/activities`;
+      const activities = await this.firestoreService.getCollection<Activity>(
+        collectionPath,
+        [
+          this.firestoreService.whereEqual('fromUserId', currentUser.uid),
+          this.firestoreService.whereEqual('type', 'view'),
+          this.firestoreService.limitTo(1),
+        ]
       );
       
-      const activitySnapshot = await getDocs(activityQuery);
-      if (!activitySnapshot.empty) {
-        await updateDoc(activitySnapshot.docs[0].ref, {
-          createdAt: serverTimestamp(),
+      if (activities.length > 0) {
+        await this.firestoreService.updateDocument(collectionPath, activities[0].id!, {
+          createdAt: this.firestoreService.getServerTimestamp(),
           read: false,
           link: `/user/${currentUser.uid}`,
           fromUserName: currentUser.displayName || 'Someone',
@@ -361,25 +357,25 @@ export class ActivityService implements OnDestroy {
     if (!currentUser || currentUser.uid === userId) return null;
 
     try {
-      const viewsRef = collection(this.firestore, 'profileViews');
-      // Using simple equality filters (no orderBy) to avoid index requirements
-      const q = query(
-        viewsRef,
-        where('viewerId', '==', userId),
-        where('viewedUserId', '==', currentUser.uid),
-        limit(1)
+      const views = await this.firestoreService.getCollection<ProfileView>(
+        'profileViews',
+        [
+          this.firestoreService.whereEqual('viewerId', userId),
+          this.firestoreService.whereEqual('viewedUserId', currentUser.uid),
+          this.firestoreService.limitTo(1),
+        ]
       );
 
-      const snapshot = await getDocs(q);
-      if (snapshot.empty) return null;
+      if (views.length === 0) return null;
 
-      const data = snapshot.docs[0].data();
-      const viewedAt = data['viewedAt'];
+      const viewedAt = views[0].viewedAt;
       
       if (!viewedAt) return null;
       
       // Handle Firestore Timestamp
-      return viewedAt.toDate ? viewedAt.toDate() : new Date(viewedAt);
+      return (viewedAt as { toDate?: () => Date }).toDate ? 
+        (viewedAt as { toDate: () => Date }).toDate() : 
+        new Date(viewedAt as number | string);
     } catch (error) {
       console.error('Error getting last viewed by:', error);
       return null;

@@ -3,7 +3,8 @@
  */
 import { Injectable, inject, signal, effect } from '@angular/core';
 import { Functions, httpsCallable } from '@angular/fire/functions';
-import { Firestore, collection, query, where, onSnapshot, orderBy, doc, getDoc } from '@angular/fire/firestore';
+import { Unsubscribe } from '@angular/fire/firestore';
+import { FirestoreService } from './firestore.service';
 import { AuthService } from './auth.service';
 import { PhotoAccessRequest, PhotoAccessGrant, PhotoAccessSummary } from '../interfaces/photo.interface';
 
@@ -15,12 +16,19 @@ export interface PhotoAccessGrantDisplay extends PhotoAccessGrant {
   id: string;
 }
 
+interface UserPhotoData {
+  onboarding?: {
+    photos?: string[];
+    photoDetails?: { url: string; isPrivate: boolean }[];
+  };
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class PhotoAccessService {
   private readonly functions = inject(Functions);
-  private readonly firestore = inject(Firestore);
+  private readonly firestoreService = inject(FirestoreService);
   private readonly authService = inject(AuthService);
 
   // Pending requests count (for badge)
@@ -35,8 +43,8 @@ export class PhotoAccessService {
   private readonly _grants = signal<PhotoAccessGrantDisplay[]>([]);
   readonly grants = this._grants.asReadonly();
 
-  private requestsUnsubscribe?: () => void;
-  private grantsUnsubscribe?: () => void;
+  private requestsUnsubscribe?: Unsubscribe;
+  private grantsUnsubscribe?: Unsubscribe;
 
   constructor() {
     // Subscribe to pending requests when user is authenticated
@@ -54,40 +62,41 @@ export class PhotoAccessService {
   private subscribeToRequests(userId: string): void {
     this.requestsUnsubscribe?.();
 
-    const requestsRef = collection(this.firestore, `users/${userId}/photoAccessRequests`);
-    const q = query(
-      requestsRef,
-      where('status', '==', 'pending'),
-      orderBy('requestedAt', 'desc')
+    this.requestsUnsubscribe = this.firestoreService.subscribeToCollection<PhotoAccessRequest>(
+      `users/${userId}/photoAccessRequests`,
+      [
+        this.firestoreService.whereEqual('status', 'pending'),
+        this.firestoreService.orderByField('requestedAt', 'desc'),
+      ],
+      (requestsData) => {
+        const requests = requestsData.map(req => ({
+          ...req,
+          id: (req as unknown as { id: string }).id,
+          requestedAt: (req.requestedAt as { toDate?: () => Date })?.toDate?.() || req.requestedAt,
+        })) as PhotoAccessRequestDisplay[];
+
+        this._pendingRequests.set(requests);
+        this._pendingRequestsCount.set(requests.length);
+      }
     );
-
-    this.requestsUnsubscribe = onSnapshot(q, (snapshot) => {
-      const requests = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        requestedAt: doc.data()['requestedAt']?.toDate(),
-      })) as PhotoAccessRequestDisplay[];
-
-      this._pendingRequests.set(requests);
-      this._pendingRequestsCount.set(requests.length);
-    });
   }
 
   private subscribeToGrants(userId: string): void {
     this.grantsUnsubscribe?.();
 
-    const grantsRef = collection(this.firestore, `users/${userId}/photoAccessGrants`);
-    const q = query(grantsRef, orderBy('grantedAt', 'desc'));
+    this.grantsUnsubscribe = this.firestoreService.subscribeToCollection<PhotoAccessGrant>(
+      `users/${userId}/photoAccessGrants`,
+      [this.firestoreService.orderByField('grantedAt', 'desc')],
+      (grantsData) => {
+        const grants = grantsData.map(grant => ({
+          ...grant,
+          id: (grant as unknown as { id: string }).id,
+          grantedAt: (grant.grantedAt as { toDate?: () => Date })?.toDate?.() || grant.grantedAt,
+        })) as PhotoAccessGrantDisplay[];
 
-    this.grantsUnsubscribe = onSnapshot(q, (snapshot) => {
-      const grants = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        grantedAt: doc.data()['grantedAt']?.toDate(),
-      })) as PhotoAccessGrantDisplay[];
-
-      this._grants.set(grants);
-    });
+        this._grants.set(grants);
+      }
+    );
   }
 
   private cleanup(): void {
@@ -191,14 +200,13 @@ export class PhotoAccessService {
     const isSelf = currentUser?.uid === targetUserId;
 
     // Get target user's profile
-    const userDoc = await getDoc(doc(this.firestore, 'users', targetUserId));
-    if (!userDoc.exists()) {
+    const userData = await this.firestoreService.getDocument<UserPhotoData>('users', targetUserId);
+    if (!userData) {
       return { photos: [], hasAccess: false };
     }
 
-    const userData = userDoc.data();
-    const photoDetails = userData['onboarding']?.photoDetails || [];
-    const photos = userData['onboarding']?.photos || [];
+    const photoDetails = userData.onboarding?.photoDetails || [];
+    const photos = userData.onboarding?.photos || [];
 
     // Build photo list with privacy info
     const photoList = photos.map((url: string) => {
@@ -240,28 +248,24 @@ export class PhotoAccessService {
     }
 
     // Listen to the request document for status changes
-    const requestDocRef = doc(
-      this.firestore,
-      `users/${targetUserId}/photoAccessRequests/${currentUser.uid}`
-    );
+    return this.firestoreService.subscribeToDocument<PhotoAccessRequest>(
+      `users/${targetUserId}/photoAccessRequests`,
+      currentUser.uid,
+      (data) => {
+        if (!data) {
+          // No request exists
+          callback({ hasAccess: false, requestStatus: undefined });
+          return;
+        }
 
-    const unsubscribe = onSnapshot(requestDocRef, (snapshot) => {
-      if (!snapshot.exists()) {
-        // No request exists
-        callback({ hasAccess: false, requestStatus: undefined });
-        return;
+        const status = data.status as 'pending' | 'granted' | 'denied';
+        
+        callback({
+          hasAccess: status === 'granted',
+          requestStatus: status,
+          requestedAt: (data.requestedAt as { toDate?: () => Date })?.toDate?.() || data.requestedAt as Date | undefined,
+        });
       }
-
-      const data = snapshot.data();
-      const status = data['status'] as 'pending' | 'granted' | 'denied';
-      
-      callback({
-        hasAccess: status === 'granted',
-        requestStatus: status,
-        requestedAt: data['requestedAt']?.toDate(),
-      });
-    });
-
-    return unsubscribe;
+    );
   }
 }

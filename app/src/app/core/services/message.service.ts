@@ -1,23 +1,6 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
-import {
-  Firestore,
-  collection,
-  query,
-  where,
-  orderBy,
-  onSnapshot,
-  addDoc,
-  updateDoc,
-  doc,
-  serverTimestamp,
-  Unsubscribe,
-  limit,
-  getDocs,
-  writeBatch,
-  arrayUnion,
-  deleteField,
-  getDoc,
-} from '@angular/fire/firestore';
+import { Unsubscribe } from '@angular/fire/firestore';
+import { FirestoreService } from './firestore.service';
 import { AuthService } from './auth.service';
 import { StorageService } from './storage.service';
 import { BlockService } from './block.service';
@@ -35,7 +18,7 @@ export type ConversationFilter = 'all' | 'unread' | 'archived';
   providedIn: 'root',
 })
 export class MessageService {
-  private readonly firestore = inject(Firestore);
+  private readonly firestoreService = inject(FirestoreService);
   private readonly storageService = inject(StorageService);
   private readonly authService = inject(AuthService);
   private readonly blockService = inject(BlockService);
@@ -126,20 +109,14 @@ export class MessageService {
 
     this._loading.set(true);
 
-    const conversationsRef = collection(this.firestore, 'conversations');
-    const q = query(
-      conversationsRef,
-      where('participants', 'array-contains', currentUser.uid),
-      orderBy('updatedAt', 'desc')
-    );
-
-
-    this.conversationsUnsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        const conversations: ConversationDisplay[] = snapshot.docs.map((docSnapshot) => {
-          const data = docSnapshot.data() as Conversation;
-          
+    this.conversationsUnsubscribe = this.firestoreService.subscribeToCollection<Conversation>(
+      'conversations',
+      [
+        this.firestoreService.whereArrayContains('participants', currentUser.uid),
+        this.firestoreService.orderByField('updatedAt', 'desc'),
+      ],
+      (conversationsData) => {
+        const conversations: ConversationDisplay[] = conversationsData.map((data) => {
           const otherUserId = data.participants.find((id) => id !== currentUser.uid) || '';
           const otherUserInfo = data.participantInfo[otherUserId] || {
             displayName: 'Unknown User',
@@ -147,7 +124,7 @@ export class MessageService {
           };
 
           return {
-            id: docSnapshot.id,
+            id: data.id!,
             otherUser: {
               uid: otherUserId,
               displayName: otherUserInfo.displayName,
@@ -163,10 +140,6 @@ export class MessageService {
         });
 
         this._conversations.set(conversations);
-        this._loading.set(false);
-      },
-      (error) => {
-        console.error('Error subscribing to conversations:', error);
         this._loading.set(false);
       }
     );
@@ -234,47 +207,48 @@ export class MessageService {
       this._otherUserStatus.set(null);
       return;
     }
-
-    const userRef = doc(this.firestore, 'users', userId);
     
-    this.userStatusUnsubscribe = onSnapshot(userRef, (snapshot) => {
-      // Check block status on each update (in case it changes)
-      if (this.blockService.isUserBlocked(userId)) {
-        this._otherUserStatus.set(null);
-        return;
-      }
-      
-      if (!snapshot.exists()) {
-        this._otherUserStatus.set(null);
-        return;
-      }
-
-      const userData = snapshot.data() as UserProfile;
-      const privacy = userData.settings?.privacy;
-      
-      // Respect privacy settings
-      const showOnlineStatus = privacy?.showOnlineStatus !== false;
-      const showLastActive = privacy?.showLastActive !== false;
-      
-      let isOnline = false;
-      let lastActiveAt: Date | null = null;
-      
-      if (showOnlineStatus && userData.lastActiveAt) {
-        const lastActive = this.toDate(userData.lastActiveAt);
-        if (lastActive) {
-          const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-          isOnline = lastActive.getTime() > fiveMinutesAgo.getTime();
-          
-          if (showLastActive) {
-            lastActiveAt = lastActive;
-          }
+    this.userStatusUnsubscribe = this.firestoreService.subscribeToDocument<UserProfile>(
+      'users',
+      userId,
+      (userData) => {
+        // Check block status on each update (in case it changes)
+        if (this.blockService.isUserBlocked(userId)) {
+          this._otherUserStatus.set(null);
+          return;
         }
-      } else if (showLastActive && userData.lastActiveAt) {
-        lastActiveAt = this.toDate(userData.lastActiveAt);
+        
+        if (!userData) {
+          this._otherUserStatus.set(null);
+          return;
+        }
+
+        const privacy = userData.settings?.privacy;
+        
+        // Respect privacy settings
+        const showOnlineStatus = privacy?.showOnlineStatus !== false;
+        const showLastActive = privacy?.showLastActive !== false;
+        
+        let isOnline = false;
+        let lastActiveAt: Date | null = null;
+        
+        if (showOnlineStatus && userData.lastActiveAt) {
+          const lastActive = this.toDate(userData.lastActiveAt);
+          if (lastActive) {
+            const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+            isOnline = lastActive.getTime() > fiveMinutesAgo.getTime();
+            
+            if (showLastActive) {
+              lastActiveAt = lastActive;
+            }
+          }
+        } else if (showLastActive && userData.lastActiveAt) {
+          lastActiveAt = this.toDate(userData.lastActiveAt);
+        }
+        
+        this._otherUserStatus.set({ isOnline, lastActiveAt });
       }
-      
-      this._otherUserStatus.set({ isOnline, lastActiveAt });
-    });
+    );
   }
 
   /**
@@ -295,23 +269,24 @@ export class MessageService {
     if (!currentUser) return;
 
     this.unsubscribeFromTyping();
-
-    const conversationRef = doc(this.firestore, 'conversations', conversationId);
     
-    this.typingUnsubscribe = onSnapshot(conversationRef, (snapshot) => {
-      const data = snapshot.data() as Conversation | undefined;
-      if (!data?.typing) {
-        this._isOtherUserTyping.set(false);
-        return;
-      }
+    this.typingUnsubscribe = this.firestoreService.subscribeToDocument<Conversation>(
+      'conversations',
+      conversationId,
+      (data) => {
+        if (!data?.typing) {
+          this._isOtherUserTyping.set(false);
+          return;
+        }
 
-      // Find if any other participant is typing
-      const otherUserTyping = Object.entries(data.typing).some(
-        ([uid, isTyping]) => uid !== currentUser.uid && isTyping
-      );
-      
-      this._isOtherUserTyping.set(otherUserTyping);
-    });
+        // Find if any other participant is typing
+        const otherUserTyping = Object.entries(data.typing).some(
+          ([uid, isTyping]) => uid !== currentUser.uid && isTyping
+        );
+        
+        this._isOtherUserTyping.set(otherUserTyping);
+      }
+    );
   }
 
   /**
@@ -348,8 +323,7 @@ export class MessageService {
     this.lastTypingUpdate = now;
 
     try {
-      const conversationRef = doc(this.firestore, 'conversations', activeConvo.id);
-      await updateDoc(conversationRef, {
+      await this.firestoreService.updateDocument('conversations', activeConvo.id, {
         [`typing.${currentUser.uid}`]: isTyping,
       });
 
@@ -379,8 +353,7 @@ export class MessageService {
     }
 
     try {
-      const conversationRef = doc(this.firestore, 'conversations', activeConvo.id);
-      await updateDoc(conversationRef, {
+      await this.firestoreService.updateDocument('conversations', activeConvo.id, {
         [`typing.${currentUser.uid}`]: false,
       });
     } catch (error) {
@@ -397,23 +370,19 @@ export class MessageService {
 
     this.unsubscribeFromMessages();
 
-    const messagesRef = collection(
-      this.firestore,
-      'conversations',
-      conversationId,
-      'messages'
-    );
-    const q = query(messagesRef, orderBy('createdAt', 'asc'), limit(100));
+    const messagesPath = `conversations/${conversationId}/messages`;
 
-    this.messagesUnsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
+    this.messagesUnsubscribe = this.firestoreService.subscribeToCollection<Message>(
+      messagesPath,
+      [
+        this.firestoreService.orderByField('createdAt', 'asc'),
+        this.firestoreService.limitTo(100),
+      ],
+      (messagesData) => {
         const messages: MessageDisplay[] = [];
         const activeConvo = this._activeConversation();
         
-        for (const docSnapshot of snapshot.docs) {
-          const data = docSnapshot.data() as Message;
-          
+        for (const data of messagesData) {
           // Skip messages deleted for this user (but not deletedForAll)
           if (data.deletedFor?.includes(currentUser.uid) && !data.deletedForAll) {
             continue;
@@ -464,7 +433,7 @@ export class MessageService {
           }
 
           messages.push({
-            id: docSnapshot.id,
+            id: data.id!,
             content: data.deletedForAll ? '' : data.content,
             isOwn: data.senderId === currentUser.uid,
             createdAt: this.toDate(data.createdAt) || new Date(),
@@ -490,9 +459,6 @@ export class MessageService {
         if (this._activeConversation()?.id === conversationId) {
           this.markConversationAsRead(conversationId);
         }
-      },
-      (error) => {
-        console.error('Error subscribing to messages:', error);
       }
     );
   }
@@ -548,12 +514,7 @@ export class MessageService {
         imageUrls = await Promise.all(uploadPromises);
       }
 
-      const messagesRef = collection(
-        this.firestore,
-        'conversations',
-        activeConversation.id,
-        'messages'
-      );
+      const messagesPath = `conversations/${activeConversation.id}/messages`;
 
       // Determine message type and content
       const messageType = hasImages ? 'image' : 'text';
@@ -565,7 +526,7 @@ export class MessageService {
         conversationId: activeConversation.id,
         senderId: currentUser.uid,
         content: messageContent,
-        createdAt: serverTimestamp(),
+        createdAt: this.firestoreService.getServerTimestamp(),
         read: false,
         type: messageType,
       };
@@ -577,7 +538,7 @@ export class MessageService {
         }
       }
 
-      await addDoc(messagesRef, messageData);
+      await this.firestoreService.addDocument(messagesPath, messageData);
 
       // Determine preview for conversation list
       let lastMessagePreview = messageContent;
@@ -588,19 +549,13 @@ export class MessageService {
       }
 
       // Update conversation's last message and unread count
-      const conversationRef = doc(
-        this.firestore,
-        'conversations',
-        activeConversation.id
-      );
-
-      await updateDoc(conversationRef, {
+      await this.firestoreService.updateDocument('conversations', activeConversation.id, {
         lastMessage: {
           content: lastMessagePreview,
           senderId: currentUser.uid,
-          createdAt: serverTimestamp(),
+          createdAt: this.firestoreService.getServerTimestamp(),
         },
-        updatedAt: serverTimestamp(),
+        updatedAt: this.firestoreService.getServerTimestamp(),
         [`unreadCount.${activeConversation.otherUser.uid}`]:
           (this._conversations().find((c) => c.id === activeConversation.id)
             ?.unreadCount || 0) + 1,
@@ -623,16 +578,9 @@ export class MessageService {
     if (!currentUser || !activeConversation) return;
 
     try {
-      const messageRef = doc(
-        this.firestore,
-        'conversations',
-        activeConversation.id,
-        'messages',
-        messageId
-      );
-
-      await updateDoc(messageRef, {
-        deletedFor: arrayUnion(currentUser.uid),
+      const messagePath = `conversations/${activeConversation.id}/messages`;
+      await this.firestoreService.updateDocument(messagePath, messageId, {
+        deletedFor: this.firestoreService.getArrayUnion(currentUser.uid),
       });
     } catch (error) {
       console.error('Error deleting message for me:', error);
@@ -656,48 +604,31 @@ export class MessageService {
     }
 
     try {
-      const messageRef = doc(
-        this.firestore,
-        'conversations',
-        activeConversation.id,
-        'messages',
-        messageId
-      );
-
-      // Get the current message data for archiving
-      const messagesRef = collection(
-        this.firestore,
-        'conversations',
-        activeConversation.id,
-        'messages'
-      );
-      const messageSnapshot = await getDocs(
-        query(messagesRef, where('__name__', '==', messageId), limit(1))
-      );
+      const messagesPath = `conversations/${activeConversation.id}/messages`;
       
-      if (!messageSnapshot.empty) {
-        const originalData = messageSnapshot.docs[0].data();
-        
+      // Get the current message data for archiving
+      const originalData = await this.firestoreService.getDocument<Message>(messagesPath, messageId);
+      
+      if (originalData) {
         // Archive the original content to admin-only collection
-        const archiveRef = collection(this.firestore, 'deletedMessages');
-        await addDoc(archiveRef, {
+        await this.firestoreService.addDocument('deletedMessages', {
           originalMessageId: messageId,
           conversationId: activeConversation.id,
           senderId: currentUser.uid,
-          content: originalData['content'] || '',
-          imageUrls: originalData['imageUrls'] || [],
-          originalCreatedAt: originalData['createdAt'],
-          deletedAt: serverTimestamp(),
+          content: originalData.content || '',
+          imageUrls: originalData.imageUrls || [],
+          originalCreatedAt: originalData.createdAt,
+          deletedAt: this.firestoreService.getServerTimestamp(),
           deletedBy: currentUser.uid,
         });
       }
 
       // Clear the content from the original message
-      await updateDoc(messageRef, {
+      await this.firestoreService.updateDocument(messagesPath, messageId, {
         deletedForAll: true,
-        deletedForAllAt: serverTimestamp(),
+        deletedForAllAt: this.firestoreService.getServerTimestamp(),
         content: '', // Clear the text content
-        imageUrls: deleteField(), // Remove image URLs entirely
+        imageUrls: this.firestoreService.getDeleteField(), // Remove image URLs entirely
       });
     } catch (error) {
       console.error('Error deleting message for everyone:', error);
@@ -716,17 +647,10 @@ export class MessageService {
     if (!currentUser || !activeConversation) return;
 
     try {
-      const messageRef = doc(
-        this.firestore,
-        'conversations',
-        activeConversation.id,
-        'messages',
-        messageId
-      );
-
+      const messagesPath = `conversations/${activeConversation.id}/messages`;
       // Use dot notation to update nested field
-      await updateDoc(messageRef, {
-        [`imageViewedBy.${currentUser.uid}`]: serverTimestamp(),
+      await this.firestoreService.updateDocument(messagesPath, messageId, {
+        [`imageViewedBy.${currentUser.uid}`]: this.firestoreService.getServerTimestamp(),
       });
     } catch (error) {
       console.error('Error marking image as viewed:', error);
@@ -745,24 +669,21 @@ export class MessageService {
     if (!currentUser) throw new Error('Not authenticated');
 
     // Check if conversation already exists
-    const conversationsRef = collection(this.firestore, 'conversations');
-    const q = query(
-      conversationsRef,
-      where('participants', 'array-contains', currentUser.uid)
+    const existingConversations = await this.firestoreService.getCollection<Conversation>(
+      'conversations',
+      [this.firestoreService.whereArrayContains('participants', currentUser.uid)]
     );
 
-    const snapshot = await getDocs(q);
-    const existingConv = snapshot.docs.find((doc) => {
-      const data = doc.data() as Conversation;
-      return data.participants.includes(otherUserId);
-    });
+    const existingConv = existingConversations.find((conv) => 
+      conv.participants.includes(otherUserId)
+    );
 
     if (existingConv) {
-      return existingConv.id;
+      return existingConv.id!;
     }
 
     // Create new conversation
-    const newConversation: Omit<Conversation, 'id'> = {
+    const newConversation = {
       participants: [currentUser.uid, otherUserId],
       participantInfo: {
         [currentUser.uid]: {
@@ -772,16 +693,16 @@ export class MessageService {
         [otherUserId]: otherUserInfo,
       },
       lastMessage: null,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
+      createdAt: this.firestoreService.getServerTimestamp(),
+      updatedAt: this.firestoreService.getServerTimestamp(),
       unreadCount: {
         [currentUser.uid]: 0,
         [otherUserId]: 0,
       },
     };
 
-    const docRef = await addDoc(conversationsRef, newConversation);
-    return docRef.id;
+    const docId = await this.firestoreService.addDocument('conversations', newConversation);
+    return docId;
   }
 
   /**
@@ -815,25 +736,27 @@ export class MessageService {
 
     try {
       // Update conversation unread count
-      const conversationRef = doc(this.firestore, 'conversations', conversationId);
-      await updateDoc(conversationRef, {
+      await this.firestoreService.updateDocument('conversations', conversationId, {
         [`unreadCount.${currentUser.uid}`]: 0,
       });
 
       // Mark unread messages from other users as read
-      const messagesRef = collection(this.firestore, 'conversations', conversationId, 'messages');
-      const unreadQuery = query(
-        messagesRef,
-        where('read', '==', false),
-        where('senderId', '!=', currentUser.uid)
+      const messagesPath = `conversations/${conversationId}/messages`;
+      const unreadMessages = await this.firestoreService.getCollection<Message>(
+        messagesPath,
+        [
+          this.firestoreService.whereEqual('read', false),
+          this.firestoreService.whereNotEqual('senderId', currentUser.uid),
+        ]
       );
       
-      const snapshot = await getDocs(unreadQuery);
-      if (snapshot.docs.length > 0) {
-        const updatePromises = snapshot.docs.map(docSnapshot => 
-          updateDoc(docSnapshot.ref, { read: true })
-        );
-        await Promise.all(updatePromises);
+      if (unreadMessages.length > 0) {
+        const updates = unreadMessages.map(msg => ({
+          collection: messagesPath,
+          docId: msg.id!,
+          data: { read: true },
+        }));
+        await this.firestoreService.batchUpdate(updates);
       }
     } catch (error) {
       console.error('Error marking conversation as read:', error);
@@ -864,17 +787,14 @@ export class MessageService {
     const currentUser = this.authService.user();
     if (!currentUser) return null;
 
-    const conversationsRef = collection(this.firestore, 'conversations');
-    const q = query(
-      conversationsRef,
-      where('participants', 'array-contains', currentUser.uid)
+    const conversations = await this.firestoreService.getCollection<Conversation>(
+      'conversations',
+      [this.firestoreService.whereArrayContains('participants', currentUser.uid)]
     );
 
-    const snapshot = await getDocs(q);
-    const existingConv = snapshot.docs.find((doc) => {
-      const data = doc.data() as Conversation;
-      return data.participants.includes(otherUserId);
-    });
+    const existingConv = conversations.find((conv) => 
+      conv.participants.includes(otherUserId)
+    );
 
     return existingConv?.id ?? null;
   }
@@ -887,9 +807,8 @@ export class MessageService {
     if (!currentUser) return;
 
     try {
-      const conversationRef = doc(this.firestore, 'conversations', conversationId);
-      await updateDoc(conversationRef, {
-        archivedBy: arrayUnion(currentUser.uid),
+      await this.firestoreService.updateDocument('conversations', conversationId, {
+        archivedBy: this.firestoreService.getArrayUnion(currentUser.uid),
       });
     } catch (error) {
       console.error('Error archiving conversation:', error);
@@ -905,16 +824,10 @@ export class MessageService {
     if (!currentUser) return;
 
     try {
-      const conversationRef = doc(this.firestore, 'conversations', conversationId);
-      // Need to get current archivedBy array and remove user
-      const snapshot = await getDoc(conversationRef);
-      if (snapshot.exists()) {
-        const data = snapshot.data() as Conversation;
-        const updatedArchivedBy = (data.archivedBy || []).filter(uid => uid !== currentUser.uid);
-        await updateDoc(conversationRef, {
-          archivedBy: updatedArchivedBy,
-        });
-      }
+      // Use arrayRemove to remove the user from the archivedBy array
+      await this.firestoreService.updateDocument('conversations', conversationId, {
+        archivedBy: this.firestoreService.getArrayRemove(currentUser.uid),
+      });
     } catch (error) {
       console.error('Error unarchiving conversation:', error);
       throw error;
@@ -947,10 +860,11 @@ export class MessageService {
    */
   private async isUserDisabled(userId: string): Promise<boolean> {
     try {
-      const userRef = doc(this.firestore, 'users', userId);
-      const userSnap = await getDoc(userRef);
-      if (!userSnap.exists()) return true; // Treat non-existent as disabled
-      const userData = userSnap.data() as { settings?: { account?: { disabled?: boolean } } };
+      const userData = await this.firestoreService.getDocument<{ settings?: { account?: { disabled?: boolean } } }>(
+        'users',
+        userId
+      );
+      if (!userData) return true; // Treat non-existent as disabled
       return userData?.settings?.account?.disabled === true;
     } catch (error) {
       console.error('Error checking user disabled status:', error);

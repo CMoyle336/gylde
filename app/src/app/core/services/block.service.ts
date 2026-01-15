@@ -1,6 +1,7 @@
 import { Injectable, inject, signal, DestroyRef } from '@angular/core';
 import { Functions, httpsCallable } from '@angular/fire/functions';
-import { Firestore, collection, onSnapshot, Unsubscribe } from '@angular/fire/firestore';
+import { Unsubscribe } from '@angular/fire/firestore';
+import { FirestoreService } from './firestore.service';
 import { AuthService } from './auth.service';
 
 export interface BlockStatus {
@@ -15,12 +16,17 @@ export interface BlockedUsersResult {
   blockedMe: string[];
 }
 
+interface BlockDoc {
+  id?: string;
+  blockedAt?: unknown;
+}
+
 @Injectable({
   providedIn: 'root',
 })
 export class BlockService {
   private readonly functions = inject(Functions);
-  private readonly firestore = inject(Firestore);
+  private readonly firestoreService = inject(FirestoreService);
   private readonly authService = inject(AuthService);
 
   // Cache of blocked user IDs for filtering
@@ -80,26 +86,32 @@ export class BlockService {
     this.cleanupSubscriptions();
 
     // Subscribe to users I've blocked (users/{me}/blocks)
-    const blocksRef = collection(this.firestore, `users/${userId}/blocks`);
-    this.blocksUnsubscribe = onSnapshot(blocksRef, (snapshot) => {
-      const blockedByMe = new Set<string>();
-      snapshot.forEach(doc => blockedByMe.add(doc.id));
-      this._blockedByMe.set(blockedByMe);
-      this.updateCombinedBlockedUsers();
-    }, (error) => {
-      console.error('Error in blocks subscription:', error);
-    });
+    this.blocksUnsubscribe = this.firestoreService.subscribeToCollection<BlockDoc>(
+      `users/${userId}/blocks`,
+      [],
+      (blocks) => {
+        const blockedByMe = new Set<string>();
+        blocks.forEach(block => {
+          if (block.id) blockedByMe.add(block.id);
+        });
+        this._blockedByMe.set(blockedByMe);
+        this.updateCombinedBlockedUsers();
+      }
+    );
 
     // Subscribe to users who blocked me (users/{me}/blockedBy)
-    const blockedByRef = collection(this.firestore, `users/${userId}/blockedBy`);
-    this.blockedByUnsubscribe = onSnapshot(blockedByRef, (snapshot) => {
-      const blockedMe = new Set<string>();
-      snapshot.forEach(doc => blockedMe.add(doc.id));
-      this._blockedMe.set(blockedMe);
-      this.updateCombinedBlockedUsers();
-    }, (error) => {
-      console.error('Error in blockedBy subscription:', error);
-    });
+    this.blockedByUnsubscribe = this.firestoreService.subscribeToCollection<BlockDoc>(
+      `users/${userId}/blockedBy`,
+      [],
+      (blockedBy) => {
+        const blockedMe = new Set<string>();
+        blockedBy.forEach(block => {
+          if (block.id) blockedMe.add(block.id);
+        });
+        this._blockedMe.set(blockedMe);
+        this.updateCombinedBlockedUsers();
+      }
+    );
   }
 
   /**
