@@ -9,6 +9,7 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+  max-height: 100%;
   background: var(--color-bg-secondary);
   border-left: 1px solid var(--color-border);
   overflow: hidden;
@@ -112,8 +113,11 @@
 
 .panel-content {
   flex: 1;
+  min-height: 0; /* Critical for flex scrolling */
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 1rem;
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
 }
 
 /* Loading State */
@@ -643,10 +647,29 @@
   .ai-panel {
     border-left: none;
     border-top: 1px solid var(--color-border);
+    height: 100%;
+    max-height: 100vh;
+    max-height: 100dvh; /* Dynamic viewport height for mobile browsers */
   }
 
   .panel-content {
     padding: 0.75rem;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .panel-header {
+    flex-shrink: 0;
+  }
+
+  .panel-tabs {
+    flex-shrink: 0;
+  }
+
+  .panel-footer {
+    flex-shrink: 0;
   }
 
   .tone-chips {
