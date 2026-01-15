@@ -41,6 +41,10 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/settings/settings').then((m) => m.SettingsComponent),
       },
       {
+        path: 'trust',
+        loadComponent: () => import('./pages/trust/trust').then((m) => m.TrustComponent),
+      },
+      {
         path: 'user/:userId',
         loadComponent: () => import('./pages/user-profile/user-profile').then((m) => m.UserProfileComponent),
       },

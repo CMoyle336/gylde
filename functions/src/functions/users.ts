@@ -58,6 +58,49 @@ function encodeGeohash(latitude: number, longitude: number, precision: number = 
 }
 
 /**
+ * Calculate trust score based on user profile data
+ * Score breakdown (100 points max):
+ * - Verification: 30 points (identity verified)
+ * - Photos: 25 points (profile photo: 10, 3+ photos: 10, 5+ photos: 5)
+ * - Profile Details: 25 points (tagline: 5, about: 5, occupation: 5, education: 5, lifestyle: 5)
+ * - Activity: 20 points (active recently: 10, profile visible: 10)
+ */
+function calculateTrustScore(data: FirebaseFirestore.DocumentData): number {
+  const onboarding = data.onboarding || {};
+  const photos = onboarding.photos || [];
+  const privacySettings = data.settings?.privacy || {};
+  let earned = 0;
+
+  // Verification (30 points)
+  if (onboarding.verificationOptions?.includes("identity")) {
+    earned += 30;
+  }
+
+  // Photos (25 points)
+  if (data.photoURL) earned += 10;
+  if (photos.length >= 3) earned += 10;
+  if (photos.length >= 5) earned += 5;
+
+  // Profile Details (25 points)
+  if (onboarding.tagline && onboarding.tagline.length > 0) earned += 5;
+  if (onboarding.idealRelationship && onboarding.idealRelationship.length > 50) earned += 5;
+  if (onboarding.occupation) earned += 5;
+  if (onboarding.education) earned += 5;
+  if (onboarding.smoker && onboarding.drinker) earned += 5;
+
+  // Activity (20 points)
+  const lastActiveAt = data.lastActiveAt as Timestamp | undefined;
+  if (lastActiveAt) {
+    const lastActiveDate = lastActiveAt.toDate();
+    const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+    if (lastActiveDate > threeDaysAgo) earned += 10;
+  }
+  if (privacySettings.profileVisible !== false) earned += 10;
+
+  return earned;
+}
+
+/**
  * Calculate denormalized fields based on user data
  */
 function calculateDenormalizedFields(data: FirebaseFirestore.DocumentData) {
@@ -87,7 +130,10 @@ function calculateDenormalizedFields(data: FirebaseFirestore.DocumentData) {
     ? encodeGeohash(location.latitude, location.longitude, 9)
     : null;
 
-  return { isSearchable, isVerified, sortableLastActive, geohash };
+  // Trust score
+  const trustScore = calculateTrustScore(data);
+
+  return { isSearchable, isVerified, sortableLastActive, geohash, trustScore };
 }
 
 /**
@@ -108,16 +154,17 @@ export const onUserCreated = onDocumentCreated(
       return;
     }
 
-    const { isSearchable, isVerified, sortableLastActive, geohash } = calculateDenormalizedFields(data);
+    const { isSearchable, isVerified, sortableLastActive, geohash, trustScore } = calculateDenormalizedFields(data);
 
     await db.collection("users").doc(userId).update({
       isSearchable,
       isVerified,
       sortableLastActive,
       geohash,
+      trustScore,
     });
 
-    logger.info(`Set denormalized fields for new user ${userId}:`, { isSearchable, isVerified, geohash: geohash?.substring(0, 4) });
+    logger.info(`Set denormalized fields for new user ${userId}:`, { isSearchable, isVerified, trustScore, geohash: geohash?.substring(0, 4) });
   }
 );
 
@@ -149,6 +196,7 @@ export const onUserUpdated = onDocumentUpdated(
       isVerified: afterData.isVerified,
       sortableLastActive: afterData.sortableLastActive,
       geohash: afterData.geohash,
+      trustScore: afterData.trustScore,
     };
 
     // Determine what needs to be updated
@@ -173,6 +221,11 @@ export const onUserUpdated = onDocumentUpdated(
     // Check geohash
     if (expected.geohash !== current.geohash) {
       updates.geohash = expected.geohash;
+    }
+
+    // Check trust score
+    if (expected.trustScore !== current.trustScore) {
+      updates.trustScore = expected.trustScore;
     }
 
     // Only update if there are changes

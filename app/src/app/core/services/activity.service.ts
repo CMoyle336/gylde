@@ -266,18 +266,9 @@ export class ActivityService implements OnDestroy {
     currentUser: { uid: string; displayName: string | null; photoURL: string | null }
   ): Promise<void> {
     try {
-      // Check if current user has profile view activity creation enabled
-      const profile = await this.userProfileService.getCurrentUserProfile();
-      const createOnView = profile?.settings?.activity?.createOnView;
-      
-      // If explicitly set to false, don't record the view
-      if (createOnView === false) {
-        return;
-      }
-
       const viewsRef = collection(this.firestore, 'profileViews');
       
-      // Check if we already have a view record from this user to this profile
+      // Check settings and existing view in parallel
       const existingViewQuery = query(
         viewsRef,
         where('viewerId', '==', currentUser.uid),
@@ -285,7 +276,18 @@ export class ActivityService implements OnDestroy {
         limit(1)
       );
       
-      const existingSnapshot = await getDocs(existingViewQuery);
+      const [profile, existingSnapshot] = await Promise.all([
+        this.userProfileService.getCurrentUserProfile(),
+        getDocs(existingViewQuery),
+      ]);
+      
+      // Check if current user has profile view activity creation enabled
+      const createOnView = profile?.settings?.activity?.createOnView;
+      
+      // If explicitly set to false, don't record the view
+      if (createOnView === false) {
+        return;
+      }
       
       if (!existingSnapshot.empty) {
         const existingDoc = existingSnapshot.docs[0];
@@ -300,8 +302,11 @@ export class ActivityService implements OnDestroy {
         });
         
         // Only trigger activity update if last view was more than an hour ago
+        // Fire in background - don't block
         if (lastViewTime <= hourAgo) {
-          await this.updateViewActivity(viewedUserId, currentUser);
+          this.updateViewActivity(viewedUserId, currentUser).catch(err => {
+            console.error('Error updating view activity:', err);
+          });
         }
       } else {
         // Create new profile view record

@@ -5,8 +5,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { SlicePipe } from '@angular/common';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatDialog, MatDialogRef } from '@angular/material/dialog';
-import { MatButtonModule } from '@angular/material/button';
+import { MatDialog } from '@angular/material/dialog';
 import { AuthService } from '../../core/services/auth.service';
 import { UserProfileService } from '../../core/services/user-profile.service';
 import { FavoriteService } from '../../core/services/favorite.service';
@@ -48,7 +47,7 @@ export class ShellComponent implements OnInit, OnDestroy {
   // Message state
   protected readonly messageUnreadCount = this.messageService.totalUnreadCount;
   protected readonly activeConversation = this.messageService.activeConversation;
-  protected readonly profileCompletion = signal(75);
+  protected readonly trustScore = signal(0);
   
   // Sidebar state - initialize from localStorage
   protected readonly sidenavOpen = signal(false);
@@ -102,6 +101,9 @@ export class ShellComponent implements OnInit, OnDestroy {
     
     // Load user's language preference
     this.loadUserLanguage();
+    
+    // Load trust score from profile
+    this.loadTrustScore();
   }
 
   private async loadUserLanguage(): Promise<void> {
@@ -113,6 +115,17 @@ export class ShellComponent implements OnInit, OnDestroy {
       }
     } catch (error) {
       console.error('Error loading user language:', error);
+    }
+  }
+
+  private async loadTrustScore(): Promise<void> {
+    try {
+      const profile = await this.userProfileService.getCurrentUserProfile();
+      // Trust score is calculated by Cloud Functions and stored on the user document
+      this.trustScore.set(profile?.trustScore ?? 0);
+    } catch (error) {
+      console.error('Error loading trust score:', error);
+      this.trustScore.set(0);
     }
   }
 
@@ -154,23 +167,6 @@ export class ShellComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.activityService.unsubscribeFromActivities();
     this.messageService.cleanup();
-  }
-
-  protected confirmLogout(): void {
-    const dialogRef = this.dialog.open(LogoutConfirmDialogComponent, {
-      panelClass: 'logout-confirm-dialog-container',
-    });
-
-    dialogRef.afterClosed().subscribe(async (confirmed: boolean) => {
-      if (confirmed) {
-        await this.onLogout();
-      }
-    });
-  }
-
-  protected async onLogout(): Promise<void> {
-    await this.authService.signOutUser();
-    this.router.navigate(['/']);
   }
 
   protected isMessagesWithActiveChat(): boolean {
@@ -247,70 +243,4 @@ export class ShellComponent implements OnInit, OnDestroy {
         return `${activity.name} interacted with you`;
     }
   }
-}
-
-// Inline Logout Confirmation Dialog Component
-@Component({
-  selector: 'app-logout-confirm-dialog',
-  template: `
-    <div class="logout-dialog">
-      <div class="dialog-icon">
-        <span class="material-icons-outlined">logout</span>
-      </div>
-      <h3>Sign Out</h3>
-      <p>Are you sure you want to sign out?</p>
-      <div class="dialog-actions">
-        <button mat-stroked-button (click)="dialogRef.close(false)">Cancel</button>
-        <button mat-flat-button color="warn" (click)="dialogRef.close(true)">Sign Out</button>
-      </div>
-    </div>
-  `,
-  styles: [`
-    .logout-dialog {
-      padding: 1.5rem;
-      text-align: center;
-      background: var(--color-bg-secondary, #1a1720);
-      border-radius: 16px;
-      min-width: 280px;
-    }
-    .dialog-icon {
-      width: 56px;
-      height: 56px;
-      margin: 0 auto 1rem;
-      background: rgba(239, 83, 80, 0.1);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .dialog-icon .material-icons-outlined {
-      font-size: 1.75rem;
-      color: #ef5350;
-    }
-    h3 {
-      font-family: 'Outfit', sans-serif;
-      font-size: 1.25rem;
-      font-weight: 600;
-      color: var(--color-text-primary, #f5f3f0);
-      margin: 0 0 0.5rem;
-    }
-    p {
-      font-size: 0.875rem;
-      color: var(--color-text-muted, #a8a4b0);
-      margin: 0 0 1.5rem;
-    }
-    .dialog-actions {
-      display: flex;
-      gap: 0.75rem;
-      justify-content: center;
-    }
-    .dialog-actions button {
-      min-width: 100px;
-    }
-  `],
-  imports: [MatButtonModule],
-  changeDetection: ChangeDetectionStrategy.OnPush,
-})
-export class LogoutConfirmDialogComponent {
-  readonly dialogRef = inject(MatDialogRef<LogoutConfirmDialogComponent>);
 }

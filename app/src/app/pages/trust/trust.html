@@ -1,0 +1,132 @@
+<div class="trust-page">
+  @if (loading()) {
+    <div class="loading-container">
+      <mat-spinner diameter="48"></mat-spinner>
+    </div>
+  } @else {
+    <!-- Hero Section with Trust Score -->
+    <div class="hero-section">
+      <div class="hero-content">
+        <div class="score-ring-container">
+          <svg class="score-ring" viewBox="0 0 120 120">
+            <!-- Background ring -->
+            <circle
+              class="ring-background"
+              cx="60"
+              cy="60"
+              r="54"
+              fill="none"
+              stroke-width="8"
+            />
+            <!-- Progress ring -->
+            <circle
+              class="ring-progress"
+              cx="60"
+              cy="60"
+              r="54"
+              fill="none"
+              stroke-width="8"
+              [style.stroke]="trustLevel().color"
+              [attr.stroke-dasharray]="getStrokeDasharray(trustScore())"
+              stroke-linecap="round"
+            />
+          </svg>
+          <div class="score-content">
+            <span class="score-value">{{ trustScore() }}</span>
+            <span class="score-label">Trust Score</span>
+          </div>
+        </div>
+
+        <div class="hero-info">
+          <h1 class="hero-title">Your Trust Score</h1>
+          <div class="trust-level" [style.color]="trustLevel().color">
+            <span class="material-icons-outlined">{{ 
+              trustScore() >= 70 ? 'verified' : 
+              trustScore() >= 50 ? 'shield' : 'security' 
+            }}</span>
+            {{ trustLevel().label }}
+          </div>
+          <p class="hero-description">
+            Your trust score helps others feel confident connecting with you. 
+            Complete the tasks below to increase your score and build trust.
+          </p>
+          <div class="progress-summary">
+            <span class="material-icons-outlined">task_alt</span>
+            <span>{{ completedTasks() }} of {{ totalTasks() }} tasks completed</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Categories Section -->
+    <div class="categories-section">
+      @for (category of categories(); track category.id) {
+        <div class="category-card">
+          <div class="category-header">
+            <div class="category-icon">
+              <span class="material-icons-outlined">{{ category.icon }}</span>
+            </div>
+            <div class="category-info">
+              <h2 class="category-title">{{ category.title }}</h2>
+              <div class="category-progress">
+                <div class="progress-bar">
+                  <div 
+                    class="progress-fill" 
+                    [style.width.%]="(category.earnedPoints / category.maxPoints) * 100"
+                  ></div>
+                </div>
+                <span class="progress-text">{{ category.earnedPoints }}/{{ category.maxPoints }} pts</span>
+              </div>
+            </div>
+          </div>
+
+          <ul class="task-list">
+            @for (task of category.tasks; track task.id) {
+              <li class="task-item" [class.completed]="task.completed">
+                <div class="task-check">
+                  @if (task.completed) {
+                    <span class="material-icons-outlined check-icon">check_circle</span>
+                  } @else {
+                    <span class="material-icons-outlined pending-icon">{{ task.icon }}</span>
+                  }
+                </div>
+                <div class="task-content">
+                  <div class="task-header">
+                    <span class="task-title">{{ task.title }}</span>
+                    <span class="task-points" [class.earned]="task.completed">
+                      +{{ task.points }} pts
+                    </span>
+                  </div>
+                  <p class="task-description">{{ task.description }}</p>
+                </div>
+                @if (!task.completed && task.action) {
+                  <button 
+                    class="task-action-btn"
+                    (click)="onTaskAction(task)">
+                    {{ task.action }}
+                  </button>
+                }
+              </li>
+            }
+          </ul>
+        </div>
+      }
+    </div>
+
+    <!-- Info Section -->
+    <div class="info-section">
+      <div class="info-card">
+        <span class="material-icons-outlined info-icon">info</span>
+        <div class="info-content">
+          <h3>Why Trust Matters</h3>
+          <p>
+            A higher trust score makes you more visible to other members and shows 
+            that you're a genuine person looking for real connections. Verified 
+            members get priority in search results and are more likely to receive 
+            messages.
+          </p>
+        </div>
+      </div>
+    </div>
+  }
+</div>

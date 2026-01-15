@@ -207,6 +207,14 @@
           </div>
           <mat-icon class="chevron">chevron_right</mat-icon>
         </div>
+
+        <div class="setting-item clickable" (click)="openLogoutDialog()">
+          <div class="setting-info">
+            <span class="setting-label">{{ 'SETTINGS.ACCOUNT.LOGOUT' | translate }}</span>
+            <span class="setting-description">{{ 'SETTINGS.ACCOUNT.LOGOUT_DESC' | translate }}</span>
+          </div>
+          <mat-icon class="chevron logout-icon">logout</mat-icon>
+        </div>
       </div>
     </section>
 
@@ -429,6 +437,26 @@
           } @else {
             {{ 'SETTINGS.DIALOGS.DISABLE_BUTTON' | translate }}
           }
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Logout Confirmation Dialog -->
+@if (showLogoutDialog()) {
+  <div class="dialog-overlay" (click)="closeDialogs()">
+    <div class="dialog logout-dialog" (click)="$event.stopPropagation()">
+      <div class="dialog-icon">
+        <mat-icon>logout</mat-icon>
+      </div>
+      <h3>{{ 'SETTINGS.DIALOGS.LOGOUT_TITLE' | translate }}</h3>
+      <p>{{ 'SETTINGS.DIALOGS.LOGOUT_DESC' | translate }}</p>
+      
+      <div class="dialog-actions">
+        <button mat-button (click)="closeDialogs()">{{ 'SETTINGS.DIALOGS.CANCEL' | translate }}</button>
+        <button mat-flat-button color="warn" (click)="confirmLogout()">
+          {{ 'SETTINGS.DIALOGS.LOGOUT_BUTTON' | translate }}
         </button>
       </div>
     </div>

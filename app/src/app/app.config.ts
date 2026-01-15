@@ -5,12 +5,14 @@ import { provideTranslateService } from '@ngx-translate/core';
 import { provideTranslateHttpLoader } from '@ngx-translate/http-loader';
 import { provideFirebaseApp, initializeApp } from '@angular/fire/app';
 import { provideAuth, getAuth, connectAuthEmulator } from '@angular/fire/auth';
-import { provideFirestore, getFirestore, connectFirestoreEmulator } from '@angular/fire/firestore';
+import { provideFirestore, getFirestore, connectFirestoreEmulator, setLogLevel, LogLevel } from '@angular/fire/firestore';
 import { provideStorage, getStorage, connectStorageEmulator } from '@angular/fire/storage';
 import { provideFunctions, getFunctions, connectFunctionsEmulator } from '@angular/fire/functions';
 import { routes } from './app.routes';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { environment } from '../environments/environment';
+
+setLogLevel(environment.firestoreLogLevel as LogLevel);
 
 export const appConfig: ApplicationConfig = {
   providers: [

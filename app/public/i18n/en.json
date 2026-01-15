@@ -369,7 +369,9 @@
       "SUBTITLE": "Manage your account settings",
       "EMAIL": "Email address",
       "PASSWORD": "Password",
-      "PASSWORD_DESC": "Change your password"
+      "PASSWORD_DESC": "Change your password",
+      "LOGOUT": "Sign out",
+      "LOGOUT_DESC": "Sign out of your account"
     },
     "BLOCKED": {
       "TITLE": "Blocked Users",
@@ -410,7 +412,10 @@
       "CLOSE": "Close",
       "CHANGE_EMAIL": "Change Email",
       "SEND_RESET": "Send Reset Link",
-      "DELETE_BUTTON": "Delete My Account"
+      "DELETE_BUTTON": "Delete My Account",
+      "LOGOUT_TITLE": "Sign Out",
+      "LOGOUT_DESC": "Are you sure you want to sign out?",
+      "LOGOUT_BUTTON": "Sign Out"
     }
   },
   "AUTH": {

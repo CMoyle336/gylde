@@ -23,6 +23,7 @@ export interface UserProfile {
   isSearchable?: boolean; // true if profile is visible and account is active
   isVerified?: boolean; // true if identity verification completed
   geohash?: string | null; // encoded location for distance-based queries
+  trustScore?: number; // 0-100 trust score calculated by Cloud Functions
   
   onboardingCompleted: boolean;
 

@@ -63,6 +63,7 @@ export class SettingsComponent implements OnInit {
   protected readonly showResetPasswordDialog = signal(false);
   protected readonly showDeleteAccountDialog = signal(false);
   protected readonly showDisableAccountDialog = signal(false);
+  protected readonly showLogoutDialog = signal(false);
   protected readonly dialogLoading = signal(false);
   protected readonly dialogError = signal<string | null>(null);
   protected readonly dialogSuccess = signal<string | null>(null);
@@ -180,6 +181,7 @@ export class SettingsComponent implements OnInit {
     this.showResetPasswordDialog.set(false);
     this.showDeleteAccountDialog.set(false);
     this.showDisableAccountDialog.set(false);
+    this.showLogoutDialog.set(false);
     this.dialogLoading.set(false);
     this.dialogError.set(null);
     this.dialogSuccess.set(null);
@@ -354,5 +356,15 @@ export class SettingsComponent implements OnInit {
       this.dialogError.set('Failed to delete account. Please try again.');
       this.dialogLoading.set(false);
     }
+  }
+
+  // Logout
+  openLogoutDialog(): void {
+    this.showLogoutDialog.set(true);
+  }
+
+  async confirmLogout(): Promise<void> {
+    await this.authService.signOutUser();
+    this.router.navigate(['/']);
   }
 }

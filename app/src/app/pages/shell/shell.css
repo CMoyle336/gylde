@@ -123,6 +123,7 @@
   cursor: pointer;
   transition: background 0.2s ease;
   text-align: left;
+  text-decoration: none;
 }
 
 .sidebar-profile:hover {
@@ -143,7 +144,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
   overflow: hidden;
   flex-shrink: 0;
   transition: all 0.2s ease;
@@ -154,9 +154,8 @@
   height: 40px;
 }
 
-.profile-avatar:hover {
+.sidebar-profile:hover .profile-avatar {
   border-color: var(--color-accent-light);
-  transform: scale(1.05);
 }
 
 .sidebar.collapsed .profile-info {
@@ -214,37 +213,6 @@
 .completion-text {
   font-size: 0.75rem;
   color: var(--color-text-muted);
-}
-
-/* Logout Icon Button */
-.logout-icon-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  margin-right: 0.75rem;
-  background: transparent;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  color: var(--color-text-muted);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  flex-shrink: 0;
-}
-
-.logout-icon-btn:hover {
-  background: rgba(239, 83, 80, 0.1);
-  border-color: rgba(239, 83, 80, 0.3);
-  color: #ef5350;
-}
-
-.logout-icon-btn .material-icons-outlined {
-  font-size: 1.125rem;
-}
-
-.sidebar.collapsed .logout-icon-btn {
-  display: none;
 }
 
 /* Sidebar Content (scrollable area) */

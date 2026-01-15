@@ -291,6 +291,38 @@
   margin: 0 0 1rem;
 }
 
+/* Logout dialog */
+.logout-dialog {
+  text-align: center;
+}
+
+.logout-dialog .dialog-icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 1rem;
+  background: rgba(239, 83, 80, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logout-dialog .dialog-icon mat-icon {
+  font-size: 1.75rem;
+  width: 1.75rem;
+  height: 1.75rem;
+  color: #ef5350;
+}
+
+.logout-dialog .dialog-actions {
+  justify-content: center;
+}
+
+/* Logout icon in account section */
+.logout-icon {
+  color: #ef5350 !important;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .settings-page {

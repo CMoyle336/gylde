@@ -343,7 +343,9 @@
       "SUBTITLE": "Beheer je accountinstellingen",
       "EMAIL": "E-mailadres",
       "PASSWORD": "Wachtwoord",
-      "PASSWORD_DESC": "Wijzig je wachtwoord"
+      "PASSWORD_DESC": "Wijzig je wachtwoord",
+      "LOGOUT": "Uitloggen",
+      "LOGOUT_DESC": "Log uit van je account"
     },
     "BLOCKED": {
       "TITLE": "Geblokkeerde gebruikers",
@@ -380,7 +382,10 @@
       "CLOSE": "Sluiten",
       "CHANGE_EMAIL": "E-mail wijzigen",
       "SEND_RESET": "Reset link versturen",
-      "DELETE_BUTTON": "Verwijder mijn account"
+      "DELETE_BUTTON": "Verwijder mijn account",
+      "LOGOUT_TITLE": "Uitloggen",
+      "LOGOUT_DESC": "Weet je zeker dat je wilt uitloggen?",
+      "LOGOUT_BUTTON": "Uitloggen"
     }
   },
   "AUTH": {

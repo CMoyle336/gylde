@@ -169,8 +169,13 @@ export class UserProfileComponent implements OnInit, OnDestroy {
       this.loading.set(true);
       this.error.set(null);
 
-      // Check if this user is blocked (either direction)
-      const blockStatus = await this.blockService.checkBlockStatus(userId);
+      // Run block check and profile fetch in parallel
+      const userRef = doc(this.firestore, 'users', userId);
+      const [blockStatus, userSnap] = await Promise.all([
+        this.blockService.checkBlockStatus(userId),
+        getDoc(userRef),
+      ]);
+
       this.blockStatus.set(blockStatus);
       
       if (blockStatus.isBlocked) {
@@ -178,9 +183,6 @@ export class UserProfileComponent implements OnInit, OnDestroy {
         this.loading.set(false);
         return;
       }
-
-      const userRef = doc(this.firestore, 'users', userId);
-      const userSnap = await getDoc(userRef);
 
       if (!userSnap.exists()) {
         this.error.set('User not found');
@@ -222,11 +224,17 @@ export class UserProfileComponent implements OnInit, OnDestroy {
         }
       );
 
-      // Record the profile view (activity created by Firebase trigger)
-      await this.activityService.recordProfileView(userId);
+      // Record profile view and get last viewed in parallel
+      // These don't block the UI - fire and forget for recordProfileView
+      const lastViewedPromise = this.activityService.getLastViewedBy(userId);
+      
+      // Record view in background (don't await - it's not critical for page load)
+      this.activityService.recordProfileView(userId).catch(err => {
+        console.error('Error recording profile view:', err);
+      });
 
-      // Get when this user last viewed the current user
-      const lastViewed = await this.activityService.getLastViewedBy(userId);
+      // Wait for lastViewedBy since we display it
+      const lastViewed = await lastViewedPromise;
       this.lastViewedMe.set(lastViewed);
     } catch (err) {
       console.error('Error loading profile:', err);

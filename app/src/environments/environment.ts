@@ -10,6 +10,7 @@ export const environment = {
     appId: '1:786713739296:web:c6495e7d8e278982213c45',
     measurementId: 'G-ETS6XP4QJ9',
   },
+  firestoreLogLevel: 'debug',
   // Google Maps API key for geocoding
   // Get yours at: https://console.cloud.google.com/apis/credentials
   // Enable: Geocoding API, Places API

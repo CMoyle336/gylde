@@ -21,10 +21,10 @@
     <!-- User Profile Section -->
     <div class="sidebar-profile-wrapper">
       <a 
-        routerLink="/profile"
+        routerLink="/trust"
         class="sidebar-profile"
         (click)="onNavItemClick()"
-        [matTooltip]="currentUser()?.displayName || 'Your Profile'"
+        [matTooltip]="'Trust Score'"
         [matTooltipDisabled]="sidenavExpanded()"
         matTooltipPosition="right">
         <div class="profile-avatar">
@@ -38,20 +38,12 @@
           <span class="profile-name">{{ currentUser()?.displayName || 'Your Profile' }}</span>
           <div class="profile-completion-mini">
             <div class="completion-bar-mini">
-              <div class="completion-fill-mini" [style.width.%]="profileCompletion()"></div>
+              <div class="completion-fill-mini" [style.width.%]="trustScore()"></div>
             </div>
-            <span class="completion-text">{{ profileCompletion() }}%</span>
+            <span class="completion-text">{{ trustScore() }}%</span>
           </div>
         </div>
       </a>
-      <button 
-        type="button" 
-        class="logout-icon-btn"
-        (click)="confirmLogout()"
-        matTooltip="Logout"
-        matTooltipPosition="right">
-        <span class="material-icons-outlined">logout</span>
-      </button>
     </div>
 
     <!-- Sidebar Content (scrollable) -->
@@ -186,7 +178,7 @@
           <span class="material-icons-outlined">{{ sidenavOpen() ? 'close' : 'menu' }}</span>
         </button>
         <span class="mobile-logo">Gylde</span>
-        <button type="button" class="mobile-profile-btn" routerLink="/profile" (click)="onNavItemClick()">
+        <button type="button" class="mobile-profile-btn" routerLink="/trust" (click)="onNavItemClick()">
           @if (userPhotoURL()) {
             <img [src]="userPhotoURL()" alt="Profile" class="mobile-avatar">
           } @else {
