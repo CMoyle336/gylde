@@ -63,6 +63,17 @@ export class MessageService {
   private userStatusUnsubscribe: Unsubscribe | null = null;
   private typingTimeout: ReturnType<typeof setTimeout> | null = null;
   private lastTypingUpdate = 0;
+  private currentTypingState = false; // Track current state to avoid duplicate writes
+  private lastMessageSentAt = 0; // Track when last message was sent to suppress typing updates
+  private pendingMessageSequence = 0; // Sequence counter for ordering pending messages
+  
+  // Debounce conversation metadata updates to reduce RESET storms during rapid sending
+  private conversationUpdateTimeout: ReturnType<typeof setTimeout> | null = null;
+  private pendingConversationUpdate: { 
+    conversationRef: ReturnType<typeof doc>; 
+    updateData: Record<string, unknown>;
+    count: number;
+  } | null = null;
   
   // Pagination state
   private oldestMessageDoc: QueryDocumentSnapshot<DocumentData> | null = null;
@@ -279,6 +290,15 @@ export class MessageService {
     this.hasMarkedAsRead = false;
     this.lastProcessedMessageId = null;
     this._otherUserLastViewedAt = null;
+    this.currentTypingState = false; // Reset for next conversation
+    this.lastMessageSentAt = 0; // Reset for next conversation
+    this.pendingMessageSequence = 0; // Reset sequence counter
+    // Clear any pending conversation update
+    if (this.conversationUpdateTimeout) {
+      clearTimeout(this.conversationUpdateTimeout);
+      this.conversationUpdateTimeout = null;
+    }
+    this.pendingConversationUpdate = null;
     this.unsubscribeFromMessages();
   }
 
@@ -349,7 +369,7 @@ export class MessageService {
 
   /**
    * Set current user's typing status
-   * Debounced to prevent excessive writes
+   * Optimized to only send updates when state actually changes
    */
   async setTyping(isTyping: boolean): Promise<void> {
     const currentUser = this.authService.user();
@@ -358,16 +378,32 @@ export class MessageService {
 
     const now = Date.now();
     
-    // Debounce: only update if 2 seconds have passed since last update
-    if (isTyping && now - this.lastTypingUpdate < 2000) {
-      // Reset the auto-clear timeout
-      if (this.typingTimeout) {
-        clearTimeout(this.typingTimeout);
-      }
-      this.typingTimeout = setTimeout(() => this.clearTypingStatus(), 3000);
+    // Skip typing updates for 1.5 seconds after sending a message
+    // This prevents the rapid true/false/true cycle when sending quickly
+    if (now - this.lastMessageSentAt < 1500) {
+      return;
+    }
+    
+    // Skip if there's a pending conversation update (user is in rapid send mode)
+    if (this.pendingConversationUpdate) {
       return;
     }
 
+    // Always reset the auto-clear timeout when user types
+    if (isTyping) {
+      if (this.typingTimeout) {
+        clearTimeout(this.typingTimeout);
+      }
+      // Auto-clear typing status after 4 seconds of no input
+      this.typingTimeout = setTimeout(() => this.clearTypingStatus(), 4000);
+    }
+
+    // Skip if state hasn't changed - avoids duplicate writes
+    if (isTyping === this.currentTypingState) {
+      return;
+    }
+
+    this.currentTypingState = isTyping;
     this.lastTypingUpdate = now;
 
     try {
@@ -375,14 +411,6 @@ export class MessageService {
       await updateDoc(conversationRef, {
         [`typing.${currentUser.uid}`]: isTyping,
       });
-
-      // Auto-clear typing status after 3 seconds of no input
-      if (isTyping) {
-        if (this.typingTimeout) {
-          clearTimeout(this.typingTimeout);
-        }
-        this.typingTimeout = setTimeout(() => this.clearTypingStatus(), 3000);
-      }
     } catch (error) {
       console.error('Error setting typing status:', error);
     }
@@ -400,6 +428,13 @@ export class MessageService {
       clearTimeout(this.typingTimeout);
       this.typingTimeout = null;
     }
+
+    // Skip if already not typing - avoids duplicate writes
+    if (!this.currentTypingState) {
+      return;
+    }
+
+    this.currentTypingState = false;
 
     try {
       const conversationRef = doc(this.firestore, 'conversations', activeConvo.id);
@@ -539,29 +574,25 @@ export class MessageService {
         }
 
         // Get any pending messages (optimistic updates) that should still be shown
-        // Remove pending messages from the current user once real messages arrive
+        // Match pending messages by content to remove confirmed ones accurately
         const currentMessages = this._messages();
         const pendingMessages = currentMessages.filter(m => m.pending && m.isOwn);
         
-        // Check if we have new confirmed messages from the current user
-        // If so, we can safely remove pending messages (they've been confirmed)
-        const confirmedOwnMessageIds = new Set(
-          messages.filter(m => m.isOwn && !m.id.startsWith('pending-')).map(m => m.id)
+        // Build a set of confirmed message contents for quick lookup
+        const confirmedContents = new Set(
+          messages.filter(m => m.isOwn && !m.id.startsWith('pending-'))
+            .map(m => m.content)
         );
         
-        // Only keep pending messages if they weren't replaced by real ones yet
-        // We match by checking if a new confirmed message exists within a small time window
-        const recentConfirmedMessages = messages.filter(
-          m => m.isOwn && 
-          !m.id.startsWith('pending-') && 
-          (Date.now() - m.createdAt.getTime() < 5000) // Messages from last 5 seconds
+        // Only keep pending messages whose content hasn't been confirmed yet
+        const remainingPending = pendingMessages.filter(
+          pending => !confirmedContents.has(pending.content)
         );
         
-        // If there are recently confirmed messages, remove all pending messages
-        // (the real message has arrived from Firestore)
-        const finalMessages = recentConfirmedMessages.length > 0 
-          ? messages  // Firestore has the real message, use only confirmed
-          : [...messages, ...pendingMessages]; // No recent confirms, keep pending
+        // Combine confirmed messages with any still-pending ones
+        // Sort to maintain proper order: confirmed messages first (by createdAt), 
+        // then pending messages (by their sequence-based id)
+        const finalMessages = [...messages, ...remainingPending];
         
         this._messages.set(finalMessages);
 
@@ -798,23 +829,36 @@ export class MessageService {
 
     if (!currentUser || !activeConversation || (!hasText && !hasImages)) return;
 
-    // Clear typing status when sending (fire and forget - don't wait)
-    this.clearTypingStatus();
+    // Record send time to suppress typing updates for a short period
+    // This prevents the rapid true/false/true cycle when sending quickly
+    this.lastMessageSentAt = Date.now();
+    
+    // Locally reset typing state without a Firestore write
+    // The typing indicator will clear naturally via auto-timeout
+    if (this.typingTimeout) {
+      clearTimeout(this.typingTimeout);
+      this.typingTimeout = null;
+    }
+    this.currentTypingState = false;
 
     // Determine message type and content
     const messageType = hasImages ? 'image' : 'text';
     const messageContent = hasText ? content.trim() : 
       (files.length === 1 ? 'Sent an image' : `Sent ${files.length} images`);
     
-    // Generate temporary ID for optimistic message
-    const tempId = `pending-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    // Generate temporary ID with sequence number for strict ordering
+    const sequence = ++this.pendingMessageSequence;
+    const tempId = `pending-${sequence}-${messageContent.substring(0, 20)}`;
+    
+    // Use a timestamp that ensures proper ordering (sequence ensures order even if same ms)
+    const optimisticTimestamp = new Date(Date.now() + sequence);
     
     // Create optimistic message for immediate UI update
     const optimisticMessage: MessageDisplay = {
       id: tempId,
       content: messageContent,
       isOwn: true,
-      createdAt: new Date(),
+      createdAt: optimisticTimestamp,
       read: false,
       type: messageType,
       senderId: currentUser.uid,
@@ -940,22 +984,72 @@ export class MessageService {
       activeConversation.id
     );
 
-    // Run message creation and conversation update in parallel for better performance
-    await Promise.all([
-      addDoc(messagesRef, messageData),
-      updateDoc(conversationRef, {
+    // Create the message immediately
+    await addDoc(messagesRef, messageData);
+    
+    // Debounce conversation metadata updates to reduce RESET storms during rapid sending
+    // Only the last message in a burst will actually trigger the conversation update
+    this.scheduleConversationUpdate(
+      conversationRef,
+      lastMessagePreview,
+      currentUser.uid,
+      activeConversation.otherUser.uid
+    );
+    
+    // The Firestore listener will receive the real message and replace the pending one
+  }
+
+  /**
+   * Schedule a debounced conversation metadata update to reduce RESET storms
+   * During rapid message sending, only the last message triggers the update
+   */
+  private scheduleConversationUpdate(
+    conversationRef: ReturnType<typeof doc>,
+    lastMessagePreview: string,
+    senderId: string,
+    recipientId: string
+  ): void {
+    // Clear any pending update
+    if (this.conversationUpdateTimeout) {
+      clearTimeout(this.conversationUpdateTimeout);
+    }
+
+    // Track how many messages are waiting for the batched update
+    const pendingCount = this.pendingConversationUpdate?.count || 0;
+    
+    // Store the update data for the debounced call
+    this.pendingConversationUpdate = {
+      conversationRef,
+      updateData: {
         lastMessage: {
           content: lastMessagePreview,
-          senderId: currentUser.uid,
+          senderId: senderId,
           createdAt: serverTimestamp(),
         },
         updatedAt: serverTimestamp(),
-        // Increment the OTHER user's unread count (they haven't seen this message yet)
-        [`unreadCount.${activeConversation.otherUser.uid}`]: increment(1),
-      }),
-    ]);
-    
-    // The Firestore listener will receive the real message and replace the pending one
+        // Accumulate unread count from pending messages
+        [`unreadCount.${recipientId}`]: increment(pendingCount + 1),
+        // Clear typing status
+        [`typing.${senderId}`]: false,
+      },
+      count: pendingCount + 1,
+    };
+
+    // Debounce: wait 200ms before actually updating
+    // This batches rapid sequential messages into a single conversation update
+    this.conversationUpdateTimeout = setTimeout(async () => {
+      if (this.pendingConversationUpdate) {
+        try {
+          await updateDoc(
+            this.pendingConversationUpdate.conversationRef, 
+            this.pendingConversationUpdate.updateData
+          );
+        } catch (error) {
+          console.error('Error updating conversation metadata:', error);
+        }
+        this.pendingConversationUpdate = null;
+      }
+    }, 200);
   }
 
   /**
