@@ -1,0 +1,223 @@
+:host {
+  display: block;
+}
+
+.virtual-phone-card {
+  padding: 0.875rem 1.25rem;
+  border-top: 1px solid var(--color-border);
+  background: linear-gradient(135deg, rgba(201, 169, 98, 0.08), transparent);
+  flex-shrink: 0;
+}
+
+.vp-number-display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.vp-info {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.vp-icon {
+  font-size: 1.25rem;
+  color: var(--color-accent);
+  flex-shrink: 0;
+}
+
+.vp-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.vp-label {
+  font-size: 0.6875rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.vp-number {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vp-actions {
+  display: flex;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.vp-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.vp-action-btn:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-accent);
+}
+
+.vp-action-btn .material-icons-outlined {
+  font-size: 1.125rem;
+}
+
+.vp-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  color: var(--color-text-muted);
+  font-size: 0.8125rem;
+}
+
+.loading-spinner {
+  width: 28px;
+  height: 28px;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.loading-spinner.small {
+  width: 16px;
+  height: 16px;
+  border-width: 2px;
+  margin: 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.vp-promo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.vp-promo-text {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+
+.vp-promo-text .material-icons-outlined {
+  font-size: 1rem;
+  color: var(--color-accent);
+  flex-shrink: 0;
+  margin-top: 0.0625rem;
+}
+
+.vp-get-number-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  background: linear-gradient(135deg, rgba(201, 169, 98, 0.15), rgba(201, 169, 98, 0.05));
+  border: 1px dashed var(--color-accent);
+  border-radius: 8px;
+  color: var(--color-accent);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.vp-get-number-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(201, 169, 98, 0.25), rgba(201, 169, 98, 0.1));
+}
+
+.vp-get-number-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.vp-get-number-btn .material-icons-outlined {
+  font-size: 1.25rem;
+}
+
+.vp-error {
+  margin: 0.5rem 0 0;
+  padding: 0.5rem;
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: 6px;
+  color: #ef4444;
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+/* Needs phone verification state */
+.vp-needs-phone .vp-promo-text {
+  color: var(--color-text-muted);
+}
+
+.vp-needs-phone .material-icons-outlined {
+  color: var(--color-text-muted);
+}
+
+.vp-verify-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  color: var(--color-text-primary);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.vp-verify-btn:hover {
+  background: var(--color-bg-hover);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.vp-verify-btn .material-icons-outlined {
+  font-size: 1.125rem;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .virtual-phone-card {
+    padding: 0.75rem 1rem;
+  }
+  
+  .vp-number {
+    font-size: 0.8125rem;
+  }
+}

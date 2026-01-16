@@ -1,0 +1,88 @@
+<footer class="chat-input-area">
+  <!-- Image Previews (inline with input) -->
+  @if (selectedImages().length > 0) {
+    <div class="image-preview-row">
+      <div class="image-previews">
+        @for (image of selectedImages(); track image.url; let i = $index) {
+          <div class="preview-item">
+            <img [src]="image.url" alt="Selected image">
+            <button type="button" class="remove-preview" (click)="removeImage(i)" aria-label="Remove image">
+              <span class="material-icons-outlined">close</span>
+            </button>
+          </div>
+        }
+      </div>
+      <div class="image-actions">
+        <!-- Timer selector -->
+        <div class="timer-selector">
+          <span class="material-icons-outlined timer-icon" [class.active]="imageTimer() !== null">timer</span>
+          <select [value]="imageTimer() ?? ''" (change)="onTimerChange($event)">
+            @for (option of timerOptions; track option.value) {
+              <option [value]="option.value ?? ''">{{ option.label }}</option>
+            }
+          </select>
+        </div>
+        @if (selectedImages().length > 1) {
+          <button type="button" class="clear-all-btn" (click)="clearImages()">
+            <span class="material-icons-outlined">close</span>
+            Clear all
+          </button>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Input Row -->
+  @if (isBlocked) {
+    <div class="blocked-notice">
+      <span class="material-icons-outlined">block</span>
+      <span>You cannot send messages to this user</span>
+    </div>
+  } @else {
+    <div class="chat-input">
+      <!-- Hidden file input -->
+      <input 
+        #fileInput
+        type="file" 
+        accept="image/*" 
+        multiple 
+        hidden 
+        (change)="onFilesSelected($event)">
+      
+      <!-- AI Assist button -->
+      <button 
+        type="button" 
+        class="ai-assist-btn"
+        [class.active]="isAiPanelOpen"
+        [class.has-access]="hasAiAccess"
+        (click)="toggleAiAssist()"
+        aria-label="AI Assist">
+        <span class="material-icons-outlined">auto_awesome</span>
+      </button>
+      
+      <!-- Image upload button -->
+      <button 
+        type="button" 
+        class="attach-btn"
+        (click)="openImagePicker()"
+        aria-label="Attach images">
+        <span class="material-icons-outlined">image</span>
+      </button>
+
+      <input
+        #messageInputEl
+        type="text"
+        placeholder="Type a message..."
+        [value]="messageInput()"
+        (input)="messageInput.set($any($event.target).value); onInput()"
+        (keydown)="onKeyDown($event)">
+      <button 
+        type="button"
+        class="send-btn"
+        [disabled]="!canSend()"
+        (click)="send()">
+        <span class="material-icons-outlined">send</span>
+      </button>
+    </div>
+  }
+</footer>

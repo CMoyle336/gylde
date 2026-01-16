@@ -1,0 +1,57 @@
+@if (conversation) {
+  <header class="chat-header">
+    <button type="button" class="back-btn" (click)="onBackClick()" aria-label="Back">
+      <span class="material-icons-outlined">arrow_back</span>
+    </button>
+    <div class="chat-user">
+      <div class="chat-avatar-wrapper">
+        @if (conversation.otherUser.photoURL) {
+          <img [src]="conversation.otherUser.photoURL" class="chat-avatar" [alt]="conversation.otherUser.displayName">
+        } @else {
+          <div class="chat-avatar placeholder">
+            <span class="material-icons-outlined">person</span>
+          </div>
+        }
+        @if (otherUserStatus?.isOnline && !conversation.isBlocked && !isBlocked) {
+          <span class="online-dot"></span>
+        }
+      </div>
+      <div class="chat-user-info">
+        <span class="chat-user-name">{{ conversation.otherUser.displayName || 'Unknown' }}</span>
+        @if (isTyping) {
+          <span class="chat-user-status typing">typing...</span>
+        } @else if (getStatusText() && !conversation.isBlocked && !isBlocked) {
+          <span class="chat-user-status" [class.online]="otherUserStatus?.isOnline">
+            {{ getStatusText() }}
+          </span>
+        }
+      </div>
+    </div>
+    <button type="button" class="options-btn" [matMenuTriggerFor]="chatOptionsMenu" aria-label="Options">
+      <span class="material-icons-outlined">more_vert</span>
+    </button>
+    <mat-menu #chatOptionsMenu="matMenu">
+      <button mat-menu-item (click)="onViewProfile()">
+        <span class="material-icons-outlined">person</span>
+        <span>View profile</span>
+      </button>
+      @if (hasVirtualPhone) {
+        <button mat-menu-item (click)="onShareNumber()">
+          <span class="material-icons-outlined">phone_forwarded</span>
+          <span>Share my number</span>
+        </button>
+      }
+      @if (conversation.isArchived) {
+        <button mat-menu-item (click)="onUnarchiveChat()">
+          <span class="material-icons-outlined">unarchive</span>
+          <span>Unarchive chat</span>
+        </button>
+      } @else {
+        <button mat-menu-item (click)="onArchiveChat()">
+          <span class="material-icons-outlined">archive</span>
+          <span>Archive chat</span>
+        </button>
+      }
+    </mat-menu>
+  </header>
+}

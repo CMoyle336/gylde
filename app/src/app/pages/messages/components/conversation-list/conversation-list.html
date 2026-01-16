@@ -1,0 +1,108 @@
+<aside class="conversation-list" [class.hidden-on-mobile]="activeConversation">
+  <!-- List Header with Tabs -->
+  <div class="list-header">
+    <h2>Chats</h2>
+    <div class="filter-tabs">
+      <button 
+        type="button" 
+        class="filter-tab"
+        [class.active]="conversationFilter === 'all'"
+        (click)="onFilterChange('all')">
+        All
+      </button>
+      <button 
+        type="button" 
+        class="filter-tab"
+        [class.active]="conversationFilter === 'unread'"
+        (click)="onFilterChange('unread')">
+        Unread
+        @if (totalUnreadCount > 0) {
+          <span class="unread-badge">{{ totalUnreadCount }}</span>
+        }
+      </button>
+      <button 
+        type="button" 
+        class="filter-tab"
+        [class.active]="conversationFilter === 'archived'"
+        (click)="onFilterChange('archived')">
+        Archived
+        @if (archivedCount > 0) {
+          <span class="archived-badge">{{ archivedCount }}</span>
+        }
+      </button>
+    </div>
+  </div>
+
+  <!-- Conversation List -->
+  <div class="conversation-scroll">
+    @if (loading) {
+      <div class="loading-state">
+        <div class="loading-spinner"></div>
+        <span>Loading...</span>
+      </div>
+    } @else if (conversations.length === 0) {
+      <div class="empty-state">
+        <span class="material-icons-outlined">{{ conversationFilter === 'archived' ? 'inventory_2' : 'chat_bubble_outline' }}</span>
+        @if (conversationFilter === 'unread') {
+          <p>No unread messages</p>
+          <button type="button" class="show-all-btn" (click)="onFilterChange('all')">Show all chats</button>
+        } @else if (conversationFilter === 'archived') {
+          <p>No archived chats</p>
+          <button type="button" class="show-all-btn" (click)="onFilterChange('all')">Show all chats</button>
+        } @else {
+          <p>No conversations yet</p>
+        }
+      </div>
+    } @else {
+      @for (conversation of conversations; track conversation.id) {
+        <button 
+          type="button"
+          class="conversation-item"
+          [class.active]="activeConversation?.id === conversation.id"
+          [class.unread]="conversation.unreadCount > 0"
+          [class.blocked]="conversation.isBlocked"
+          (click)="onConversationClick(conversation)">
+          <div class="conversation-avatar">
+            @if (conversation.otherUser.photoURL) {
+              <img [src]="conversation.otherUser.photoURL" [alt]="conversation.otherUser.displayName || 'User'" class="avatar-image">
+            } @else {
+              <span class="material-icons-outlined avatar-placeholder">person</span>
+            }
+            @if (conversation.isBlocked) {
+              <span class="blocked-indicator" title="Blocked">
+                <span class="material-icons-outlined">block</span>
+              </span>
+            } @else if (conversation.unreadCount > 0) {
+              <span class="unread-indicator">{{ conversation.unreadCount > 9 ? '9+' : conversation.unreadCount }}</span>
+            }
+          </div>
+          <div class="conversation-info">
+            <span class="conversation-name">{{ conversation.otherUser.displayName || 'Unknown' }}</span>
+            <span class="conversation-preview">
+              @if (conversation.isBlocked) {
+                <span class="blocked-text">Blocked</span>
+              } @else {
+                {{ conversation.lastMessage || 'New chat' }}
+              }
+            </span>
+          </div>
+          <span class="conversation-time">{{ formatTime(conversation.lastMessageTime) }}</span>
+        </button>
+      }
+    }
+  </div>
+
+  <!-- Virtual Phone Card -->
+  <app-virtual-phone-card
+    [virtualPhone]="virtualPhone"
+    [loading]="virtualPhoneLoading"
+    [provisioning]="virtualPhoneProvisioning"
+    [error]="virtualPhoneError"
+    [isElite]="isElite"
+    [hasVerifiedPhone]="hasVerifiedPhone"
+    (copyNumber)="onVirtualPhoneCopy()"
+    (openSettings)="onVirtualPhoneSettings()"
+    (provision)="onVirtualPhoneProvision()"
+    (showUpgrade)="onVirtualPhoneUpgrade()">
+  </app-virtual-phone-card>
+</aside>

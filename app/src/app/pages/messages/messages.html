@@ -1,241 +1,42 @@
 <div class="messages-layout" [class.ai-panel-open]="isAiPanelOpen()">
   <!-- Conversation List -->
-  <aside class="conversation-list" [class.hidden-on-mobile]="activeConversation()">
-    <!-- List Header with Tabs -->
-    <div class="list-header">
-      <h2>Chats</h2>
-      <div class="filter-tabs">
-        <button 
-          type="button" 
-          class="filter-tab"
-          [class.active]="conversationFilter() === 'all'"
-          (click)="setFilter('all')">
-          All
-        </button>
-        <button 
-          type="button" 
-          class="filter-tab"
-          [class.active]="conversationFilter() === 'unread'"
-          (click)="setFilter('unread')">
-          Unread
-          @if (totalUnreadCount() > 0) {
-            <span class="unread-badge">{{ totalUnreadCount() }}</span>
-          }
-        </button>
-        <button 
-          type="button" 
-          class="filter-tab"
-          [class.active]="conversationFilter() === 'archived'"
-          (click)="setFilter('archived')">
-          Archived
-          @if (archivedCount() > 0) {
-            <span class="archived-badge">{{ archivedCount() }}</span>
-          }
-        </button>
-      </div>
-    </div>
-
-    <!-- Conversation List -->
-    <div class="conversation-scroll">
-      @if (loading()) {
-        <div class="loading-state">
-          <div class="loading-spinner"></div>
-          <span>Loading...</span>
-        </div>
-      } @else if (conversations().length === 0) {
-        <div class="empty-state">
-          <span class="material-icons-outlined">{{ conversationFilter() === 'archived' ? 'inventory_2' : 'chat_bubble_outline' }}</span>
-          @if (conversationFilter() === 'unread') {
-            <p>No unread messages</p>
-            <button type="button" class="show-all-btn" (click)="setFilter('all')">Show all chats</button>
-          } @else if (conversationFilter() === 'archived') {
-            <p>No archived chats</p>
-            <button type="button" class="show-all-btn" (click)="setFilter('all')">Show all chats</button>
-          } @else {
-            <p>No conversations yet</p>
-          }
-        </div>
-      } @else {
-        @for (conversation of conversations(); track conversation.id) {
-          <button 
-            type="button"
-            class="conversation-item"
-            [class.active]="activeConversation()?.id === conversation.id"
-            [class.unread]="conversation.unreadCount > 0"
-            [class.blocked]="conversation.isBlocked"
-            (click)="openConversation(conversation)">
-            <div class="conversation-avatar">
-              @if (conversation.otherUser.photoURL) {
-                <img [src]="conversation.otherUser.photoURL" [alt]="conversation.otherUser.displayName || 'User'" class="avatar-image">
-              } @else {
-                <span class="material-icons-outlined avatar-placeholder">person</span>
-              }
-              @if (conversation.isBlocked) {
-                <span class="blocked-indicator" title="Blocked">
-                  <span class="material-icons-outlined">block</span>
-                </span>
-              } @else if (conversation.unreadCount > 0) {
-                <span class="unread-indicator">{{ conversation.unreadCount > 9 ? '9+' : conversation.unreadCount }}</span>
-              }
-            </div>
-            <div class="conversation-info">
-              <span class="conversation-name">{{ conversation.otherUser.displayName || 'Unknown' }}</span>
-              <span class="conversation-preview">
-                @if (conversation.isBlocked) {
-                  <span class="blocked-text">Blocked</span>
-                } @else {
-                  {{ conversation.lastMessage || 'New chat' }}
-                }
-              </span>
-            </div>
-            <span class="conversation-time">{{ formatTime(conversation.lastMessageTime) }}</span>
-          </button>
-        }
-      }
-    </div>
-
-    <!-- Virtual Phone Card -->
-    <div class="virtual-phone-card">
-      @if (subscriptionService.isElite() && virtualPhone()) {
-        <!-- Elite user with virtual number -->
-        <div class="vp-number-display">
-          <div class="vp-info">
-            <span class="material-icons-outlined vp-icon">phone_android</span>
-            <div class="vp-details">
-              <span class="vp-label">Your Private Number</span>
-              <span class="vp-number">{{ formatPhoneNumber(virtualPhone()!.number) }}</span>
-            </div>
-          </div>
-          <div class="vp-actions">
-            <button 
-              type="button"
-              class="vp-action-btn"
-              (click)="copyVirtualNumber()"
-              [title]="copiedNumber() ? 'Copied!' : 'Copy number'">
-              <span class="material-icons-outlined">{{ copiedNumber() ? 'check' : 'content_copy' }}</span>
-            </button>
-            <button 
-              type="button"
-              class="vp-action-btn"
-              (click)="openVirtualPhoneSettings()"
-              title="Settings">
-              <span class="material-icons-outlined">settings</span>
-            </button>
-          </div>
-        </div>
-      } @else if (subscriptionService.isElite() && virtualPhoneLoading()) {
-        <!-- Elite user, loading -->
-        <div class="vp-loading">
-          <div class="loading-spinner small"></div>
-          <span>Loading...</span>
-        </div>
-      } @else if (subscriptionService.isElite() && !hasVerifiedPhone()) {
-        <!-- Elite user, need to verify phone first -->
-        <div class="vp-promo vp-needs-phone">
-          <div class="vp-promo-text">
-            <span class="material-icons-outlined">phone_locked</span>
-            <span>Verify your phone number first to get a private number for sharing with connections</span>
-          </div>
-          <a routerLink="/settings" class="vp-verify-btn">
-            <span class="material-icons-outlined">verified_user</span>
-            <span>Verify Phone in Settings</span>
-          </a>
-        </div>
-      } @else if (subscriptionService.isElite()) {
-        <!-- Elite user, can get virtual number -->
-        <div class="vp-promo">
-          <div class="vp-promo-text">
-            <span class="material-icons-outlined">shield</span>
-            <span>Share a number with connections without revealing your real one</span>
-          </div>
-          <button type="button" class="vp-get-number-btn" (click)="provisionVirtualNumber()" [disabled]="virtualPhoneProvisioning()">
-            @if (virtualPhoneProvisioning()) {
-              <div class="loading-spinner small"></div>
-              <span>Setting up...</span>
-            } @else {
-              <span class="material-icons-outlined">add_call</span>
-              <span>Get Private Number</span>
-            }
-          </button>
-        </div>
-        @if (virtualPhoneError()) {
-          <p class="vp-error">{{ virtualPhoneError() }}</p>
-        }
-      } @else {
-        <!-- Non-Elite user, show upgrade prompt -->
-        <div class="vp-promo">
-          <div class="vp-promo-text">
-            <span class="material-icons-outlined">shield</span>
-            <span>Share a number with connections without revealing your real one</span>
-          </div>
-          <button type="button" class="vp-get-number-btn vp-upgrade-btn" (click)="showVirtualPhoneUpgrade()">
-            <span class="material-icons-outlined">add_call</span>
-            <span>Get Private Number</span>
-          </button>
-        </div>
-      }
-    </div>
-  </aside>
+  <app-conversation-list
+    [conversations]="conversations()"
+    [activeConversation]="activeConversation()"
+    [loading]="loading()"
+    [conversationFilter]="conversationFilter()"
+    [totalUnreadCount]="totalUnreadCount()"
+    [archivedCount]="archivedCount()"
+    [virtualPhone]="virtualPhone()"
+    [virtualPhoneLoading]="virtualPhoneLoading()"
+    [virtualPhoneProvisioning]="virtualPhoneProvisioning()"
+    [virtualPhoneError]="virtualPhoneError()"
+    [isElite]="subscriptionService.isElite()"
+    [hasVerifiedPhone]="hasVerifiedPhone()"
+    (conversationSelected)="onConversationSelected($event)"
+    (filterChanged)="onFilterChanged($event)"
+    (virtualPhoneCopy)="onVirtualPhoneCopy()"
+    (virtualPhoneSettings)="onVirtualPhoneSettings()"
+    (virtualPhoneProvision)="onVirtualPhoneProvision()"
+    (virtualPhoneUpgrade)="onVirtualPhoneUpgrade()">
+  </app-conversation-list>
 
   <!-- Chat Area -->
   <main class="chat-area" [class.visible-on-mobile]="activeConversation()">
     @if (activeConversation()) {
-      <!-- Mobile Back Button & User Info -->
-      <header class="chat-header">
-        <button type="button" class="back-btn" (click)="closeConversation()" aria-label="Back">
-          <span class="material-icons-outlined">arrow_back</span>
-        </button>
-        <div class="chat-user">
-          <div class="chat-avatar-wrapper">
-            @if (activeConversation()!.otherUser.photoURL) {
-              <img [src]="activeConversation()!.otherUser.photoURL" class="chat-avatar" [alt]="activeConversation()!.otherUser.displayName">
-            } @else {
-              <div class="chat-avatar placeholder">
-                <span class="material-icons-outlined">person</span>
-              </div>
-            }
-            @if (otherUserStatus()?.isOnline && !activeConversation()?.isBlocked && !isOtherUserBlocked()) {
-              <span class="online-dot"></span>
-            }
-          </div>
-          <div class="chat-user-info">
-            <span class="chat-user-name">{{ activeConversation()!.otherUser.displayName || 'Unknown' }}</span>
-            @if (isOtherUserTyping()) {
-              <span class="chat-user-status typing">typing...</span>
-            } @else if (getStatusText() && !activeConversation()?.isBlocked && !isOtherUserBlocked()) {
-              <span class="chat-user-status" [class.online]="otherUserStatus()?.isOnline">
-                {{ getStatusText() }}
-              </span>
-            }
-          </div>
-        </div>
-        <button type="button" class="options-btn" [matMenuTriggerFor]="chatOptionsMenu" aria-label="Options">
-          <span class="material-icons-outlined">more_vert</span>
-        </button>
-        <mat-menu #chatOptionsMenu="matMenu">
-          <button mat-menu-item (click)="viewOtherUserProfile()">
-            <span class="material-icons-outlined">person</span>
-            <span>View profile</span>
-          </button>
-          @if (virtualPhone()) {
-            <button mat-menu-item (click)="shareVirtualNumberInChat()">
-              <span class="material-icons-outlined">phone_forwarded</span>
-              <span>Share my number</span>
-            </button>
-          }
-          @if (activeConversation()?.isArchived) {
-            <button mat-menu-item (click)="unarchiveActiveConversation()">
-              <span class="material-icons-outlined">unarchive</span>
-              <span>Unarchive chat</span>
-            </button>
-          } @else {
-            <button mat-menu-item (click)="archiveActiveConversation()">
-              <span class="material-icons-outlined">archive</span>
-              <span>Archive chat</span>
-            </button>
-          }
-        </mat-menu>
-      </header>
+      <!-- Chat Header -->
+      <app-chat-header
+        [conversation]="activeConversation()"
+        [otherUserStatus]="otherUserStatus()"
+        [isTyping]="isOtherUserTyping()"
+        [isBlocked]="isOtherUserBlocked()"
+        [hasVirtualPhone]="!!virtualPhone()"
+        (backClicked)="onBackClicked()"
+        (viewProfile)="onViewProfile()"
+        (archiveChat)="onArchiveChat()"
+        (unarchiveChat)="onUnarchiveChat()"
+        (shareNumber)="onShareNumber()">
+      </app-chat-header>
 
       <!-- Messages with Virtual Scrolling -->
       @if (messages().length === 0) {
@@ -246,7 +47,7 @@
           </div>
         </div>
       } @else {
-        <cdk-virtual-scroll-viewport class="messages-scroll" (scrolledIndexChange)="onScroll()">
+        <cdk-virtual-scroll-viewport class="messages-scroll">
           <!-- Loading older messages indicator -->
           @if (loadingOlderMessages()) {
             <div class="loading-older">
@@ -259,274 +60,30 @@
               <span>Scroll up for more</span>
             </div>
           }
-          <div *cdkVirtualFor="let message of messages(); trackBy: trackByMessageId; let isLast = last"
-               class="message" 
-               [class.own]="message.isOwn" 
-               [class.image-message]="message.type === 'image'" 
-               [class.deleted]="message.isDeletedForAll" 
-               [class.with-avatar]="!message.isOwn">
-                
-                <!-- Sender Avatar (for messages from others) -->
-                @if (!message.isOwn) {
-                  <div class="message-avatar">
-                    @if (message.senderPhoto) {
-                      <img [src]="message.senderPhoto" [alt]="message.senderName || 'User'" class="avatar-img">
-                    } @else {
-                      <div class="avatar-placeholder">
-                        <span class="material-icons-outlined">person</span>
-                      </div>
-                    }
-                  </div>
-                }
-
-                <div class="message-content">
-                <!-- Deleted for everyone placeholder -->
-                @if (message.isDeletedForAll) {
-                  <div class="bubble deleted-bubble">
-                    <span class="material-icons-outlined deleted-icon">block</span>
-                    <span class="deleted-text">{{ message.isOwn ? 'You deleted this message' : 'This message was deleted' }}</span>
-                  </div>
-                }
-                <!-- Image message -->
-                @else if (message.type === 'image' && message.imageUrls?.length) {
-                  <div class="message-wrapper">
-                    <div class="image-bubble" [class.timed]="message.imageTimer" [class.expired]="message.isImageExpired && !message.isOwn">
-                      <!-- Show text content if present (not a placeholder) -->
-                      @if (message.content && !message.content.startsWith('Sent ')) {
-                        <p class="image-caption">{{ message.content }}</p>
-                      }
-                      
-                      <!-- Expired timed image placeholder (real-time check) -->
-                      @if (isTimedImageExpired(message)) {
-                        <div class="expired-image-placeholder">
-                          <span class="material-icons-outlined">timer_off</span>
-                          <span>Image expired</span>
-                        </div>
-                      }
-                      <!-- Timed image - show placeholder instead of thumbnail -->
-                      @else if (message.imageTimer && !message.isOwn) {
-                        <button type="button" class="timed-image-placeholder" (click)="openGallery(message.imageUrls!, 0, $event, message)">
-                          <div class="timed-icon-wrapper">
-                            <span class="material-icons-outlined">photo_camera</span>
-                            <span class="material-icons-outlined timer-overlay">timer</span>
-                          </div>
-                          <span class="tap-to-view">Tap to view</span>
-                          <span class="timer-duration">{{ message.imageTimer }}s</span>
-                        </button>
-                      }
-                      <!-- Sender's timed image - show thumbnail with status -->
-                      @else if (message.imageTimer && message.isOwn) {
-                        <div class="sender-timed-image">
-                          <div class="image-grid single">
-                            <button type="button" class="image-item" (click)="openGallery(message.imageUrls!, 0, $event, message)">
-                              @if (isLast) {
-                                <img [ngSrc]="message.imageUrls![0]" alt="Shared image" width="400" height="300" priority>
-                              } @else {
-                                <img [ngSrc]="message.imageUrls![0]" alt="Shared image" width="400" height="300" loading="lazy">
-                              }
-                              <!-- Status overlay -->
-                              @let countdown = getSenderCountdown(message.id);
-                              @let isExpiredNow = message.recipientViewExpired || (countdown !== null && countdown <= 0);
-                              <div class="sender-status-overlay" 
-                                   [class.waiting]="!message.recipientViewedAt"
-                                   [class.viewing]="message.isRecipientViewing && !isExpiredNow"
-                                   [class.viewed]="message.recipientViewedAt && isExpiredNow">
-                                @if (!message.recipientViewedAt) {
-                                  <span class="material-icons-outlined">visibility_off</span>
-                                  <span>Not opened</span>
-                                }
-                                @else if (message.isRecipientViewing && !isExpiredNow) {
-                                  <span class="material-icons-outlined">visibility</span>
-                                  <span class="countdown-live">{{ countdown }}s</span>
-                                }
-                                @else if (message.recipientViewedAt && isExpiredNow) {
-                                  <span class="material-icons-outlined">done_all</span>
-                                  <span>Opened {{ formatMessageTime(message.recipientViewedAt!) }}</span>
-                                }
-                              </div>
-                            </button>
-                          </div>
-                        </div>
-                      }
-                      <!-- Regular image - show thumbnail -->
-                      @else {
-                        <div class="image-grid" [class.single]="message.imageUrls!.length === 1" [class.grid-2]="message.imageUrls!.length === 2" [class.grid-many]="message.imageUrls!.length > 2">
-                          @for (imageUrl of message.imageUrls; track imageUrl; let idx = $index) {
-                            <button type="button" class="image-item" (click)="openGallery(message.imageUrls!, idx, $event, message)">
-                              @if (isLast) {
-                                <img [ngSrc]="imageUrl" alt="Shared image" [width]="message.imageUrls!.length === 1 ? 400 : 200" [height]="message.imageUrls!.length === 1 ? 300 : 150" priority>
-                              } @else {
-                                <img [ngSrc]="imageUrl" alt="Shared image" [width]="message.imageUrls!.length === 1 ? 400 : 200" [height]="message.imageUrls!.length === 1 ? 300 : 150" loading="lazy">
-                              }
-                            </button>
-                          }
-                        </div>
-                      }
-                      <div class="message-meta">
-                        <time>{{ formatMessageTime(message.createdAt) }}</time>
-                        @if (message.isOwn) {
-                          @if (message.pending) {
-                            <span class="read-status pending">
-                              <span class="material-icons-outlined">schedule</span>
-                            </span>
-                          } @else {
-                            <span class="read-status" [class.read]="message.read">
-                              <span class="material-icons-outlined">{{ message.read ? 'done_all' : 'done' }}</span>
-                            </span>
-                          }
-                        }
-                      </div>
-                    </div>
-                    <!-- Message actions menu -->
-                    <button type="button" class="message-menu-btn" [matMenuTriggerFor]="messageMenu">
-                      <span class="material-icons-outlined">more_vert</span>
-                    </button>
-                    <mat-menu #messageMenu="matMenu" class="message-actions-menu">
-                      <button mat-menu-item (click)="deleteForMe(message)">
-                        <span class="material-icons-outlined">delete</span>
-                        <span>Delete for me</span>
-                      </button>
-                      @if (message.isOwn) {
-                        <button mat-menu-item (click)="deleteForEveryone(message)" class="delete-everyone">
-                          <span class="material-icons-outlined">delete_forever</span>
-                          <span>Delete for everyone</span>
-                        </button>
-                      }
-                    </mat-menu>
-                  </div>
-                }
-                <!-- Text message -->
-                @else {
-                  <div class="message-wrapper">
-                    <div class="bubble">
-                      <p>{{ message.content }}</p>
-                      <div class="message-meta">
-                        <time>{{ formatMessageTime(message.createdAt) }}</time>
-                        @if (message.isOwn) {
-                          @if (message.pending) {
-                            <span class="read-status pending">
-                              <span class="material-icons-outlined">schedule</span>
-                            </span>
-                          } @else {
-                            <span class="read-status" [class.read]="message.read">
-                              <span class="material-icons-outlined">{{ message.read ? 'done_all' : 'done' }}</span>
-                            </span>
-                          }
-                        }
-                      </div>
-                    </div>
-                    <!-- Message actions menu -->
-                    <button type="button" class="message-menu-btn" [matMenuTriggerFor]="messageMenu">
-                      <span class="material-icons-outlined">more_vert</span>
-                    </button>
-                    <mat-menu #messageMenu="matMenu" class="message-actions-menu">
-                      <button mat-menu-item (click)="deleteForMe(message)">
-                        <span class="material-icons-outlined">delete</span>
-                        <span>Delete for me</span>
-                      </button>
-                      @if (message.isOwn) {
-                        <button mat-menu-item (click)="deleteForEveryone(message)" class="delete-everyone">
-                          <span class="material-icons-outlined">delete_forever</span>
-                          <span>Delete for everyone</span>
-                        </button>
-                      }
-                    </mat-menu>
-                  </div>
-                }
-                </div><!-- end message-content -->
-          </div>
+          
+          <ng-container *cdkVirtualFor="let message of messages(); trackBy: trackByMessageId; let isLast = last">
+            <app-message-bubble
+              [message]="message"
+              [senderCountdown]="getSenderCountdown(message.id)"
+              [recipientCountdown]="getRecipientCountdown(message.id)"
+              [isLast]="isLast"
+              (openGallery)="onOpenGallery($event)"
+              (deleteForMe)="onDeleteForMe($event)"
+              (deleteForEveryone)="onDeleteForEveryone($event)">
+            </app-message-bubble>
+          </ng-container>
         </cdk-virtual-scroll-viewport>
       }
 
-      <!-- Input Area -->
-      <footer class="chat-input-area">
-        <!-- Image Previews (inline with input) -->
-        @if (selectedImages().length > 0) {
-          <div class="image-preview-row">
-            <div class="image-previews">
-              @for (image of selectedImages(); track image.url; let i = $index) {
-                <div class="preview-item">
-                  <img [src]="image.url" alt="Selected image">
-                  <button type="button" class="remove-preview" (click)="removeImage(i)" aria-label="Remove image">
-                    <span class="material-icons-outlined">close</span>
-                  </button>
-                </div>
-              }
-            </div>
-            <div class="image-actions">
-              <!-- Timer selector -->
-              <div class="timer-selector">
-                <span class="material-icons-outlined timer-icon" [class.active]="imageTimer() !== null">timer</span>
-                <select [value]="imageTimer() ?? ''" (change)="imageTimer.set($any($event.target).value === '' ? null : +$any($event.target).value)">
-                  @for (option of timerOptions; track option.value) {
-                    <option [value]="option.value ?? ''">{{ option.label }}</option>
-                  }
-                </select>
-              </div>
-              @if (selectedImages().length > 1) {
-                <button type="button" class="clear-all-btn" (click)="clearImages()">
-                  <span class="material-icons-outlined">close</span>
-                  Clear all
-                </button>
-              }
-            </div>
-          </div>
-        }
-
-        <!-- Input Row -->
-        @if (isOtherUserBlocked()) {
-          <div class="blocked-notice">
-            <span class="material-icons-outlined">block</span>
-            <span>You cannot send messages to this user</span>
-          </div>
-        } @else {
-          <div class="chat-input">
-            <!-- Hidden file input -->
-            <input 
-              #fileInput
-              type="file" 
-              accept="image/*" 
-              multiple 
-              hidden 
-              (change)="onFilesSelected($event)">
-            
-            <!-- AI Assist button (Elite only) -->
-            <button 
-              type="button" 
-              class="ai-assist-btn"
-              [class.active]="isAiPanelOpen()"
-              [class.has-access]="hasAiAccess()"
-              (click)="toggleAiAssist()"
-              aria-label="AI Assist">
-              <span class="material-icons-outlined">auto_awesome</span>
-            </button>
-            
-            <!-- Image upload button -->
-            <button 
-              type="button" 
-              class="attach-btn"
-              (click)="openImagePicker()"
-              aria-label="Attach images">
-              <span class="material-icons-outlined">image</span>
-            </button>
-
-            <input
-              #messageInputEl
-              type="text"
-              placeholder="Type a message..."
-              [value]="messageInput()"
-              (input)="messageInput.set($any($event.target).value); onInput()"
-              (keydown)="onKeyDown($event)">
-            <button 
-              type="button"
-              class="send-btn"
-              [disabled]="!canSend()"
-              (click)="send()">
-              <span class="material-icons-outlined">send</span>
-            </button>
-          </div>
-        }
-      </footer>
+      <!-- Chat Input -->
+      <app-chat-input
+        [isBlocked]="isOtherUserBlocked()"
+        [isAiPanelOpen]="isAiPanelOpen()"
+        [hasAiAccess]="hasAiAccess()"
+        (messageSent)="onMessageSent($event)"
+        (typing)="onTyping()"
+        (aiAssistToggled)="onAiAssistToggled()">
+      </app-chat-input>
     } @else {
       <!-- No chat selected (desktop only) -->
       <div class="no-chat">
@@ -550,156 +107,20 @@
 </div>
 
 <!-- Image Gallery Lightbox -->
-@if (gallery().isOpen) {
-  <div class="gallery-overlay" [class.expired]="gallery().isExpired" (click)="closeGallery()">
-    <div class="gallery-container" (click)="$event.stopPropagation()">
-      <!-- Close Button -->
-      <button type="button" class="gallery-close" (click)="closeGallery()" aria-label="Close gallery">
-        <span class="material-icons-outlined">close</span>
-      </button>
-
-      <!-- Countdown Timer for timed images -->
-      @if (gallery().isTimed && galleryCountdown() !== null) {
-        <div class="gallery-countdown" [class.urgent]="galleryCountdown()! <= 5">
-          <span class="material-icons-outlined">timer</span>
-          <span class="countdown-value">{{ galleryCountdown() }}s</span>
-        </div>
-      }
-
-      <!-- Expired overlay -->
-      @if (gallery().isExpired) {
-        <div class="gallery-expired-overlay">
-          <span class="material-icons-outlined">timer_off</span>
-          <h3>Image expired</h3>
-          <p>This image is no longer available</p>
-          <button type="button" class="close-expired-btn" (click)="closeGallery()">Close</button>
-        </div>
-      } @else {
-        <!-- Navigation: Previous -->
-        @if (gallery().images.length > 1) {
-          <button type="button" class="gallery-nav prev" (click)="prevImage()" aria-label="Previous image">
-            <span class="material-icons-outlined">chevron_left</span>
-          </button>
-        }
-
-        <!-- Main Image -->
-        <div class="gallery-image-wrapper">
-          <img [ngSrc]="gallery().images[gallery().currentIndex]" alt="Image" class="gallery-image" fill priority>
-        </div>
-
-        <!-- Navigation: Next -->
-        @if (gallery().images.length > 1) {
-          <button type="button" class="gallery-nav next" (click)="nextImage()" aria-label="Next image">
-            <span class="material-icons-outlined">chevron_right</span>
-          </button>
-        }
-
-        <!-- Image Counter -->
-        @if (gallery().images.length > 1) {
-          <div class="gallery-counter">
-            {{ gallery().currentIndex + 1 }} / {{ gallery().images.length }}
-          </div>
-        }
-
-        <!-- Thumbnail Strip -->
-        @if (gallery().images.length > 1) {
-          <div class="gallery-thumbnails">
-            @for (img of gallery().images; track img; let i = $index) {
-              <button 
-                type="button" 
-                class="thumbnail" 
-                [class.active]="i === gallery().currentIndex"
-                (click)="goToImage(i)">
-                <img [ngSrc]="img" alt="Thumbnail" width="60" height="60">
-              </button>
-            }
-          </div>
-        }
-      }
-    </div>
-  </div>
-}
+<app-image-gallery
+  [gallery]="gallery()"
+  [countdown]="galleryCountdown()"
+  (closed)="onGalleryClosed()"
+  (navigated)="onGalleryNavigated($event)">
+</app-image-gallery>
 
 <!-- Virtual Phone Settings Dialog -->
-@if (showVirtualPhoneSettings()) {
-  <div class="vp-dialog-overlay" (click)="closeVirtualPhoneSettings()">
-    <div class="vp-dialog" (click)="$event.stopPropagation()">
-      <div class="vp-dialog-header">
-        <h3>Virtual Phone Settings</h3>
-        <button type="button" class="vp-close-btn" (click)="closeVirtualPhoneSettings()">
-          <span class="material-icons-outlined">close</span>
-        </button>
-      </div>
-      
-      @if (virtualPhone()) {
-        <div class="vp-dialog-number">
-          <span class="vp-dialog-label">Your Private Number</span>
-          <span class="vp-dialog-value">{{ formatPhoneNumber(virtualPhone()!.number) }}</span>
-        </div>
-
-        <div class="vp-settings-list">
-          <label class="vp-setting-item">
-            <div class="vp-setting-info">
-              <span class="vp-setting-label">Do Not Disturb</span>
-              <span class="vp-setting-desc">Silence all calls and texts</span>
-            </div>
-            <input 
-              type="checkbox" 
-              class="vp-toggle"
-              [checked]="virtualPhone()?.settings?.doNotDisturb ?? false"
-              (change)="updateVirtualPhoneSetting('doNotDisturb', $any($event.target).checked)">
-          </label>
-
-          <label class="vp-setting-item">
-            <div class="vp-setting-info">
-              <span class="vp-setting-label">Forward Calls</span>
-              <span class="vp-setting-desc">Receive incoming calls in the app</span>
-            </div>
-            <input 
-              type="checkbox" 
-              class="vp-toggle"
-              [checked]="virtualPhone()?.settings?.forwardCalls ?? true"
-              (change)="updateVirtualPhoneSetting('forwardCalls', $any($event.target).checked)">
-          </label>
-
-          <label class="vp-setting-item">
-            <div class="vp-setting-info">
-              <span class="vp-setting-label">Forward Texts</span>
-              <span class="vp-setting-desc">Receive incoming texts in the app</span>
-            </div>
-            <input 
-              type="checkbox" 
-              class="vp-toggle"
-              [checked]="virtualPhone()?.settings?.forwardTexts ?? true"
-              (change)="updateVirtualPhoneSetting('forwardTexts', $any($event.target).checked)">
-          </label>
-        </div>
-
-        <div class="vp-danger-zone">
-          <button 
-            type="button" 
-            class="vp-release-btn"
-            (click)="releaseVirtualNumber()"
-            [disabled]="virtualPhoneProvisioning()">
-            @if (virtualPhoneProvisioning()) {
-              <div class="loading-spinner small"></div>
-            } @else {
-              Release This Number
-            }
-          </button>
-          <span class="vp-release-hint">You can get a new number later, but it may be different.</span>
-        </div>
-
-        @if (virtualPhoneError()) {
-          <p class="vp-error">{{ virtualPhoneError() }}</p>
-        }
-      }
-
-      <div class="vp-dialog-footer">
-        <button type="button" class="vp-done-btn" (click)="closeVirtualPhoneSettings()">
-          Done
-        </button>
-      </div>
-    </div>
-  </div>
-}
+<app-virtual-phone-settings
+  [isOpen]="showVirtualPhoneSettings()"
+  [virtualPhone]="virtualPhone()"
+  [provisioning]="virtualPhoneProvisioning()"
+  [error]="virtualPhoneError()"
+  (closed)="onVirtualPhoneSettingsClosed()"
+  (settingChanged)="onVirtualPhoneSettingChanged($event)"
+  (released)="onVirtualPhoneReleased()">
+</app-virtual-phone-settings>

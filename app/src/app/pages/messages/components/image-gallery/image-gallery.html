@@ -1,0 +1,69 @@
+@if (gallery.isOpen) {
+  <div class="gallery-overlay" [class.expired]="gallery.isExpired" (click)="onOverlayClick()">
+    <div class="gallery-container" (click)="onContainerClick($event)">
+      <!-- Close Button -->
+      <button type="button" class="gallery-close" (click)="close()" aria-label="Close gallery">
+        <span class="material-icons-outlined">close</span>
+      </button>
+
+      <!-- Countdown Timer for timed images -->
+      @if (gallery.isTimed && countdown !== null) {
+        <div class="gallery-countdown" [class.urgent]="countdown <= 5">
+          <span class="material-icons-outlined">timer</span>
+          <span class="countdown-value">{{ countdown }}s</span>
+        </div>
+      }
+
+      <!-- Expired overlay -->
+      @if (gallery.isExpired) {
+        <div class="gallery-expired-overlay">
+          <span class="material-icons-outlined">timer_off</span>
+          <h3>Image expired</h3>
+          <p>This image is no longer available</p>
+          <button type="button" class="close-expired-btn" (click)="close()">Close</button>
+        </div>
+      } @else {
+        <!-- Navigation: Previous -->
+        @if (gallery.images.length > 1) {
+          <button type="button" class="gallery-nav prev" (click)="prevImage()" aria-label="Previous image">
+            <span class="material-icons-outlined">chevron_left</span>
+          </button>
+        }
+
+        <!-- Main Image -->
+        <div class="gallery-image-wrapper">
+          <img [ngSrc]="gallery.images[gallery.currentIndex]" alt="Image" class="gallery-image" fill priority>
+        </div>
+
+        <!-- Navigation: Next -->
+        @if (gallery.images.length > 1) {
+          <button type="button" class="gallery-nav next" (click)="nextImage()" aria-label="Next image">
+            <span class="material-icons-outlined">chevron_right</span>
+          </button>
+        }
+
+        <!-- Image Counter -->
+        @if (gallery.images.length > 1) {
+          <div class="gallery-counter">
+            {{ gallery.currentIndex + 1 }} / {{ gallery.images.length }}
+          </div>
+        }
+
+        <!-- Thumbnail Strip -->
+        @if (gallery.images.length > 1) {
+          <div class="gallery-thumbnails">
+            @for (img of gallery.images; track img; let i = $index) {
+              <button 
+                type="button" 
+                class="thumbnail" 
+                [class.active]="i === gallery.currentIndex"
+                (click)="goToImage(i)">
+                <img [ngSrc]="img" alt="Thumbnail" width="60" height="60">
+              </button>
+            }
+          </div>
+        }
+      }
+    </div>
+  </div>
+}

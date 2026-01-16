@@ -1,0 +1,82 @@
+@if (isOpen) {
+  <div class="vp-dialog-overlay" (click)="onOverlayClick()">
+    <div class="vp-dialog" (click)="onDialogClick($event)">
+      <div class="vp-dialog-header">
+        <h3>Virtual Phone Settings</h3>
+        <button type="button" class="vp-close-btn" (click)="close()">
+          <span class="material-icons-outlined">close</span>
+        </button>
+      </div>
+      
+      @if (virtualPhone) {
+        <div class="vp-dialog-number">
+          <span class="vp-dialog-label">Your Private Number</span>
+          <span class="vp-dialog-value">{{ formatPhoneNumber(virtualPhone.number) }}</span>
+        </div>
+
+        <div class="vp-settings-list">
+          <label class="vp-setting-item">
+            <div class="vp-setting-info">
+              <span class="vp-setting-label">Do Not Disturb</span>
+              <span class="vp-setting-desc">Silence all calls and texts</span>
+            </div>
+            <input 
+              type="checkbox" 
+              class="vp-toggle"
+              [checked]="virtualPhone.settings.doNotDisturb"
+              (change)="onSettingChange('doNotDisturb', $event)">
+          </label>
+
+          <label class="vp-setting-item">
+            <div class="vp-setting-info">
+              <span class="vp-setting-label">Forward Calls</span>
+              <span class="vp-setting-desc">Receive incoming calls in the app</span>
+            </div>
+            <input 
+              type="checkbox" 
+              class="vp-toggle"
+              [checked]="virtualPhone.settings.forwardCalls"
+              (change)="onSettingChange('forwardCalls', $event)">
+          </label>
+
+          <label class="vp-setting-item">
+            <div class="vp-setting-info">
+              <span class="vp-setting-label">Forward Texts</span>
+              <span class="vp-setting-desc">Receive incoming texts in the app</span>
+            </div>
+            <input 
+              type="checkbox" 
+              class="vp-toggle"
+              [checked]="virtualPhone.settings.forwardTexts"
+              (change)="onSettingChange('forwardTexts', $event)">
+          </label>
+        </div>
+
+        <div class="vp-danger-zone">
+          <button 
+            type="button" 
+            class="vp-release-btn"
+            (click)="releaseNumber()"
+            [disabled]="provisioning">
+            @if (provisioning) {
+              <div class="loading-spinner small"></div>
+            } @else {
+              Release This Number
+            }
+          </button>
+          <span class="vp-release-hint">You can get a new number later, but it may be different.</span>
+        </div>
+
+        @if (error) {
+          <p class="vp-error">{{ error }}</p>
+        }
+      }
+
+      <div class="vp-dialog-footer">
+        <button type="button" class="vp-done-btn" (click)="close()">
+          Done
+        </button>
+      </div>
+    </div>
+  </div>
+}

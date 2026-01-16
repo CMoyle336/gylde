@@ -1,0 +1,173 @@
+<div class="message" 
+     [class.own]="message.isOwn" 
+     [class.image-message]="message.type === 'image'" 
+     [class.deleted]="message.isDeletedForAll" 
+     [class.with-avatar]="!message.isOwn">
+      
+  <!-- Sender Avatar (for messages from others) -->
+  @if (!message.isOwn) {
+    <div class="message-avatar">
+      @if (message.senderPhoto) {
+        <img [src]="message.senderPhoto" [alt]="message.senderName || 'User'" class="avatar-img">
+      } @else {
+        <div class="avatar-placeholder">
+          <span class="material-icons-outlined">person</span>
+        </div>
+      }
+    </div>
+  }
+
+  <div class="message-content">
+    <!-- Deleted for everyone placeholder -->
+    @if (message.isDeletedForAll) {
+      <div class="bubble deleted-bubble">
+        <span class="material-icons-outlined deleted-icon">block</span>
+        <span class="deleted-text">{{ message.isOwn ? 'You deleted this message' : 'This message was deleted' }}</span>
+      </div>
+    }
+    <!-- Image message -->
+    @else if (message.type === 'image' && message.imageUrls?.length) {
+      <div class="message-wrapper">
+        <div class="image-bubble" [class.timed]="message.imageTimer" [class.expired]="message.isImageExpired && !message.isOwn">
+          <!-- Show text content if present (not a placeholder) -->
+          @if (message.content && !message.content.startsWith('Sent ')) {
+            <p class="image-caption">{{ message.content }}</p>
+          }
+          
+          <!-- Expired timed image placeholder (real-time check) -->
+          @if (isTimedImageExpired()) {
+            <div class="expired-image-placeholder">
+              <span class="material-icons-outlined">timer_off</span>
+              <span>Image expired</span>
+            </div>
+          }
+          <!-- Timed image - show placeholder instead of thumbnail -->
+          @else if (message.imageTimer && !message.isOwn) {
+            <button type="button" class="timed-image-placeholder" (click)="onOpenGallery(message.imageUrls!, 0, $event)">
+              <div class="timed-icon-wrapper">
+                <span class="material-icons-outlined">photo_camera</span>
+                <span class="material-icons-outlined timer-overlay">timer</span>
+              </div>
+              <span class="tap-to-view">Tap to view</span>
+              <span class="timer-duration">{{ message.imageTimer }}s</span>
+            </button>
+          }
+          <!-- Sender's timed image - show thumbnail with status -->
+          @else if (message.imageTimer && message.isOwn) {
+            <div class="sender-timed-image">
+              <div class="image-grid single">
+                <button type="button" class="image-item" (click)="onOpenGallery(message.imageUrls!, 0, $event)">
+                  @if (isLast) {
+                    <img [ngSrc]="message.imageUrls![0]" alt="Shared image" width="400" height="300" priority>
+                  } @else {
+                    <img [ngSrc]="message.imageUrls![0]" alt="Shared image" width="400" height="300" loading="lazy">
+                  }
+                  <!-- Status overlay -->
+                  <div class="sender-status-overlay" 
+                       [class.waiting]="!message.recipientViewedAt"
+                       [class.viewing]="message.isRecipientViewing && !isExpiredNow()"
+                       [class.viewed]="message.recipientViewedAt && isExpiredNow()">
+                    @if (!message.recipientViewedAt) {
+                      <span class="material-icons-outlined">visibility_off</span>
+                      <span>Not opened</span>
+                    }
+                    @else if (message.isRecipientViewing && !isExpiredNow()) {
+                      <span class="material-icons-outlined">visibility</span>
+                      <span class="countdown-live">{{ senderCountdown }}s</span>
+                    }
+                    @else if (message.recipientViewedAt && isExpiredNow()) {
+                      <span class="material-icons-outlined">done_all</span>
+                      <span>Opened {{ formatMessageTime(message.recipientViewedAt!) }}</span>
+                    }
+                  </div>
+                </button>
+              </div>
+            </div>
+          }
+          <!-- Regular image - show thumbnail -->
+          @else {
+            <div class="image-grid" [class.single]="message.imageUrls!.length === 1" [class.grid-2]="message.imageUrls!.length === 2" [class.grid-many]="message.imageUrls!.length > 2">
+              @for (imageUrl of message.imageUrls; track imageUrl; let idx = $index) {
+                <button type="button" class="image-item" (click)="onOpenGallery(message.imageUrls!, idx, $event)">
+                  @if (isLast) {
+                    <img [ngSrc]="imageUrl" alt="Shared image" [width]="message.imageUrls!.length === 1 ? 400 : 200" [height]="message.imageUrls!.length === 1 ? 300 : 150" priority>
+                  } @else {
+                    <img [ngSrc]="imageUrl" alt="Shared image" [width]="message.imageUrls!.length === 1 ? 400 : 200" [height]="message.imageUrls!.length === 1 ? 300 : 150" loading="lazy">
+                  }
+                </button>
+              }
+            </div>
+          }
+          <div class="message-meta">
+            <time>{{ formatMessageTime(message.createdAt) }}</time>
+            @if (message.isOwn) {
+              @if (message.pending) {
+                <span class="read-status pending">
+                  <span class="material-icons-outlined">schedule</span>
+                </span>
+              } @else {
+                <span class="read-status" [class.read]="message.read">
+                  <span class="material-icons-outlined">{{ message.read ? 'done_all' : 'done' }}</span>
+                </span>
+              }
+            }
+          </div>
+        </div>
+        <!-- Message actions menu -->
+        <button type="button" class="message-menu-btn" [matMenuTriggerFor]="messageMenu">
+          <span class="material-icons-outlined">more_vert</span>
+        </button>
+        <mat-menu #messageMenu="matMenu" class="message-actions-menu">
+          <button mat-menu-item (click)="onDeleteForMe()">
+            <span class="material-icons-outlined">delete</span>
+            <span>Delete for me</span>
+          </button>
+          @if (message.isOwn) {
+            <button mat-menu-item (click)="onDeleteForEveryone()" class="delete-everyone">
+              <span class="material-icons-outlined">delete_forever</span>
+              <span>Delete for everyone</span>
+            </button>
+          }
+        </mat-menu>
+      </div>
+    }
+    <!-- Text message -->
+    @else {
+      <div class="message-wrapper">
+        <div class="bubble">
+          <p>{{ message.content }}</p>
+          <div class="message-meta">
+            <time>{{ formatMessageTime(message.createdAt) }}</time>
+            @if (message.isOwn) {
+              @if (message.pending) {
+                <span class="read-status pending">
+                  <span class="material-icons-outlined">schedule</span>
+                </span>
+              } @else {
+                <span class="read-status" [class.read]="message.read">
+                  <span class="material-icons-outlined">{{ message.read ? 'done_all' : 'done' }}</span>
+                </span>
+              }
+            }
+          </div>
+        </div>
+        <!-- Message actions menu -->
+        <button type="button" class="message-menu-btn" [matMenuTriggerFor]="messageMenu">
+          <span class="material-icons-outlined">more_vert</span>
+        </button>
+        <mat-menu #messageMenu="matMenu" class="message-actions-menu">
+          <button mat-menu-item (click)="onDeleteForMe()">
+            <span class="material-icons-outlined">delete</span>
+            <span>Delete for me</span>
+          </button>
+          @if (message.isOwn) {
+            <button mat-menu-item (click)="onDeleteForEveryone()" class="delete-everyone">
+              <span class="material-icons-outlined">delete_forever</span>
+              <span>Delete for everyone</span>
+            </button>
+          }
+        </mat-menu>
+      </div>
+    }
+  </div>
+</div>
