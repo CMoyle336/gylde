@@ -16,12 +16,15 @@ import { FormsModule } from '@angular/forms';
 import { NgOptimizedImage } from '@angular/common';
 import { CdkScrollable, ScrollingModule } from '@angular/cdk/scrolling';
 import { MatMenuModule } from '@angular/material/menu';
+import { Firestore, doc, getDoc, updateDoc } from '@angular/fire/firestore';
+import { Functions, httpsCallable } from '@angular/fire/functions';
+import { Auth } from '@angular/fire/auth';
 import { MessageService, ConversationFilter } from '../../core/services/message.service';
 import { BlockService } from '../../core/services/block.service';
 import { SubscriptionService } from '../../core/services/subscription.service';
 import { AiChatService } from '../../core/services/ai-chat.service';
 import { UserProfileService } from '../../core/services/user-profile.service';
-import { ConversationDisplay, MessageDisplay } from '../../core/interfaces';
+import { ConversationDisplay, MessageDisplay, VirtualPhone, VirtualPhoneSettings } from '../../core/interfaces';
 import { AiAssistPanelComponent, AiAssistContext } from '../../components/ai-assist-panel';
 
 interface ImagePreview {
@@ -50,9 +53,12 @@ export class MessagesComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly messageService = inject(MessageService);
   private readonly blockService = inject(BlockService);
-  private readonly subscriptionService = inject(SubscriptionService);
+  protected readonly subscriptionService = inject(SubscriptionService);
   protected readonly aiChatService = inject(AiChatService);
   private readonly userProfileService = inject(UserProfileService);
+  private readonly firestore = inject(Firestore);
+  private readonly functions = inject(Functions);
+  private readonly auth = inject(Auth);
 
   @ViewChild(CdkScrollable) scrollable!: CdkScrollable;
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
@@ -108,6 +114,14 @@ export class MessagesComponent implements OnInit, OnDestroy {
   // AI Assist panel state
   protected readonly isAiPanelOpen = this.aiChatService.isOpen;
   protected readonly hasAiAccess = this.aiChatService.hasAccess;
+
+  // Virtual Phone state (Elite feature)
+  protected readonly virtualPhone = signal<VirtualPhone | null>(null);
+  protected readonly virtualPhoneLoading = signal(false);
+  protected readonly virtualPhoneProvisioning = signal(false);
+  protected readonly virtualPhoneError = signal<string | null>(null);
+  protected readonly copiedNumber = signal(false);
+  protected readonly showVirtualPhoneSettings = signal(false);
 
   // Computed context for AI assist panel
   protected readonly aiAssistContext = computed((): AiAssistContext | null => {
@@ -203,6 +217,11 @@ export class MessagesComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     // Check for conversationId in route params
     this.conversationIdFromRoute = this.route.snapshot.paramMap.get('conversationId');
+    
+    // Load virtual phone data for Elite users
+    if (this.subscriptionService.isElite()) {
+      this.loadVirtualPhone();
+    }
   }
 
   ngOnDestroy(): void {
@@ -722,6 +741,151 @@ export class MessagesComponent implements OnInit, OnDestroy {
    */
   protected onAiPanelClosed(): void {
     // Optional: focus back on message input
+    setTimeout(() => {
+      this.messageInputEl?.nativeElement?.focus();
+    }, 0);
+  }
+
+  // ============================================
+  // VIRTUAL PHONE (Elite Feature)
+  // ============================================
+
+  private async loadVirtualPhone(): Promise<void> {
+    const user = this.auth.currentUser;
+    if (!user) return;
+
+    this.virtualPhoneLoading.set(true);
+    try {
+      const privateDataRef = doc(this.firestore, 'users', user.uid, 'private', 'virtualPhone');
+      const snapshot = await getDoc(privateDataRef);
+      
+      if (snapshot.exists()) {
+        this.virtualPhone.set(snapshot.data() as VirtualPhone);
+      }
+    } catch (error) {
+      console.error('Failed to load virtual phone:', error);
+    } finally {
+      this.virtualPhoneLoading.set(false);
+    }
+  }
+
+  protected formatPhoneNumber(phone: string): string {
+    // Format E.164 number to readable format
+    // +12125551234 -> (212) 555-1234
+    if (!phone) return '';
+    
+    const cleaned = phone.replace(/\D/g, '');
+    if (cleaned.length === 11 && cleaned.startsWith('1')) {
+      const area = cleaned.slice(1, 4);
+      const prefix = cleaned.slice(4, 7);
+      const line = cleaned.slice(7);
+      return `(${area}) ${prefix}-${line}`;
+    }
+    return phone;
+  }
+
+  protected async copyVirtualNumber(): Promise<void> {
+    const phone = this.virtualPhone();
+    if (!phone?.number) return;
+
+    try {
+      await navigator.clipboard.writeText(phone.number);
+      this.copiedNumber.set(true);
+      setTimeout(() => this.copiedNumber.set(false), 2000);
+    } catch (error) {
+      console.error('Failed to copy number:', error);
+    }
+  }
+
+  protected openVirtualPhoneSettings(): void {
+    this.virtualPhoneError.set(null);
+    this.showVirtualPhoneSettings.set(true);
+  }
+
+  protected closeVirtualPhoneSettings(): void {
+    this.showVirtualPhoneSettings.set(false);
+    this.virtualPhoneError.set(null);
+  }
+
+  protected async provisionVirtualNumber(): Promise<void> {
+    this.virtualPhoneProvisioning.set(true);
+    this.virtualPhoneError.set(null);
+
+    try {
+      const provisionFn = httpsCallable<void, VirtualPhone>(this.functions, 'provisionVirtualNumber');
+      const result = await provisionFn();
+      this.virtualPhone.set(result.data);
+    } catch (error: any) {
+      console.error('Failed to provision virtual number:', error);
+      this.virtualPhoneError.set(
+        error?.message || 'Failed to get your virtual number. Please try again.'
+      );
+    } finally {
+      this.virtualPhoneProvisioning.set(false);
+    }
+  }
+
+  protected async updateVirtualPhoneSetting(
+    key: keyof VirtualPhoneSettings,
+    value: boolean
+  ): Promise<void> {
+    const user = this.auth.currentUser;
+    const phone = this.virtualPhone();
+    if (!user || !phone) return;
+
+    // Optimistic update
+    const updatedSettings: VirtualPhoneSettings = {
+      ...phone.settings,
+      [key]: value,
+    };
+    this.virtualPhone.set({ ...phone, settings: updatedSettings });
+
+    try {
+      const privateDataRef = doc(this.firestore, 'users', user.uid, 'private', 'virtualPhone');
+      await updateDoc(privateDataRef, {
+        [`settings.${key}`]: value,
+      });
+    } catch (error) {
+      console.error('Failed to update virtual phone setting:', error);
+      // Revert on error
+      this.virtualPhone.set(phone);
+    }
+  }
+
+  protected async releaseVirtualNumber(): Promise<void> {
+    this.virtualPhoneProvisioning.set(true);
+    this.virtualPhoneError.set(null);
+
+    try {
+      const releaseFn = httpsCallable(this.functions, 'releaseVirtualNumber');
+      await releaseFn();
+      this.virtualPhone.set(null);
+      this.closeVirtualPhoneSettings();
+    } catch (error: any) {
+      console.error('Failed to release virtual number:', error);
+      this.virtualPhoneError.set(
+        error?.message || 'Failed to release number. Please try again.'
+      );
+    } finally {
+      this.virtualPhoneProvisioning.set(false);
+    }
+  }
+
+  protected shareVirtualNumberInChat(): void {
+    const phone = this.virtualPhone();
+    if (!phone?.number) return;
+
+    // Insert the virtual number into the message input
+    const currentMessage = this.messageInput().trim();
+    const numberMessage = `Here's my private number: ${phone.number}`;
+    
+    if (currentMessage) {
+      this.messageInput.set(`${currentMessage}\n${numberMessage}`);
+    } else {
+      this.messageInput.set(numberMessage);
+    }
+    
+    // Focus the input
     setTimeout(() => {
       this.messageInputEl?.nativeElement?.focus();
     }, 0);

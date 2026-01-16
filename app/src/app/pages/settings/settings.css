@@ -617,6 +617,320 @@
   left: 0;
 }
 
+/* ============================================================================
+   Virtual Phone Section (Elite Feature)
+   ============================================================================ */
+
+.virtual-phone-section {
+  background: linear-gradient(135deg, rgba(147, 112, 219, 0.08) 0%, var(--color-bg-card) 100%);
+  border-color: rgba(147, 112, 219, 0.3);
+}
+
+.virtual-phone-section .section-header {
+  position: relative;
+}
+
+.elite-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.75rem;
+  background: linear-gradient(135deg, rgba(147, 112, 219, 0.2), rgba(147, 112, 219, 0.1));
+  border: 1px solid rgba(147, 112, 219, 0.4);
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #b794f4;
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+.elite-badge mat-icon {
+  font-size: 0.875rem;
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+/* Phone number display card */
+.virtual-phone-display {
+  padding: 0 0 1rem;
+}
+
+.phone-number-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  background: linear-gradient(135deg, rgba(147, 112, 219, 0.12), rgba(147, 112, 219, 0.05));
+  border: 1px solid rgba(147, 112, 219, 0.3);
+  border-radius: 12px;
+  margin-bottom: 1rem;
+}
+
+.number-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.number-label {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.number-value {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  font-family: var(--font-display);
+  letter-spacing: 1px;
+}
+
+.number-actions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.number-actions button {
+  color: var(--color-text-muted);
+}
+
+.number-actions button:hover {
+  color: var(--color-text-primary);
+}
+
+.phone-status-row {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
+.status-item mat-icon {
+  font-size: 1rem;
+  width: 1rem;
+  height: 1rem;
+}
+
+.status-item.active {
+  color: var(--color-success, #10b981);
+}
+
+.status-item.active mat-icon {
+  color: var(--color-success, #10b981);
+}
+
+/* Virtual phone loading state */
+.virtual-phone-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 2rem;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+/* Virtual phone promo (no number yet) */
+.virtual-phone-promo {
+  display: flex;
+  gap: 1.25rem;
+  padding: 1.5rem;
+  background: var(--color-bg-primary);
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  margin-bottom: 1rem;
+}
+
+.promo-icon {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(147, 112, 219, 0.2), rgba(147, 112, 219, 0.1));
+  border-radius: 12px;
+}
+
+.promo-icon mat-icon {
+  font-size: 1.5rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  color: #b794f4;
+}
+
+.promo-content h4 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.promo-content > p {
+  margin: 0 0 1rem;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+.promo-features {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.promo-features li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+}
+
+.promo-features li mat-icon {
+  font-size: 1rem;
+  width: 1rem;
+  height: 1rem;
+  color: var(--color-success, #10b981);
+}
+
+.get-number-btn {
+  width: 100%;
+  padding: 0.875rem 1.5rem;
+  font-size: 0.9375rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, #9370db, #b794f4);
+  border: none;
+}
+
+.get-number-btn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.get-number-btn mat-icon {
+  font-size: 1.25rem;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+/* Virtual Phone Settings Dialog */
+.virtual-phone-dialog {
+  max-width: 420px;
+}
+
+.dialog-phone-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.25rem;
+  background: linear-gradient(135deg, rgba(147, 112, 219, 0.12), rgba(147, 112, 219, 0.05));
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+}
+
+.dialog-phone-display .phone-label {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.25rem;
+}
+
+.dialog-phone-display .phone-number {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  font-family: var(--font-display);
+  letter-spacing: 1px;
+}
+
+.dialog-settings-group {
+  margin-bottom: 1.5rem;
+}
+
+.danger-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.danger-action button {
+  min-width: 160px;
+}
+
+.danger-hint {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+/* Share Number Dialog */
+.share-number-dialog {
+  text-align: center;
+}
+
+.share-number-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.share-number {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  font-family: var(--font-display);
+  letter-spacing: 1px;
+}
+
+.share-options {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.share-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 1.5rem;
+  min-width: 120px;
+}
+
+.share-option mat-icon {
+  font-size: 1.5rem;
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .settings-page {

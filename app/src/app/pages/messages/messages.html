@@ -93,6 +93,64 @@
         }
       }
     </div>
+
+    <!-- Virtual Phone Card (Elite Only) -->
+    @if (subscriptionService.isElite()) {
+      <div class="virtual-phone-card">
+        @if (virtualPhone()) {
+          <div class="vp-number-display">
+            <div class="vp-info">
+              <span class="material-icons-outlined vp-icon">phone_android</span>
+              <div class="vp-details">
+                <span class="vp-label">Your Private Number</span>
+                <span class="vp-number">{{ formatPhoneNumber(virtualPhone()!.number) }}</span>
+              </div>
+            </div>
+            <div class="vp-actions">
+              <button 
+                type="button"
+                class="vp-action-btn"
+                (click)="copyVirtualNumber()"
+                [title]="copiedNumber() ? 'Copied!' : 'Copy number'">
+                <span class="material-icons-outlined">{{ copiedNumber() ? 'check' : 'content_copy' }}</span>
+              </button>
+              <button 
+                type="button"
+                class="vp-action-btn"
+                (click)="openVirtualPhoneSettings()"
+                title="Settings">
+                <span class="material-icons-outlined">settings</span>
+              </button>
+            </div>
+          </div>
+        } @else if (virtualPhoneLoading()) {
+          <div class="vp-loading">
+            <div class="loading-spinner small"></div>
+            <span>Loading...</span>
+          </div>
+        } @else {
+          <div class="vp-promo">
+            <div class="vp-promo-text">
+              <span class="material-icons-outlined">shield</span>
+              <span>Share a number with connections without revealing your real one</span>
+            </div>
+            <button type="button" class="vp-get-number-btn" (click)="provisionVirtualNumber()" [disabled]="virtualPhoneProvisioning()">
+              @if (virtualPhoneProvisioning()) {
+                <div class="loading-spinner small"></div>
+                <span>Setting up...</span>
+              } @else {
+                <span class="material-icons-outlined">add_call</span>
+                <span>Get Private Number</span>
+              }
+              <span class="elite-tag">Elite</span>
+            </button>
+          </div>
+          @if (virtualPhoneError()) {
+            <p class="vp-error">{{ virtualPhoneError() }}</p>
+          }
+        }
+      </div>
+    }
   </aside>
 
   <!-- Chat Area -->
@@ -133,6 +191,12 @@
             <span class="material-icons-outlined">person</span>
             <span>View profile</span>
           </button>
+          @if (virtualPhone()) {
+            <button mat-menu-item (click)="shareVirtualNumberInChat()">
+              <span class="material-icons-outlined">phone_forwarded</span>
+              <span>Share my number</span>
+            </button>
+          }
           @if (activeConversation()?.isArchived) {
             <button mat-menu-item (click)="unarchiveActiveConversation()">
               <span class="material-icons-outlined">unarchive</span>
@@ -520,6 +584,90 @@
           </div>
         }
       }
+    </div>
+  </div>
+}
+
+<!-- Virtual Phone Settings Dialog -->
+@if (showVirtualPhoneSettings()) {
+  <div class="vp-dialog-overlay" (click)="closeVirtualPhoneSettings()">
+    <div class="vp-dialog" (click)="$event.stopPropagation()">
+      <div class="vp-dialog-header">
+        <h3>Virtual Phone Settings</h3>
+        <button type="button" class="vp-close-btn" (click)="closeVirtualPhoneSettings()">
+          <span class="material-icons-outlined">close</span>
+        </button>
+      </div>
+      
+      @if (virtualPhone()) {
+        <div class="vp-dialog-number">
+          <span class="vp-dialog-label">Your Private Number</span>
+          <span class="vp-dialog-value">{{ formatPhoneNumber(virtualPhone()!.number) }}</span>
+        </div>
+
+        <div class="vp-settings-list">
+          <label class="vp-setting-item">
+            <div class="vp-setting-info">
+              <span class="vp-setting-label">Do Not Disturb</span>
+              <span class="vp-setting-desc">Silence all calls and texts</span>
+            </div>
+            <input 
+              type="checkbox" 
+              class="vp-toggle"
+              [checked]="virtualPhone()?.settings?.doNotDisturb ?? false"
+              (change)="updateVirtualPhoneSetting('doNotDisturb', $any($event.target).checked)">
+          </label>
+
+          <label class="vp-setting-item">
+            <div class="vp-setting-info">
+              <span class="vp-setting-label">Forward Calls</span>
+              <span class="vp-setting-desc">Receive incoming calls in the app</span>
+            </div>
+            <input 
+              type="checkbox" 
+              class="vp-toggle"
+              [checked]="virtualPhone()?.settings?.forwardCalls ?? true"
+              (change)="updateVirtualPhoneSetting('forwardCalls', $any($event.target).checked)">
+          </label>
+
+          <label class="vp-setting-item">
+            <div class="vp-setting-info">
+              <span class="vp-setting-label">Forward Texts</span>
+              <span class="vp-setting-desc">Receive incoming texts in the app</span>
+            </div>
+            <input 
+              type="checkbox" 
+              class="vp-toggle"
+              [checked]="virtualPhone()?.settings?.forwardTexts ?? true"
+              (change)="updateVirtualPhoneSetting('forwardTexts', $any($event.target).checked)">
+          </label>
+        </div>
+
+        <div class="vp-danger-zone">
+          <button 
+            type="button" 
+            class="vp-release-btn"
+            (click)="releaseVirtualNumber()"
+            [disabled]="virtualPhoneProvisioning()">
+            @if (virtualPhoneProvisioning()) {
+              <div class="loading-spinner small"></div>
+            } @else {
+              Release This Number
+            }
+          </button>
+          <span class="vp-release-hint">You can get a new number later, but it may be different.</span>
+        </div>
+
+        @if (virtualPhoneError()) {
+          <p class="vp-error">{{ virtualPhoneError() }}</p>
+        }
+      }
+
+      <div class="vp-dialog-footer">
+        <button type="button" class="vp-done-btn" (click)="closeVirtualPhoneSettings()">
+          Done
+        </button>
+      </div>
     </div>
   </div>
 }

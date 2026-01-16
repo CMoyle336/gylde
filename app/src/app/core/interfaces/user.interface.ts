@@ -7,6 +7,35 @@ import { Photo } from './photo.interface';
 import { UserSubscription } from './subscription.interface';
 
 /**
+ * Virtual phone number data (Elite feature)
+ * Stored in users/{uid}/private/data for security
+ */
+export interface VirtualPhone {
+  /** The Twilio phone number in E.164 format */
+  number: string;
+  /** Twilio Phone Number SID */
+  twilioSid: string;
+  /** When the number was provisioned */
+  provisionedAt: unknown;
+  /** Current status of the virtual number */
+  status: 'active' | 'suspended' | 'released';
+  /** Virtual phone settings */
+  settings: VirtualPhoneSettings;
+}
+
+/**
+ * Virtual phone settings
+ */
+export interface VirtualPhoneSettings {
+  /** Do not disturb mode - silences calls/texts */
+  doNotDisturb: boolean;
+  /** Forward incoming calls to the app */
+  forwardCalls: boolean;
+  /** Forward incoming texts to the app */
+  forwardTexts: boolean;
+}
+
+/**
  * Main user profile document structure
  */
 export interface UserProfile {
