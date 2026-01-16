@@ -103,6 +103,8 @@ export class MessagesComponent implements OnInit, OnDestroy {
   protected readonly otherUserStatus = this.messageService.otherUserStatus;
   protected readonly totalUnreadCount = this.messageService.totalUnreadCount;
   protected readonly archivedCount = this.messageService.archivedCount;
+  protected readonly loadingOlderMessages = this.messageService.loadingOlderMessages;
+  protected readonly hasOlderMessages = this.messageService.hasOlderMessages;
   
   // Check if the other user in the active conversation is blocked
   protected readonly isOtherUserBlocked = computed(() => {
@@ -701,10 +703,15 @@ export class MessagesComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Handle scroll events to track if user is near bottom
+   * Handle scroll events to track if user is near bottom or top
    */
   protected onScroll(): void {
     this.isNearBottom = this.checkIfNearBottom();
+    
+    // Check if user scrolled near the top to load older messages
+    if (this.checkIfNearTop() && this.hasOlderMessages() && !this.loadingOlderMessages()) {
+      this.loadOlderMessages();
+    }
   }
 
   /**
@@ -718,6 +725,40 @@ export class MessagesComponent implements OnInit, OnDestroy {
     const distanceFromBottom = element.scrollHeight - element.scrollTop - element.clientHeight;
     
     return distanceFromBottom <= threshold;
+  }
+
+  /**
+   * Check if scroll position is within threshold of top
+   */
+  private checkIfNearTop(): boolean {
+    if (!this.scrollable) return false;
+    
+    const element = this.scrollable.getElementRef().nativeElement;
+    const threshold = 150; // pixels from top to trigger load
+    
+    return element.scrollTop <= threshold;
+  }
+
+  /**
+   * Load older messages and maintain scroll position
+   */
+  private async loadOlderMessages(): Promise<void> {
+    if (!this.scrollable) return;
+    
+    const element = this.scrollable.getElementRef().nativeElement;
+    const previousScrollHeight = element.scrollHeight;
+    
+    const loaded = await this.messageService.loadOlderMessages();
+    
+    if (loaded) {
+      // Maintain scroll position after prepending older messages
+      // Wait for DOM to update, then adjust scroll position
+      setTimeout(() => {
+        const newScrollHeight = element.scrollHeight;
+        const heightDifference = newScrollHeight - previousScrollHeight;
+        element.scrollTop = element.scrollTop + heightDifference;
+      }, 0);
+    }
   }
 
   private scrollToBottom(): void {

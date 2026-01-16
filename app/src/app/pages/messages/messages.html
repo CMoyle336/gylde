@@ -244,6 +244,18 @@
           </div>
         } @else {
           <div class="messages-list">
+            <!-- Loading older messages indicator -->
+            @if (loadingOlderMessages()) {
+              <div class="loading-older">
+                <div class="loading-spinner small"></div>
+                <span>Loading older messages...</span>
+              </div>
+            } @else if (hasOlderMessages()) {
+              <div class="load-more-hint">
+                <span class="material-icons-outlined">expand_less</span>
+                <span>Scroll up for more</span>
+              </div>
+            }
             @for (message of messages(); track message.id; let isLast = $last) {
               <div class="message" [class.own]="message.isOwn" [class.image-message]="message.type === 'image'" [class.deleted]="message.isDeletedForAll" [class.with-avatar]="!message.isOwn">
                 

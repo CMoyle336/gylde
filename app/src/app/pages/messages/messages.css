@@ -826,6 +826,30 @@
   margin: 0;
 }
 
+/* Loading older messages indicator */
+.loading-older,
+.load-more-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.loading-older .loading-spinner {
+  margin: 0;
+}
+
+.load-more-hint {
+  opacity: 0.5;
+}
+
+.load-more-hint .material-icons-outlined {
+  font-size: 1rem;
+}
+
 .show-all-btn {
   margin-top: 0.75rem;
   padding: 0.5rem 1rem;

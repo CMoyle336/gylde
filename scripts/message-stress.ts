@@ -227,13 +227,22 @@ async function main() {
   const messagesRef = db.collection('conversations').doc(conversationId).collection('messages');
   const startTime = Date.now();
 
+  // Track last message for final conversation update
+  let lastContent = '';
+  let lastSenderId = '';
+  let unreadCount1 = 0; // unread for user1
+  let unreadCount2 = 0; // unread for user2
+  
+  // Batch size for conversation metadata updates (reduces writes)
+  const METADATA_UPDATE_INTERVAL = 10;
+
   for (let i = 0; i < config.count; i++) {
     // Randomly pick sender
     const sender = faker.helpers.arrayElement(users);
     const recipient = users.find(u => u.uid !== sender.uid)!;
     const content = generateMessage();
 
-    // Create message
+    // Create message (this is the main operation we're testing)
     await messagesRef.add({
       senderId: sender.uid,
       content,
@@ -241,13 +250,29 @@ async function main() {
       read: false,
     });
 
-    // Update conversation metadata
-    await conversationsRef.doc(conversationId).update({
-      lastMessageAt: FieldValue.serverTimestamp(),
-      lastMessage: content,
-      lastSenderId: sender.uid,
-      [`unread_${recipient.uid}`]: FieldValue.increment(1),
-    });
+    // Track for batched metadata update
+    lastContent = content;
+    lastSenderId = sender.uid;
+    if (recipient.uid === config.user1) {
+      unreadCount1++;
+    } else {
+      unreadCount2++;
+    }
+
+    // Only update conversation metadata every N messages (reduces Firestore writes)
+    // This simulates a more realistic pattern where metadata is batched
+    if ((i + 1) % METADATA_UPDATE_INTERVAL === 0 || i === config.count - 1) {
+      await conversationsRef.doc(conversationId).update({
+        lastMessageAt: FieldValue.serverTimestamp(),
+        lastMessage: { content: lastContent, senderId: lastSenderId, createdAt: FieldValue.serverTimestamp() },
+        updatedAt: FieldValue.serverTimestamp(),
+        [`unreadCount.${config.user1}`]: FieldValue.increment(unreadCount1),
+        [`unreadCount.${config.user2}`]: FieldValue.increment(unreadCount2),
+      });
+      // Reset counters after update
+      unreadCount1 = 0;
+      unreadCount2 = 0;
+    }
 
     // Progress indicator
     const progress = Math.round(((i + 1) / config.count) * 100);

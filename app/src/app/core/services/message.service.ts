@@ -12,11 +12,17 @@ import {
   serverTimestamp,
   Unsubscribe,
   limit,
+  limitToLast,
   getDocs,
   writeBatch,
   arrayUnion,
   deleteField,
   getDoc,
+  startAfter,
+  endBefore,
+  Timestamp,
+  QueryDocumentSnapshot,
+  DocumentData,
 } from '@angular/fire/firestore';
 import { AuthService } from './auth.service';
 import { StorageService } from './storage.service';
@@ -51,10 +57,18 @@ export class MessageService {
 
   private conversationsUnsubscribe: Unsubscribe | null = null;
   private messagesUnsubscribe: Unsubscribe | null = null;
-  private typingUnsubscribe: Unsubscribe | null = null;
   private userStatusUnsubscribe: Unsubscribe | null = null;
   private typingTimeout: ReturnType<typeof setTimeout> | null = null;
   private lastTypingUpdate = 0;
+  
+  // Pagination state
+  private oldestMessageDoc: QueryDocumentSnapshot<DocumentData> | null = null;
+  private readonly _loadingOlderMessages = signal(false);
+  private readonly _hasOlderMessages = signal(true);
+  private activeConversationId: string | null = null;
+  
+  // Message batch size
+  private static readonly MESSAGE_BATCH_SIZE = 50;
 
   readonly conversations = this._conversations.asReadonly();
   readonly activeConversation = this._activeConversation.asReadonly();
@@ -64,6 +78,8 @@ export class MessageService {
   readonly isOtherUserTyping = this._isOtherUserTyping.asReadonly();
   readonly conversationFilter = this._conversationFilter.asReadonly();
   readonly otherUserStatus = this._otherUserStatus.asReadonly();
+  readonly loadingOlderMessages = this._loadingOlderMessages.asReadonly();
+  readonly hasOlderMessages = this._hasOlderMessages.asReadonly();
 
   // Filtered conversations based on current filter and block status
   readonly filteredConversations = computed(() => {
@@ -115,6 +131,7 @@ export class MessageService {
 
   /**
    * Subscribe to real-time conversation updates for the current user
+   * Also handles typing status for the active conversation to reduce listeners
    */
   subscribeToConversations(): void {
     const currentUser = this.authService.user();
@@ -129,7 +146,6 @@ export class MessageService {
       orderBy('updatedAt', 'desc')
     );
 
-
     this.conversationsUnsubscribe = onSnapshot(
       q,
       (snapshot) => {
@@ -141,6 +157,15 @@ export class MessageService {
             displayName: 'Unknown User',
             photoURL: null,
           };
+
+          // If this is the active conversation, update typing status from the same snapshot
+          // This eliminates the need for a separate listener on the conversation document
+          if (this.activeConversationId === docSnapshot.id && data.typing) {
+            const otherUserTyping = Object.entries(data.typing).some(
+              ([uid, isTyping]) => uid !== currentUser.uid && isTyping
+            );
+            this._isOtherUserTyping.set(otherUserTyping);
+          }
 
           return {
             id: docSnapshot.id,
@@ -186,8 +211,13 @@ export class MessageService {
     this._messages.set([]);
     this._isOtherUserTyping.set(false);
     this._otherUserStatus.set(null);
+    this._hasOlderMessages.set(true);
+    this.oldestMessageDoc = null;
+    
+    // Track active conversation ID for typing status extraction from conversations listener
+    this.activeConversationId = conversation.id;
+    
     this.subscribeToMessages(conversation.id);
-    this.subscribeToTypingStatus(conversation.id);
     
     // Subscribe to other user's online status (only if not blocked)
     // Don't show online status if either user has blocked the other
@@ -207,12 +237,14 @@ export class MessageService {
   closeConversation(): void {
     // Clear our typing status before closing
     this.clearTypingStatus();
-    this.unsubscribeFromTyping();
     this.unsubscribeFromUserStatus();
     this._activeConversation.set(null);
     this._messages.set([]);
     this._isOtherUserTyping.set(false);
     this._otherUserStatus.set(null);
+    this._hasOlderMessages.set(true);
+    this.oldestMessageDoc = null;
+    this.activeConversationId = null;
     this.unsubscribeFromMessages();
   }
 
@@ -280,42 +312,6 @@ export class MessageService {
     }
   }
 
-  /**
-   * Subscribe to typing status for a conversation
-   */
-  private subscribeToTypingStatus(conversationId: string): void {
-    const currentUser = this.authService.user();
-    if (!currentUser) return;
-
-    this.unsubscribeFromTyping();
-
-    const conversationRef = doc(this.firestore, 'conversations', conversationId);
-    
-    this.typingUnsubscribe = onSnapshot(conversationRef, (snapshot) => {
-      const data = snapshot.data() as Conversation | undefined;
-      if (!data?.typing) {
-        this._isOtherUserTyping.set(false);
-        return;
-      }
-
-      // Find if any other participant is typing
-      const otherUserTyping = Object.entries(data.typing).some(
-        ([uid, isTyping]) => uid !== currentUser.uid && isTyping
-      );
-      
-      this._isOtherUserTyping.set(otherUserTyping);
-    });
-  }
-
-  /**
-   * Unsubscribe from typing status
-   */
-  private unsubscribeFromTyping(): void {
-    if (this.typingUnsubscribe) {
-      this.typingUnsubscribe();
-      this.typingUnsubscribe = null;
-    }
-  }
 
   /**
    * Set current user's typing status
@@ -383,6 +379,7 @@ export class MessageService {
 
   /**
    * Subscribe to messages in a conversation
+   * Uses limitToLast to get the most recent messages for better performance
    */
   private subscribeToMessages(conversationId: string): void {
     const currentUser = this.authService.user();
@@ -396,13 +393,29 @@ export class MessageService {
       conversationId,
       'messages'
     );
-    const q = query(messagesRef, orderBy('createdAt', 'asc'), limit(100));
+    
+    // Use limitToLast to get the most recent messages (ordered ascending for display)
+    const q = query(
+      messagesRef, 
+      orderBy('createdAt', 'asc'), 
+      limitToLast(MessageService.MESSAGE_BATCH_SIZE)
+    );
 
     this.messagesUnsubscribe = onSnapshot(
       q,
       (snapshot) => {
         const messages: MessageDisplay[] = [];
         const activeConvo = this._activeConversation();
+        
+        // Track the oldest message for pagination
+        if (snapshot.docs.length > 0) {
+          this.oldestMessageDoc = snapshot.docs[0];
+          // If we got fewer messages than requested, there are no more older messages
+          this._hasOlderMessages.set(snapshot.docs.length >= MessageService.MESSAGE_BATCH_SIZE);
+        } else {
+          this.oldestMessageDoc = null;
+          this._hasOlderMessages.set(false);
+        }
         
         for (const docSnapshot of snapshot.docs) {
           const data = docSnapshot.data() as Message;
@@ -497,6 +510,138 @@ export class MessageService {
     if (this.messagesUnsubscribe) {
       this.messagesUnsubscribe();
       this.messagesUnsubscribe = null;
+    }
+  }
+
+  /**
+   * Load older messages for the active conversation (pagination)
+   * Returns true if older messages were loaded, false if no more messages
+   */
+  async loadOlderMessages(): Promise<boolean> {
+    const currentUser = this.authService.user();
+    const activeConvo = this._activeConversation();
+    
+    if (!currentUser || !activeConvo || !this.oldestMessageDoc || this._loadingOlderMessages()) {
+      return false;
+    }
+
+    this._loadingOlderMessages.set(true);
+
+    try {
+      const messagesRef = collection(
+        this.firestore,
+        'conversations',
+        activeConvo.id,
+        'messages'
+      );
+      
+      // Query for messages older than our oldest message
+      const q = query(
+        messagesRef,
+        orderBy('createdAt', 'asc'),
+        endBefore(this.oldestMessageDoc),
+        limitToLast(MessageService.MESSAGE_BATCH_SIZE)
+      );
+
+      const snapshot = await getDocs(q);
+      
+      if (snapshot.empty) {
+        this._hasOlderMessages.set(false);
+        return false;
+      }
+
+      // Update oldest message reference for next pagination
+      this.oldestMessageDoc = snapshot.docs[0];
+      
+      // If we got fewer messages than requested, there are no more older messages
+      if (snapshot.docs.length < MessageService.MESSAGE_BATCH_SIZE) {
+        this._hasOlderMessages.set(false);
+      }
+
+      // Process and prepend older messages
+      const olderMessages: MessageDisplay[] = [];
+      
+      for (const docSnapshot of snapshot.docs) {
+        const data = docSnapshot.data() as Message;
+        
+        // Skip messages deleted for this user (but not deletedForAll)
+        if (data.deletedFor?.includes(currentUser.uid) && !data.deletedForAll) {
+          continue;
+        }
+
+        // Get sender info
+        let senderName: string | null = null;
+        let senderPhoto: string | null = null;
+        
+        if (data.senderId === currentUser.uid) {
+          senderName = currentUser.displayName;
+          senderPhoto = currentUser.photoURL;
+        } else if (activeConvo) {
+          senderName = activeConvo.otherUser?.displayName || 'Unknown';
+          senderPhoto = activeConvo.otherUser?.photoURL || null;
+        }
+
+        // Calculate timed image status
+        let imageViewedAt: Date | null = null;
+        let isImageExpired = false;
+        
+        if (data.imageTimer && data.imageViewedBy?.[currentUser.uid]) {
+          imageViewedAt = this.toDate(data.imageViewedBy[currentUser.uid]);
+          if (imageViewedAt) {
+            const expiresAt = new Date(imageViewedAt.getTime() + data.imageTimer * 1000);
+            isImageExpired = new Date() > expiresAt;
+          }
+        }
+
+        // Calculate recipient viewing status for sender
+        let recipientViewedAt: Date | null = null;
+        let isRecipientViewing = false;
+        let recipientViewExpired = false;
+        
+        if (data.imageTimer && data.senderId === currentUser.uid) {
+          const recipientUid = Object.keys(data.imageViewedBy || {}).find(uid => uid !== currentUser.uid);
+          if (recipientUid && data.imageViewedBy?.[recipientUid]) {
+            recipientViewedAt = this.toDate(data.imageViewedBy[recipientUid]);
+            if (recipientViewedAt) {
+              const expiresAt = new Date(recipientViewedAt.getTime() + data.imageTimer * 1000);
+              const now = new Date();
+              isRecipientViewing = now <= expiresAt;
+              recipientViewExpired = now > expiresAt;
+            }
+          }
+        }
+
+        olderMessages.push({
+          id: docSnapshot.id,
+          content: data.deletedForAll ? '' : data.content,
+          isOwn: data.senderId === currentUser.uid,
+          createdAt: this.toDate(data.createdAt) || new Date(),
+          read: data.read,
+          type: data.deletedForAll ? 'system' : data.type,
+          imageUrls: data.deletedForAll ? undefined : data.imageUrls,
+          isDeletedForAll: data.deletedForAll,
+          senderId: data.senderId,
+          senderName,
+          senderPhoto,
+          imageTimer: data.imageTimer,
+          imageViewedAt,
+          isImageExpired,
+          recipientViewedAt,
+          isRecipientViewing,
+          recipientViewExpired,
+        });
+      }
+
+      // Prepend older messages to current messages
+      const currentMessages = this._messages();
+      this._messages.set([...olderMessages, ...currentMessages]);
+      
+      return olderMessages.length > 0;
+    } catch (error) {
+      console.error('Error loading older messages:', error);
+      return false;
+    } finally {
+      this._loadingOlderMessages.set(false);
     }
   }
 
@@ -934,11 +1079,12 @@ export class MessageService {
   cleanup(): void {
     this.unsubscribeFromConversations();
     this.unsubscribeFromMessages();
-    this.unsubscribeFromTyping();
     this.unsubscribeFromUserStatus();
     if (this.typingTimeout) {
       clearTimeout(this.typingTimeout);
       this.typingTimeout = null;
     }
+    this.activeConversationId = null;
+    this.oldestMessageDoc = null;
   }
 }
