@@ -13,6 +13,7 @@ export * from "./accounts";
 export * from "./blocks";
 export * from "./verification";
 export * from "./ai-chat";
+export * from "./virtual-phone";
 
 // Future function modules:
 // export * from "./matches";

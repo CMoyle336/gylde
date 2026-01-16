@@ -127,7 +127,29 @@ export class AiAssistPanelComponent {
             this.fetchCoachInsights();
           }
           break;
+        case 'safety':
+          // Auto-check the last incoming message for safety concerns
+          if (this.safetyAlerts().length === 0) {
+            this.autoCheckSafety();
+          }
+          break;
       }
+    }
+  }
+
+  /**
+   * Automatically check the last incoming message for safety concerns
+   */
+  private async autoCheckSafety(): Promise<void> {
+    if (!this.context) return;
+
+    // Find the last incoming (non-own) message
+    const lastIncomingMessage = [...this.context.recentMessages]
+      .reverse()
+      .find(m => !m.isOwn);
+
+    if (lastIncomingMessage) {
+      await this.checkSafety(lastIncomingMessage.content, true);
     }
   }
 
@@ -271,21 +293,21 @@ export class AiAssistPanelComponent {
   protected async makeItShorter(suggestion: ReplySuggestion): Promise<void> {
     const result = await this.aiService.handleSuggestionAction('shorter', suggestion);
     if (result.text) {
-      this.insertText.emit(result.text);
+      this.updateSuggestionText(suggestion.id, result.text);
     }
   }
 
   protected async makeItMorePlayful(suggestion: ReplySuggestion): Promise<void> {
     const result = await this.aiService.handleSuggestionAction('more-playful', suggestion);
     if (result.text) {
-      this.insertText.emit(result.text);
+      this.updateSuggestionText(suggestion.id, result.text);
     }
   }
 
   protected async makeItMoreDirect(suggestion: ReplySuggestion): Promise<void> {
     const result = await this.aiService.handleSuggestionAction('more-direct', suggestion);
     if (result.text) {
-      this.insertText.emit(result.text);
+      this.updateSuggestionText(suggestion.id, result.text);
     }
   }
 
@@ -298,11 +320,20 @@ export class AiAssistPanelComponent {
       createdAt: m.createdAt,
     }));
 
-    await this.aiService.handleSuggestionAction('more-like', suggestion, {
+    // This will fetch new suggestions similar to the selected one
+    await this.aiService.getSuggestions({
       conversationId: this.context.conversationId,
       recipientId: this.context.recipientId,
       recentMessages: messages,
+      requestedTone: suggestion.tone,
     });
+  }
+
+  /**
+   * Update a suggestion's text in place (used by modification actions)
+   */
+  private updateSuggestionText(suggestionId: string, newText: string): void {
+    this.aiService.updateSuggestion(suggestionId, newText);
   }
 
   // ============================================
@@ -311,7 +342,15 @@ export class AiAssistPanelComponent {
 
   protected setUserVoice(value: number): void {
     const voices: UserVoicePreference[] = ['authentic', 'balanced', 'polished'];
-    this.aiService.setUserVoice(voices[value] || 'balanced');
+    const newVoice = voices[value] || 'balanced';
+    const currentVoice = this.userVoice();
+    
+    // Only re-fetch if the voice actually changed
+    if (newVoice !== currentVoice) {
+      this.aiService.setUserVoice(newVoice);
+      // Re-fetch suggestions with the new voice style
+      this.fetchReplySuggestions();
+    }
   }
 
   protected getUserVoiceValue(): number {
@@ -354,6 +393,10 @@ export class AiAssistPanelComponent {
         break;
       case 'coach':
         this.fetchCoachInsights();
+        break;
+      case 'safety':
+        this.aiService.clearSafetyAlerts(); // Clear existing alerts first
+        this.autoCheckSafety();
         break;
     }
   }

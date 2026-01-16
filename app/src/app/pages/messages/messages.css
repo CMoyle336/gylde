@@ -24,6 +24,9 @@
 .messages-layout {
   display: flex;
   height: 100%;
+  max-height: 100%;
+  min-height: 0;
+  overflow: hidden;
   background: var(--bg-primary);
 }
 
@@ -271,6 +274,8 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .chat-header {
@@ -1656,11 +1661,22 @@
   width: 380px;
   flex-shrink: 0;
   height: 100%;
+  max-height: 100%;
+  min-height: 0; /* Critical for flex children to respect parent bounds */
   display: flex;
   flex-direction: column;
   background: var(--bg-secondary);
   border-left: 1px solid var(--border);
   animation: slideInRight 0.2s ease-out;
+  overflow: hidden; /* Prevent content from pushing past bounds */
+}
+
+.ai-assist-sidebar app-ai-assist-panel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 @keyframes slideInRight {
@@ -1772,7 +1788,7 @@
    ============================================ */
 
 .virtual-phone-card {
-  padding: 0.75rem;
+  padding: 0.875rem 1.25rem;
   border-top: 1px solid var(--border);
   background: linear-gradient(135deg, rgba(201, 169, 98, 0.08), transparent);
   flex-shrink: 0;
@@ -1782,7 +1798,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
 .vp-info {
@@ -1865,6 +1881,7 @@
   width: 16px;
   height: 16px;
   border-width: 2px;
+  margin: 0;
 }
 
 .vp-promo {
@@ -1938,6 +1955,43 @@
   color: #ef4444;
   font-size: 0.75rem;
   text-align: center;
+}
+
+/* Needs phone verification state */
+.vp-needs-phone .vp-promo-text {
+  color: var(--text-muted);
+}
+
+.vp-needs-phone .material-icons-outlined {
+  color: var(--text-muted);
+}
+
+.vp-verify-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.vp-verify-btn:hover {
+  background: var(--bg-hover);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.vp-verify-btn .material-icons-outlined {
+  font-size: 1.125rem;
 }
 
 /* ============================================
@@ -2174,7 +2228,7 @@
 /* Mobile adjustments for virtual phone card */
 @media (max-width: 768px) {
   .virtual-phone-card {
-    padding: 1rem;
+    padding: 0.75rem 1rem;
   }
   
   .vp-number {

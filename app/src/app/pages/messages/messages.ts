@@ -11,7 +11,7 @@ import {
   ElementRef,
   HostListener,
 } from '@angular/core';
-import { Router, ActivatedRoute } from '@angular/router';
+import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { NgOptimizedImage } from '@angular/common';
 import { CdkScrollable, ScrollingModule } from '@angular/cdk/scrolling';
@@ -46,7 +46,7 @@ interface GalleryState {
   templateUrl: './messages.html',
   styleUrl: './messages.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, ScrollingModule, MatMenuModule, NgOptimizedImage, AiAssistPanelComponent],
+  imports: [FormsModule, ScrollingModule, MatMenuModule, NgOptimizedImage, RouterLink, AiAssistPanelComponent],
 })
 export class MessagesComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
@@ -122,6 +122,12 @@ export class MessagesComponent implements OnInit, OnDestroy {
   protected readonly virtualPhoneError = signal<string | null>(null);
   protected readonly copiedNumber = signal(false);
   protected readonly showVirtualPhoneSettings = signal(false);
+
+  // Check if user has a verified phone number (required for virtual phone)
+  protected readonly hasVerifiedPhone = computed(() => {
+    const profile = this.userProfileService.profile();
+    return profile?.phoneNumberVerified === true && !!profile?.phoneNumber;
+  });
 
   // Computed context for AI assist panel
   protected readonly aiAssistContext = computed((): AiAssistContext | null => {
@@ -212,16 +218,24 @@ export class MessagesComponent implements OnInit, OnDestroy {
         this.stopRecipientCountdowns();
       }
     });
+
+    // Watch for Elite status to load virtual phone
+    // This handles the case where subscription loads after component init
+    effect(() => {
+      const isElite = this.subscriptionService.isElite();
+      if (isElite && !this.virtualPhone() && !this.virtualPhoneLoading() && !this.virtualPhoneLoadAttempted) {
+        this.virtualPhoneLoadAttempted = true;
+        this.loadVirtualPhone();
+      }
+    });
   }
+
+  // Flag to prevent multiple load attempts
+  private virtualPhoneLoadAttempted = false;
 
   ngOnInit(): void {
     // Check for conversationId in route params
     this.conversationIdFromRoute = this.route.snapshot.paramMap.get('conversationId');
-    
-    // Load virtual phone data for Elite users
-    if (this.subscriptionService.isElite()) {
-      this.loadVirtualPhone();
-    }
   }
 
   ngOnDestroy(): void {
@@ -823,6 +837,15 @@ export class MessagesComponent implements OnInit, OnDestroy {
     } finally {
       this.virtualPhoneProvisioning.set(false);
     }
+  }
+
+  /**
+   * Show upgrade dialog for non-Elite users trying to get a virtual number
+   */
+  protected showVirtualPhoneUpgrade(): void {
+    // Use subscription service to show upgrade dialog
+    // The 'hasVirtualPhone' capability is Elite-only
+    this.subscriptionService.canPerformAction('hasVirtualPhone', true);
   }
 
   protected async updateVirtualPhoneSetting(

@@ -15,10 +15,12 @@ export interface VirtualPhone {
   number: string;
   /** Twilio Phone Number SID */
   twilioSid: string;
+  /** User's verified phone number where calls/texts are forwarded */
+  forwardingNumber: string;
   /** When the number was provisioned */
   provisionedAt: unknown;
   /** Current status of the virtual number */
-  status: 'active' | 'suspended' | 'released';
+  status?: 'active' | 'suspended' | 'released';
   /** Virtual phone settings */
   settings: VirtualPhoneSettings;
 }

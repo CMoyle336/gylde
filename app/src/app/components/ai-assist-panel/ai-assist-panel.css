@@ -5,6 +5,15 @@
  * Uses a card-based design for suggestions with clear action buttons.
  */
 
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .ai-panel {
   display: flex;
   flex-direction: column;
@@ -161,12 +170,22 @@
   color: var(--color-text-secondary);
 }
 
-.empty-state mat-icon,
-.empty-suggestions mat-icon {
+.empty-state > mat-icon,
+.empty-suggestions > mat-icon {
   font-size: 48px;
   width: 48px;
   height: 48px;
   opacity: 0.5;
+}
+
+/* Button icons should stay normal size */
+.empty-state button mat-icon,
+.empty-suggestions button mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  opacity: 1;
+  margin-right: 0.25rem;
 }
 
 /* ============================================
@@ -327,13 +346,15 @@
 
 .suggestion-actions {
   display: flex;
-  gap: 0.5rem;
+  align-items: center;
+  gap: 0.25rem;
 }
 
 .suggestion-actions button[mat-stroked-button] {
   font-size: 0.8rem;
   padding: 0 0.75rem;
   height: 32px;
+  line-height: 32px;
 }
 
 .suggestion-actions button[mat-stroked-button] mat-icon {
@@ -341,6 +362,18 @@
   width: 16px;
   height: 16px;
   margin-right: 0.25rem;
+}
+
+.suggestion-actions button[mat-icon-button] {
+  width: 32px;
+  height: 32px;
+  line-height: 32px;
+}
+
+.suggestion-actions button[mat-icon-button] mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
 }
 
 .change-summary {

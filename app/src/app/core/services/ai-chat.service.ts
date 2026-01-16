@@ -176,6 +176,20 @@ export class AiChatService {
     });
   }
 
+  /**
+   * Update a suggestion's text in place (used by modification actions)
+   */
+  updateSuggestion(suggestionId: string, newText: string): void {
+    this._state.update(s => ({
+      ...s,
+      replySuggestions: s.replySuggestions.map(suggestion =>
+        suggestion.id === suggestionId
+          ? { ...suggestion, text: newText }
+          : suggestion
+      ),
+    }));
+  }
+
   // ============================================
   // REWRITE FEATURE
   // ============================================
@@ -322,6 +336,12 @@ export class AiChatService {
    * Can be used for both incoming and outgoing messages
    */
   async checkSafety(request: SafetyRequest): Promise<SafetyResponse> {
+    this._state.update(s => ({ 
+      ...s, 
+      isLoading: true, 
+      error: null,
+    }));
+
     try {
       const fn = httpsCallable<SafetyRequest, SafetyResponse>(
         this.functions, 
@@ -332,6 +352,7 @@ export class AiChatService {
 
       this._state.update(s => ({
         ...s,
+        isLoading: false,
         safetyAlerts: result.data.alerts,
         hasSafetyFlags: result.data.isFlagged,
         // Auto-switch to safety tab if flags detected
@@ -341,6 +362,11 @@ export class AiChatService {
       return result.data;
     } catch (error) {
       console.error('Safety check failed:', error);
+      this._state.update(s => ({ 
+        ...s, 
+        isLoading: false,
+        error: 'Failed to check message safety',
+      }));
       return { isFlagged: false, alerts: [] };
     }
   }
