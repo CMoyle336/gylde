@@ -44,6 +44,11 @@ export interface Conversation {
   unreadCount: {
     [uid: string]: number;
   };
+  // Last time each user viewed this conversation
+  // Messages created before this timestamp are considered "read" for that user
+  lastViewedAt?: {
+    [uid: string]: Date | FieldValue;
+  };
   typing?: {
     [uid: string]: boolean;
   };
@@ -65,6 +70,8 @@ export interface ConversationDisplay {
   unreadCount: number;
   isArchived: boolean;
   isBlocked?: boolean;
+  // Last time the other user viewed this conversation (for read receipts)
+  otherUserLastViewedAt?: Date | null;
 }
 
 /**
@@ -91,4 +98,6 @@ export interface MessageDisplay {
   recipientViewedAt?: Date | null; // When recipient first opened the image
   isRecipientViewing?: boolean; // True if recipient is currently viewing (timer not expired)
   recipientViewExpired?: boolean; // True if recipient's timer has expired
+  // Optimistic UI state
+  pending?: boolean; // True if message is being sent (not yet confirmed by server)
 }

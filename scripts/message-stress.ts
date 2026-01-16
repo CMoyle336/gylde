@@ -191,24 +191,27 @@ async function main() {
     // Create new conversation
     const newConvo = await conversationsRef.add({
       participants: [config.user1, config.user2],
-      participantDetails: {
+      participantInfo: {
         [config.user1]: {
-          uid: config.user1,
           displayName: user1Data.displayName,
           photoURL: user1Data.photoURL,
         },
         [config.user2]: {
-          uid: config.user2,
           displayName: user2Data.displayName,
           photoURL: user2Data.photoURL,
         },
       },
-      lastMessageAt: FieldValue.serverTimestamp(),
-      lastMessage: '',
-      lastSenderId: '',
+      lastMessage: null,
       createdAt: FieldValue.serverTimestamp(),
-      [`unread_${config.user1}`]: 0,
-      [`unread_${config.user2}`]: 0,
+      updatedAt: FieldValue.serverTimestamp(),
+      unreadCount: {
+        [config.user1]: 0,
+        [config.user2]: 0,
+      },
+      lastViewedAt: {
+        [config.user1]: FieldValue.serverTimestamp(),
+        [config.user2]: FieldValue.serverTimestamp(),
+      },
     });
     conversationId = newConvo.id;
     console.log(`✅ Created new conversation: ${conversationId}`);

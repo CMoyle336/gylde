@@ -431,7 +431,7 @@ export class MessagesComponent implements OnInit, OnDestroy {
   /**
    * Send message with optional text and/or images
    */
-  protected async send(): Promise<void> {
+  protected send(): void {
     const content = this.messageInput().trim();
     const images = this.selectedImages();
     const timer = this.imageTimer();
@@ -448,9 +448,11 @@ export class MessagesComponent implements OnInit, OnDestroy {
     this.imageTimer.set(null);
     this.isNearBottom = true;
 
-    await this.messageService.sendMessage(content, files, timer ?? undefined);
+    // Send message with optimistic update - returns immediately
+    // The message appears in UI instantly, no waiting for API
+    this.messageService.sendMessage(content, files, timer ?? undefined);
     
-    // Refocus the input for continued typing (use setTimeout to ensure DOM is ready)
+    // Refocus the input for continued typing
     setTimeout(() => {
       this.messageInputEl?.nativeElement?.focus();
     }, 0);
@@ -463,10 +465,10 @@ export class MessagesComponent implements OnInit, OnDestroy {
     return this.messageInput().trim().length > 0 || this.selectedImages().length > 0;
   }
 
-  protected async onKeyDown(event: KeyboardEvent): Promise<void> {
+  protected onKeyDown(event: KeyboardEvent): void {
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
-      await this.send();
+      this.send();
     }
   }
 
@@ -764,8 +766,11 @@ export class MessagesComponent implements OnInit, OnDestroy {
   private scrollToBottom(): void {
     if (this.scrollable) {
       const element = this.scrollable.getElementRef().nativeElement;
-      element.scrollTop = element.scrollHeight;
-      this.isNearBottom = true;
+      // Use requestAnimationFrame to ensure DOM has completed layout
+      requestAnimationFrame(() => {
+        element.scrollTop = element.scrollHeight;
+        this.isNearBottom = true;
+      });
     }
   }
 

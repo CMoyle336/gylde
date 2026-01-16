@@ -524,6 +524,12 @@
   opacity: 1;
 }
 
+.read-status.pending .material-icons-outlined {
+  color: var(--text-muted);
+  opacity: 0.5;
+  font-size: 0.75rem;
+}
+
 /* ============================================
    MESSAGE WRAPPER & ACTIONS
    ============================================ */

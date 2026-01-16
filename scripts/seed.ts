@@ -432,12 +432,22 @@ async function seedConversations(
 
     for (const conv of batchConversations) {
       const convRef = db.collection('conversations').doc(conv.odId);
+      const [user1, user2] = conv.odParticipants;
       batch.set(convRef, {
         participants: conv.odParticipants,
         lastMessageAt: conv.lastMessageAt,
-        lastMessage: conv.lastMessage,
-        lastSenderId: conv.lastSenderId,
+        lastMessage: { content: conv.lastMessage, senderId: conv.lastSenderId, createdAt: conv.lastMessageAt },
+        updatedAt: conv.lastMessageAt,
         createdAt: FieldValue.serverTimestamp(),
+        unreadCount: {
+          [user1]: 0,
+          [user2]: 0,
+        },
+        // Initialize lastViewedAt for both users
+        lastViewedAt: {
+          [user1]: conv.lastMessageAt,
+          [user2]: conv.lastMessageAt,
+        },
       });
     }
     

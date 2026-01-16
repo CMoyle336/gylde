@@ -23,6 +23,7 @@ import {
   Timestamp,
   QueryDocumentSnapshot,
   DocumentData,
+  increment,
 } from '@angular/fire/firestore';
 import { AuthService } from './auth.service';
 import { StorageService } from './storage.service';
@@ -54,6 +55,8 @@ export class MessageService {
   private readonly _isOtherUserTyping = signal(false);
   private readonly _conversationFilter = signal<ConversationFilter>('all');
   private readonly _otherUserStatus = signal<{ isOnline: boolean; lastActiveAt: Date | null } | null>(null);
+  // Track the other user's lastViewedAt for read receipts on our messages
+  private _otherUserLastViewedAt: Date | null = null;
 
   private conversationsUnsubscribe: Unsubscribe | null = null;
   private messagesUnsubscribe: Unsubscribe | null = null;
@@ -66,9 +69,13 @@ export class MessageService {
   private readonly _loadingOlderMessages = signal(false);
   private readonly _hasOlderMessages = signal(true);
   private activeConversationId: string | null = null;
+  private hasMarkedAsRead = false; // Prevent duplicate markAsRead calls
   
-  // Message batch size
-  private static readonly MESSAGE_BATCH_SIZE = 50;
+  // Message batch size - reduced from 50 to improve real-time update performance
+  private static readonly MESSAGE_BATCH_SIZE = 30;
+  
+  // Track the last message we processed to detect new incoming messages
+  private lastProcessedMessageId: string | null = null;
 
   readonly conversations = this._conversations.asReadonly();
   readonly activeConversation = this._activeConversation.asReadonly();
@@ -158,13 +165,30 @@ export class MessageService {
             photoURL: null,
           };
 
-          // If this is the active conversation, update typing status from the same snapshot
-          // This eliminates the need for a separate listener on the conversation document
-          if (this.activeConversationId === docSnapshot.id && data.typing) {
-            const otherUserTyping = Object.entries(data.typing).some(
-              ([uid, isTyping]) => uid !== currentUser.uid && isTyping
-            );
-            this._isOtherUserTyping.set(otherUserTyping);
+          // Extract the other user's lastViewedAt for read receipts
+          const otherUserLastViewedAt = data.lastViewedAt?.[otherUserId]
+            ? this.toDate(data.lastViewedAt[otherUserId])
+            : null;
+
+          // If this is the active conversation, update typing status and lastViewedAt
+          if (this.activeConversationId === docSnapshot.id) {
+            // Update typing status from the same snapshot
+            if (data.typing) {
+              const otherUserTyping = Object.entries(data.typing).some(
+                ([uid, isTyping]) => uid !== currentUser.uid && isTyping
+              );
+              this._isOtherUserTyping.set(otherUserTyping);
+            }
+            // Update other user's lastViewedAt for read receipts
+            // If it changed, we need to recompute message read states
+            const previousLastViewedAt = this._otherUserLastViewedAt;
+            this._otherUserLastViewedAt = otherUserLastViewedAt;
+            
+            // If the other user's lastViewedAt increased, update message read states
+            if (otherUserLastViewedAt && 
+                (!previousLastViewedAt || otherUserLastViewedAt.getTime() > previousLastViewedAt.getTime())) {
+              this.updateMessageReadStates();
+            }
           }
 
           return {
@@ -180,6 +204,7 @@ export class MessageService {
               : null,
             unreadCount: data.unreadCount?.[currentUser.uid] || 0,
             isArchived: data.archivedBy?.includes(currentUser.uid) || false,
+            otherUserLastViewedAt,
           };
         });
 
@@ -213,6 +238,11 @@ export class MessageService {
     this._otherUserStatus.set(null);
     this._hasOlderMessages.set(true);
     this.oldestMessageDoc = null;
+    this.hasMarkedAsRead = false; // Reset read marker
+    this.lastProcessedMessageId = null; // Reset message tracking
+    
+    // Initialize other user's lastViewedAt for read receipts
+    this._otherUserLastViewedAt = conversation.otherUserLastViewedAt ?? null;
     
     // Track active conversation ID for typing status extraction from conversations listener
     this.activeConversationId = conversation.id;
@@ -228,7 +258,8 @@ export class MessageService {
       this.subscribeToUserStatus(conversation.otherUser.uid);
     }
     
-    this.markConversationAsRead(conversation.id);
+    // Note: markConversationAsRead is called from subscribeToMessages after initial load
+    // to avoid duplicate updates
   }
 
   /**
@@ -245,6 +276,9 @@ export class MessageService {
     this._hasOlderMessages.set(true);
     this.oldestMessageDoc = null;
     this.activeConversationId = null;
+    this.hasMarkedAsRead = false;
+    this.lastProcessedMessageId = null;
+    this._otherUserLastViewedAt = null;
     this.unsubscribeFromMessages();
   }
 
@@ -469,12 +503,26 @@ export class MessageService {
             }
           }
 
+          const messageCreatedAt = this.toDate(data.createdAt) || new Date();
+          const isOwn = data.senderId === currentUser.uid;
+          
+          // Compute read status:
+          // - For our messages: read if the other user's lastViewedAt >= message createdAt
+          // - For their messages: always considered "read" from our perspective (we're viewing them)
+          let isRead = true;
+          if (isOwn && this._otherUserLastViewedAt) {
+            isRead = messageCreatedAt <= this._otherUserLastViewedAt;
+          } else if (isOwn) {
+            // No lastViewedAt data yet, fall back to stored read status
+            isRead = data.read;
+          }
+
           messages.push({
             id: docSnapshot.id,
             content: data.deletedForAll ? '' : data.content,
-            isOwn: data.senderId === currentUser.uid,
-            createdAt: this.toDate(data.createdAt) || new Date(),
-            read: data.read,
+            isOwn,
+            createdAt: messageCreatedAt,
+            read: isRead,
             type: data.deletedForAll ? 'system' : data.type,
             imageUrls: data.deletedForAll ? undefined : data.imageUrls,
             isDeletedForAll: data.deletedForAll,
@@ -490,11 +538,58 @@ export class MessageService {
           });
         }
 
-        this._messages.set(messages);
+        // Get any pending messages (optimistic updates) that should still be shown
+        // Remove pending messages from the current user once real messages arrive
+        const currentMessages = this._messages();
+        const pendingMessages = currentMessages.filter(m => m.pending && m.isOwn);
+        
+        // Check if we have new confirmed messages from the current user
+        // If so, we can safely remove pending messages (they've been confirmed)
+        const confirmedOwnMessageIds = new Set(
+          messages.filter(m => m.isOwn && !m.id.startsWith('pending-')).map(m => m.id)
+        );
+        
+        // Only keep pending messages if they weren't replaced by real ones yet
+        // We match by checking if a new confirmed message exists within a small time window
+        const recentConfirmedMessages = messages.filter(
+          m => m.isOwn && 
+          !m.id.startsWith('pending-') && 
+          (Date.now() - m.createdAt.getTime() < 5000) // Messages from last 5 seconds
+        );
+        
+        // If there are recently confirmed messages, remove all pending messages
+        // (the real message has arrived from Firestore)
+        const finalMessages = recentConfirmedMessages.length > 0 
+          ? messages  // Firestore has the real message, use only confirmed
+          : [...messages, ...pendingMessages]; // No recent confirms, keep pending
+        
+        this._messages.set(finalMessages);
 
-        // Mark new messages as read if conversation is open
-        if (this._activeConversation()?.id === conversationId) {
-          this.markConversationAsRead(conversationId);
+        // Get the most recent message ID to detect new incoming messages
+        const newestMessage = messages.length > 0 ? messages[messages.length - 1] : null;
+        const newestMessageId = newestMessage?.id || null;
+        const hasNewMessage = newestMessageId && newestMessageId !== this.lastProcessedMessageId;
+        
+        // Detect if the newest message is from the other user (incoming message)
+        const isIncomingMessage = hasNewMessage && newestMessage && !newestMessage.isOwn;
+        
+        // Mark messages as read only once on initial load to avoid duplicate updates
+        // that trigger conversation query RESETs. Delay slightly to let initial
+        // subscriptions settle before triggering updates.
+        if (!this.hasMarkedAsRead && this._activeConversation()?.id === conversationId) {
+          this.hasMarkedAsRead = true;
+          this.lastProcessedMessageId = newestMessageId;
+          // Small delay to avoid triggering RESET on conversations query during initial load
+          setTimeout(() => this.markConversationAsRead(conversationId), 100);
+        } else if (isIncomingMessage && this._activeConversation()?.id === conversationId) {
+          // A new message arrived from the other user while we're viewing the conversation
+          // Update our lastViewedAt so they can see we've read it
+          this.lastProcessedMessageId = newestMessageId;
+          // Debounce this slightly to avoid multiple rapid updates
+          setTimeout(() => this.markConversationAsRead(conversationId), 50);
+        } else if (hasNewMessage) {
+          // Track our own sent messages
+          this.lastProcessedMessageId = newestMessageId;
         }
       },
       (error) => {
@@ -510,6 +605,38 @@ export class MessageService {
     if (this.messagesUnsubscribe) {
       this.messagesUnsubscribe();
       this.messagesUnsubscribe = null;
+    }
+  }
+
+  /**
+   * Update the read status of all messages based on the current _otherUserLastViewedAt
+   * This is called when the other user's lastViewedAt timestamp changes
+   */
+  private updateMessageReadStates(): void {
+    if (!this._otherUserLastViewedAt) return;
+    
+    const currentMessages = this._messages();
+    if (currentMessages.length === 0) return;
+    
+    const updatedMessages = currentMessages.map(message => {
+      if (!message.isOwn) {
+        // Not our message, keep as is
+        return message;
+      }
+      
+      // For our messages, check if the other user has viewed it
+      const isRead = message.createdAt <= this._otherUserLastViewedAt!;
+      
+      if (message.read !== isRead) {
+        return { ...message, read: isRead };
+      }
+      return message;
+    });
+    
+    // Only update if any read status changed
+    const hasChanges = updatedMessages.some((msg, i) => msg.read !== currentMessages[i].read);
+    if (hasChanges) {
+      this._messages.set(updatedMessages);
     }
   }
 
@@ -611,12 +738,23 @@ export class MessageService {
           }
         }
 
+        const messageCreatedAt = this.toDate(data.createdAt) || new Date();
+        const isOwn = data.senderId === currentUser.uid;
+        
+        // Compute read status using lastViewedAt
+        let isRead = true;
+        if (isOwn && this._otherUserLastViewedAt) {
+          isRead = messageCreatedAt <= this._otherUserLastViewedAt;
+        } else if (isOwn) {
+          isRead = data.read;
+        }
+
         olderMessages.push({
           id: docSnapshot.id,
           content: data.deletedForAll ? '' : data.content,
-          isOwn: data.senderId === currentUser.uid,
-          createdAt: this.toDate(data.createdAt) || new Date(),
-          read: data.read,
+          isOwn,
+          createdAt: messageCreatedAt,
+          read: isRead,
           type: data.deletedForAll ? 'system' : data.type,
           imageUrls: data.deletedForAll ? undefined : data.imageUrls,
           isDeletedForAll: data.deletedForAll,
@@ -660,95 +798,164 @@ export class MessageService {
 
     if (!currentUser || !activeConversation || (!hasText && !hasImages)) return;
 
-    // Check if recipient's account is disabled
+    // Clear typing status when sending (fire and forget - don't wait)
+    this.clearTypingStatus();
+
+    // Determine message type and content
+    const messageType = hasImages ? 'image' : 'text';
+    const messageContent = hasText ? content.trim() : 
+      (files.length === 1 ? 'Sent an image' : `Sent ${files.length} images`);
+    
+    // Generate temporary ID for optimistic message
+    const tempId = `pending-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Create optimistic message for immediate UI update
+    const optimisticMessage: MessageDisplay = {
+      id: tempId,
+      content: messageContent,
+      isOwn: true,
+      createdAt: new Date(),
+      read: false,
+      type: messageType,
+      senderId: currentUser.uid,
+      senderName: currentUser.displayName,
+      senderPhoto: currentUser.photoURL,
+      pending: true, // Mark as pending until confirmed
+    };
+    
+    // Add optimistic message to UI immediately
+    this._messages.update(msgs => [...msgs, optimisticMessage]);
+
+    // Now handle the actual send in the background (no await blocking UI)
+    this.sendMessageToServer(
+      activeConversation,
+      currentUser,
+      messageContent,
+      messageType,
+      files,
+      imageTimer,
+      hasImages,
+      hasText,
+      tempId
+    ).catch(error => {
+      console.error('Error sending message:', error);
+      // Remove the optimistic message on error
+      this._messages.update(msgs => msgs.filter(m => m.id !== tempId));
+    });
+  }
+
+  /**
+   * Internal method to actually send the message to Firestore
+   */
+  private async sendMessageToServer(
+    activeConversation: ConversationDisplay,
+    currentUser: { uid: string; displayName: string | null; photoURL: string | null },
+    messageContent: string,
+    messageType: 'text' | 'image',
+    files: File[],
+    imageTimer: number | undefined,
+    hasImages: boolean,
+    hasText: boolean,
+    tempId: string
+  ): Promise<void> {
+    // Check if recipient's account is disabled (in parallel with image uploads if any)
     const otherUserId = activeConversation.otherUser?.uid;
-    if (otherUserId) {
-      const recipientDisabled = await this.isUserDisabled(otherUserId);
+    const disabledCheckPromise = otherUserId 
+      ? this.isUserDisabled(otherUserId) 
+      : Promise.resolve(false);
+    
+    // Upload images if any (runs in parallel with disabled check)
+    let imageUrls: string[] = [];
+    if (hasImages) {
+      const uploadPromises = files.map((file, index) => {
+        const path = `conversations/${activeConversation.id}/images/${Date.now()}_${index}_${file.name}`;
+        return this.storageService.uploadFile(path, file);
+      });
+      
+      // Wait for both disabled check and uploads
+      const [recipientDisabled, ...urls] = await Promise.all([
+        disabledCheckPromise,
+        ...uploadPromises,
+      ]);
+      
       if (recipientDisabled) {
         console.warn('Cannot send message: recipient account is disabled');
+        // Remove optimistic message
+        this._messages.update(msgs => msgs.filter(m => m.id !== tempId));
+        return;
+      }
+      imageUrls = urls;
+      
+      // Update the optimistic message with uploaded image URLs
+      this._messages.update(msgs => msgs.map(m => 
+        m.id === tempId ? { ...m, imageUrls } : m
+      ));
+    } else {
+      // No images, just check disabled status
+      const recipientDisabled = await disabledCheckPromise;
+      if (recipientDisabled) {
+        console.warn('Cannot send message: recipient account is disabled');
+        // Remove optimistic message
+        this._messages.update(msgs => msgs.filter(m => m.id !== tempId));
         return;
       }
     }
 
-    this._sending.set(true);
+    const messagesRef = collection(
+      this.firestore,
+      'conversations',
+      activeConversation.id,
+      'messages'
+    );
 
-    // Clear typing status when sending
-    this.clearTypingStatus();
+    // Build message data
+    const messageData: Record<string, unknown> = {
+      conversationId: activeConversation.id,
+      senderId: currentUser.uid,
+      content: messageContent,
+      createdAt: serverTimestamp(),
+      read: false,
+      type: messageType,
+    };
 
-    try {
-      // Upload images if any
-      let imageUrls: string[] = [];
-      if (hasImages) {
-        const uploadPromises = files.map((file, index) => {
-          const path = `conversations/${activeConversation.id}/images/${Date.now()}_${index}_${file.name}`;
-          return this.storageService.uploadFile(path, file);
-        });
-        imageUrls = await Promise.all(uploadPromises);
+    if (hasImages) {
+      messageData['imageUrls'] = imageUrls;
+      if (imageTimer && imageTimer > 0) {
+        messageData['imageTimer'] = imageTimer;
       }
+    }
 
-      const messagesRef = collection(
-        this.firestore,
-        'conversations',
-        activeConversation.id,
-        'messages'
-      );
+    // Determine preview for conversation list
+    let lastMessagePreview = messageContent;
+    if (hasImages && !hasText) {
+      lastMessagePreview = files.length === 1 ? '📷 Image' : `📷 ${files.length} images`;
+    } else if (hasImages && hasText) {
+      lastMessagePreview = `📷 ${messageContent}`;
+    }
 
-      // Determine message type and content
-      const messageType = hasImages ? 'image' : 'text';
-      const messageContent = hasText ? content.trim() : 
-        (files.length === 1 ? 'Sent an image' : `Sent ${files.length} images`);
+    // Get conversation reference for metadata update
+    const conversationRef = doc(
+      this.firestore,
+      'conversations',
+      activeConversation.id
+    );
 
-      // Build message data
-      const messageData: Record<string, unknown> = {
-        conversationId: activeConversation.id,
-        senderId: currentUser.uid,
-        content: messageContent,
-        createdAt: serverTimestamp(),
-        read: false,
-        type: messageType,
-      };
-
-      if (hasImages) {
-        messageData['imageUrls'] = imageUrls;
-        if (imageTimer && imageTimer > 0) {
-          messageData['imageTimer'] = imageTimer;
-        }
-      }
-
-      await addDoc(messagesRef, messageData);
-
-      // Determine preview for conversation list
-      let lastMessagePreview = messageContent;
-      if (hasImages && !hasText) {
-        lastMessagePreview = files.length === 1 ? '📷 Image' : `📷 ${files.length} images`;
-      } else if (hasImages && hasText) {
-        lastMessagePreview = `📷 ${messageContent}`;
-      }
-
-      // Update conversation's last message and unread count
-      const conversationRef = doc(
-        this.firestore,
-        'conversations',
-        activeConversation.id
-      );
-
-      await updateDoc(conversationRef, {
+    // Run message creation and conversation update in parallel for better performance
+    await Promise.all([
+      addDoc(messagesRef, messageData),
+      updateDoc(conversationRef, {
         lastMessage: {
           content: lastMessagePreview,
           senderId: currentUser.uid,
           createdAt: serverTimestamp(),
         },
         updatedAt: serverTimestamp(),
-        [`unreadCount.${activeConversation.otherUser.uid}`]:
-          (this._conversations().find((c) => c.id === activeConversation.id)
-            ?.unreadCount || 0) + 1,
-      });
-    } catch (error) {
-      console.error('Error sending message:', error);
-      throw error;
-    } finally {
-      this._sending.set(false);
-    }
+        // Increment the OTHER user's unread count (they haven't seen this message yet)
+        [`unreadCount.${activeConversation.otherUser.uid}`]: increment(1),
+      }),
+    ]);
+    
+    // The Firestore listener will receive the real message and replace the pending one
   }
 
   /**
@@ -916,6 +1123,11 @@ export class MessageService {
         [currentUser.uid]: 0,
         [otherUserId]: 0,
       },
+      // Initialize lastViewedAt for both users (they've just opened/created the conversation)
+      lastViewedAt: {
+        [currentUser.uid]: serverTimestamp(),
+        [otherUserId]: serverTimestamp(),
+      },
     };
 
     const docRef = await addDoc(conversationsRef, newConversation);
@@ -925,31 +1137,22 @@ export class MessageService {
   /**
    * Mark all messages in a conversation as read
    */
+  /**
+   * Mark a conversation as read by updating the user's lastViewedAt timestamp.
+   * Messages are considered "read" if created before this timestamp.
+   * This is much more efficient than updating individual message documents.
+   */
   private async markConversationAsRead(conversationId: string): Promise<void> {
     const currentUser = this.authService.user();
     if (!currentUser) return;
 
     try {
-      // Update conversation unread count
       const conversationRef = doc(this.firestore, 'conversations', conversationId);
+      // Update lastViewedAt and reset unread count in a single write
       await updateDoc(conversationRef, {
+        [`lastViewedAt.${currentUser.uid}`]: serverTimestamp(),
         [`unreadCount.${currentUser.uid}`]: 0,
       });
-
-      // Mark unread messages from other users as read
-      const messagesRef = collection(this.firestore, 'conversations', conversationId, 'messages');
-      const unreadQuery = query(
-        messagesRef,
-        where('read', '==', false),
-        where('senderId', '!=', currentUser.uid)
-      );
-      
-      const snapshot = await getDocs(unreadQuery);
-      const updatePromises = snapshot.docs.map(docSnapshot => 
-        updateDoc(docSnapshot.ref, { read: true })
-      );
-      
-      await Promise.all(updatePromises);
     } catch (error) {
       console.error('Error marking conversation as read:', error);
     }
@@ -1086,5 +1289,8 @@ export class MessageService {
     }
     this.activeConversationId = null;
     this.oldestMessageDoc = null;
+    this.hasMarkedAsRead = false;
+    this.lastProcessedMessageId = null;
+    this._otherUserLastViewedAt = null;
   }
 }

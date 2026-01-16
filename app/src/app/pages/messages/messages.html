@@ -358,9 +358,15 @@
                       <div class="message-meta">
                         <time>{{ formatMessageTime(message.createdAt) }}</time>
                         @if (message.isOwn) {
-                          <span class="read-status" [class.read]="message.read">
-                            <span class="material-icons-outlined">{{ message.read ? 'done_all' : 'done' }}</span>
-                          </span>
+                          @if (message.pending) {
+                            <span class="read-status pending">
+                              <span class="material-icons-outlined">schedule</span>
+                            </span>
+                          } @else {
+                            <span class="read-status" [class.read]="message.read">
+                              <span class="material-icons-outlined">{{ message.read ? 'done_all' : 'done' }}</span>
+                            </span>
+                          }
                         }
                       </div>
                     </div>
@@ -390,9 +396,15 @@
                       <div class="message-meta">
                         <time>{{ formatMessageTime(message.createdAt) }}</time>
                         @if (message.isOwn) {
-                          <span class="read-status" [class.read]="message.read">
-                            <span class="material-icons-outlined">{{ message.read ? 'done_all' : 'done' }}</span>
-                          </span>
+                          @if (message.pending) {
+                            <span class="read-status pending">
+                              <span class="material-icons-outlined">schedule</span>
+                            </span>
+                          } @else {
+                            <span class="read-status" [class.read]="message.read">
+                              <span class="material-icons-outlined">{{ message.read ? 'done_all' : 'done' }}</span>
+                            </span>
+                          }
                         }
                       </div>
                     </div>
@@ -491,7 +503,6 @@
               [class.active]="isAiPanelOpen()"
               [class.has-access]="hasAiAccess()"
               (click)="toggleAiAssist()"
-              [disabled]="sending()"
               aria-label="AI Assist">
               <span class="material-icons-outlined">auto_awesome</span>
             </button>
@@ -501,7 +512,6 @@
               type="button" 
               class="attach-btn"
               (click)="openImagePicker()"
-              [disabled]="sending()"
               aria-label="Attach images">
               <span class="material-icons-outlined">image</span>
             </button>
@@ -512,18 +522,13 @@
               placeholder="Type a message..."
               [value]="messageInput()"
               (input)="messageInput.set($any($event.target).value); onInput()"
-              (keydown)="onKeyDown($event)"
-              [disabled]="sending()">
+              (keydown)="onKeyDown($event)">
             <button 
               type="button"
               class="send-btn"
-              [disabled]="!canSend() || sending()"
+              [disabled]="!canSend()"
               (click)="send()">
-              @if (sending()) {
-                <div class="spinner"></div>
-              } @else {
-                <span class="material-icons-outlined">send</span>
-              }
+              <span class="material-icons-outlined">send</span>
             </button>
           </div>
         }
