@@ -200,7 +200,9 @@
           </div>
           <div class="chat-user-info">
             <span class="chat-user-name">{{ activeConversation()!.otherUser.displayName || 'Unknown' }}</span>
-            @if (getStatusText() && !activeConversation()?.isBlocked && !isOtherUserBlocked()) {
+            @if (isOtherUserTyping()) {
+              <span class="chat-user-status typing">typing...</span>
+            } @else if (getStatusText() && !activeConversation()?.isBlocked && !isOtherUserBlocked()) {
               <span class="chat-user-status" [class.online]="otherUserStatus()?.isOnline">
                 {{ getStatusText() }}
               </span>
@@ -235,29 +237,34 @@
         </mat-menu>
       </header>
 
-      <!-- Messages -->
-      <div class="messages-scroll" cdkScrollable (scroll)="onScroll()">
-        @if (messages().length === 0) {
+      <!-- Messages with Virtual Scrolling -->
+      @if (messages().length === 0) {
+        <div class="messages-scroll empty-state">
           <div class="start-chat">
             <span class="material-icons-outlined">waving_hand</span>
             <p>Start the conversation!</p>
           </div>
-        } @else {
-          <div class="messages-list">
-            <!-- Loading older messages indicator -->
-            @if (loadingOlderMessages()) {
-              <div class="loading-older">
-                <div class="loading-spinner small"></div>
-                <span>Loading older messages...</span>
-              </div>
-            } @else if (hasOlderMessages()) {
-              <div class="load-more-hint">
-                <span class="material-icons-outlined">expand_less</span>
-                <span>Scroll up for more</span>
-              </div>
-            }
-            @for (message of messages(); track message.id; let isLast = $last) {
-              <div class="message" [class.own]="message.isOwn" [class.image-message]="message.type === 'image'" [class.deleted]="message.isDeletedForAll" [class.with-avatar]="!message.isOwn">
+        </div>
+      } @else {
+        <cdk-virtual-scroll-viewport class="messages-scroll" (scrolledIndexChange)="onScroll()">
+          <!-- Loading older messages indicator -->
+          @if (loadingOlderMessages()) {
+            <div class="loading-older">
+              <div class="loading-spinner small"></div>
+              <span>Loading older messages...</span>
+            </div>
+          } @else if (hasOlderMessages()) {
+            <div class="load-more-hint">
+              <span class="material-icons-outlined">expand_less</span>
+              <span>Scroll up for more</span>
+            </div>
+          }
+          <div *cdkVirtualFor="let message of messages(); trackBy: trackByMessageId; let isLast = last"
+               class="message" 
+               [class.own]="message.isOwn" 
+               [class.image-message]="message.type === 'image'" 
+               [class.deleted]="message.isDeletedForAll" 
+               [class.with-avatar]="!message.isOwn">
                 
                 <!-- Sender Avatar (for messages from others) -->
                 @if (!message.isOwn) {
@@ -427,22 +434,9 @@
                   </div>
                 }
                 </div><!-- end message-content -->
-              </div>
-            }
-            
-            <!-- Typing Indicator -->
-            @if (isOtherUserTyping()) {
-              <div class="message typing-indicator">
-                <div class="bubble typing-bubble">
-                  <span class="dot"></span>
-                  <span class="dot"></span>
-                  <span class="dot"></span>
-                </div>
-              </div>
-            }
           </div>
-        }
-      </div>
+        </cdk-virtual-scroll-viewport>
+      }
 
       <!-- Input Area -->
       <footer class="chat-input-area">

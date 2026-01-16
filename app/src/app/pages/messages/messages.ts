@@ -6,6 +6,7 @@ import {
   computed,
   OnInit,
   OnDestroy,
+  AfterViewInit,
   effect,
   ViewChild,
   ElementRef,
@@ -13,8 +14,9 @@ import {
 } from '@angular/core';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { NgOptimizedImage } from '@angular/common';
-import { CdkScrollable, ScrollingModule } from '@angular/cdk/scrolling';
+import { CommonModule, NgOptimizedImage } from '@angular/common';
+import { CdkVirtualScrollViewport, ScrollingModule, VIRTUAL_SCROLL_STRATEGY } from '@angular/cdk/scrolling';
+import { AutoSizeVirtualScrollStrategy } from '../../core/utils/auto-size-virtual-scroll.strategy';
 import { MatMenuModule } from '@angular/material/menu';
 import { Firestore, doc, getDoc, updateDoc } from '@angular/fire/firestore';
 import { Functions, httpsCallable } from '@angular/fire/functions';
@@ -46,9 +48,13 @@ interface GalleryState {
   templateUrl: './messages.html',
   styleUrl: './messages.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, ScrollingModule, MatMenuModule, NgOptimizedImage, RouterLink, AiAssistPanelComponent],
+  imports: [CommonModule, FormsModule, ScrollingModule, MatMenuModule, NgOptimizedImage, RouterLink, AiAssistPanelComponent],
+  providers: [
+    AutoSizeVirtualScrollStrategy,
+    { provide: VIRTUAL_SCROLL_STRATEGY, useExisting: AutoSizeVirtualScrollStrategy },
+  ],
 })
-export class MessagesComponent implements OnInit, OnDestroy {
+export class MessagesComponent implements OnInit, OnDestroy, AfterViewInit {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly messageService = inject(MessageService);
@@ -60,7 +66,7 @@ export class MessagesComponent implements OnInit, OnDestroy {
   private readonly functions = inject(Functions);
   private readonly auth = inject(Auth);
 
-  @ViewChild(CdkScrollable) scrollable!: CdkScrollable;
+  @ViewChild(CdkVirtualScrollViewport) virtualScroll!: CdkVirtualScrollViewport;
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
   @ViewChild('messageInputEl') messageInputEl!: ElementRef<HTMLInputElement>;
 
@@ -81,6 +87,7 @@ export class MessagesComponent implements OnInit, OnDestroy {
   private isNearBottom = true;
   private previousMessageCount = 0;
   private conversationIdFromRoute: string | null = null;
+  
 
   // Timer options for timed images
   protected readonly timerOptions = [
@@ -93,11 +100,9 @@ export class MessagesComponent implements OnInit, OnDestroy {
 
   // Expose service signals
   protected readonly conversations = this.messageService.filteredConversations;
-  protected readonly allConversations = this.messageService.conversations;
   protected readonly activeConversation = this.messageService.activeConversation;
   protected readonly messages = this.messageService.messages;
   protected readonly loading = this.messageService.loading;
-  protected readonly sending = this.messageService.sending;
   protected readonly isOtherUserTyping = this.messageService.isOtherUserTyping;
   protected readonly conversationFilter = this.messageService.conversationFilter;
   protected readonly otherUserStatus = this.messageService.otherUserStatus;
@@ -173,6 +178,13 @@ export class MessagesComponent implements OnInit, OnDestroy {
       const messages = this.messages();
       const currentCount = messages.length;
       
+      // Trigger viewport to recalculate when message count changes
+      if (this.virtualScroll && currentCount !== this.previousMessageCount) {
+        setTimeout(() => {
+          this.virtualScroll?.checkViewportSize();
+        }, 0);
+      }
+      
       if (currentCount > this.previousMessageCount) {
         // Initial load (first batch of messages) - always scroll to bottom
         // Subsequent messages - only scroll if user is near bottom
@@ -183,14 +195,6 @@ export class MessagesComponent implements OnInit, OnDestroy {
         }
       }
       this.previousMessageCount = currentCount;
-    });
-
-    // Watch for typing indicator and scroll if near bottom
-    effect(() => {
-      const isTyping = this.isOtherUserTyping();
-      if (isTyping && this.isNearBottom) {
-        setTimeout(() => this.scrollToBottom(), 0);
-      }
     });
 
     // Watch for messages with active sender countdowns
@@ -238,6 +242,15 @@ export class MessagesComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     // Check for conversationId in route params
     this.conversationIdFromRoute = this.route.snapshot.paramMap.get('conversationId');
+  }
+
+  ngAfterViewInit(): void {
+    // Trigger viewport size check after view is initialized
+    if (this.virtualScroll) {
+      setTimeout(() => {
+        this.virtualScroll.checkViewportSize();
+      }, 0);
+    }
   }
 
   ngOnDestroy(): void {
@@ -720,58 +733,58 @@ export class MessagesComponent implements OnInit, OnDestroy {
    * Check if scroll position is within threshold of bottom
    */
   private checkIfNearBottom(): boolean {
-    if (!this.scrollable) return true;
+    if (!this.virtualScroll) return true;
     
-    const element = this.scrollable.getElementRef().nativeElement;
+    const scrollOffset = this.virtualScroll.measureScrollOffset('bottom');
     const threshold = 100; // pixels from bottom to consider "near"
-    const distanceFromBottom = element.scrollHeight - element.scrollTop - element.clientHeight;
     
-    return distanceFromBottom <= threshold;
+    return scrollOffset <= threshold;
   }
 
   /**
    * Check if scroll position is within threshold of top
    */
   private checkIfNearTop(): boolean {
-    if (!this.scrollable) return false;
+    if (!this.virtualScroll) return false;
     
-    const element = this.scrollable.getElementRef().nativeElement;
+    const scrollOffset = this.virtualScroll.measureScrollOffset('top');
     const threshold = 150; // pixels from top to trigger load
     
-    return element.scrollTop <= threshold;
+    return scrollOffset <= threshold;
   }
 
   /**
-   * Load older messages and maintain scroll position
+   * Load older messages
    */
   private async loadOlderMessages(): Promise<void> {
-    if (!this.scrollable) return;
-    
-    const element = this.scrollable.getElementRef().nativeElement;
-    const previousScrollHeight = element.scrollHeight;
+    if (!this.virtualScroll) return;
     
     const loaded = await this.messageService.loadOlderMessages();
     
     if (loaded) {
-      // Maintain scroll position after prepending older messages
-      // Wait for DOM to update, then adjust scroll position
-      setTimeout(() => {
-        const newScrollHeight = element.scrollHeight;
-        const heightDifference = newScrollHeight - previousScrollHeight;
-        element.scrollTop = element.scrollTop + heightDifference;
-      }, 0);
+      // Wait for viewport to update
+      requestAnimationFrame(() => {
+        this.virtualScroll.checkViewportSize();
+      });
     }
   }
 
   private scrollToBottom(): void {
-    if (this.scrollable) {
-      const element = this.scrollable.getElementRef().nativeElement;
-      // Use requestAnimationFrame to ensure DOM has completed layout
-      requestAnimationFrame(() => {
-        element.scrollTop = element.scrollHeight;
+    if (this.virtualScroll) {
+      const messageCount = this.messages().length;
+      if (messageCount > 0) {
+        // Scroll to the last message
+        this.virtualScroll.scrollToIndex(messageCount - 1, 'smooth');
         this.isNearBottom = true;
-      });
+      }
     }
+  }
+
+  /**
+   * TrackBy function for virtual scroll performance
+   */
+  protected trackByMessageId(index: number, message: MessageDisplay): string {
+    return message.id;
   }
 
   // ============================================
