@@ -47,7 +47,7 @@
           </div>
         </div>
       } @else {
-        <cdk-virtual-scroll-viewport class="messages-scroll">
+        <div class="messages-scroll">
           <!-- Loading older messages indicator -->
           @if (loadingOlderMessages()) {
             <div class="loading-older">
@@ -61,7 +61,7 @@
             </div>
           }
           
-          <ng-container *cdkVirtualFor="let message of messages(); trackBy: trackByMessageId; let isLast = last">
+          <div *uiScroll="let message of messageDatasource; let i = index; let isLast = last">
             <app-message-bubble
               [message]="message"
               [senderCountdown]="getSenderCountdown(message.id)"
@@ -71,8 +71,8 @@
               (deleteForMe)="onDeleteForMe($event)"
               (deleteForEveryone)="onDeleteForEveryone($event)">
             </app-message-bubble>
-          </ng-container>
-        </cdk-virtual-scroll-viewport>
+          </div>
+        </div>
       }
 
       <!-- Chat Input -->

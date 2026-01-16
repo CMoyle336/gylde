@@ -33,32 +33,15 @@
 }
 
 /* ============================================
-   MESSAGES SCROLL
+   MESSAGES SCROLL (ngx-ui-scroll viewport)
    ============================================ */
 
 .messages-scroll {
   flex: 1;
   overflow-y: auto;
-  padding: 1.25rem;
-}
-
-/* Virtual scroll viewport */
-cdk-virtual-scroll-viewport.messages-scroll {
-  flex: 1 1 0;
+  overflow-x: hidden;
   min-height: 0;
-  width: 100%;
-  padding: 0;
-  contain: strict;
-}
-
-/* Content wrapper for virtual scroll items */
-.cdk-virtual-scroll-content-wrapper {
   padding: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  width: 100%;
-  box-sizing: border-box;
 }
 
 /* Empty state */
@@ -213,11 +196,11 @@ cdk-virtual-scroll-viewport.messages-scroll {
     height: 100%;
   }
 
-  .messages-scroll.empty-state {
+  .messages-scroll {
     padding: 1rem;
   }
-  
-  .cdk-virtual-scroll-content-wrapper {
+
+  .messages-scroll.empty-state {
     padding: 1rem;
   }
 

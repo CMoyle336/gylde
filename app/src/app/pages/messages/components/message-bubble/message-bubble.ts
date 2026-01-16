@@ -74,4 +74,8 @@ export class MessageBubbleComponent {
     if (!this.message.isOwn) return;
     this.deleteForEveryone.emit(this.message);
   }
+
+  protected isBlobUrl(url: string): boolean {
+    return url?.startsWith('blob:');
+  }
 }

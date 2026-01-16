@@ -128,6 +128,49 @@ export class AutoSizeVirtualScrollStrategy implements VirtualScrollStrategy {
   }
 
   /**
+   * Scroll to the bottom of the content.
+   * Uses scrollToIndex to ensure the last item is rendered, then scrollIntoView.
+   */
+  scrollToBottom(behavior: ScrollBehavior = 'auto'): void {
+    if (!this.viewport) return;
+    
+    const dataLength = this.viewport.getDataLength();
+    if (dataLength === 0) return;
+    
+    // First, scroll to the last index to ensure it's rendered
+    this.viewport.scrollToIndex(dataLength - 1, behavior);
+    
+    // Then use scrollIntoView on the actual last element
+    setTimeout(() => {
+      const items = document.querySelectorAll('app-message-bubble');
+      if (items.length > 0) {
+        const lastItem = items[items.length - 1];
+        lastItem.scrollIntoView({ behavior, block: 'end' });
+      }
+    }, 50);
+  }
+
+  /**
+   * Check if the viewport is scrolled to (or near) the bottom.
+   * @param threshold How many pixels from the bottom to consider "at bottom" (default: 100)
+   */
+  isAtBottom(threshold = 100): boolean {
+    if (!this.viewport) return true; // Assume at bottom if no viewport
+    
+    // Use actual element properties for accuracy
+    const element = this.viewport.getElementRef().nativeElement;
+    const scrollTop = element.scrollTop;
+    const scrollHeight = element.scrollHeight;
+    const clientHeight = element.clientHeight;
+    
+    // Handle case where content is smaller than viewport
+    if (scrollHeight <= clientHeight) return true;
+    
+    const maxScroll = scrollHeight - clientHeight;
+    return scrollTop >= maxScroll - threshold;
+  }
+
+  /**
    * Measure the heights of currently rendered items.
    */
   private measureRenderedItems(): void {

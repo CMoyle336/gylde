@@ -853,6 +853,9 @@ export class MessageService {
     // Use a timestamp that ensures proper ordering (sequence ensures order even if same ms)
     const optimisticTimestamp = new Date(Date.now() + sequence);
     
+    // Create temporary blob URLs for immediate image preview
+    const tempImageUrls = hasImages ? files.map(file => URL.createObjectURL(file)) : undefined;
+    
     // Create optimistic message for immediate UI update
     const optimisticMessage: MessageDisplay = {
       id: tempId,
@@ -865,6 +868,8 @@ export class MessageService {
       senderName: currentUser.displayName,
       senderPhoto: currentUser.photoURL,
       pending: true, // Mark as pending until confirmed
+      imageUrls: tempImageUrls, // Include blob URLs for immediate preview
+      imageTimer: hasImages && imageTimer ? imageTimer : undefined, // Include timer for timed images
     };
     
     // Add optimistic message to UI immediately
@@ -880,11 +885,14 @@ export class MessageService {
       imageTimer,
       hasImages,
       hasText,
-      tempId
+      tempId,
+      tempImageUrls
     ).catch(error => {
       console.error('Error sending message:', error);
       // Remove the optimistic message on error
       this._messages.update(msgs => msgs.filter(m => m.id !== tempId));
+      // Clean up blob URLs
+      tempImageUrls?.forEach(url => URL.revokeObjectURL(url));
     });
   }
 
@@ -900,7 +908,8 @@ export class MessageService {
     imageTimer: number | undefined,
     hasImages: boolean,
     hasText: boolean,
-    tempId: string
+    tempId: string,
+    tempImageUrls?: string[]
   ): Promise<void> {
     // Check if recipient's account is disabled (in parallel with image uploads if any)
     const otherUserId = activeConversation.otherUser?.uid;
@@ -926,9 +935,14 @@ export class MessageService {
         console.warn('Cannot send message: recipient account is disabled');
         // Remove optimistic message
         this._messages.update(msgs => msgs.filter(m => m.id !== tempId));
+        // Clean up blob URLs
+        tempImageUrls?.forEach(url => URL.revokeObjectURL(url));
         return;
       }
       imageUrls = urls;
+      
+      // Clean up blob URLs now that real URLs are available
+      tempImageUrls?.forEach(url => URL.revokeObjectURL(url));
       
       // Update the optimistic message with uploaded image URLs
       this._messages.update(msgs => msgs.map(m => 

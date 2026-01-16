@@ -11,8 +11,8 @@ import {
 } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { CdkVirtualScrollViewport, ScrollingModule, VIRTUAL_SCROLL_STRATEGY } from '@angular/cdk/scrolling';
-import { AutoSizeVirtualScrollStrategy } from '../../core/utils/auto-size-virtual-scroll.strategy';
+import { Datasource } from 'ngx-ui-scroll';
+import { UiScrollModule } from 'ngx-ui-scroll';
 import { Firestore, doc, getDoc, updateDoc } from '@angular/fire/firestore';
 import { Functions, httpsCallable } from '@angular/fire/functions';
 import { Auth } from '@angular/fire/auth';
@@ -44,7 +44,7 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     CommonModule,
-    ScrollingModule,
+    UiScrollModule,
     AiAssistPanelComponent,
     ConversationListComponent,
     ChatHeaderComponent,
@@ -52,10 +52,6 @@ import {
     ChatInputComponent,
     ImageGalleryComponent,
     VirtualPhoneSettingsComponent,
-  ],
-  providers: [
-    AutoSizeVirtualScrollStrategy,
-    { provide: VIRTUAL_SCROLL_STRATEGY, useExisting: AutoSizeVirtualScrollStrategy },
   ],
 })
 export class MessagesComponent implements OnInit, OnDestroy {
@@ -70,8 +66,12 @@ export class MessagesComponent implements OnInit, OnDestroy {
   private readonly functions = inject(Functions);
   private readonly auth = inject(Auth);
 
-  @ViewChild(CdkVirtualScrollViewport) virtualScroll!: CdkVirtualScrollViewport;
   @ViewChild(ChatInputComponent) chatInput!: ChatInputComponent;
+
+  // Datasource state tracking
+  private lastMessageCount = 0;
+  private lastMessageId: string | undefined = undefined;
+  private isInitialLoad = true;
 
   protected readonly gallery = signal<GalleryState>({
     isOpen: false,
@@ -145,6 +145,43 @@ export class MessagesComponent implements OnInit, OnDestroy {
 
   private virtualPhoneLoadAttempted = false;
 
+  // ============================================
+  // NGX-UI-SCROLL DATASOURCE
+  // ============================================
+
+  /**
+   * Datasource for ngx-ui-scroll
+   * Uses standard indices: 0 = oldest, N-1 = newest
+   * startIndex is set dynamically when messages load
+   */
+  protected messageDatasource = new Datasource<MessageDisplay>({
+    get: (index: number, count: number, success: (items: MessageDisplay[]) => void) => {
+      const allMessages = this.messages();
+      const total = allMessages.length;
+      
+      if (total === 0) {
+        success([]);
+        return;
+      }
+
+      const start = Math.max(0, index);
+      const end = Math.min(total, index + count);
+      
+      if (start >= end) {
+        success([]);
+        return;
+      }
+
+      const items = allMessages.slice(start, end);
+      success(items);
+    },
+    settings: {
+      bufferSize: 20,
+      padding: 0.5,
+      minIndex: 0,
+    },
+  });
+
   constructor() {
     effect(() => {
       const convos = this.conversations();
@@ -187,6 +224,106 @@ export class MessagesComponent implements OnInit, OnDestroy {
       if (isElite && !this.virtualPhone() && !this.virtualPhoneLoading() && !this.virtualPhoneLoadAttempted) {
         this.virtualPhoneLoadAttempted = true;
         this.loadVirtualPhone();
+      }
+    });
+
+    // React to message changes and update the datasource
+    effect(() => {
+      const messages = this.messages();
+      const messageCount = messages.length;
+      const adapter = this.messageDatasource.adapter;
+      
+      const lastMessageId = messages[messageCount - 1]?.id;
+
+      if (messageCount === 0) {
+        this.lastMessageCount = 0;
+        this.lastMessageId = undefined;
+        this.isInitialLoad = true;
+        return;
+      }
+
+      const hasNewMessages = messageCount > this.lastMessageCount || 
+        (messageCount === this.lastMessageCount && lastMessageId !== this.lastMessageId);
+      const hadMessages = this.lastMessageCount > 0;
+      
+      // If this is the first load or conversation change, reload the datasource
+      if (this.isInitialLoad) {
+        this.isInitialLoad = false;
+        this.lastMessageCount = messageCount;
+        this.lastMessageId = lastMessageId;
+        
+        const reloadIndex = Math.max(0, messageCount - 1);
+        
+        const doReload = () => {
+          adapter.reload(reloadIndex);
+          
+          // Wait for loading to complete, then scroll to bottom
+          const loadingSub = adapter.isLoading$.subscribe((isLoading) => {
+            if (!isLoading && adapter.itemsCount > 0) {
+              loadingSub.unsubscribe();
+              adapter.fix({
+                scrollPosition: +Infinity
+              });
+            }
+          });
+        };
+        
+        if (adapter.init) {
+          doReload();
+        } else {
+          const sub = adapter.init$.subscribe((ready) => {
+            if (ready) {
+              sub.unsubscribe();
+              doReload();
+            }
+          });
+        }
+      } else if (hasNewMessages && hadMessages) {
+        // New message added - append to the end (bottom)
+        // If count increased, slice from lastMessageCount
+        // If count is same but lastMessageId changed, get messages after the old lastMessageId
+        let newMessages: MessageDisplay[];
+        
+        if (messageCount > this.lastMessageCount) {
+          // Count increased - simple slice
+          newMessages = messages.slice(this.lastMessageCount);
+        } else {
+          // Count same but lastMessageId changed - find new messages by ID
+          const oldLastIndex = messages.findIndex(m => m.id === this.lastMessageId);
+          if (oldLastIndex === -1) {
+            // Old message not found - just get the last message
+            newMessages = [messages[messageCount - 1]];
+          } else {
+            // Get everything after the old last message
+            newMessages = messages.slice(oldLastIndex + 1);
+          }
+        }
+        
+        this.lastMessageCount = messageCount;
+        this.lastMessageId = lastMessageId;
+        
+        if (adapter.init && newMessages.length > 0) {
+          adapter.append({
+            items: newMessages,
+            eof: true,
+          });
+          
+          // Wait for append to complete, then scroll to bottom
+          adapter.relax(() => {
+            adapter.fix({
+              scrollPosition: +Infinity
+            });
+          });
+        }
+      } else {
+        // Existing messages may have been updated (read status, viewed, etc.)
+        // Refresh the visible items to reflect changes
+        this.lastMessageCount = messageCount;
+        this.lastMessageId = lastMessageId;
+        
+        if (adapter.init) {
+          adapter.check();
+        }
       }
     });
   }
@@ -299,6 +436,10 @@ export class MessagesComponent implements OnInit, OnDestroy {
   // ============================================
 
   protected onConversationSelected(conversation: ConversationDisplay): void {
+    // Reset state for new conversation
+    this.lastMessageCount = 0;
+    this.isInitialLoad = true;
+    
     this.messageService.openConversation(conversation);
     this.router.navigate(['/messages', conversation.id], { replaceUrl: true });
   }
@@ -364,10 +505,6 @@ export class MessagesComponent implements OnInit, OnDestroy {
   protected async onDeleteForEveryone(message: MessageDisplay): Promise<void> {
     if (!message.isOwn) return;
     await this.messageService.deleteMessageForEveryone(message.id);
-  }
-
-  protected trackByMessageId(index: number, message: MessageDisplay): string {
-    return message.id;
   }
 
   // ============================================

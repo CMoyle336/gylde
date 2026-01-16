@@ -57,7 +57,9 @@
             <div class="sender-timed-image">
               <div class="image-grid single">
                 <button type="button" class="image-item" (click)="onOpenGallery(message.imageUrls!, 0, $event)">
-                  @if (isLast) {
+                  @if (isBlobUrl(message.imageUrls![0])) {
+                    <img [src]="message.imageUrls![0]" alt="Shared image" width="400" height="300">
+                  } @else if (isLast) {
                     <img [ngSrc]="message.imageUrls![0]" alt="Shared image" width="400" height="300" priority>
                   } @else {
                     <img [ngSrc]="message.imageUrls![0]" alt="Shared image" width="400" height="300" loading="lazy">
@@ -89,7 +91,9 @@
             <div class="image-grid" [class.single]="message.imageUrls!.length === 1" [class.grid-2]="message.imageUrls!.length === 2" [class.grid-many]="message.imageUrls!.length > 2">
               @for (imageUrl of message.imageUrls; track imageUrl; let idx = $index) {
                 <button type="button" class="image-item" (click)="onOpenGallery(message.imageUrls!, idx, $event)">
-                  @if (isLast) {
+                  @if (isBlobUrl(imageUrl)) {
+                    <img [src]="imageUrl" alt="Shared image" [width]="message.imageUrls!.length === 1 ? 400 : 200" [height]="message.imageUrls!.length === 1 ? 300 : 150">
+                  } @else if (isLast) {
                     <img [ngSrc]="imageUrl" alt="Shared image" [width]="message.imageUrls!.length === 1 ? 400 : 200" [height]="message.imageUrls!.length === 1 ? 300 : 150" priority>
                   } @else {
                     <img [ngSrc]="imageUrl" alt="Shared image" [width]="message.imageUrls!.length === 1 ? 400 : 200" [height]="message.imageUrls!.length === 1 ? 300 : 150" loading="lazy">
