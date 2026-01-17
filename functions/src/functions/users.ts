@@ -1,26 +1,26 @@
 /**
  * User Cloud Functions
  * Handles user-related triggers for denormalized fields
- * 
+ *
  * Denormalized fields maintained by these triggers:
  * - sortableLastActive: null if user hides activity, otherwise lastActiveAt
  * - isSearchable: false if profile hidden, account disabled, or scheduled for deletion
  * - identityVerified: true if identity verification completed (via Veriff)
  * - geohash: encoded location for distance-based queries
- * 
+ *
  * Private data maintained:
  * - trustScore: calculated from trust tasks
  * - subscription: tier and status
  * - tasks: individual trust task completion status
  */
-import { onDocumentUpdated, onDocumentCreated } from "firebase-functions/v2/firestore";
-import { db, bucket } from "../config/firebase";
-import { Timestamp } from "firebase-admin/firestore";
+import {onDocumentUpdated, onDocumentCreated} from "firebase-functions/v2/firestore";
+import {db, bucket} from "../config/firebase";
+import {Timestamp} from "firebase-admin/firestore";
 import * as logger from "firebase-functions/logger";
-import { 
-  TRUST_TASK_DEFINITIONS, 
-  TrustData, 
-  TrustTask, 
+import {
+  TRUST_TASK_DEFINITIONS,
+  TrustData,
+  TrustTask,
   TrustCategory,
   getPointsPerCategory,
 } from "../types/trust.types";
@@ -56,34 +56,34 @@ async function syncStorageWithPhotos(
   afterPhotos: string[]
 ): Promise<void> {
   // Find photos that were removed
-  const removedPhotos = beforePhotos.filter(url => !afterPhotos.includes(url));
-  
+  const removedPhotos = beforePhotos.filter((url) => !afterPhotos.includes(url));
+
   if (removedPhotos.length === 0) {
     return;
   }
 
   logger.info(`[${userId}] Syncing storage: ${removedPhotos.length} photos to delete`);
-  
+
   const bucketName = bucket.name;
-  
+
   for (const photoUrl of removedPhotos) {
     const filePath = extractFilePathFromUrl(photoUrl, bucketName);
-    
+
     if (!filePath) {
       logger.warn(`[${userId}] Could not extract path from URL: ${photoUrl}`);
       continue;
     }
-    
+
     // Verify the file belongs to this user (security check)
     if (!filePath.startsWith(`users/${userId}/`)) {
       logger.warn(`[${userId}] Skipping file that doesn't belong to user: ${filePath}`);
       continue;
     }
-    
+
     try {
       const file = bucket.file(filePath);
       const [exists] = await file.exists();
-      
+
       if (exists) {
         await file.delete();
         logger.info(`[${userId}] Deleted orphaned photo: ${filePath}`);
@@ -97,10 +97,10 @@ async function syncStorageWithPhotos(
 /**
  * Generate a geohash for a lat/lng coordinate
  */
-function encodeGeohash(latitude: number, longitude: number, precision: number = 9): string {
+function encodeGeohash(latitude: number, longitude: number, precision = 9): string {
   const base32 = "0123456789bcdefghjkmnpqrstuvwxyz";
-  let latRange = { min: -90, max: 90 };
-  let lngRange = { min: -180, max: 180 };
+  const latRange = {min: -90, max: 90};
+  const lngRange = {min: -180, max: 180};
   let hash = "";
   let isLng = true;
   let bit = 0;
@@ -146,7 +146,7 @@ function calculateTrustData(data: FirebaseFirestore.DocumentData, existingTasks?
   const now = Timestamp.now();
   const tasks: Record<string, TrustTask> = {};
   const categoryPoints = getPointsPerCategory();
-  
+
   // Initialize category stats
   const categories: Record<TrustCategory, {
     maxPoints: number;
@@ -154,10 +154,10 @@ function calculateTrustData(data: FirebaseFirestore.DocumentData, existingTasks?
     completedTasks: number;
     totalTasks: number;
   }> = {
-    verification: { maxPoints: categoryPoints.verification, earnedPoints: 0, completedTasks: 0, totalTasks: 0 },
-    photos: { maxPoints: categoryPoints.photos, earnedPoints: 0, completedTasks: 0, totalTasks: 0 },
-    profile: { maxPoints: categoryPoints.profile, earnedPoints: 0, completedTasks: 0, totalTasks: 0 },
-    activity: { maxPoints: categoryPoints.activity, earnedPoints: 0, completedTasks: 0, totalTasks: 0 },
+    verification: {maxPoints: categoryPoints.verification, earnedPoints: 0, completedTasks: 0, totalTasks: 0},
+    photos: {maxPoints: categoryPoints.photos, earnedPoints: 0, completedTasks: 0, totalTasks: 0},
+    profile: {maxPoints: categoryPoints.profile, earnedPoints: 0, completedTasks: 0, totalTasks: 0},
+    activity: {maxPoints: categoryPoints.activity, earnedPoints: 0, completedTasks: 0, totalTasks: 0},
   };
 
   let earnedPoints = 0;
@@ -168,7 +168,7 @@ function calculateTrustData(data: FirebaseFirestore.DocumentData, existingTasks?
     const completed = taskDef.check(data);
     const value = taskDef.getValue ? taskDef.getValue(data) : undefined;
     const existingTask = existingTasks?.[taskDef.id];
-    
+
     // Determine completedAt timestamp
     let completedAt: Timestamp | null = null;
     if (completed) {
@@ -241,14 +241,14 @@ function calculateDenormalizedFields(data: FirebaseFirestore.DocumentData) {
 
   // Geohash for location-based queries
   const location = data.onboarding?.location;
-  const geohash = location?.latitude && location?.longitude
-    ? encodeGeohash(location.latitude, location.longitude, 9)
-    : null;
+  const geohash = location?.latitude && location?.longitude ?
+    encodeGeohash(location.latitude, location.longitude, 9) :
+    null;
 
   // Note: trustScore is stored ONLY in users/{uid}/private/data for security
   // It is not written to the public user document
 
-  return { isSearchable, identityVerified, sortableLastActive, geohash };
+  return {isSearchable, identityVerified, sortableLastActive, geohash};
 }
 
 /**
@@ -269,7 +269,7 @@ export const onUserCreated = onDocumentCreated(
       return;
     }
 
-    const { isSearchable, identityVerified, sortableLastActive, geohash } = calculateDenormalizedFields(data);
+    const {isSearchable, identityVerified, sortableLastActive, geohash} = calculateDenormalizedFields(data);
     const trustData = calculateTrustData(data);
 
     // Update public denormalized fields on user document
@@ -285,7 +285,7 @@ export const onUserCreated = onDocumentCreated(
       // Trust data
       trustScore: trustData.score,
       trust: trustData,
-      
+
       // Subscription data
       subscription: {
         tier: "free",
@@ -293,13 +293,13 @@ export const onUserCreated = onDocumentCreated(
         currentPeriodEnd: null,
         cancelAtPeriodEnd: false,
       },
-      
+
       updatedAt: Timestamp.now(),
     });
 
-    logger.info(`Set denormalized fields for new user ${userId}:`, { 
-      isSearchable, 
-      identityVerified, 
+    logger.info(`Set denormalized fields for new user ${userId}:`, {
+      isSearchable,
+      identityVerified,
       trustScore: trustData.score,
       earnedPoints: trustData.earnedPoints,
       maxScore: trustData.maxScore,
@@ -333,10 +333,10 @@ export const onUserUpdated = onDocumentUpdated(
     const afterPhotoDetails = afterData.onboarding?.photoDetails || [];
     const beforePhotos: string[] = beforePhotoDetails.map((p: { url: string }) => p.url);
     const afterPhotos: string[] = afterPhotoDetails.map((p: { url: string }) => p.url);
-    
+
     if (JSON.stringify(beforePhotos) !== JSON.stringify(afterPhotos)) {
       // Photos changed - sync storage (fire and forget, don't block other updates)
-      syncStorageWithPhotos(userId, beforePhotos, afterPhotos).catch(error => {
+      syncStorageWithPhotos(userId, beforePhotos, afterPhotos).catch((error) => {
         logger.error(`[${userId}] Error syncing storage with photos:`, error);
       });
     }
@@ -366,7 +366,7 @@ export const onUserUpdated = onDocumentUpdated(
     // Check sortableLastActive
     const currentSortableMillis = (current.sortableLastActive as Timestamp)?.toMillis?.() || null;
     const expectedSortableMillis = (expected.sortableLastActive as Timestamp)?.toMillis?.() || null;
-    
+
     if (currentSortableMillis !== expectedSortableMillis) {
       publicUpdates.sortableLastActive = expected.sortableLastActive;
     }
@@ -397,14 +397,14 @@ export const onUserUpdated = onDocumentUpdated(
       logger.info(`Updating trust data for user ${userId}: ${existingTrustScore} -> ${trustData.score}`, {
         earnedPoints: trustData.earnedPoints,
         maxScore: trustData.maxScore,
-        completedTasks: Object.values(trustData.tasks).filter(t => t.completed).length,
+        completedTasks: Object.values(trustData.tasks).filter((t) => t.completed).length,
       });
-      
+
       await privateDocRef.set({
         trustScore: trustData.score,
         trust: trustData,
         updatedAt: Timestamp.now(),
-      }, { merge: true });
+      }, {merge: true});
     }
   }
 );

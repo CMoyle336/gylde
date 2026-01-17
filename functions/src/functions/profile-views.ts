@@ -2,8 +2,8 @@
  * Cloud Functions for profile view tracking
  */
 
-import { onDocumentCreated } from "firebase-functions/v2/firestore";
-import { getFirestore, FieldValue } from "firebase-admin/firestore";
+import {onDocumentCreated} from "firebase-functions/v2/firestore";
+import {getFirestore, FieldValue} from "firebase-admin/firestore";
 import * as logger from "firebase-functions/logger";
 
 const db = getFirestore();
@@ -21,7 +21,7 @@ export const onProfileViewCreated = onDocumentCreated(
       return;
     }
 
-    const { viewerId, viewerName, viewerPhoto, viewedUserId } = viewData;
+    const {viewerId, viewerName, viewerPhoto, viewedUserId} = viewData;
 
     if (!viewerId || !viewedUserId) {
       logger.warn("Missing viewerId or viewedUserId in profile view");

@@ -2,9 +2,9 @@
  * Cloud Functions for private photo access management
  */
 
-import { onCall, HttpsError } from "firebase-functions/v2/https";
-import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
-import { PhotoAccessRequest, PhotoAccessGrant } from "../types";
+import {onCall, HttpsError} from "firebase-functions/v2/https";
+import {getFirestore, FieldValue, Timestamp} from "firebase-admin/firestore";
+import {PhotoAccessRequest, PhotoAccessGrant} from "../types";
 
 const db = getFirestore();
 
@@ -13,13 +13,13 @@ const db = getFirestore();
  * Requires a paid subscription (Connect or Elite tier)
  */
 export const requestPhotoAccess = onCall(async (request) => {
-  const { auth, data } = request;
+  const {auth, data} = request;
 
   if (!auth) {
     throw new HttpsError("unauthenticated", "Must be authenticated");
   }
 
-  const { targetUserId } = data;
+  const {targetUserId} = data;
   const requesterId = auth.uid;
 
   if (!targetUserId || typeof targetUserId !== "string") {
@@ -43,7 +43,7 @@ export const requestPhotoAccess = onCall(async (request) => {
   // Check subscription - only plus/elite can request private photos
   const privateData = privateDataDoc.data();
   const subscriptionTier = privateData?.subscription?.tier || "free";
-  
+
   if (subscriptionTier === "free") {
     throw new HttpsError(
       "permission-denied",
@@ -108,20 +108,20 @@ export const requestPhotoAccess = onCall(async (request) => {
 
   // Activity creation is handled by onPhotoAccessRequestWrite trigger
 
-  return { success: true, message: "Request sent" };
+  return {success: true, message: "Request sent"};
 });
 
 /**
  * Cancel a pending photo access request
  */
 export const cancelPhotoAccessRequest = onCall(async (request) => {
-  const { auth, data } = request;
+  const {auth, data} = request;
 
   if (!auth) {
     throw new HttpsError("unauthenticated", "Must be authenticated");
   }
 
-  const { targetUserId } = data;
+  const {targetUserId} = data;
   const requesterId = auth.uid;
 
   if (!targetUserId || typeof targetUserId !== "string") {
@@ -157,20 +157,20 @@ export const cancelPhotoAccessRequest = onCall(async (request) => {
     pendingPhotoAccessCount: FieldValue.increment(-1),
   });
 
-  return { success: true, message: "Request cancelled" };
+  return {success: true, message: "Request cancelled"};
 });
 
 /**
  * Respond to a photo access request (grant or deny)
  */
 export const respondToPhotoAccessRequest = onCall(async (request) => {
-  const { auth, data } = request;
+  const {auth, data} = request;
 
   if (!auth) {
     throw new HttpsError("unauthenticated", "Must be authenticated");
   }
 
-  const { requesterId, response } = data;
+  const {requesterId, response} = data;
   const ownerId = auth.uid;
 
   if (!requesterId || typeof requesterId !== "string") {
@@ -255,13 +255,13 @@ export const respondToPhotoAccessRequest = onCall(async (request) => {
  * Revoke previously granted photo access
  */
 export const revokePhotoAccess = onCall(async (request) => {
-  const { auth, data } = request;
+  const {auth, data} = request;
 
   if (!auth) {
     throw new HttpsError("unauthenticated", "Must be authenticated");
   }
 
-  const { userId } = data;
+  const {userId} = data;
   const ownerId = auth.uid;
 
   if (!userId || typeof userId !== "string") {
@@ -308,20 +308,20 @@ export const revokePhotoAccess = onCall(async (request) => {
 
   await batch.commit();
 
-  return { success: true, message: "Access revoked" };
+  return {success: true, message: "Access revoked"};
 });
 
 /**
  * Check if current user has access to view another user's private photos
  */
 export const checkPhotoAccess = onCall(async (request) => {
-  const { auth, data } = request;
+  const {auth, data} = request;
 
   if (!auth) {
     throw new HttpsError("unauthenticated", "Must be authenticated");
   }
 
-  const { targetUserId } = data;
+  const {targetUserId} = data;
   const requesterId = auth.uid;
 
   if (!targetUserId || typeof targetUserId !== "string") {
@@ -330,7 +330,7 @@ export const checkPhotoAccess = onCall(async (request) => {
 
   // Self always has access
   if (requesterId === targetUserId) {
-    return { hasAccess: true, isSelf: true };
+    return {hasAccess: true, isSelf: true};
   }
 
   // Check for existing grant
@@ -342,7 +342,7 @@ export const checkPhotoAccess = onCall(async (request) => {
     .get();
 
   if (grantDoc.exists) {
-    return { hasAccess: true, isSelf: false };
+    return {hasAccess: true, isSelf: false};
   }
 
   // Check for pending/denied request
@@ -363,14 +363,14 @@ export const checkPhotoAccess = onCall(async (request) => {
     };
   }
 
-  return { hasAccess: false, isSelf: false, requestStatus: null };
+  return {hasAccess: false, isSelf: false, requestStatus: null};
 });
 
 /**
  * Get list of users who have been granted access to view private photos
  */
 export const getPhotoAccessGrants = onCall(async (request) => {
-  const { auth } = request;
+  const {auth} = request;
 
   if (!auth) {
     throw new HttpsError("unauthenticated", "Must be authenticated");
@@ -391,14 +391,14 @@ export const getPhotoAccessGrants = onCall(async (request) => {
     grantedAt: doc.data().grantedAt?.toDate(),
   }));
 
-  return { grants };
+  return {grants};
 });
 
 /**
  * Get list of pending photo access requests
  */
 export const getPhotoAccessRequests = onCall(async (request) => {
-  const { auth } = request;
+  const {auth} = request;
 
   if (!auth) {
     throw new HttpsError("unauthenticated", "Must be authenticated");
@@ -420,20 +420,20 @@ export const getPhotoAccessRequests = onCall(async (request) => {
     requestedAt: doc.data().requestedAt?.toDate(),
   }));
 
-  return { requests };
+  return {requests};
 });
 
 /**
  * Toggle a photo's private status
  */
 export const togglePhotoPrivacy = onCall(async (request) => {
-  const { auth, data } = request;
+  const {auth, data} = request;
 
   if (!auth) {
     throw new HttpsError("unauthenticated", "Must be authenticated");
   }
 
-  const { photoUrl, isPrivate } = data;
+  const {photoUrl, isPrivate} = data;
   const userId = auth.uid;
 
   if (!photoUrl || typeof photoUrl !== "string") {
@@ -465,7 +465,7 @@ export const togglePhotoPrivacy = onCall(async (request) => {
   const existingPhotoDetails = userData?.onboarding?.photoDetails || [];
 
   // Find and update the photo detail
-  let photoDetails = [...existingPhotoDetails];
+  const photoDetails = [...existingPhotoDetails];
   const existingIndex = photoDetails.findIndex((p: { url: string }) => p.url === photoUrl);
 
   if (existingIndex >= 0) {
@@ -494,7 +494,7 @@ export const togglePhotoPrivacy = onCall(async (request) => {
 // FIRESTORE TRIGGERS FOR PHOTO ACCESS REQUESTS
 // ============================================================
 
-import { onDocumentWritten, onDocumentDeleted } from "firebase-functions/v2/firestore";
+import {onDocumentWritten, onDocumentDeleted} from "firebase-functions/v2/firestore";
 
 /**
  * Trigger: When a photo access request is created or updated
@@ -504,7 +504,7 @@ import { onDocumentWritten, onDocumentDeleted } from "firebase-functions/v2/fire
 export const onPhotoAccessRequestWrite = onDocumentWritten(
   "users/{targetUserId}/photoAccessRequests/{requesterId}",
   async (event) => {
-    const { targetUserId, requesterId } = event.params;
+    const {targetUserId, requesterId} = event.params;
     const beforeData = event.data?.before.data();
     const afterData = event.data?.after.data();
 
@@ -566,9 +566,9 @@ export const onPhotoAccessRequestWrite = onDocumentWritten(
       const ownerName = ownerData?.displayName || "Someone";
       const ownerPhoto = ownerData?.photoURL || null;
 
-      const activityType = afterData.status === "granted"
-        ? "photo_access_granted"
-        : "photo_access_denied";
+      const activityType = afterData.status === "granted" ?
+        "photo_access_granted" :
+        "photo_access_denied";
 
       // Create activity for the requester
       await db
@@ -596,7 +596,7 @@ export const onPhotoAccessRequestWrite = onDocumentWritten(
 export const onPhotoAccessRequestDeleted = onDocumentDeleted(
   "users/{targetUserId}/photoAccessRequests/{requesterId}",
   async (event) => {
-    const { targetUserId, requesterId } = event.params;
+    const {targetUserId, requesterId} = event.params;
 
     const activitiesRef = db
       .collection("users")

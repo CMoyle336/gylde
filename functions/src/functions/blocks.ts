@@ -3,9 +3,9 @@
  * Handles blocking/unblocking users and related cleanup
  */
 
-import { onCall, HttpsError } from "firebase-functions/v2/https";
-import { FieldValue } from "firebase-admin/firestore";
-import { db } from "../config/firebase";
+import {onCall, HttpsError} from "firebase-functions/v2/https";
+import {FieldValue} from "firebase-admin/firestore";
+import {db} from "../config/firebase";
 import * as logger from "firebase-functions/logger";
 
 interface BlockRecord {
@@ -28,7 +28,7 @@ export const blockUser = onCall(async (request) => {
   }
 
   const currentUserId = request.auth.uid;
-  const { userId: targetUserId } = request.data as { userId: string };
+  const {userId: targetUserId} = request.data as { userId: string };
 
   if (!targetUserId) {
     throw new HttpsError("invalid-argument", "Target user ID is required");
@@ -50,7 +50,7 @@ export const blockUser = onCall(async (request) => {
       .doc(currentUserId)
       .collection("blocks")
       .doc(targetUserId);
-    
+
     batch.set(blockerBlockRef, {
       blockedUserId: targetUserId,
       blockedByUserId: currentUserId,
@@ -63,7 +63,7 @@ export const blockUser = onCall(async (request) => {
       .doc(targetUserId)
       .collection("blockedBy")
       .doc(currentUserId);
-    
+
     batch.set(targetBlockRef, {
       blockedUserId: currentUserId,
       blockedByUserId: currentUserId,
@@ -74,31 +74,31 @@ export const blockUser = onCall(async (request) => {
     logger.info(`Created block records for ${currentUserId} -> ${targetUserId}`);
 
     // 3. Delete activity records between users (async, don't block response)
-    deleteActivityBetweenUsers(currentUserId, targetUserId).catch(err => {
+    deleteActivityBetweenUsers(currentUserId, targetUserId).catch((err) => {
       logger.error("Error deleting activity:", err);
     });
 
     // 4. Delete favorites between users
-    deleteFavoritesBetweenUsers(currentUserId, targetUserId).catch(err => {
+    deleteFavoritesBetweenUsers(currentUserId, targetUserId).catch((err) => {
       logger.error("Error deleting favorites:", err);
     });
 
     // 5. Delete matches between users
-    deleteMatchesBetweenUsers(currentUserId, targetUserId).catch(err => {
+    deleteMatchesBetweenUsers(currentUserId, targetUserId).catch((err) => {
       logger.error("Error deleting matches:", err);
     });
 
     // 6. Delete profile views between users
-    deleteProfileViewsBetweenUsers(currentUserId, targetUserId).catch(err => {
+    deleteProfileViewsBetweenUsers(currentUserId, targetUserId).catch((err) => {
       logger.error("Error deleting profile views:", err);
     });
 
     // 7. Delete photo access requests between users
-    deletePhotoAccessBetweenUsers(currentUserId, targetUserId).catch(err => {
+    deletePhotoAccessBetweenUsers(currentUserId, targetUserId).catch((err) => {
       logger.error("Error deleting photo access:", err);
     });
 
-    return { success: true };
+    return {success: true};
   } catch (error) {
     logger.error("Error blocking user:", error);
     throw new HttpsError("internal", "Failed to block user");
@@ -116,7 +116,7 @@ export const unblockUser = onCall(async (request) => {
   }
 
   const currentUserId = request.auth.uid;
-  const { userId: targetUserId } = request.data as { userId: string };
+  const {userId: targetUserId} = request.data as { userId: string };
 
   if (!targetUserId) {
     throw new HttpsError("invalid-argument", "Target user ID is required");
@@ -146,7 +146,7 @@ export const unblockUser = onCall(async (request) => {
     await batch.commit();
     logger.info(`Removed block records for ${currentUserId} -> ${targetUserId}`);
 
-    return { success: true };
+    return {success: true};
   } catch (error) {
     logger.error("Error unblocking user:", error);
     throw new HttpsError("internal", "Failed to unblock user");
@@ -179,13 +179,13 @@ export const getBlockedUsers = onCall(async (request) => {
       .collection("blockedBy")
       .get();
 
-    const blockedUserIds = blockedSnapshot.docs.map(doc => doc.id);
-    const blockedByUserIds = blockedBySnapshot.docs.map(doc => doc.id);
+    const blockedUserIds = blockedSnapshot.docs.map((doc) => doc.id);
+    const blockedByUserIds = blockedBySnapshot.docs.map((doc) => doc.id);
 
     // Combine and deduplicate
     const allBlockedIds = [...new Set([...blockedUserIds, ...blockedByUserIds])];
 
-    return { 
+    return {
       blockedUserIds: allBlockedIds,
       blockedByMe: blockedUserIds,
       blockedMe: blockedByUserIds,
@@ -205,7 +205,7 @@ export const checkBlockStatus = onCall(async (request) => {
   }
 
   const currentUserId = request.auth.uid;
-  const { userId: targetUserId } = request.data as { userId: string };
+  const {userId: targetUserId} = request.data as { userId: string };
 
   if (!targetUserId) {
     throw new HttpsError("invalid-argument", "Target user ID is required");
@@ -247,10 +247,10 @@ async function deleteActivityBetweenUsers(userId1: string, userId2: string): Pro
   const activitiesRef = db.collection("users").doc(userId1).collection("activities");
   const query1 = activitiesRef.where("fromUserId", "==", userId2);
   const snapshot1 = await query1.get();
-  
+
   if (!snapshot1.empty) {
     const batch1 = db.batch();
-    snapshot1.docs.forEach(doc => batch1.delete(doc.ref));
+    snapshot1.docs.forEach((doc) => batch1.delete(doc.ref));
     await batch1.commit();
     logger.info(`Deleted ${snapshot1.size} activities for ${userId1} from ${userId2}`);
   }
@@ -259,10 +259,10 @@ async function deleteActivityBetweenUsers(userId1: string, userId2: string): Pro
   const activitiesRef2 = db.collection("users").doc(userId2).collection("activities");
   const query2 = activitiesRef2.where("fromUserId", "==", userId1);
   const snapshot2 = await query2.get();
-  
+
   if (!snapshot2.empty) {
     const batch2 = db.batch();
-    snapshot2.docs.forEach(doc => batch2.delete(doc.ref));
+    snapshot2.docs.forEach((doc) => batch2.delete(doc.ref));
     await batch2.commit();
     logger.info(`Deleted ${snapshot2.size} activities for ${userId2} from ${userId1}`);
   }
@@ -289,17 +289,17 @@ async function deleteMatchesBetweenUsers(userId1: string, userId2: string): Prom
   // Matches are stored with both user IDs, find and delete
   const matchesQuery = db.collection("matches")
     .where("users", "array-contains", userId1);
-  
+
   const snapshot = await matchesQuery.get();
-  
+
   const batch = db.batch();
-  snapshot.docs.forEach(doc => {
+  snapshot.docs.forEach((doc) => {
     const users = doc.data().users as string[];
     if (users.includes(userId2)) {
       batch.delete(doc.ref);
     }
   });
-  
+
   await batch.commit();
   logger.info(`Deleted matches between ${userId1} and ${userId2}`);
 }
@@ -312,14 +312,14 @@ async function deleteProfileViewsBetweenUsers(userId1: string, userId2: string):
     .where("viewerId", "==", userId1)
     .where("viewedUserId", "==", userId2);
   const snapshot1 = await views1Query.get();
-  snapshot1.docs.forEach(doc => batch.delete(doc.ref));
+  snapshot1.docs.forEach((doc) => batch.delete(doc.ref));
 
   // Delete views where user2 viewed user1
   const views2Query = db.collection("profileViews")
     .where("viewerId", "==", userId2)
     .where("viewedUserId", "==", userId1);
   const snapshot2 = await views2Query.get();
-  snapshot2.docs.forEach(doc => batch.delete(doc.ref));
+  snapshot2.docs.forEach((doc) => batch.delete(doc.ref));
 
   await batch.commit();
   logger.info(`Deleted profile views between ${userId1} and ${userId2}`);

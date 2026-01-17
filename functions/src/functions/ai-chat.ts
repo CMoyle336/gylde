@@ -1,14 +1,14 @@
 /**
  * AI Chat Assistance Cloud Functions
- * 
+ *
  * These functions provide AI-powered messaging assistance for Elite subscribers.
  * The AI is a private "sidecar" that helps users - it never sends messages automatically.
- * 
+ *
  * IMPORTANT: All AI operations should verify the user has Elite subscription before processing.
  */
 
-import { onCall, HttpsError } from "firebase-functions/v2/https";
-import { getFirestore } from "firebase-admin/firestore";
+import {onCall, HttpsError} from "firebase-functions/v2/https";
+import {getFirestore} from "firebase-admin/firestore";
 import * as logger from "firebase-functions/logger";
 import OpenAI from "openai";
 
@@ -23,7 +23,7 @@ function getOpenAIClient(): OpenAI {
   if (!apiKey) {
     throw new HttpsError("failed-precondition", "OpenAI API key not configured");
   }
-  return new OpenAI({ apiKey });
+  return new OpenAI({apiKey});
 }
 
 /**
@@ -32,7 +32,7 @@ function getOpenAIClient(): OpenAI {
 function cleanText(text: string): string {
   if (!text) return text;
   // Remove surrounding quotes (single or double)
-  return text.replace(/^["']|["']$/g, '').trim();
+  return text.replace(/^["']|["']$/g, "").trim();
 }
 
 // System prompt for dating app context
@@ -55,18 +55,18 @@ IMPORTANT RULES:
 // TYPES
 // ============================================
 
-type MessageTone = 
-  | 'playful'
-  | 'flirty'
-  | 'confident'
-  | 'warm'
-  | 'direct'
-  | 'casual'
-  | 'witty'
-  | 'apologetic'
-  | 'boundary-setting';
+type MessageTone =
+  | "playful"
+  | "flirty"
+  | "confident"
+  | "warm"
+  | "direct"
+  | "casual"
+  | "witty"
+  | "apologetic"
+  | "boundary-setting";
 
-type UserVoicePreference = 'authentic' | 'balanced' | 'polished';
+type UserVoicePreference = "authentic" | "balanced" | "polished";
 
 interface ReplySuggestion {
   id: string;
@@ -183,7 +183,7 @@ function generateId(): string {
  * Get AI-generated reply suggestions based on conversation context.
  */
 export const aiGetReplySuggestions = onCall(async (request) => {
-  const { auth, data } = request;
+  const {auth, data} = request;
 
   if (!auth) {
     throw new HttpsError("unauthenticated", "Must be authenticated");
@@ -192,7 +192,7 @@ export const aiGetReplySuggestions = onCall(async (request) => {
   await verifyEliteSubscription(auth.uid);
 
   const req = data as ReplyRequest;
-  logger.info("AI reply suggestions requested", { 
+  logger.info("AI reply suggestions requested", {
     conversationId: req.conversationId,
     messageCount: req.recentMessages?.length,
     tone: req.requestedTone,
@@ -207,36 +207,36 @@ export const aiGetReplySuggestions = onCall(async (request) => {
       .map((m) => `${m.isOwn ? "You" : "Them"}: ${m.content}`)
       .join("\n") || "";
 
-    const userContext = req.userProfile?.displayName 
-      ? `Your name is ${req.userProfile.displayName}.` 
-      : "";
-    
-    const recipientContext = req.recipientProfile?.displayName
-      ? `You're talking to ${req.recipientProfile.displayName}.`
-      : "";
+    const userContext = req.userProfile?.displayName ?
+      `Your name is ${req.userProfile.displayName}.` :
+      "";
 
-    const voiceStyle = req.userVoice === "polished" 
-      ? "WRITING STYLE: Polished and well-crafted. Use proper grammar, thoughtful word choices, and articulate phrasing. Sound intelligent and refined."
-      : req.userVoice === "authentic"
-      ? "WRITING STYLE: Casual and authentic like texting a friend. Use lowercase, abbreviations, casual phrasing. Sound relaxed and natural, not formal."
-      : "WRITING STYLE: Balanced - natural but thoughtful. Mix casual and polished elements.";
+    const recipientContext = req.recipientProfile?.displayName ?
+      `You're talking to ${req.recipientProfile.displayName}.` :
+      "";
 
-    const draftContext = req.userDraft 
-      ? `The user has started typing: "${req.userDraft}". Build on their thought.`
-      : "";
+    const voiceStyle = req.userVoice === "polished" ?
+      "WRITING STYLE: Polished and well-crafted. Use proper grammar, thoughtful word choices, and articulate phrasing. Sound intelligent and refined." :
+      req.userVoice === "authentic" ?
+        "WRITING STYLE: Casual and authentic like texting a friend. Use lowercase, abbreviations, casual phrasing. Sound relaxed and natural, not formal." :
+        "WRITING STYLE: Balanced - natural but thoughtful. Mix casual and polished elements.";
+
+    const draftContext = req.userDraft ?
+      `The user has started typing: "${req.userDraft}". Build on their thought.` :
+      "";
 
     // Build tone instructions based on whether a specific tone is requested
-    const toneInstructions = req.requestedTone
-      ? `- ALL suggestions must have a "${req.requestedTone}" tone
+    const toneInstructions = req.requestedTone ?
+      `- ALL suggestions must have a "${req.requestedTone}" tone
 - Vary the approach/angle but keep the same "${req.requestedTone}" feel
-- Each suggestion should be a different way to express "${req.requestedTone}" energy`
-      : `- Have a distinct tone (vary between warm, playful, flirty, casual, witty, direct)`;
+- Each suggestion should be a different way to express "${req.requestedTone}" energy` :
+      "- Have a distinct tone (vary between warm, playful, flirty, casual, witty, direct)";
 
-    const toneExample = req.requestedTone
-      ? `    { "text": "message here", "tone": "${req.requestedTone}", "explanation": "why this works" },
+    const toneExample = req.requestedTone ?
+      `    { "text": "message here", "tone": "${req.requestedTone}", "explanation": "why this works" },
     { "text": "message here", "tone": "${req.requestedTone}", "explanation": "different angle" },
-    { "text": "message here", "tone": "${req.requestedTone}", "explanation": "another approach" }`
-      : `    { "text": "message here", "tone": "warm", "explanation": "why this works" },
+    { "text": "message here", "tone": "${req.requestedTone}", "explanation": "another approach" }` :
+      `    { "text": "message here", "tone": "warm", "explanation": "why this works" },
     { "text": "message here", "tone": "playful", "explanation": "why this works" },
     { "text": "message here", "tone": "flirty", "explanation": "why this works" }`;
 
@@ -266,8 +266,8 @@ ${toneExample}
 
     const response = await openai.chat.completions.create({
       model: "gpt-4o-mini",
-      messages: [{ role: "user", content: prompt }],
-      response_format: { type: "json_object" },
+      messages: [{role: "user", content: prompt}],
+      response_format: {type: "json_object"},
       max_tokens: 500,
       temperature: 0.8, // Higher for more creative variety
     });
@@ -287,10 +287,10 @@ ${toneExample}
       })
     );
 
-    return { suggestions };
+    return {suggestions};
   } catch (error: any) {
     logger.error("OpenAI reply suggestions failed:", error);
-    
+
     // Fallback to basic suggestions if OpenAI fails
     const fallbackSuggestions: ReplySuggestion[] = [
       {
@@ -306,8 +306,8 @@ ${toneExample}
         explanation: "Keeps the conversation going",
       },
     ];
-    
-    return { suggestions: fallbackSuggestions };
+
+    return {suggestions: fallbackSuggestions};
   }
 });
 
@@ -319,7 +319,7 @@ ${toneExample}
  * Rewrite a user's draft message with a different tone.
  */
 export const aiRewriteMessage = onCall(async (request) => {
-  const { auth, data } = request;
+  const {auth, data} = request;
 
   if (!auth) {
     throw new HttpsError("unauthenticated", "Must be authenticated");
@@ -337,21 +337,21 @@ export const aiRewriteMessage = onCall(async (request) => {
   try {
     const openai = getOpenAIClient();
 
-    const voiceStyle = req.userVoice === "polished" 
-      ? "STYLE: Polished, well-crafted language with proper grammar and thoughtful phrasing."
-      : req.userVoice === "authentic"
-      ? "STYLE: Casual like texting a friend - lowercase ok, relaxed phrasing, natural."
-      : "STYLE: Balanced - natural but thoughtful.";
+    const voiceStyle = req.userVoice === "polished" ?
+      "STYLE: Polished, well-crafted language with proper grammar and thoughtful phrasing." :
+      req.userVoice === "authentic" ?
+        "STYLE: Casual like texting a friend - lowercase ok, relaxed phrasing, natural." :
+        "STYLE: Balanced - natural but thoughtful.";
 
     const toneDescriptions: Record<MessageTone, string> = {
-      playful: "Add humor, lightness, and fun energy",
-      flirty: "Add subtle romantic interest and charm without being inappropriate",
-      confident: "Make it self-assured and bold",
-      warm: "Make it friendly, caring, and inviting",
-      direct: "Make it clear and straightforward",
-      casual: "Make it relaxed and low-pressure",
-      witty: "Add clever wordplay or humor",
-      apologetic: "Make it sincerely apologetic and understanding",
+      "playful": "Add humor, lightness, and fun energy",
+      "flirty": "Add subtle romantic interest and charm without being inappropriate",
+      "confident": "Make it self-assured and bold",
+      "warm": "Make it friendly, caring, and inviting",
+      "direct": "Make it clear and straightforward",
+      "casual": "Make it relaxed and low-pressure",
+      "witty": "Add clever wordplay or humor",
+      "apologetic": "Make it sincerely apologetic and understanding",
       "boundary-setting": "Make it firm but respectful about boundaries",
     };
 
@@ -379,8 +379,8 @@ Respond in JSON format:
 
     const response = await openai.chat.completions.create({
       model: "gpt-4o-mini",
-      messages: [{ role: "user", content: prompt }],
-      response_format: { type: "json_object" },
+      messages: [{role: "user", content: prompt}],
+      response_format: {type: "json_object"},
       max_tokens: 400,
       temperature: 0.7,
     });
@@ -399,10 +399,10 @@ Respond in JSON format:
       })
     );
 
-    return { variants };
+    return {variants};
   } catch (error: any) {
     logger.error("OpenAI rewrite failed:", error);
-    
+
     // Return the original as fallback
     return {
       variants: [
@@ -424,7 +424,7 @@ Respond in JSON format:
  * Get conversation starters for an empty or stalled conversation.
  */
 export const aiGetConversationStarters = onCall(async (request) => {
-  const { auth, data } = request;
+  const {auth, data} = request;
 
   if (!auth) {
     throw new HttpsError("unauthenticated", "Must be authenticated");
@@ -458,9 +458,9 @@ export const aiGetConversationStarters = onCall(async (request) => {
       profileInfo.push(`Looking for: ${req.recipientProfile.connectionTypes.join(", ")}`);
     }
 
-    const profileContext = profileInfo.length > 0 
-      ? `What you know about ${recipientName}:\n${profileInfo.join("\n")}`
-      : `You don't have much info about ${recipientName} yet.`;
+    const profileContext = profileInfo.length > 0 ?
+      `What you know about ${recipientName}:\n${profileInfo.join("\n")}` :
+      `You don't have much info about ${recipientName} yet.`;
 
     const prompt = `${DATING_ASSISTANT_SYSTEM_PROMPT}
 
@@ -490,8 +490,8 @@ Respond in JSON format:
 
     const response = await openai.chat.completions.create({
       model: "gpt-4o-mini",
-      messages: [{ role: "user", content: prompt }],
-      response_format: { type: "json_object" },
+      messages: [{role: "user", content: prompt}],
+      response_format: {type: "json_object"},
       max_tokens: 600,
       temperature: 0.9, // Higher creativity for unique openers
     });
@@ -502,7 +502,7 @@ Respond in JSON format:
     }
 
     const parsed = JSON.parse(content);
-    
+
     const readyMessages: ReplySuggestion[] = parsed.readyMessages.map(
       (m: { text: string; tone: MessageTone; explanation: string }) => ({
         id: generateId(),
@@ -512,10 +512,10 @@ Respond in JSON format:
       })
     );
 
-    return { ideas: parsed.ideas, readyMessages };
+    return {ideas: parsed.ideas, readyMessages};
   } catch (error: any) {
     logger.error("OpenAI starters failed:", error);
-    
+
     // Fallback starters
     return {
       ideas: [
@@ -543,7 +543,7 @@ Respond in JSON format:
  * Get tone analysis and advice for the conversation.
  */
 export const aiGetCoachInsights = onCall(async (request) => {
-  const { auth, data } = request;
+  const {auth, data} = request;
 
   if (!auth) {
     throw new HttpsError("unauthenticated", "Must be authenticated");
@@ -598,8 +598,8 @@ Labels to use: genuine-interest, curious, playful, guarded, polite-neutral, enth
 
     const response = await openai.chat.completions.create({
       model: "gpt-4o-mini",
-      messages: [{ role: "user", content: prompt }],
-      response_format: { type: "json_object" },
+      messages: [{role: "user", content: prompt}],
+      response_format: {type: "json_object"},
       max_tokens: 400,
       temperature: 0.5, // Lower for more consistent analysis
     });
@@ -616,7 +616,7 @@ Labels to use: genuine-interest, curious, playful, guarded, polite-neutral, enth
     };
   } catch (error: any) {
     logger.error("OpenAI coach insights failed:", error);
-    
+
     return {
       toneInsight: {
         label: "analyzing",
@@ -640,7 +640,7 @@ Labels to use: genuine-interest, curious, playful, guarded, polite-neutral, enth
  * Analyze a message for safety concerns using AI.
  */
 export const aiCheckMessageSafety = onCall(async (request) => {
-  const { auth, data } = request;
+  const {auth, data} = request;
 
   if (!auth) {
     throw new HttpsError("unauthenticated", "Must be authenticated");
@@ -815,8 +815,8 @@ Only flag genuine concerns - don't be overly paranoid about normal conversation.
 
     const safetyResponse = await openai.chat.completions.create({
       model: "gpt-4o-mini",
-      messages: [{ role: "user", content: safetyPrompt }],
-      response_format: { type: "json_object" },
+      messages: [{role: "user", content: safetyPrompt}],
+      response_format: {type: "json_object"},
       max_tokens: 500,
       temperature: 0.3, // Lower for more consistent safety analysis
     });
@@ -850,7 +850,7 @@ Only flag genuine concerns - don't be overly paranoid about normal conversation.
     };
   } catch (error: any) {
     logger.error("OpenAI safety check failed:", error);
-    
+
     // Fallback to basic keyword detection
     const lowerMessage = message.toLowerCase();
     const alerts: Array<{
@@ -894,7 +894,7 @@ Only flag genuine concerns - don't be overly paranoid about normal conversation.
  * Modify an AI suggestion with a specific instruction.
  */
 export const aiModifySuggestion = onCall(async (request) => {
-  const { auth, data } = request;
+  const {auth, data} = request;
 
   if (!auth) {
     throw new HttpsError("unauthenticated", "Must be authenticated");
@@ -902,7 +902,7 @@ export const aiModifySuggestion = onCall(async (request) => {
 
   await verifyEliteSubscription(auth.uid);
 
-  const { text, instruction } = data as { text: string; instruction: string };
+  const {text, instruction} = data as { text: string; instruction: string };
 
   logger.info("AI modify suggestion requested", {
     instruction,
@@ -928,17 +928,17 @@ Modified message:`;
 
     const response = await openai.chat.completions.create({
       model: "gpt-4o-mini",
-      messages: [{ role: "user", content: prompt }],
+      messages: [{role: "user", content: prompt}],
       max_tokens: 200,
       temperature: 0.7,
     });
 
     const modifiedText = response.choices[0]?.message?.content?.trim() || text;
-    
-    return { text: cleanText(modifiedText) };
+
+    return {text: cleanText(modifiedText)};
   } catch (error: any) {
     logger.error("OpenAI modify failed:", error);
-    
+
     // Fallback to simple modifications
     let modifiedText = text;
     const lowerInstruction = instruction.toLowerCase();
@@ -950,7 +950,7 @@ Modified message:`;
       modifiedText = text + " 😊";
     }
 
-    return { text: modifiedText };
+    return {text: modifiedText};
   }
 });
 
@@ -960,7 +960,7 @@ Modified message:`;
 
 interface ProfilePolishRequest {
   text: string;
-  fieldType: 'tagline' | 'idealRelationship' | 'supportMeaning' | 'generic';
+  fieldType: "tagline" | "idealRelationship" | "supportMeaning" | "generic";
   maxLength?: number;
   profileContext?: {
     displayName?: string;
@@ -989,7 +989,7 @@ interface ProfilePolishResponse {
  * For Elite users to improve their profile content.
  */
 export const aiPolishProfileText = onCall(async (request) => {
-  const { auth, data } = request;
+  const {auth, data} = request;
 
   if (!auth) {
     throw new HttpsError("unauthenticated", "Must be authenticated");
@@ -998,7 +998,7 @@ export const aiPolishProfileText = onCall(async (request) => {
   await verifyEliteSubscription(auth.uid);
 
   const req = data as ProfilePolishRequest;
-  
+
   if (!req.text || req.text.trim().length === 0) {
     throw new HttpsError("invalid-argument", "Text is required");
   }
@@ -1053,8 +1053,8 @@ Respond in JSON format:
 
     const response = await openai.chat.completions.create({
       model: "gpt-4o-mini",
-      messages: [{ role: "user", content: prompt }],
-      response_format: { type: "json_object" },
+      messages: [{role: "user", content: prompt}],
+      response_format: {type: "json_object"},
       max_tokens: 400,
       temperature: 0.7,
     });
@@ -1065,20 +1065,20 @@ Respond in JSON format:
     }
 
     const parsed = JSON.parse(content) as ProfilePolishResponse;
-    
+
     // Ensure we stay within limits
     const polished = parsed.polished?.substring(0, maxLength) || req.text;
     const suggestions = (parsed.suggestions || [])
-      .map(s => s.substring(0, maxLength))
+      .map((s) => s.substring(0, maxLength))
       .slice(0, 2);
 
     return {
       polished: cleanText(polished),
-      suggestions: suggestions.map(s => cleanText(s)),
+      suggestions: suggestions.map((s) => cleanText(s)),
     };
   } catch (error: any) {
     logger.error("OpenAI profile polish failed:", error);
-    
+
     // Return original text on failure
     return {
       polished: req.text,
@@ -1090,7 +1090,7 @@ Respond in JSON format:
 /**
  * Build profile context string for AI prompt
  */
-function buildProfileContext(context?: ProfilePolishRequest['profileContext']): string {
+function buildProfileContext(context?: ProfilePolishRequest["profileContext"]): string {
   if (!context) {
     return "PROFILE CONTEXT: Limited information available";
   }
@@ -1145,8 +1145,8 @@ function buildProfileContext(context?: ProfilePolishRequest['profileContext']): 
  */
 function getFieldGuidance(fieldType: string, supportOrientation?: string): string {
   switch (fieldType) {
-    case 'tagline':
-      return `
+  case "tagline":
+    return `
 TAGLINE GUIDANCE:
 - This is a short phrase that appears prominently on their profile
 - Should be catchy, memorable, and reflect their personality
@@ -1155,8 +1155,8 @@ TAGLINE GUIDANCE:
 - Maximum 100 characters typically
 - Should hint at their unique qualities or what makes them special`;
 
-    case 'idealRelationship':
-      return `
+  case "idealRelationship":
+    return `
 IDEAL RELATIONSHIP GUIDANCE:
 - This describes what kind of relationship/connection they're seeking
 - Should be specific enough to attract compatible matches
@@ -1165,18 +1165,18 @@ IDEAL RELATIONSHIP GUIDANCE:
 - Avoid negativity ("no drama") - focus on what they DO want
 - Should align with their connection types and support orientation`;
 
-    case 'supportMeaning':
-      const orientationContext = supportOrientation 
-        ? `
+  case "supportMeaning":
+    const orientationContext = supportOrientation ?
+      `
 CRITICAL CONTEXT - Their Support Orientation is "${supportOrientation}":
 - This is the MOST important context for this field
 - Their answer should authentically reflect this orientation
 - If they're a "provider/supporter", they might focus on what they enjoy giving
 - If they're seeking support, they should express their needs genuinely
-- If they're "mutual/equal", emphasize reciprocity and partnership`
-        : "";
-      
-      return `
+- If they're "mutual/equal", emphasize reciprocity and partnership` :
+      "";
+
+    return `
 SUPPORT MEANING GUIDANCE:
 - This explains what support means to them in a relationship
 - Should show emotional depth and vulnerability
@@ -1186,8 +1186,8 @@ SUPPORT MEANING GUIDANCE:
 - Be authentic about their needs and what they offer
 ${orientationContext}`;
 
-    default:
-      return `
+  default:
+    return `
 GENERAL GUIDANCE:
 - Make it sound natural and authentic
 - Show personality without being try-hard

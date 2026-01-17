@@ -3,10 +3,10 @@
  * Handles account disable/enable/delete operations
  */
 
-import { onCall, HttpsError } from "firebase-functions/v2/https";
-import { FieldValue } from "firebase-admin/firestore";
-import { getAuth } from "firebase-admin/auth";
-import { db, bucket } from "../config/firebase";
+import {onCall, HttpsError} from "firebase-functions/v2/https";
+import {FieldValue} from "firebase-admin/firestore";
+import {getAuth} from "firebase-admin/auth";
+import {db, bucket} from "../config/firebase";
 import * as logger from "firebase-functions/logger";
 
 /**
@@ -35,7 +35,7 @@ export const disableAccount = onCall(async (request) => {
     });
     logger.info(`Disabled account for user ${userId}`);
 
-    return { success: true };
+    return {success: true};
   } catch (error) {
     logger.error("Error disabling account:", error);
     throw new HttpsError("internal", "Failed to disable account");
@@ -67,7 +67,7 @@ export const enableAccount = onCall(async (request) => {
     });
     logger.info(`Enabled account for user ${userId}`);
 
-    return { success: true };
+    return {success: true};
   } catch (error) {
     logger.error("Error enabling account:", error);
     throw new HttpsError("internal", "Failed to enable account");
@@ -83,21 +83,21 @@ async function deleteCollection(collectionRef: FirebaseFirestore.CollectionRefer
 
   const batch = db.batch();
   let count = 0;
-  
+
   for (const doc of snapshot.docs) {
     batch.delete(doc.ref);
     count++;
-    
+
     // Firestore batches are limited to 500 operations
     if (count % 450 === 0) {
       await batch.commit();
     }
   }
-  
+
   if (count % 450 !== 0) {
     await batch.commit();
   }
-  
+
   return count;
 }
 
@@ -117,7 +117,7 @@ async function deleteSubcollections(docRef: FirebaseFirestore.DocumentReference,
 /**
  * Permanently delete a user's account and all associated data
  * This is a destructive operation that cannot be undone.
- * 
+ *
  * Deletes:
  * - All user subcollections (favorites, blocks, activities, photo access, etc.)
  * - All conversations where user is a participant (and their messages)
@@ -159,7 +159,7 @@ export const deleteAccount = onCall(
       // Delete private subcollection and its nested subcollections
       const privateDocRef = userRef.collection("private").doc("data");
       await privateDocRef.delete().catch(() => {}); // May not exist
-      
+
       const virtualPhoneDocRef = userRef.collection("private").doc("virtualPhone");
       await deleteSubcollections(virtualPhoneDocRef, ["callLogs", "messageLogs"]);
       await virtualPhoneDocRef.delete().catch(() => {}); // May not exist
@@ -174,11 +174,11 @@ export const deleteAccount = onCall(
         // Delete all messages in the conversation
         const messagesRef = convDoc.ref.collection("messages");
         await deleteCollection(messagesRef);
-        
+
         // Delete conversation images from storage
         const convImagesPrefix = `conversations/${convDoc.id}/images/`;
         try {
-          const [files] = await bucket.getFiles({ prefix: convImagesPrefix });
+          const [files] = await bucket.getFiles({prefix: convImagesPrefix});
           for (const file of files) {
             await file.delete().catch(() => {});
           }
@@ -188,7 +188,7 @@ export const deleteAccount = onCall(
         } catch (error) {
           logger.warn(`[${userId}] Error deleting conversation images:`, error);
         }
-        
+
         // Delete the conversation document
         await convDoc.ref.delete();
       }
@@ -198,7 +198,7 @@ export const deleteAccount = onCall(
       logger.info(`[${userId}] Deleting user storage files...`);
       const userStoragePrefix = `users/${userId}/`;
       try {
-        const [files] = await bucket.getFiles({ prefix: userStoragePrefix });
+        const [files] = await bucket.getFiles({prefix: userStoragePrefix});
         for (const file of files) {
           await file.delete().catch(() => {});
         }
@@ -212,7 +212,7 @@ export const deleteAccount = onCall(
       const favoritedByQuery = await db.collectionGroup("favorites")
         .where("favoritedUserId", "==", userId)
         .get();
-      
+
       for (const favDoc of favoritedByQuery.docs) {
         await favDoc.ref.delete();
       }
@@ -222,7 +222,7 @@ export const deleteAccount = onCall(
 
       // 5. Remove photo access grants/requests where user was involved
       logger.info(`[${userId}] Cleaning up photo access records...`);
-      
+
       // Remove requests from this user (where they were the requester)
       const requestsFromUserQuery = await db.collectionGroup("photoAccessRequests")
         .where("requesterId", "==", userId)
@@ -230,7 +230,7 @@ export const deleteAccount = onCall(
       for (const doc of requestsFromUserQuery.docs) {
         await doc.ref.delete();
       }
-      
+
       // Note: photoAccessGrants and photoAccessReceived use userId as doc ID
       // These can't be efficiently queried via collectionGroup, so we rely on
       // the user's own subcollection deletion above. The orphaned documents
@@ -280,7 +280,7 @@ export const deleteAccount = onCall(
       }
 
       logger.info(`Account deletion completed for user ${userId}`);
-      return { success: true };
+      return {success: true};
     } catch (error) {
       logger.error(`Error deleting account for user ${userId}:`, error);
       throw new HttpsError("internal", "Failed to delete account. Please try again or contact support.");

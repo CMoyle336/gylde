@@ -56,9 +56,9 @@ export async function moderateImage(
 
     if (!response.ok) {
       const errorText = await response.text();
-      logger.error("OpenAI moderation API error:", { status: response.status, error: errorText });
+      logger.error("OpenAI moderation API error:", {status: response.status, error: errorText});
       // Don't block upload on API errors, but log them
-      return { flagged: false, error: `Moderation API error: ${response.status}` };
+      return {flagged: false, error: `Moderation API error: ${response.status}`};
     }
 
     const data = await response.json() as {
@@ -70,11 +70,11 @@ export async function moderateImage(
     };
 
     if (!data.results || data.results.length === 0) {
-      return { flagged: false };
+      return {flagged: false};
     }
 
     const result = data.results[0];
-    
+
     // Check if any blocked categories are flagged
     const flaggedCategories = BLOCKED_CATEGORIES.filter(
       (category) => result.categories[category] === true
@@ -87,14 +87,14 @@ export async function moderateImage(
           flaggedCategories.map((cat) => [cat, result.category_scores[cat]])
         ),
       });
-      return { flagged: true, categories: flaggedCategories };
+      return {flagged: true, categories: flaggedCategories};
     }
 
-    return { flagged: false };
+    return {flagged: false};
   } catch (error) {
     logger.error("Error calling OpenAI moderation API:", error);
     // Don't block upload on errors, but log them
-    return { flagged: false, error: "Failed to moderate image" };
+    return {flagged: false, error: "Failed to moderate image"};
   }
 }
 
@@ -154,9 +154,9 @@ Illustrations, cartoons, or AI-generated people should return false.`,
 
     if (!response.ok) {
       const errorText = await response.text();
-      logger.error("OpenAI Vision API error:", { status: response.status, error: errorText });
+      logger.error("OpenAI Vision API error:", {status: response.status, error: errorText});
       // Don't block upload on API errors, but log them
-      return { containsPerson: true, error: `Vision API error: ${response.status}` };
+      return {containsPerson: true, error: `Vision API error: ${response.status}`};
     }
 
     const data = await response.json() as {
@@ -169,41 +169,41 @@ Illustrations, cartoons, or AI-generated people should return false.`,
 
     if (!data.choices || data.choices.length === 0) {
       logger.error("No response from OpenAI Vision API");
-      return { containsPerson: true, error: "No response from Vision API" };
+      return {containsPerson: true, error: "No response from Vision API"};
     }
 
     const content = data.choices[0].message.content.trim();
-    
+
     // Parse the JSON response
     try {
       // Try to extract JSON from the response (in case there's extra text)
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]) as { containsPerson: boolean };
-        return { containsPerson: parsed.containsPerson };
+        return {containsPerson: parsed.containsPerson};
       }
-      
+
       // Fallback: check for keywords if JSON parsing fails
       const lowerContent = content.toLowerCase();
       if (lowerContent.includes("true") || lowerContent.includes("yes")) {
-        return { containsPerson: true };
+        return {containsPerson: true};
       }
       if (lowerContent.includes("false") || lowerContent.includes("no")) {
-        return { containsPerson: false };
+        return {containsPerson: false};
       }
-      
+
       // If we can't determine, allow the upload but log it
-      logger.warn("Could not parse person detection response:", { content });
-      return { containsPerson: true, error: "Could not parse response" };
+      logger.warn("Could not parse person detection response:", {content});
+      return {containsPerson: true, error: "Could not parse response"};
     } catch (parseError) {
-      logger.error("Error parsing Vision API response:", { content, error: parseError });
+      logger.error("Error parsing Vision API response:", {content, error: parseError});
       // Allow upload on parse errors
-      return { containsPerson: true, error: "Failed to parse response" };
+      return {containsPerson: true, error: "Failed to parse response"};
     }
   } catch (error) {
     logger.error("Error calling OpenAI Vision API:", error);
     // Don't block upload on errors, but log them
-    return { containsPerson: true, error: "Failed to detect person in image" };
+    return {containsPerson: true, error: "Failed to detect person in image"};
   }
 }
 
@@ -233,7 +233,7 @@ export async function analyzeImage(
           {
             role: "user",
             content: [
-              { type: "text", text: prompt },
+              {type: "text", text: prompt},
               {
                 type: "image_url",
                 image_url: {
@@ -251,8 +251,8 @@ export async function analyzeImage(
 
     if (!response.ok) {
       const errorText = await response.text();
-      logger.error("OpenAI Vision API error:", { status: response.status, error: errorText });
-      return { response: "", error: `Vision API error: ${response.status}` };
+      logger.error("OpenAI Vision API error:", {status: response.status, error: errorText});
+      return {response: "", error: `Vision API error: ${response.status}`};
     }
 
     const data = await response.json() as {
@@ -264,12 +264,12 @@ export async function analyzeImage(
     };
 
     if (!data.choices || data.choices.length === 0) {
-      return { response: "", error: "No response from Vision API" };
+      return {response: "", error: "No response from Vision API"};
     }
 
-    return { response: data.choices[0].message.content.trim() };
+    return {response: data.choices[0].message.content.trim()};
   } catch (error) {
     logger.error("Error calling OpenAI Vision API:", error);
-    return { response: "", error: "Failed to analyze image" };
+    return {response: "", error: "Failed to analyze image"};
   }
 }

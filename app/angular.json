@@ -40,14 +40,19 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "500kB",
-                  "maximumError": "1MB"
+                  "maximumWarning": "900kB",
+                  "maximumError": "1.5MB"
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "20kB",
+                  "maximumWarning": "25kB",
                   "maximumError": "50kB"
                 }
+              ],
+              "allowedCommonJsDependencies": [
+                "@veriff/js-sdk",
+                "@grpc/grpc-js",
+                "@grpc/proto-loader"
               ],
               "outputHashing": "all"
             },

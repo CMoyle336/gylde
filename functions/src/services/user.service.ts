@@ -2,10 +2,10 @@
  * User Service
  * Handles user profile operations
  */
-import { db } from "../config/firebase";
-import { UserProfile, UserDisplayInfo } from "../types";
+import {db} from "../config/firebase";
+import {UserProfile, UserDisplayInfo} from "../types";
 import * as logger from "firebase-functions/logger";
-import { FieldValue, Timestamp } from "firebase-admin/firestore";
+import {FieldValue, Timestamp} from "firebase-admin/firestore";
 
 export class UserService {
   /**
@@ -44,7 +44,7 @@ export class UserService {
     try {
       const userRef = db.collection("users").doc(userId);
       const doc = await userRef.get();
-      
+
       if (!doc.exists) {
         logger.warn(`Cannot update last active - user not found: ${userId}`);
         return;
@@ -89,7 +89,7 @@ export class UserService {
         updatedAt: FieldValue.serverTimestamp(),
       });
 
-      logger.info(`Recalculated sortableLastActive for user ${userId}: ${canShowActivity ? 'visible' : 'hidden'}`);
+      logger.info(`Recalculated sortableLastActive for user ${userId}: ${canShowActivity ? "visible" : "hidden"}`);
     } catch (error) {
       logger.error(`Error recalculating sortableLastActive for ${userId}:`, error);
     }

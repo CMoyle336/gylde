@@ -12,13 +12,13 @@
  * - Duplicate image detection (content hash)
  * - Rate limiting (optional)
  */
-import { onCall, HttpsError } from "firebase-functions/v2/https";
-import { defineSecret } from "firebase-functions/params";
-import { bucket, db } from "../config/firebase";
+import {onCall, HttpsError} from "firebase-functions/v2/https";
+import {defineSecret} from "firebase-functions/params";
+import {bucket, db} from "../config/firebase";
 import * as logger from "firebase-functions/logger";
 import sharp from "sharp";
 import * as crypto from "crypto";
-import { moderateImage, detectPerson } from "../services/openai.service";
+import {moderateImage, detectPerson} from "../services/openai.service";
 
 // Define the OpenAI API key as a secret
 const openaiApiKey = defineSecret("OPENAI_API_KEY");
@@ -54,13 +54,13 @@ async function checkForDuplicateImage(
   try {
     // List all files in the user's folder
     const prefix = `users/${userId}/${folder}/`;
-    const [files] = await bucket.getFiles({ prefix });
+    const [files] = await bucket.getFiles({prefix});
 
     // Check metadata of each file for matching hash
     for (const file of files) {
       const [metadata] = await file.getMetadata();
       const storedHash = metadata.metadata?.imageHash;
-      
+
       if (storedHash === imageHash) {
         // Found a duplicate - return its URL
         const emulatorHost = process.env.FIREBASE_STORAGE_EMULATOR_HOST;
@@ -134,7 +134,7 @@ function validateBase64Image(
   try {
     buffer = Buffer.from(base64Clean, "base64");
   } catch {
-    return { valid: false, error: "Invalid base64 encoding" };
+    return {valid: false, error: "Invalid base64 encoding"};
   }
 
   // Check file size
@@ -162,18 +162,18 @@ function validateBase64Image(
     buffer[3] === 0x47;
 
   if (!isJpeg && !isPng) {
-    return { valid: false, error: "File content does not match a valid image format" };
+    return {valid: false, error: "File content does not match a valid image format"};
   }
 
   // Verify MIME type matches actual content
   if ((mimeType === "image/jpeg" || mimeType === "image/jpg") && !isJpeg) {
-    return { valid: false, error: "MIME type does not match file content" };
+    return {valid: false, error: "MIME type does not match file content"};
   }
   if (mimeType === "image/png" && !isPng) {
-    return { valid: false, error: "MIME type does not match file content" };
+    return {valid: false, error: "MIME type does not match file content"};
   }
 
-  return { valid: true, buffer };
+  return {valid: true, buffer};
 }
 
 /**
@@ -190,7 +190,7 @@ function getImageDimensions(
       if (buffer.length < 24) return null;
       const width = buffer.readUInt32BE(16);
       const height = buffer.readUInt32BE(20);
-      return { width, height };
+      return {width, height};
     } else if (mimeType === "image/jpeg" || mimeType === "image/jpg") {
       // JPEG: need to parse segments to find SOF marker
       let offset = 2; // Skip SOI marker
@@ -204,7 +204,7 @@ function getImageDimensions(
         if (marker >= 0xc0 && marker <= 0xc3) {
           const height = buffer.readUInt16BE(offset + 5);
           const width = buffer.readUInt16BE(offset + 7);
-          return { width, height };
+          return {width, height};
         }
 
         offset += 2 + length;
@@ -256,13 +256,13 @@ async function optimizeImage(
     if (hasAlpha) {
       // Keep as PNG if it has transparency
       outputBuffer = await pipeline
-        .png({ compressionLevel: PNG_COMPRESSION })
+        .png({compressionLevel: PNG_COMPRESSION})
         .toBuffer();
       outputMimeType = "image/png";
     } else {
       // Convert to JPEG for smaller file size
       outputBuffer = await pipeline
-        .jpeg({ quality: JPEG_QUALITY, mozjpeg: true })
+        .jpeg({quality: JPEG_QUALITY, mozjpeg: true})
         .toBuffer();
       outputMimeType = "image/jpeg";
     }
@@ -280,11 +280,11 @@ async function optimizeImage(
       outputFormat: outputMimeType,
     });
 
-    return { buffer: outputBuffer, mimeType: outputMimeType };
+    return {buffer: outputBuffer, mimeType: outputMimeType};
   } catch (error) {
     logger.error("Error optimizing image:", error);
     // Return original if optimization fails
-    return { buffer, mimeType };
+    return {buffer, mimeType};
   }
 }
 
@@ -307,7 +307,7 @@ export const uploadProfileImage = onCall<UploadImageRequest, Promise<UploadImage
     }
 
     const userId = request.auth.uid;
-    const { imageData, mimeType, fileName, folder = "photos" } = request.data;
+    const {imageData, mimeType, fileName, folder = "photos"} = request.data;
 
     // Validate required fields
     if (!imageData || !mimeType) {
@@ -341,7 +341,7 @@ export const uploadProfileImage = onCall<UploadImageRequest, Promise<UploadImage
     const imageHash = computeImageHash(validation.buffer);
     const duplicateUrl = await checkForDuplicateImage(userId, imageHash, folder);
     if (duplicateUrl) {
-      logger.info(`Duplicate image detected for user ${userId}`, { hash: imageHash });
+      logger.info(`Duplicate image detected for user ${userId}`, {hash: imageHash});
       throw new HttpsError(
         "already-exists",
         "This image has already been uploaded. Please choose a different photo."
@@ -352,7 +352,7 @@ export const uploadProfileImage = onCall<UploadImageRequest, Promise<UploadImage
     const userDoc = await db.collection("users").doc(userId).get();
     const userData = userDoc.data();
     const currentPhotoDetails = userData?.onboarding?.photoDetails || [];
-    
+
     if (folder === "photos" && currentPhotoDetails.length >= 20) {
       throw new HttpsError(
         "resource-exhausted",
@@ -364,7 +364,7 @@ export const uploadProfileImage = onCall<UploadImageRequest, Promise<UploadImage
     const apiKey = openaiApiKey.value();
     if (apiKey) {
       const moderation = await moderateImage(imageData, mimeType, apiKey);
-      
+
       if (moderation.flagged) {
         logger.warn(`Image rejected for user ${userId} - inappropriate content`, {
           categories: moderation.categories,
@@ -374,7 +374,7 @@ export const uploadProfileImage = onCall<UploadImageRequest, Promise<UploadImage
           "This image contains content that violates our community guidelines. Please upload a different photo."
         );
       }
-      
+
       if (moderation.error) {
         // Log the error but don't block the upload
         logger.warn("Moderation check failed, proceeding with upload", {
@@ -386,7 +386,7 @@ export const uploadProfileImage = onCall<UploadImageRequest, Promise<UploadImage
       // Person detection - ensure the image contains a real person
       if (folder === "photos") {
         const personCheck = await detectPerson(imageData, mimeType, apiKey);
-        
+
         if (!personCheck.containsPerson && !personCheck.error) {
           logger.warn(`Image rejected for user ${userId} - no person detected`);
           throw new HttpsError(
@@ -394,7 +394,7 @@ export const uploadProfileImage = onCall<UploadImageRequest, Promise<UploadImage
             "Profile photos must contain a person. Please upload a photo of yourself."
           );
         }
-        
+
         if (personCheck.error) {
           logger.warn("Person detection check had an error, proceeding with upload", {
             error: personCheck.error,
@@ -442,7 +442,7 @@ export const uploadProfileImage = onCall<UploadImageRequest, Promise<UploadImage
       // Get the download URL - works with both emulator and production
       let downloadUrl: string;
       const emulatorHost = process.env.FIREBASE_STORAGE_EMULATOR_HOST;
-      
+
       if (emulatorHost) {
         // Running in emulator - construct emulator URL
         const encodedPath = encodeURIComponent(filePath);
@@ -482,30 +482,30 @@ async function processSingleImage(
   maxPhotos: number,
   apiKey: string | undefined
 ): Promise<ImageResult> {
-  const { imageData, mimeType, fileName } = image;
+  const {imageData, mimeType, fileName} = image;
 
   try {
     // Validate the image data
     const validation = validateBase64Image(imageData, mimeType);
     if (!validation.valid || !validation.buffer) {
-      return { success: false, error: validation.error || "Invalid image", fileName };
+      return {success: false, error: validation.error || "Invalid image", fileName};
     }
 
     // Check image dimensions
     const dimensions = getImageDimensions(validation.buffer, mimeType);
     if (dimensions) {
       if (dimensions.width > MAX_DIMENSION || dimensions.height > MAX_DIMENSION) {
-        return { 
-          success: false, 
+        return {
+          success: false,
           error: `Image dimensions too large. Maximum: ${MAX_DIMENSION}x${MAX_DIMENSION}px`,
-          fileName 
+          fileName,
         };
       }
       if (dimensions.width < MIN_DIMENSION || dimensions.height < MIN_DIMENSION) {
-        return { 
-          success: false, 
+        return {
+          success: false,
           error: `Image dimensions too small. Minimum: ${MIN_DIMENSION}x${MIN_DIMENSION}px`,
-          fileName 
+          fileName,
         };
       }
     }
@@ -514,40 +514,40 @@ async function processSingleImage(
     const imageHash = computeImageHash(validation.buffer);
     const duplicateUrl = await checkForDuplicateImage(userId, imageHash, folder);
     if (duplicateUrl) {
-      logger.info(`Duplicate image detected for user ${userId}`, { hash: imageHash, fileName });
-      return { 
-        success: false, 
+      logger.info(`Duplicate image detected for user ${userId}`, {hash: imageHash, fileName});
+      return {
+        success: false,
         error: "This image has already been uploaded. Please choose a different photo.",
-        fileName 
+        fileName,
       };
     }
 
     // Content moderation using OpenAI
     if (apiKey) {
       const moderation = await moderateImage(imageData, mimeType, apiKey);
-      
+
       if (moderation.flagged) {
         logger.warn(`Image rejected for user ${userId} - inappropriate content`, {
           categories: moderation.categories,
           fileName,
         });
-        return { 
-          success: false, 
+        return {
+          success: false,
           error: "This image contains content that violates our community guidelines.",
-          fileName 
+          fileName,
         };
       }
 
       // Person detection - ensure the image contains a real person
       if (folder === "photos") {
         const personCheck = await detectPerson(imageData, mimeType, apiKey);
-        
+
         if (!personCheck.containsPerson && !personCheck.error) {
-          logger.warn(`Image rejected for user ${userId} - no person detected`, { fileName });
-          return { 
-            success: false, 
+          logger.warn(`Image rejected for user ${userId} - no person detected`, {fileName});
+          return {
+            success: false,
             error: "Profile photos must contain a person. Please upload a photo of yourself.",
-            fileName 
+            fileName,
           };
         }
       }
@@ -588,7 +588,7 @@ async function processSingleImage(
     // Get the download URL
     let downloadUrl: string;
     const emulatorHost = process.env.FIREBASE_STORAGE_EMULATOR_HOST;
-    
+
     if (emulatorHost) {
       const encodedPath = encodeURIComponent(filePath);
       downloadUrl = `http://${emulatorHost}/v0/b/${bucket.name}/o/${encodedPath}?alt=media`;
@@ -603,10 +603,10 @@ async function processSingleImage(
       fileName,
     });
 
-    return { success: true, url: downloadUrl, fileName };
+    return {success: true, url: downloadUrl, fileName};
   } catch (error) {
-    logger.error(`Failed to process image for user ${userId}`, { error, fileName });
-    return { success: false, error: "Failed to process image", fileName };
+    logger.error(`Failed to process image for user ${userId}`, {error, fileName});
+    return {success: false, error: "Failed to process image", fileName};
   }
 }
 
@@ -628,7 +628,7 @@ export const uploadProfileImages = onCall<UploadImagesRequest, Promise<UploadIma
     }
 
     const userId = request.auth.uid;
-    const { images, folder = "photos" } = request.data;
+    const {images, folder = "photos"} = request.data;
 
     // Validate request
     if (!images || !Array.isArray(images) || images.length === 0) {
@@ -653,7 +653,7 @@ export const uploadProfileImages = onCall<UploadImagesRequest, Promise<UploadIma
     }
 
     const apiKey = openaiApiKey.value();
-    
+
     if (!apiKey) {
       logger.warn("OpenAI API key not configured, skipping content moderation");
     }
@@ -665,12 +665,12 @@ export const uploadProfileImages = onCall<UploadImagesRequest, Promise<UploadIma
     for (let i = 0; i < images.length; i += concurrencyLimit) {
       const batch = images.slice(i, i + concurrencyLimit);
       const batchResults = await Promise.all(
-        batch.map((image, idx) => 
+        batch.map((image, idx) =>
           processSingleImage(
-            userId, 
-            image, 
-            folder, 
-            currentPhotoDetails.length + results.filter(r => r.success).length + idx,
+            userId,
+            image,
+            folder,
+            currentPhotoDetails.length + results.filter((r) => r.success).length + idx,
             20,
             apiKey
           )
@@ -679,8 +679,8 @@ export const uploadProfileImages = onCall<UploadImagesRequest, Promise<UploadIma
       results.push(...batchResults);
     }
 
-    const successCount = results.filter(r => r.success).length;
-    const failureCount = results.filter(r => !r.success).length;
+    const successCount = results.filter((r) => r.success).length;
+    const failureCount = results.filter((r) => !r.success).length;
 
     logger.info(`Batch upload completed for user ${userId}`, {
       totalImages: images.length,
@@ -734,7 +734,7 @@ export const deleteProfileImage = onCall<{ imageUrl: string }, Promise<{ success
     }
 
     const userId = request.auth.uid;
-    const { imageUrl } = request.data;
+    const {imageUrl} = request.data;
 
     if (!imageUrl) {
       throw new HttpsError("invalid-argument", "Missing required field: imageUrl");
@@ -743,11 +743,11 @@ export const deleteProfileImage = onCall<{ imageUrl: string }, Promise<{ success
     // Extract file path from URL (handles both emulator and production formats)
     const bucketName = bucket.name;
     const filePath = extractFilePathFromUrl(imageUrl, bucketName);
-    
+
     if (!filePath) {
       throw new HttpsError("permission-denied", "Invalid image URL");
     }
-    
+
     // Verify the file belongs to this user
     if (!filePath.startsWith(`users/${userId}/`)) {
       throw new HttpsError("permission-denied", "You can only delete your own images");
@@ -756,13 +756,13 @@ export const deleteProfileImage = onCall<{ imageUrl: string }, Promise<{ success
     try {
       const file = bucket.file(filePath);
       const [exists] = await file.exists();
-      
+
       if (exists) {
         await file.delete();
-        logger.info(`Image deleted for user ${userId}`, { path: filePath });
+        logger.info(`Image deleted for user ${userId}`, {path: filePath});
       }
 
-      return { success: true };
+      return {success: true};
     } catch (error) {
       logger.error(`Failed to delete image for user ${userId}`, error);
       throw new HttpsError("internal", "Failed to delete image. Please try again.");

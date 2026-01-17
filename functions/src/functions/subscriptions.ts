@@ -2,9 +2,9 @@
  * Stripe Subscription Cloud Functions
  * Handles subscription checkout, management, and webhook events
  */
-import { onCall, onRequest, HttpsError } from "firebase-functions/v2/https";
-import { db } from "../config/firebase";
-import { FieldValue } from "firebase-admin/firestore";
+import {onCall, onRequest, HttpsError} from "firebase-functions/v2/https";
+import {db} from "../config/firebase";
+import {FieldValue} from "firebase-admin/firestore";
 import Stripe from "stripe";
 
 // Initialize Stripe
@@ -60,7 +60,7 @@ export const createSubscriptionCheckout = onCall(
       throw new HttpsError("unauthenticated", "User must be authenticated");
     }
 
-    const { tier, interval } = request.data as {
+    const {tier, interval} = request.data as {
       tier: SubscriptionTier;
       interval: "monthly" | "quarterly";
     };
@@ -169,7 +169,7 @@ export const createSubscriptionCheckout = onCall(
               pendingDowngradeTier: null,
               pendingDowngradeDate: null,
             },
-          }, { merge: true });
+          }, {merge: true});
 
           return {
             updated: true,
@@ -208,7 +208,7 @@ export const createSubscriptionCheckout = onCall(
               pendingDowngradeTier: null,
               pendingDowngradeDate: null,
             },
-          }, { merge: true });
+          }, {merge: true});
 
           const tierName = tier === "elite" ? "Elite" : "Connect";
           const intervalName = interval === "quarterly" ? "quarterly" : "monthly";
@@ -244,9 +244,9 @@ export const createSubscriptionCheckout = onCall(
           });
 
           const subscriptionItem = updatedSubscription.items?.data?.[0];
-          const currentPeriodEnd = subscriptionItem?.current_period_end
-            ? new Date(subscriptionItem.current_period_end * 1000)
-            : null;
+          const currentPeriodEnd = subscriptionItem?.current_period_end ?
+            new Date(subscriptionItem.current_period_end * 1000) :
+            null;
 
           await db.collection("users").doc(userId).collection("private").doc("data").set({
             subscription: {
@@ -257,7 +257,7 @@ export const createSubscriptionCheckout = onCall(
               pendingDowngradeTier: null, // Clear any pending downgrade
               pendingDowngradeDate: null,
             },
-          }, { merge: true });
+          }, {merge: true});
 
           // Log the plan change
           await db.collection("users").doc(userId).collection("payments").add({
@@ -296,9 +296,9 @@ export const createSubscriptionCheckout = onCall(
 
           // Get the date when the downgrade takes effect
           const subscriptionItem = updatedSubscription.items?.data?.[0];
-          const currentPeriodEnd = subscriptionItem?.current_period_end
-            ? new Date(subscriptionItem.current_period_end * 1000)
-            : null;
+          const currentPeriodEnd = subscriptionItem?.current_period_end ?
+            new Date(subscriptionItem.current_period_end * 1000) :
+            null;
 
           // Store pending downgrade info but KEEP current tier active
           await db.collection("users").doc(userId).collection("private").doc("data").set({
@@ -310,7 +310,7 @@ export const createSubscriptionCheckout = onCall(
               pendingDowngradeTier: tier, // The tier they're downgrading to
               pendingDowngradeDate: currentPeriodEnd, // When it takes effect
             },
-          }, { merge: true });
+          }, {merge: true});
 
           // Log the scheduled downgrade
           await db.collection("users").doc(userId).collection("payments").add({
@@ -323,9 +323,9 @@ export const createSubscriptionCheckout = onCall(
             createdAt: FieldValue.serverTimestamp(),
           });
 
-          const effectiveDateStr = currentPeriodEnd 
-            ? currentPeriodEnd.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
-            : "your next billing date";
+          const effectiveDateStr = currentPeriodEnd ?
+            currentPeriodEnd.toLocaleDateString("en-US", {month: "long", day: "numeric", year: "numeric"}) :
+            "your next billing date";
 
           return {
             updated: true,
@@ -339,9 +339,9 @@ export const createSubscriptionCheckout = onCall(
 
       // No existing subscription - create new checkout session
       // Determine success and cancel URLs
-      const baseUrl = process.env.FUNCTIONS_EMULATOR
-        ? "http://localhost:4200"
-        : "https://gylde-dba55.web.app"; // TODO: Update with actual domain
+      const baseUrl = process.env.FUNCTIONS_EMULATOR ?
+        "http://localhost:4200" :
+        "https://gylde-dba55.web.app"; // TODO: Update with actual domain
 
       // Create Checkout Session
       const session = await stripe.checkout.sessions.create({
@@ -413,9 +413,9 @@ export const createCustomerPortal = onCall(
         throw new HttpsError("failed-precondition", "No subscription found");
       }
 
-      const baseUrl = process.env.FUNCTIONS_EMULATOR
-        ? "http://localhost:4200"
-        : "https://gylde-dba55.web.app";
+      const baseUrl = process.env.FUNCTIONS_EMULATOR ?
+        "http://localhost:4200" :
+        "https://gylde-dba55.web.app";
 
       // Create Customer Portal session
       const session = await stripe.billingPortal.sessions.create({
@@ -423,7 +423,7 @@ export const createCustomerPortal = onCall(
         return_url: `${baseUrl}/subscription`,
       });
 
-      return { url: session.url };
+      return {url: session.url};
     } catch (error) {
       console.error("Error creating customer portal:", error);
       if (error instanceof HttpsError) throw error;
@@ -476,33 +476,33 @@ export const stripeWebhook = onRequest(
 
     try {
       switch (event.type) {
-        case "checkout.session.completed": {
-          const session = event.data.object as Stripe.Checkout.Session;
-          await handleCheckoutComplete(session);
-          break;
-        }
+      case "checkout.session.completed": {
+        const session = event.data.object as Stripe.Checkout.Session;
+        await handleCheckoutComplete(session);
+        break;
+      }
 
-        case "customer.subscription.created":
-        case "customer.subscription.updated": {
-          const subscription = event.data.object as Stripe.Subscription;
-          await handleSubscriptionUpdate(subscription);
-          break;
-        }
+      case "customer.subscription.created":
+      case "customer.subscription.updated": {
+        const subscription = event.data.object as Stripe.Subscription;
+        await handleSubscriptionUpdate(subscription);
+        break;
+      }
 
-        case "customer.subscription.deleted": {
-          const subscription = event.data.object as Stripe.Subscription;
-          await handleSubscriptionCanceled(subscription);
-          break;
-        }
+      case "customer.subscription.deleted": {
+        const subscription = event.data.object as Stripe.Subscription;
+        await handleSubscriptionCanceled(subscription);
+        break;
+      }
 
-        case "invoice.payment_failed": {
-          const invoice = event.data.object as Stripe.Invoice;
-          await handlePaymentFailed(invoice);
-          break;
-        }
+      case "invoice.payment_failed": {
+        const invoice = event.data.object as Stripe.Invoice;
+        await handlePaymentFailed(invoice);
+        break;
+      }
 
-        default:
-          console.log(`Unhandled event type: ${event.type}`);
+      default:
+        console.log(`Unhandled event type: ${event.type}`);
       }
 
       res.status(200).send("OK");
@@ -524,7 +524,7 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session): Promise
   }
 
   const tier = session.metadata?.tier as SubscriptionTier;
-  
+
   console.log(`Checkout complete for user ${userId}, tier: ${tier}`);
 
   // The subscription update will be handled by the subscription.updated event
@@ -552,12 +552,12 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription): Prom
       .where("stripeCustomerId", "==", customerId)
       .limit(1)
       .get();
-    
+
     if (userQuery.empty) {
       console.error("Could not find user for subscription:", subscription.id);
       return;
     }
-    
+
     await updateUserSubscription(userQuery.docs[0].id, subscription);
     return;
   }
@@ -586,13 +586,13 @@ async function updateUserSubscription(userId: string, subscription: Stripe.Subsc
 
   // Get subscription items to extract period info
   const subscriptionItem = subscription.items?.data?.[0];
-  const currentPeriodStart = subscriptionItem?.current_period_start 
-    ? new Date(subscriptionItem.current_period_start * 1000)
-    : null;
-  const currentPeriodEnd = subscriptionItem?.current_period_end
-    ? new Date(subscriptionItem.current_period_end * 1000)
-    : null;
-  
+  const currentPeriodStart = subscriptionItem?.current_period_start ?
+    new Date(subscriptionItem.current_period_start * 1000) :
+    null;
+  const currentPeriodEnd = subscriptionItem?.current_period_end ?
+    new Date(subscriptionItem.current_period_end * 1000) :
+    null;
+
   // Determine billing interval from the price
   // interval_count of 3 months = quarterly, 1 month = monthly
   const priceInterval = subscriptionItem?.price?.recurring?.interval;
@@ -611,7 +611,7 @@ async function updateUserSubscription(userId: string, subscription: Stripe.Subsc
 
   // Determine the effective tier
   let effectiveTier = tier;
-  
+
   // If there was a pending downgrade and we've passed the downgrade date,
   // the new tier from Stripe metadata should now be in effect
   if (pendingDowngradeTier && pendingDowngradeDate) {
@@ -634,9 +634,9 @@ async function updateUserSubscription(userId: string, subscription: Stripe.Subsc
   // Check if subscription is scheduled to cancel
   // Stripe can use either cancel_at_period_end OR cancel_at (timestamp)
   const isScheduledToCancel = subscription.cancel_at_period_end || subscription.cancel_at !== null;
-  const cancelAt = subscription.cancel_at 
-    ? new Date(subscription.cancel_at * 1000) 
-    : null;
+  const cancelAt = subscription.cancel_at ?
+    new Date(subscription.cancel_at * 1000) :
+    null;
 
   // Build subscription data update
   const subscriptionData: Record<string, unknown> = {
@@ -658,7 +658,7 @@ async function updateUserSubscription(userId: string, subscription: Stripe.Subsc
       subscriptionData.pendingDowngradeDate = null;
     }
   }
-  
+
   // Also clear pending downgrade if subscription is explicitly set to cancel
   if (isScheduledToCancel) {
     subscriptionData.pendingDowngradeTier = null;
@@ -668,7 +668,7 @@ async function updateUserSubscription(userId: string, subscription: Stripe.Subsc
   // Update private subscription data
   await db.collection("users").doc(userId).collection("private").doc("data").set({
     subscription: subscriptionData,
-  }, { merge: true });
+  }, {merge: true});
 
   console.log(`Updated subscription for user ${userId}: tier=${effectiveTier}, status=${mappedStatus}`);
 }
@@ -678,13 +678,13 @@ async function updateUserSubscription(userId: string, subscription: Stripe.Subsc
  */
 async function handleSubscriptionCanceled(subscription: Stripe.Subscription): Promise<void> {
   const customerId = subscription.customer as string;
-  
+
   // Find user by customer ID
   const userQuery = await db.collection("users")
     .where("stripeCustomerId", "==", customerId)
     .limit(1)
     .get();
-  
+
   if (userQuery.empty) {
     console.error("Could not find user for canceled subscription:", subscription.id);
     return;
@@ -705,7 +705,7 @@ async function handleSubscriptionCanceled(subscription: Stripe.Subscription): Pr
       stripeSubscriptionId: subscription.id,
       canceledAt: FieldValue.serverTimestamp(),
     },
-  }, { merge: true });
+  }, {merge: true});
 
   console.log(`Subscription canceled for user ${userId}`);
 }
@@ -715,13 +715,13 @@ async function handleSubscriptionCanceled(subscription: Stripe.Subscription): Pr
  */
 async function handlePaymentFailed(invoice: Stripe.Invoice): Promise<void> {
   const customerId = invoice.customer as string;
-  
+
   // Find user by customer ID
   const userQuery = await db.collection("users")
     .where("stripeCustomerId", "==", customerId)
     .limit(1)
     .get();
-  
+
   if (userQuery.empty) {
     console.error("Could not find user for failed payment:", invoice.id);
     return;

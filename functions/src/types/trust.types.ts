@@ -1,11 +1,11 @@
 /**
  * Trust Score Types
- * 
+ *
  * The trust system is designed to be flexible and extensible.
  * Tasks can be added/removed/reweighted without major refactoring.
  */
 
-import { Timestamp } from "firebase-admin/firestore";
+import {Timestamp} from "firebase-admin/firestore";
 
 /**
  * Individual trust task completion status
@@ -34,9 +34,9 @@ export interface TrustTaskDefinition {
 /**
  * Trust categories
  */
-export type TrustCategory = 
+export type TrustCategory =
   | "verification"
-  | "photos" 
+  | "photos"
   | "profile"
   | "activity";
 
@@ -46,19 +46,19 @@ export type TrustCategory =
 export interface TrustData {
   // Overall calculated score (0-100)
   score: number;
-  
+
   // When the score was last calculated
   lastCalculatedAt: Timestamp;
-  
+
   // Maximum possible score (sum of all task points)
   maxScore: number;
-  
+
   // Points earned
   earnedPoints: number;
-  
+
   // Individual task statuses
   tasks: Record<string, TrustTask>;
-  
+
   // Category breakdowns
   categories: Record<TrustCategory, {
     maxPoints: number;
@@ -70,11 +70,11 @@ export interface TrustData {
 
 /**
  * Trust task definitions with weights
- * 
+ *
  * Point allocation (100 total):
  * - Verification: 30 points (identity is the big one)
  * - Photos: 20 points
- * - Profile: 25 points  
+ * - Profile: 25 points
  * - Activity: 25 points
  */
 export const TRUST_TASK_DEFINITIONS: TrustTaskDefinition[] = [
@@ -186,7 +186,7 @@ export const TRUST_TASK_DEFINITIONS: TrustTaskDefinition[] = [
         onboarding.occupation,
         onboarding.income,
       ];
-      const filledCount = fields.filter(v => v && v !== '').length;
+      const filledCount = fields.filter((v) => v && v !== "").length;
       return filledCount >= 3;
     },
     getValue: (data) => {
@@ -203,7 +203,7 @@ export const TRUST_TASK_DEFINITIONS: TrustTaskDefinition[] = [
         onboarding.occupation,
         onboarding.income,
       ];
-      return fields.filter(v => v && v !== '').length;
+      return fields.filter((v) => v && v !== "").length;
     },
   },
   {

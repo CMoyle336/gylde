@@ -1,11 +1,11 @@
 /**
  * Favorite-related Cloud Functions
  */
-import { onDocumentCreated, onDocumentDeleted } from "firebase-functions/v2/firestore";
-import { FieldValue } from "firebase-admin/firestore";
-import { db } from "../config/firebase";
-import { ActivityService, UserService } from "../services";
-import { UserDisplayInfo } from "../types";
+import {onDocumentCreated, onDocumentDeleted} from "firebase-functions/v2/firestore";
+import {FieldValue} from "firebase-admin/firestore";
+import {db} from "../config/firebase";
+import {ActivityService, UserService} from "../services";
+import {UserDisplayInfo} from "../types";
 import * as logger from "firebase-functions/logger";
 
 /**
@@ -126,7 +126,7 @@ async function handleUnmatch(
     ActivityService.deleteActivities(toUserId, "match", fromUserId),
   ]);
 
-  logger.info(`Match and match activities removed for both users`);
+  logger.info("Match and match activities removed for both users");
 }
 
 /**
@@ -178,5 +178,5 @@ async function handleMatch(
     ),
   ]);
 
-  logger.info(`Match activities created for both users`);
+  logger.info("Match activities created for both users");
 }

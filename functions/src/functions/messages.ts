@@ -1,10 +1,10 @@
 /**
  * Message-related Cloud Functions
  */
-import { onDocumentCreated } from "firebase-functions/v2/firestore";
-import { FieldValue } from "firebase-admin/firestore";
-import { db } from "../config/firebase";
-import { ActivityService } from "../services";
+import {onDocumentCreated} from "firebase-functions/v2/firestore";
+import {FieldValue} from "firebase-admin/firestore";
+import {db} from "../config/firebase";
+import {ActivityService} from "../services";
 import * as logger from "firebase-functions/logger";
 
 /**

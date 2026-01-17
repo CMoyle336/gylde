@@ -5,8 +5,8 @@
  * for Elite subscribers using Twilio.
  */
 
-import { onCall, onRequest, HttpsError } from "firebase-functions/v2/https";
-import { getFirestore, FieldValue } from "firebase-admin/firestore";
+import {onCall, onRequest, HttpsError} from "firebase-functions/v2/https";
+import {getFirestore, FieldValue} from "firebase-admin/firestore";
 import * as twilio from "twilio";
 
 const db = getFirestore();
@@ -30,7 +30,7 @@ function getTwilioClient() {
  * Verify user has Elite subscription
  */
 async function verifyEliteSubscription(uid: string): Promise<void> {
-  const userDoc = await db.collection("users").doc(uid).collection('private').doc('data').get();
+  const userDoc = await db.collection("users").doc(uid).collection("private").doc("data").get();
   const userData = userDoc.data();
 
   if (!userData?.subscription?.tier || userData.subscription.tier !== "elite") {
@@ -47,7 +47,7 @@ async function getVerifiedPhoneNumber(uid: string): Promise<string> {
 
   if (!userData?.phoneNumberVerified || !userData?.phoneNumber) {
     throw new HttpsError(
-      "failed-precondition", 
+      "failed-precondition",
       "You must verify your phone number in Settings before getting a virtual number"
     );
   }
@@ -76,7 +76,7 @@ async function getExistingVirtualPhone(uid: string) {
  * Provision a new virtual phone number for a user
  */
 export const provisionVirtualNumber = onCall(
-  { cors: true },
+  {cors: true},
   async (request) => {
     // Verify authentication
     if (!request.auth?.uid) {
@@ -131,8 +131,8 @@ export const provisionVirtualNumber = onCall(
         phoneNumber: selectedNumber.phoneNumber,
         friendlyName: `Gylde-${uid.slice(0, 8)}`,
         // Configure webhooks for incoming calls/SMS
-        ...(voiceWebhookUrl && { voiceUrl: voiceWebhookUrl, voiceMethod: "POST" }),
-        ...(smsWebhookUrl && { smsUrl: smsWebhookUrl, smsMethod: "POST" }),
+        ...(voiceWebhookUrl && {voiceUrl: voiceWebhookUrl, voiceMethod: "POST"}),
+        ...(smsWebhookUrl && {smsUrl: smsWebhookUrl, smsMethod: "POST"}),
       });
 
       // Store the virtual phone data in Firestore
@@ -185,26 +185,26 @@ export const provisionVirtualNumber = onCall(
       // Handle Twilio-specific errors
       if (error.code) {
         switch (error.code) {
-          case 21422:
-            throw new HttpsError(
-              "invalid-argument",
-              "Invalid phone number format"
-            );
-          case 21452:
-            throw new HttpsError(
-              "resource-exhausted",
-              "Phone number limit reached"
-            );
-          case 21606:
-            throw new HttpsError(
-              "unavailable",
-              "Phone number is not available"
-            );
-          default:
-            throw new HttpsError(
-              "internal",
-              "Failed to provision phone number. Please try again."
-            );
+        case 21422:
+          throw new HttpsError(
+            "invalid-argument",
+            "Invalid phone number format"
+          );
+        case 21452:
+          throw new HttpsError(
+            "resource-exhausted",
+            "Phone number limit reached"
+          );
+        case 21606:
+          throw new HttpsError(
+            "unavailable",
+            "Phone number is not available"
+          );
+        default:
+          throw new HttpsError(
+            "internal",
+            "Failed to provision phone number. Please try again."
+          );
         }
       }
 
@@ -225,7 +225,7 @@ export const provisionVirtualNumber = onCall(
  * Release a virtual phone number
  */
 export const releaseVirtualNumber = onCall(
-  { cors: true },
+  {cors: true},
   async (request) => {
     // Verify authentication
     if (!request.auth?.uid) {
@@ -264,7 +264,7 @@ export const releaseVirtualNumber = onCall(
 
       console.log(`[VirtualPhone] Released ${existingPhone.number} for user ${uid}`);
 
-      return { success: true };
+      return {success: true};
     } catch (error: any) {
       console.error("[VirtualPhone] Failed to release number:", error);
 
@@ -283,7 +283,7 @@ export const releaseVirtualNumber = onCall(
           updatedAt: FieldValue.serverTimestamp(),
         });
 
-        return { success: true };
+        return {success: true};
       }
 
       throw new HttpsError(
@@ -298,7 +298,7 @@ export const releaseVirtualNumber = onCall(
  * Update virtual phone settings
  */
 export const updateVirtualPhoneSettings = onCall(
-  { cors: true },
+  {cors: true},
   async (request) => {
     // Verify authentication
     if (!request.auth?.uid) {
@@ -306,7 +306,7 @@ export const updateVirtualPhoneSettings = onCall(
     }
 
     const uid = request.auth.uid;
-    const { settings } = request.data as {
+    const {settings} = request.data as {
       settings: {
         doNotDisturb?: boolean;
         forwardCalls?: boolean;
@@ -341,7 +341,7 @@ export const updateVirtualPhoneSettings = onCall(
         updatedAt: FieldValue.serverTimestamp(),
       });
 
-    return { settings: updatedSettings };
+    return {settings: updatedSettings};
   }
 );
 
@@ -349,7 +349,7 @@ export const updateVirtualPhoneSettings = onCall(
  * Get virtual phone number info
  */
 export const getVirtualPhoneInfo = onCall(
-  { cors: true },
+  {cors: true},
   async (request) => {
     // Verify authentication
     if (!request.auth?.uid) {
@@ -380,7 +380,7 @@ export const getVirtualPhoneInfo = onCall(
 async function findUserByVirtualNumber(virtualNumber: string) {
   // Query all users' private/virtualPhone docs for this number
   const usersSnapshot = await db.collectionGroup("private").where("number", "==", virtualNumber).get();
-  
+
   if (usersSnapshot.empty) {
     return null;
   }
@@ -389,7 +389,7 @@ async function findUserByVirtualNumber(virtualNumber: string) {
   const doc = usersSnapshot.docs[0];
   // Path is: users/{uid}/private/virtualPhone
   const uid = doc.ref.parent.parent?.id;
-  
+
   if (!uid) return null;
 
   return {
@@ -400,18 +400,18 @@ async function findUserByVirtualNumber(virtualNumber: string) {
 
 /**
  * Twilio Voice Webhook - Handle incoming calls
- * 
+ *
  * When someone calls the virtual number, this webhook:
  * 1. Looks up who owns the virtual number
  * 2. Checks their settings (do not disturb, forward calls)
  * 3. Forwards the call to their real phone number
  */
 export const twilioVoiceWebhook = onRequest(
-  { cors: false },
+  {cors: false},
   async (req, res) => {
     console.log("[VirtualPhone] Incoming voice webhook:", req.body);
 
-    const { To, From, CallSid } = req.body;
+    const {To, From, CallSid} = req.body;
 
     if (!To || !From) {
       console.error("[VirtualPhone] Missing To or From in voice webhook");
@@ -433,7 +433,7 @@ export const twilioVoiceWebhook = onRequest(
         return;
       }
 
-      const { virtualPhone } = user;
+      const {virtualPhone} = user;
 
       // Check if Do Not Disturb is enabled
       if (virtualPhone.settings?.doNotDisturb) {
@@ -501,18 +501,18 @@ export const twilioVoiceWebhook = onRequest(
 
 /**
  * Twilio SMS Webhook - Handle incoming text messages
- * 
+ *
  * When someone texts the virtual number, this webhook:
  * 1. Looks up who owns the virtual number
  * 2. Checks their settings (do not disturb, forward texts)
  * 3. Forwards the text to their real phone number
  */
 export const twilioSmsWebhook = onRequest(
-  { cors: false },
+  {cors: false},
   async (req, res) => {
     console.log("[VirtualPhone] Incoming SMS webhook:", req.body);
 
-    const { To, From, Body, MessageSid } = req.body;
+    const {To, From, Body, MessageSid} = req.body;
 
     if (!To || !From) {
       console.error("[VirtualPhone] Missing To or From in SMS webhook");
@@ -530,7 +530,7 @@ export const twilioSmsWebhook = onRequest(
         return;
       }
 
-      const { virtualPhone } = user;
+      const {virtualPhone} = user;
 
       // Check if Do Not Disturb is enabled
       if (virtualPhone.settings?.doNotDisturb) {
@@ -566,7 +566,7 @@ export const twilioSmsWebhook = onRequest(
         });
         console.log(`[VirtualPhone] SMS forwarded successfully, SID: ${forwardedMessage.sid}`);
       } catch (twilioError: any) {
-        console.error(`[VirtualPhone] Failed to forward SMS:`, twilioError.message, twilioError.code);
+        console.error("[VirtualPhone] Failed to forward SMS:", twilioError.message, twilioError.code);
         // Common issues:
         // - 21608: The number is not verified (trial accounts can only send to verified numbers)
         // - 21211: Invalid 'To' phone number

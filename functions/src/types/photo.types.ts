@@ -2,7 +2,7 @@
  * Photo-related type definitions for Cloud Functions
  */
 
-import { Timestamp } from "firebase-admin/firestore";
+import {Timestamp} from "firebase-admin/firestore";
 
 /**
  * Individual photo with metadata

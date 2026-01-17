@@ -3,9 +3,9 @@
  * Handles profile search, filtering, sorting, and pagination with privacy enforcement
  */
 
-import { onCall, HttpsError } from "firebase-functions/v2/https";
-import { db } from "../config/firebase";
-import { FieldValue } from "firebase-admin/firestore";
+import {onCall, HttpsError} from "firebase-functions/v2/https";
+import {db} from "../config/firebase";
+import {FieldValue} from "firebase-admin/firestore";
 
 // Types
 interface GeoLocation {
@@ -111,19 +111,19 @@ interface SavedView {
 /**
  * Search profiles with filters, sorting, and pagination
  * ALL filtering happens at Firestore level for proper pagination
- * 
+ *
  * ARCHITECTURE:
  * - All scalar filters use Firestore 'in' operator
  * - One array filter uses 'array-contains-any' (connectionTypes prioritized)
  * - Geohash-based distance filtering for location queries
  * - Cursor-based pagination with startAfter
- * 
+ *
  * Limitations:
  * - Only ONE array-contains-any per query (we use connectionTypes)
  * - Distance sorting requires fetching nearby geohashes then sorting
  */
 export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
-  { region: "us-central1" },
+  {region: "us-central1"},
   async (request) => {
     // Ensure user is authenticated
     if (!request.auth) {
@@ -131,12 +131,11 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
     }
 
     const currentUserId = request.auth.uid;
-    const { filters = {}, sort = { field: "lastActive", direction: "desc" }, pagination = {} } = request.data;
-    const { limit: pageLimit = 20, cursor } = pagination;
+    const {filters = {}, sort = {field: "lastActive", direction: "desc"}, pagination = {}} = request.data;
+    const {limit: pageLimit = 20, cursor} = pagination;
     const searcherLocation = request.data.location;
 
     try {
-
       // Fetch current user's profile to get their support orientation
       const currentUserDoc = await db.collection("users").doc(currentUserId).get();
       const currentUserData = currentUserDoc.data();
@@ -148,8 +147,8 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
         db.collection("users").doc(currentUserId).collection("blockedBy").get(),
       ]);
       const blockedUserIds = new Set<string>([
-        ...blockedSnapshot.docs.map(d => d.id),
-        ...blockedBySnapshot.docs.map(d => d.id),
+        ...blockedSnapshot.docs.map((d) => d.id),
+        ...blockedBySnapshot.docs.map((d) => d.id),
       ]);
 
       // Determine compatible support orientations based on current user's preference
@@ -157,10 +156,10 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
       // - "providing" users should see "receiving" or "either" profiles
       // - "either" or "private" or undefined users see all (no filtering)
       let compatibleSupportOrientations: string[] | null = null;
-      if (currentUserSupportOrientation === 'receiving') {
-        compatibleSupportOrientations = ['providing', 'either'];
-      } else if (currentUserSupportOrientation === 'providing') {
-        compatibleSupportOrientations = ['receiving', 'either'];
+      if (currentUserSupportOrientation === "receiving") {
+        compatibleSupportOrientations = ["providing", "either"];
+      } else if (currentUserSupportOrientation === "providing") {
+        compatibleSupportOrientations = ["receiving", "either"];
       }
 
       // === BUILD FIRESTORE QUERY ===
@@ -186,12 +185,12 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
         const today = new Date();
         if (filters.maxAge) {
           const minBirthYear = today.getFullYear() - filters.maxAge - 1;
-          const minBirthDate = `${minBirthYear}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+          const minBirthDate = `${minBirthYear}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
           query = query.where("onboarding.birthDate", ">=", minBirthDate);
         }
         if (filters.minAge) {
           const maxBirthYear = today.getFullYear() - filters.minAge;
-          const maxBirthDate = `${maxBirthYear}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+          const maxBirthDate = `${maxBirthYear}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
           query = query.where("onboarding.birthDate", "<=", maxBirthDate);
         }
       }
@@ -239,7 +238,7 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
       if (filters.connectionTypes?.length) {
         query = query.where("onboarding.connectionTypes", "array-contains-any", filters.connectionTypes.slice(0, 30));
       }
-      
+
       // 9. Support orientation filter
       // If user explicitly set a filter, use that; otherwise apply automatic matching
       if (filters.supportOrientation?.length) {
@@ -264,25 +263,25 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
 
       // 10. Sorting
       switch (sort.field) {
-        case "lastActive":
-          query = query.orderBy("sortableLastActive", sort.direction === "asc" ? "asc" : "desc");
-          break;
-        case "newest":
-          query = query.orderBy("createdAt", sort.direction === "asc" ? "asc" : "desc");
-          break;
-        case "age":
-          query = query.orderBy("onboarding.birthDate", sort.direction === "asc" ? "desc" : "asc");
-          break;
-        case "distance":
-          // For distance sorting, we sort by geohash proximity then refine
-          if (searcherLocation) {
-            query = query.orderBy("geohash", "asc");
-          } else {
-            query = query.orderBy("sortableLastActive", "desc");
-          }
-          break;
-        default:
+      case "lastActive":
+        query = query.orderBy("sortableLastActive", sort.direction === "asc" ? "asc" : "desc");
+        break;
+      case "newest":
+        query = query.orderBy("createdAt", sort.direction === "asc" ? "asc" : "desc");
+        break;
+      case "age":
+        query = query.orderBy("onboarding.birthDate", sort.direction === "asc" ? "desc" : "asc");
+        break;
+      case "distance":
+        // For distance sorting, we sort by geohash proximity then refine
+        if (searcherLocation) {
+          query = query.orderBy("geohash", "asc");
+        } else {
           query = query.orderBy("sortableLastActive", "desc");
+        }
+        break;
+      default:
+        query = query.orderBy("sortableLastActive", "desc");
       }
 
       // Secondary sort for consistent pagination
@@ -304,15 +303,15 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
 
       // === FETCH TRUST SCORES FROM PRIVATE SUBCOLLECTION ===
       // Batch fetch trust scores for all matched profiles
-      const userIds = snapshot.docs.map(doc => doc.id).filter(id => !blockedUserIds.has(id));
+      const userIds = snapshot.docs.map((doc) => doc.id).filter((id) => !blockedUserIds.has(id));
       const trustScoreMap = new Map<string, number>();
-      
+
       // Fetch in batches of 10 (Firestore limit for parallel reads)
       const batchSize = 10;
       for (let i = 0; i < userIds.length; i += batchSize) {
         const batch = userIds.slice(i, i + batchSize);
         const trustDocs = await Promise.all(
-          batch.map(uid => 
+          batch.map((uid) =>
             db.collection("users").doc(uid).collection("private").doc("data").get()
           )
         );
@@ -324,7 +323,7 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
 
       // === TRANSFORM RESULTS ===
       const profiles: SearchResult[] = [];
-      
+
       for (const doc of snapshot.docs) {
         // Stop once we have enough (accounting for filtering)
         if (profiles.length >= pageLimit) break;
@@ -342,7 +341,7 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
 
         const data = doc.data();
         const onboarding = data.onboarding;
-        
+
         // Calculate distance for display (not filtering - that was done by geohash)
         let distance: number | undefined;
         if (searcherLocation && onboarding?.location) {
@@ -360,7 +359,7 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
         const showOnlineStatus = privacySettings.showOnlineStatus !== false;
         const showLastActive = privacySettings.showLastActive !== false;
         const showLocation = privacySettings.showLocation !== false;
-        
+
         // User is online if active within last 15 minutes
         let isCurrentlyOnline = false;
         if (lastActiveAt && !isNaN(lastActiveAt.getTime())) {
@@ -391,7 +390,7 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
             .map((p: { url: string }) => p.url),
           identityVerified: data.identityVerified === true,
           values: onboarding?.values || [],
-          supportOrientation: onboarding?.supportOrientation || '',
+          supportOrientation: onboarding?.supportOrientation || "",
           trustScore, // From private subcollection
           ethnicity: onboarding?.ethnicity,
           relationshipStatus: onboarding?.relationshipStatus,
@@ -415,9 +414,9 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
       // For trustScore sorting, sort in memory (since trust scores come from private subcollection)
       if (sort.field === "trustScore") {
         profiles.sort((a, b) => {
-          return sort.direction === "asc" 
-            ? a.trustScore - b.trustScore 
-            : b.trustScore - a.trustScore;
+          return sort.direction === "asc" ?
+            a.trustScore - b.trustScore :
+            b.trustScore - a.trustScore;
         });
       }
 
@@ -441,14 +440,14 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
  * Save a search view for the user
  */
 export const saveSearchView = onCall<SavedView, Promise<{ id: string }>>(
-  { region: "us-central1" },
+  {region: "us-central1"},
   async (request) => {
     if (!request.auth) {
       throw new HttpsError("unauthenticated", "Must be logged in to save views");
     }
 
     const userId = request.auth.uid;
-    const { name, filters, sort, isDefault } = request.data;
+    const {name, filters, sort, isDefault} = request.data;
 
     try {
       // If setting as default, unset other defaults
@@ -461,8 +460,8 @@ export const saveSearchView = onCall<SavedView, Promise<{ id: string }>>(
           .get();
 
         const batch = db.batch();
-        existingDefaults.docs.forEach(doc => {
-          batch.update(doc.ref, { isDefault: false });
+        existingDefaults.docs.forEach((doc) => {
+          batch.update(doc.ref, {isDefault: false});
         });
         await batch.commit();
       }
@@ -482,7 +481,7 @@ export const saveSearchView = onCall<SavedView, Promise<{ id: string }>>(
         .collection("savedViews")
         .add(viewData);
 
-      return { id: docRef.id };
+      return {id: docRef.id};
     } catch (error) {
       console.error("Error saving view:", error);
       throw new HttpsError("internal", "Failed to save view");
@@ -494,7 +493,7 @@ export const saveSearchView = onCall<SavedView, Promise<{ id: string }>>(
  * Get user's saved views
  */
 export const getSavedViews = onCall<void, Promise<SavedView[]>>(
-  { region: "us-central1" },
+  {region: "us-central1"},
   async (request) => {
     if (!request.auth) {
       throw new HttpsError("unauthenticated", "Must be logged in to get views");
@@ -510,7 +509,7 @@ export const getSavedViews = onCall<void, Promise<SavedView[]>>(
         .orderBy("createdAt", "desc")
         .get();
 
-      return snapshot.docs.map(doc => ({
+      return snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       })) as SavedView[];
@@ -525,14 +524,14 @@ export const getSavedViews = onCall<void, Promise<SavedView[]>>(
  * Delete a saved view
  */
 export const deleteSearchView = onCall<{ viewId: string }, Promise<void>>(
-  { region: "us-central1" },
+  {region: "us-central1"},
   async (request) => {
     if (!request.auth) {
       throw new HttpsError("unauthenticated", "Must be logged in to delete views");
     }
 
     const userId = request.auth.uid;
-    const { viewId } = request.data;
+    const {viewId} = request.data;
 
     try {
       await db
@@ -552,14 +551,14 @@ export const deleteSearchView = onCall<{ viewId: string }, Promise<void>>(
  * Set a view as the default (and unset others)
  */
 export const setDefaultView = onCall<{ viewId: string }, Promise<void>>(
-  { region: "us-central1" },
+  {region: "us-central1"},
   async (request) => {
     if (!request.auth) {
       throw new HttpsError("unauthenticated", "Must be logged in to set default view");
     }
 
     const userId = request.auth.uid;
-    const { viewId } = request.data;
+    const {viewId} = request.data;
 
     try {
       const viewsRef = db
@@ -569,17 +568,17 @@ export const setDefaultView = onCall<{ viewId: string }, Promise<void>>(
 
       // Get all views to update them in a batch
       const allViews = await viewsRef.get();
-      
+
       const batch = db.batch();
-      
-      allViews.docs.forEach(doc => {
+
+      allViews.docs.forEach((doc) => {
         // Set the specified view as default, unset all others
-        batch.update(doc.ref, { 
+        batch.update(doc.ref, {
           isDefault: doc.id === viewId,
           updatedAt: FieldValue.serverTimestamp(),
         });
       });
-      
+
       await batch.commit();
     } catch (error) {
       console.error("Error setting default view:", error);
@@ -628,10 +627,10 @@ function toRad(deg: number): number {
  * Generate a geohash for a lat/lng coordinate
  * Uses a simple base32 encoding scheme
  */
-function encodeGeohash(latitude: number, longitude: number, precision: number = 9): string {
+function encodeGeohash(latitude: number, longitude: number, precision = 9): string {
   const base32 = "0123456789bcdefghjkmnpqrstuvwxyz";
-  let latRange = { min: -90, max: 90 };
-  let lngRange = { min: -180, max: 180 };
+  const latRange = {min: -90, max: 90};
+  const lngRange = {min: -180, max: 180};
   let hash = "";
   let isLng = true;
   let bit = 0;

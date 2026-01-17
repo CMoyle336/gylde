@@ -2,9 +2,9 @@
  * Activity Service
  * Handles creation and deletion of activity records
  */
-import { FieldValue } from "firebase-admin/firestore";
-import { db } from "../config/firebase";
-import { ActivityType, ActivityWrite } from "../types";
+import {FieldValue} from "firebase-admin/firestore";
+import {db} from "../config/firebase";
+import {ActivityType, ActivityWrite} from "../types";
 import * as logger from "firebase-functions/logger";
 
 export class ActivityService {

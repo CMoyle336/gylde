@@ -2,9 +2,9 @@
  * Stripe Payment Cloud Functions
  * Handles payment intents for various paid features
  */
-import { onCall, HttpsError } from "firebase-functions/v2/https";
-import { db } from "../config/firebase";
-import { FieldValue } from "firebase-admin/firestore";
+import {onCall, HttpsError} from "firebase-functions/v2/https";
+import {db} from "../config/firebase";
+import {FieldValue} from "firebase-admin/firestore";
 import Stripe from "stripe";
 
 // Initialize Stripe with secret key from environment
@@ -28,7 +28,7 @@ const PRICES = {
  * Create a payment intent for a specific product/service
  */
 export const createPaymentIntent = onCall(
-  { 
+  {
     region: "us-central1",
     secrets: ["STRIPE_SECRET_KEY"],
   },
@@ -38,7 +38,7 @@ export const createPaymentIntent = onCall(
       throw new HttpsError("unauthenticated", "User must be authenticated");
     }
 
-    const { type } = request.data as { type: keyof typeof PRICES };
+    const {type} = request.data as { type: keyof typeof PRICES };
     const userId = request.auth.uid;
 
     // Validate payment type
@@ -109,7 +109,7 @@ export const confirmPayment = onCall(
       throw new HttpsError("unauthenticated", "User must be authenticated");
     }
 
-    const { paymentIntentId, type } = request.data as { 
+    const {paymentIntentId, type} = request.data as {
       paymentIntentId: string;
       type: keyof typeof PRICES;
     };
@@ -154,7 +154,7 @@ export const confirmPayment = onCall(
 
       console.log(`Payment ${paymentIntentId} confirmed for user ${userId}`);
 
-      return { success: true };
+      return {success: true};
     } catch (error) {
       console.error("Error confirming payment:", error);
       if (error instanceof HttpsError) throw error;
@@ -168,16 +168,16 @@ export const confirmPayment = onCall(
  */
 async function grantPurchasedFeature(userId: string, type: keyof typeof PRICES): Promise<void> {
   switch (type) {
-    case "identity_verification":
-      // Mark that user has paid for verification
-      // The actual verification will be done via Veriff
-      await db.collection("users").doc(userId).update({
-        identityVerificationPaid: true,
-        identityVerificationPaidAt: FieldValue.serverTimestamp(),
-      });
-      break;
-    default:
-      console.warn(`Unknown purchase type: ${type}`);
+  case "identity_verification":
+    // Mark that user has paid for verification
+    // The actual verification will be done via Veriff
+    await db.collection("users").doc(userId).update({
+      identityVerificationPaid: true,
+      identityVerificationPaidAt: FieldValue.serverTimestamp(),
+    });
+    break;
+  default:
+    console.warn(`Unknown purchase type: ${type}`);
   }
 }
 
@@ -186,9 +186,9 @@ async function grantPurchasedFeature(userId: string, type: keyof typeof PRICES):
  */
 function getPaymentDescription(type: keyof typeof PRICES): string {
   switch (type) {
-    case "identity_verification":
-      return "Gylde Identity Verification";
-    default:
-      return "Gylde Purchase";
+  case "identity_verification":
+    return "Gylde Identity Verification";
+  default:
+    return "Gylde Purchase";
   }
 }

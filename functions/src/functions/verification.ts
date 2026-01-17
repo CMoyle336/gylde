@@ -1,8 +1,8 @@
 /**
  * Identity Verification Cloud Functions (Veriff Integration)
  */
-import { onRequest } from "firebase-functions/v2/https";
-import { db } from "../config/firebase";
+import {onRequest} from "firebase-functions/v2/https";
+import {db} from "../config/firebase";
 import * as logger from "firebase-functions/logger";
 import * as crypto from "crypto";
 
@@ -12,10 +12,10 @@ const VERIFF_WEBHOOK_SECRET = process.env.VERIFF_WEBHOOK_SECRET || "";
 
 /**
  * Veriff decision webhook
- * 
+ *
  * This endpoint receives verification decision events from Veriff.
  * It updates the user's profile with the verification result.
- * 
+ *
  * Webhook setup in Veriff Station:
  * 1. Go to Integrations > Webhooks
  * 2. Add new webhook with this URL
@@ -23,7 +23,7 @@ const VERIFF_WEBHOOK_SECRET = process.env.VERIFF_WEBHOOK_SECRET || "";
  * 4. Copy the signing secret and set it as VERIFF_WEBHOOK_SECRET
  */
 export const veriffWebhook = onRequest(
-  { 
+  {
     cors: false,
     secrets: ["VERIFF_WEBHOOK_SECRET"],
   },
@@ -55,7 +55,7 @@ export const veriffWebhook = onRequest(
       }
 
       const data = req.body;
-      
+
       // Log the full payload for debugging
       logger.info("Received Veriff webhook payload:", JSON.stringify(data));
 
@@ -71,7 +71,7 @@ export const veriffWebhook = onRequest(
       const code = data.verification?.code || data.code;
       const vendorData = data.verification?.vendorData || data.vendorData;
 
-      logger.info("Parsed Veriff data:", { sessionId, verificationStatus, action, code, vendorData });
+      logger.info("Parsed Veriff data:", {sessionId, verificationStatus, action, code, vendorData});
 
       if (!sessionId) {
         logger.error("Missing sessionId in Veriff webhook. Payload:", JSON.stringify(data));
@@ -114,7 +114,7 @@ export const veriffWebhook = onRequest(
         logger.info(`Verification APPROVED for user ${userId}, session ${sessionId}`);
       } else if (
         code === 9102 || code === 9103 || code === 9104 || code === 9121 ||
-        verificationStatus === "declined" || verificationStatus === "resubmission_requested" || 
+        verificationStatus === "declined" || verificationStatus === "resubmission_requested" ||
         verificationStatus === "expired" || verificationStatus === "abandoned"
       ) {
         finalStatus = "declined";
