@@ -2,7 +2,8 @@
      [class.own]="message.isOwn" 
      [class.image-message]="message.type === 'image'" 
      [class.deleted]="message.isDeletedForAll || message.isDeletedForMe" 
-     [class.with-avatar]="!message.isOwn">
+     [class.with-avatar]="!message.isOwn"
+     [animate.enter]="message.isOwn ? 'message-enter-own' : 'message-enter'">
       
   <!-- Sender Avatar (for messages from others) -->
   @if (!message.isOwn) {
