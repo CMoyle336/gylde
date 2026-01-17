@@ -27,10 +27,17 @@ export const environment = {
   // Stripe Payment Processing
   // Get your keys at: https://dashboard.stripe.com/apikeys
   stripe: {
-    publishableKey: 'pk_test_51SpemHFd7ok3RIzwYr7GAhAcctfRysm9YffzNoX7KHeT8Jl1jUnzYIaFBGFQs8wawRYYn9QLPgLsdsVylPZxXqXn00KgPe9UlK', // TODO: Add your Stripe publishable key (pk_test_... or pk_live_...)
+    publishableKey: 'pk_test_51SpemHFd7ok3RIzwYr7GAhAcctfRysm9YffzNoX7KHeT8Jl1jUnzYIaFBGFQs8wawRYYn9QLPgLsdsVylPZxXqXn00KgPe9UlK',
+    // Stripe Price IDs for subscriptions (create these in Stripe Dashboard)
+    prices: {
+      plus_monthly: '', // TODO: Add Stripe Price ID for Plus monthly
+      plus_quarterly: '', // TODO: Add Stripe Price ID for Plus quarterly
+      elite_monthly: '', // TODO: Add Stripe Price ID for Elite monthly
+      elite_quarterly: '', // TODO: Add Stripe Price ID for Elite quarterly
+    },
   },
 
-  // Pricing
+  // Pricing (for display purposes - actual prices come from Stripe)
   pricing: {
     identityVerification: 499, // $4.99 in cents
   },

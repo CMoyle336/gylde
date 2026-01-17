@@ -1,4 +1,56 @@
 <div class="subscription-page">
+  <!-- Loading Overlay -->
+  @if (loading()) {
+    <div class="loading-overlay">
+      <mat-spinner diameter="48"></mat-spinner>
+      <p>Redirecting to checkout...</p>
+    </div>
+  }
+
+  <!-- Success Message -->
+  @if (successMessage()) {
+    <div class="message-banner success">
+      <mat-icon>check_circle</mat-icon>
+      <span>{{ successMessage() }}</span>
+      <button class="dismiss-btn" (click)="dismissSuccess()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  }
+
+  <!-- Error Message -->
+  @if (error()) {
+    <div class="message-banner error">
+      <mat-icon>error</mat-icon>
+      <span>{{ error() }}</span>
+      <button class="dismiss-btn" (click)="dismissError()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  }
+
+  <!-- Pending Cancellation Notice -->
+  @if (pendingCancellation(); as cancellation) {
+    <div class="message-banner warning">
+      <mat-icon>cancel</mat-icon>
+      <span>
+        Your <strong>{{ getPlanName(cancellation.currentTier) }}</strong> subscription will end on {{ cancellation.formattedDate }}.
+        You'll keep your features until then.
+      </span>
+    </div>
+  }
+
+  <!-- Pending Downgrade Notice -->
+  @if (pendingDowngrade(); as pending) {
+    <div class="message-banner info">
+      <mat-icon>schedule</mat-icon>
+      <span>
+        Your plan will change to <strong>{{ getPlanName(pending.tier) }}</strong> on {{ pending.formattedDate }}.
+        You'll keep your current features until then.
+      </span>
+    </div>
+  }
+
   <!-- Header -->
   <header class="subscription-header">
     <button class="back-btn" (click)="goBack()">
@@ -8,6 +60,12 @@
       <h1>Choose Your Plan</h1>
       <p>Unlock the full Gylde experience</p>
     </div>
+    @if (hasActiveSubscription()) {
+      <button class="manage-btn" (click)="manageSubscription()">
+        <mat-icon>settings</mat-icon>
+        Manage
+      </button>
+    }
   </header>
 
   <!-- Billing Toggle -->

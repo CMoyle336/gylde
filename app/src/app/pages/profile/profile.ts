@@ -172,14 +172,14 @@ export class ProfileComponent implements OnInit, OnDestroy {
     // Sort by order and extract URLs
     const sortedDetails = [...photoDetails].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     this.editablePhotos.set(sortedDetails.map(p => p.url));
-    this.profilePhotoUrl.set(profile.photoURL || null);
-    
-    // Sync photo privacy state
-    const privacyMap = new Map<string, boolean>();
+        this.profilePhotoUrl.set(profile.photoURL || null);
+        
+        // Sync photo privacy state
+        const privacyMap = new Map<string, boolean>();
     for (const detail of photoDetails) {
-      privacyMap.set(detail.url, detail.isPrivate);
-    }
-    this.photoPrivacy.set(privacyMap);
+          privacyMap.set(detail.url, detail.isPrivate);
+        }
+        this.photoPrivacy.set(privacyMap);
   }
 
   ngOnInit(): void {
@@ -569,7 +569,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     // Perform the move in the original array
     moveItemInArray(photos, originalFromIndex, originalToIndex);
     this.editablePhotos.set(photos);
-    
+
     // If not editing, save immediately
     if (!this.isEditing()) {
       await this.savePhotosToProfile();

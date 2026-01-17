@@ -67,6 +67,69 @@ export class SubscriptionService {
     return this.currentTier() === 'elite';
   });
 
+  readonly pendingDowngrade = computed(() => {
+    const sub = this._subscription();
+    
+    // Don't show pending downgrade if subscription is set to cancel entirely
+    if (!sub?.pendingDowngradeTier || !sub?.pendingDowngradeDate || sub?.cancelAtPeriodEnd) {
+      return null;
+    }
+    
+    // Convert Firestore timestamp if needed
+    let date: Date | null = null;
+    if (sub.pendingDowngradeDate) {
+      if (typeof (sub.pendingDowngradeDate as { toDate?: () => Date }).toDate === 'function') {
+        date = (sub.pendingDowngradeDate as { toDate: () => Date }).toDate();
+      } else if (sub.pendingDowngradeDate instanceof Date) {
+        date = sub.pendingDowngradeDate;
+      }
+    }
+
+    return {
+      tier: sub.pendingDowngradeTier,
+      date,
+      formattedDate: date?.toLocaleDateString('en-US', { 
+        month: 'long', 
+        day: 'numeric', 
+        year: 'numeric' 
+      }) || 'your next billing date',
+    };
+  });
+
+  readonly pendingCancellation = computed(() => {
+    const sub = this._subscription();
+    
+    // Check if subscription is scheduled to cancel
+    if (!sub?.cancelAtPeriodEnd) {
+      return null;
+    }
+    
+    // Use cancelAt date if available, otherwise fall back to currentPeriodEnd
+    const dateSource = sub.cancelAt || sub.currentPeriodEnd;
+    
+    if (!dateSource) {
+      return null;
+    }
+    
+    // Convert Firestore timestamp if needed
+    let date: Date | null = null;
+    if (typeof (dateSource as { toDate?: () => Date }).toDate === 'function') {
+      date = (dateSource as { toDate: () => Date }).toDate();
+    } else if (dateSource instanceof Date) {
+      date = dateSource;
+    }
+
+    return {
+      currentTier: sub.tier,
+      date,
+      formattedDate: date?.toLocaleDateString('en-US', { 
+        month: 'long', 
+        day: 'numeric', 
+        year: 'numeric' 
+      }) || 'your next billing date',
+    };
+  });
+
   readonly plans = SUBSCRIPTION_PLANS;
 
   constructor() {

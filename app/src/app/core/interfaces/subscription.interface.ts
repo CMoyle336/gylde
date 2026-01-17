@@ -28,8 +28,12 @@ export interface UserSubscription {
   currentPeriodStart?: unknown;
   currentPeriodEnd?: unknown;
   cancelAtPeriodEnd?: boolean;
+  cancelAt?: unknown; // Firestore Timestamp - specific cancellation date
   stripeCustomerId?: string;
   stripeSubscriptionId?: string;
+  // Pending downgrade fields (for scheduled tier changes)
+  pendingDowngradeTier?: SubscriptionTier | null;
+  pendingDowngradeDate?: unknown; // Firestore Timestamp
 }
 
 /**
@@ -107,6 +111,7 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
       { id: 'verify', label: 'Verify your profile', included: true },
       { id: 'messaging', label: 'Send messages', included: false },
       { id: 'private-photos', label: 'Request & view private photos', included: false },
+      { id: 'priority', label: 'Priority in search results', included: false, highlight: false },
       { id: 'ai', label: 'AI assistant', included: false },
       { id: 'phone', label: 'Virtual phone number', included: false },
     ],
@@ -127,6 +132,7 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
       { id: 'verify', label: 'Verify your profile', included: true },
       { id: 'messaging', label: 'Send unlimited messages', included: true, highlight: true },
       { id: 'private-photos', label: 'Request & view private photos', included: true, highlight: true },
+      { id: 'priority', label: 'Priority in search results', included: false, highlight: false },
       { id: 'ai', label: 'AI assistant', included: false },
       { id: 'phone', label: 'Virtual phone number', included: false },
     ],
@@ -146,7 +152,7 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
       { id: 'verify', label: 'Verify your profile', included: true },
       { id: 'messaging', label: 'Send unlimited messages', included: true },
       { id: 'private-photos', label: 'Request & view private photos', included: true },
-      { id: 'priority', label: 'Priority in search results', included: true },
+      { id: 'priority', label: 'Priority in search results', included: true, highlight: true },
       { id: 'ai', label: 'AI assistant for profile & chat', included: true, highlight: true },
       { id: 'phone', label: 'Virtual phone number', included: true, highlight: true },
     ],

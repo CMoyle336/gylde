@@ -282,3 +282,46 @@ mat-progress-spinner svg,
 #veriff-root a:hover {
   text-decoration: underline !important;
 }
+
+/* ============================================
+   DIALOG PANEL STYLES
+   Global styles for Material Dialog panels
+   ============================================ */
+
+/* Subscription confirm dialog */
+.subscription-confirm-dialog .mat-mdc-dialog-container {
+  --mdc-dialog-container-color: var(--color-bg-secondary);
+  border-radius: 16px !important;
+  overflow: hidden;
+}
+
+.subscription-confirm-dialog .mat-mdc-dialog-surface {
+  background: var(--color-bg-secondary) !important;
+  border-radius: 16px !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+
+/* Light mode dialog panel */
+[data-theme="light"] .subscription-confirm-dialog .mat-mdc-dialog-container,
+[data-theme="light"] .subscription-confirm-dialog .mat-mdc-dialog-surface {
+  --mdc-dialog-container-color: #ffffff;
+  background: #ffffff !important;
+}
+
+/* Generic app-dialog panel class */
+.app-dialog .mat-mdc-dialog-container {
+  --mdc-dialog-container-color: var(--color-bg-secondary);
+  border-radius: 16px !important;
+}
+
+.app-dialog .mat-mdc-dialog-surface {
+  background: var(--color-bg-secondary) !important;
+  border-radius: 16px !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+
+[data-theme="light"] .app-dialog .mat-mdc-dialog-container,
+[data-theme="light"] .app-dialog .mat-mdc-dialog-surface {
+  --mdc-dialog-container-color: #ffffff;
+  background: #ffffff !important;
+}

@@ -20,6 +20,13 @@ export const environment = {
   // Stripe Payment Processing
   stripe: {
     publishableKey: '', // TODO: Add your Stripe live publishable key (pk_live_...)
+    // Stripe Price IDs for subscriptions
+    prices: {
+      plus_monthly: '', // TODO: Add Stripe Price ID for Plus monthly
+      plus_quarterly: '', // TODO: Add Stripe Price ID for Plus quarterly
+      elite_monthly: '', // TODO: Add Stripe Price ID for Elite monthly
+      elite_quarterly: '', // TODO: Add Stripe Price ID for Elite quarterly
+    },
   },
 
   // Pricing

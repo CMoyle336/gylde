@@ -38,13 +38,15 @@ service cloud.firestore {
         && !request.resource.data.keys().hasAny([
           'trustScore', 'subscription', 'isElite',
           'identityVerified', 'identityVerificationStatus', 'identityVerificationCompletedAt',
-          'identityVerificationPaid', 'identityVerificationPaidAt'
+          'identityVerificationPaid', 'identityVerificationPaidAt',
+          'stripeCustomerId', 'stripeSubscriptionId'
         ]);
       allow update: if isOwner(userId)
         && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
           'trustScore', 'subscription', 'isElite',
           'identityVerified', 'identityVerificationStatus', 'identityVerificationCompletedAt',
-          'identityVerificationPaid', 'identityVerificationPaidAt'
+          'identityVerificationPaid', 'identityVerificationPaidAt',
+          'stripeCustomerId', 'stripeSubscriptionId'
         ]);
       allow delete: if false; // Deletion handled via Cloud Functions
       
