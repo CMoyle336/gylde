@@ -25,7 +25,7 @@
   ],
   "apphosting": {
     "backendId": "gylde-server",
-    "rootDir": "/build",
+    "rootDir": "app",
     "ignore": [
       "node_modules",
       ".git",
@@ -40,7 +40,7 @@
   "emulators": {
     "apphosting": {
       "port": 5002,
-      "rootDirectory": "./build",
+      "rootDirectory": "./app/dist",
       "startCommand": "node server/server.mjs"
     },
     "auth": {

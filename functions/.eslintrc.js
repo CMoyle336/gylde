@@ -30,9 +30,10 @@ module.exports = {
     "import/no-unresolved": 0,
     "indent": ["error", 2],
     "linebreak-style": "off",
-    "max-len": ["warn", { "code": 120 }],
+    "max-len": "off",
     "valid-jsdoc": "off",
     "require-jsdoc": "off",
-    "@typescript-eslint/no-empty-function": "warn",
+    "@typescript-eslint/no-empty-function": "off",
+    "@typescript-eslint/no-explicit-any": "off",
   },
 };

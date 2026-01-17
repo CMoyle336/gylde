@@ -1165,7 +1165,7 @@ IDEAL RELATIONSHIP GUIDANCE:
 - Avoid negativity ("no drama") - focus on what they DO want
 - Should align with their connection types and support orientation`;
 
-  case "supportMeaning":
+  case "supportMeaning": {
     const orientationContext = supportOrientation ?
       `
 CRITICAL CONTEXT - Their Support Orientation is "${supportOrientation}":
@@ -1185,6 +1185,7 @@ SUPPORT MEANING GUIDANCE:
 - Show they understand healthy relationship dynamics
 - Be authentic about their needs and what they offer
 ${orientationContext}`;
+  }
 
   default:
     return `
