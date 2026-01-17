@@ -319,6 +319,35 @@ export class MessagesComponent implements OnInit, OnDestroy {
         };
         
         doReload();
+      } else if (adapter.init) {
+        // No structural changes - update buffer items with fresh data
+        // This handles: read status changes, timed image view status, etc.
+        // Use adapter.fix({ updater }) which updates data in-place without structural changes
+        const messageMap = new Map(confirmedMessages.map(m => [m.id, m]));
+        
+        adapter.fix({
+          updater: (item, update) => {
+            const currentMessage = item.data as MessageDisplay;
+            const freshMessage = messageMap.get(currentMessage.id);
+            
+            if (!freshMessage) return;
+            
+            // Check if any relevant properties changed
+            const hasChanges = 
+              currentMessage.recipientViewedAt !== freshMessage.recipientViewedAt ||
+              currentMessage.isRecipientViewing !== freshMessage.isRecipientViewing ||
+              currentMessage.recipientViewExpired !== freshMessage.recipientViewExpired ||
+              currentMessage.read !== freshMessage.read ||
+              currentMessage.imageViewedAt !== freshMessage.imageViewedAt ||
+              currentMessage.isImageExpired !== freshMessage.isImageExpired;
+            
+            if (hasChanges) {
+              // Update the data object with fresh values
+              Object.assign(item.data, freshMessage);
+              update();
+            }
+          }
+        });
       }
     });
   }
