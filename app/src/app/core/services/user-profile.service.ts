@@ -57,9 +57,10 @@ export class UserProfileService {
       throw new Error('User not authenticated');
     }
 
-    // Set the first photo as the profile photo
-    const profilePhotoURL = onboardingData.photos.length > 0 
-      ? onboardingData.photos[0] 
+    // Set the first photo as the profile photo (sorted by order)
+    const sortedPhotos = [...(onboardingData.photoDetails || [])].sort((a, b) => a.order - b.order);
+    const profilePhotoURL = sortedPhotos.length > 0 
+      ? sortedPhotos[0].url 
       : user.photoURL;
 
     // Update Firebase Auth profile with the photo

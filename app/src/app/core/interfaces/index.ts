@@ -12,3 +12,4 @@ export * from './message.interface';
 export * from './subscription.interface';
 export * from './trust.interface';
 export * from './ai-chat.interface';
+export * from './photo.interface';

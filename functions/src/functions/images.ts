@@ -670,7 +670,7 @@ export const uploadProfileImages = onCall<UploadImagesRequest, Promise<UploadIma
             userId, 
             image, 
             folder, 
-            currentPhotos.length + results.filter(r => r.success).length + idx,
+            currentPhotoDetails.length + results.filter(r => r.success).length + idx,
             20,
             apiKey
           )

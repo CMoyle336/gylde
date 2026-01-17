@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 
 import { UserProfileService } from '../../core/services/user-profile.service';
-import { OnboardingProfile } from '../../core/interfaces';
+import { OnboardingProfile, Photo } from '../../core/interfaces';
 import { OnboardingService } from './onboarding.service';
 import { Step1EligibilityComponent } from './steps/step-1-eligibility';
 import { Step2IdentityComponent } from './steps/step-2-identity';
@@ -77,7 +77,13 @@ export class OnboardingComponent {
         connectionTypes: data.connectionTypes,
         supportOrientation: data.supportOrientation,
         idealRelationship: data.idealRelationship,
-        photos: data.photos,
+        photoDetails: data.photos.map((url, index): Photo => ({
+          id: `photo-${Date.now()}-${index}`,
+          url,
+          isPrivate: false,
+          uploadedAt: new Date(),
+          order: index,
+        })),
         verificationOptions: data.verificationOptions,
       };
 

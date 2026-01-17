@@ -198,16 +198,14 @@ export class PhotoAccessService {
 
     const userData = userDoc.data();
     const photoDetails = userData['onboarding']?.photoDetails || [];
-    const photos = userData['onboarding']?.photos || [];
 
-    // Build photo list with privacy info
-    const photoList = photos.map((url: string) => {
-      const detail = photoDetails.find((d: { url: string }) => d.url === url);
-      return {
-        url,
-        isPrivate: detail?.isPrivate || false,
-      };
-    });
+    // Build photo list with privacy info from photoDetails (sorted by order)
+    const photoList = [...photoDetails]
+      .sort((a: { order: number }, b: { order: number }) => a.order - b.order)
+      .map((detail: { url: string; isPrivate?: boolean }) => ({
+        url: detail.url,
+        isPrivate: detail.isPrivate || false,
+      }));
 
     // Check access if not self
     if (isSelf) {

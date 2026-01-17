@@ -509,13 +509,16 @@ export class ProfileComponent implements OnInit, OnDestroy {
   async removePhoto(index: number): Promise<void> {
     const photos = this.editablePhotos();
     const photoUrl = photos[index];
+    
+    // Prevent deleting the profile photo
+    if (photoUrl === this.profilePhotoUrl()) {
+      this.uploadError.set('Profile photo cannot be deleted. Set another photo as profile first.');
+      setTimeout(() => this.uploadError.set(null), 3000);
+      return;
+    }
+    
     const newPhotos = photos.filter((_, i) => i !== index);
     this.editablePhotos.set(newPhotos);
-
-    // If removed photo was profile photo, set first remaining photo as profile
-    if (photoUrl === this.profilePhotoUrl()) {
-      this.profilePhotoUrl.set(newPhotos[0] || null);
-    }
 
     // If not editing, save immediately
     // Storage cleanup is handled by Cloud Function trigger on user document

@@ -48,14 +48,13 @@
                  [class.is-private]="photoItem.isPrivate"
                  [class.is-draggable]="!photoItem.isProfilePhoto">
               <div class="photo-drag-placeholder" *cdkDragPlaceholder></div>
-              <img [src]="photoItem.url" alt="Profile photo {{ i + 1 }}" cdkDragHandle>
+              <img [src]="photoItem.url" alt="Profile photo {{ i + 1 }}" draggable="false">
               <div class="photo-overlay">
                 @if (!photoItem.isPrivate) {
                   <button mat-icon-button 
                           [class.active]="photoItem.isProfilePhoto"
                           (click)="setAsProfilePhoto(photoItem.url)"
-                          matTooltip="Set as profile photo"
-                          cdkDragHandle>
+                          matTooltip="Set as profile photo">
                     <mat-icon>{{ photoItem.isProfilePhoto ? 'star' : 'star_outline' }}</mat-icon>
                   </button>
                 }
@@ -66,13 +65,13 @@
                           [matTooltip]="photoItem.isPrivate ? 'Make public' : 'Make private'">
                     <mat-icon>{{ photoItem.isPrivate ? 'lock' : 'lock_open' }}</mat-icon>
                   </button>
+                  <button mat-icon-button 
+                          class="remove-btn"
+                          (click)="removePhoto(i)"
+                          matTooltip="Remove photo">
+                    <mat-icon>delete</mat-icon>
+                  </button>
                 }
-                <button mat-icon-button 
-                        class="remove-btn"
-                        (click)="removePhoto(i)"
-                        matTooltip="Remove photo">
-                  <mat-icon>delete</mat-icon>
-                </button>
               </div>
               @if (photoItem.isProfilePhoto) {
                 <div class="profile-badge">

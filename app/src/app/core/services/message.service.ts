@@ -171,7 +171,7 @@ export class MessageService {
           const data = docSnapshot.data() as Conversation;
           
           const otherUserId = data.participants.find((id) => id !== currentUser.uid) || '';
-          const otherUserInfo = data.participantInfo[otherUserId] || {
+          const otherUserInfo = data.participantInfo?.[otherUserId] || {
             displayName: 'Unknown User',
             photoURL: null,
           };

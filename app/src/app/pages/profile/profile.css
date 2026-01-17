@@ -184,10 +184,12 @@
   transition: opacity 0.2s;
   border-radius: 8px;
   overflow: hidden;
+  pointer-events: none; /* Allow drag through overlay */
 }
 
 .photo-item:hover .photo-overlay {
   opacity: 1;
+  pointer-events: auto; /* Enable button clicks on hover */
 }
 
 .photo-overlay button[mat-icon-button] {
@@ -221,6 +223,7 @@
   text-transform: uppercase;
   letter-spacing: 0.3px;
   border-radius: 3px;
+  pointer-events: none; /* Don't block drag */
 }
 
 .private-badge {
@@ -234,6 +237,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  pointer-events: none; /* Don't block drag */
 }
 
 .private-badge mat-icon {
@@ -301,7 +305,22 @@
   border-radius: 4px;
   opacity: 0;
   transition: opacity 0.2s;
+  cursor: grab;
+}
+
+/* Make the whole photo item draggable */
+.photo-item.is-draggable {
+  cursor: grab;
+}
+
+.photo-item.is-draggable:active {
+  cursor: grabbing;
+}
+
+/* Prevent image from being dragged by browser default */
+.photo-item img {
   pointer-events: none;
+  user-select: none;
 }
 
 .drag-handle mat-icon {
