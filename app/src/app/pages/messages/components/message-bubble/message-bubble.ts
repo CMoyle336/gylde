@@ -5,7 +5,7 @@ import {
   Input,
   Output,
 } from '@angular/core';
-import { CommonModule, NgOptimizedImage } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { MatMenuModule } from '@angular/material/menu';
 import { MessageDisplay } from '../../../../core/interfaces';
 
@@ -21,7 +21,7 @@ export interface GalleryOpenEvent {
   templateUrl: './message-bubble.html',
   styleUrl: './message-bubble.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, NgOptimizedImage, MatMenuModule],
+  imports: [CommonModule, MatMenuModule],
 })
 export class MessageBubbleComponent {
   @Input() message!: MessageDisplay;

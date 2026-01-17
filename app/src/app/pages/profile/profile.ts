@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, ElementRef, OnInit, OnDestroy, ViewChild, effect, inject, signal, computed, PLATFORM_ID, viewChild } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
@@ -64,6 +65,7 @@ interface UploadingPhoto {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     FormsModule,
+    DragDropModule,
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
@@ -131,17 +133,24 @@ export class ProfileComponent implements OnInit, OnDestroy {
     return Array.from(privacyMap.values()).some(isPrivate => isPrivate);
   });
 
-  // Computed: photos with their privacy status
+  // Computed: photos with their privacy status, profile photo always first
   protected readonly photosWithPrivacy = computed(() => {
     const photos = this.editablePhotos();
     const privacyMap = this.photoPrivacy();
     const profilePhoto = this.profilePhotoUrl();
     
-    return photos.map(url => ({
+    const photoItems = photos.map(url => ({
       url,
       isPrivate: privacyMap.get(url) || false,
       isProfilePhoto: url === profilePhoto,
     }));
+    
+    // Sort so profile photo is always first
+    return photoItems.sort((a, b) => {
+      if (a.isProfilePhoto) return -1;
+      if (b.isProfilePhoto) return 1;
+      return 0;
+    });
   });
 
   constructor() {
@@ -149,34 +158,35 @@ export class ProfileComponent implements OnInit, OnDestroy {
     effect(() => {
       const profile = this.profile();
       if (profile && !this.isEditing()) {
-        this.editablePhotos.set([...(profile.onboarding?.photos || [])]);
-        this.profilePhotoUrl.set(profile.photoURL || null);
-        
-        // Sync photo privacy state
-        const photoDetails = profile.onboarding?.photoDetails || [];
-        const privacyMap = new Map<string, boolean>();
-        for (const detail of photoDetails as Photo[]) {
-          privacyMap.set(detail.url, detail.isPrivate);
-        }
-        this.photoPrivacy.set(privacyMap);
+        this.syncPhotosFromProfile(profile);
       }
     });
+  }
+
+  /**
+   * Sync local photo state from profile photoDetails
+   */
+  private syncPhotosFromProfile(profile: { onboarding?: { photoDetails?: Photo[] }; photoURL?: string | null }): void {
+    const photoDetails = profile.onboarding?.photoDetails || [];
+    
+    // Sort by order and extract URLs
+    const sortedDetails = [...photoDetails].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    this.editablePhotos.set(sortedDetails.map(p => p.url));
+    this.profilePhotoUrl.set(profile.photoURL || null);
+    
+    // Sync photo privacy state
+    const privacyMap = new Map<string, boolean>();
+    for (const detail of photoDetails) {
+      privacyMap.set(detail.url, detail.isPrivate);
+    }
+    this.photoPrivacy.set(privacyMap);
   }
 
   ngOnInit(): void {
     // Initial sync
     const profile = this.profile();
     if (profile) {
-      this.editablePhotos.set([...(profile.onboarding?.photos || [])]);
-      this.profilePhotoUrl.set(profile.photoURL || null);
-      
-      // Sync photo privacy state
-      const photoDetails = profile.onboarding?.photoDetails || [];
-      const privacyMap = new Map<string, boolean>();
-      for (const detail of photoDetails as Photo[]) {
-        privacyMap.set(detail.url, detail.isPrivate);
-      }
-      this.photoPrivacy.set(privacyMap);
+      this.syncPhotosFromProfile(profile);
     }
 
     // Add click outside listener for autocomplete
@@ -310,8 +320,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     // Reset to original values from profile
     const profile = this.profile();
     if (profile) {
-      this.editablePhotos.set([...(profile.onboarding?.photos || [])]);
-      this.profilePhotoUrl.set(profile.photoURL || null);
+      this.syncPhotosFromProfile(profile);
     }
     
     // Reset location state
@@ -341,6 +350,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
       const location = this.pendingLocation || profile.onboarding.location;
 
       // Build updated onboarding data
+      const photoDetails = this.buildPhotoDetails();
       const updatedOnboarding: Partial<OnboardingProfile> = {
         ...profile.onboarding,
         city,
@@ -355,7 +365,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
         supportOrientation: this.editForm.supportOrientation,
         idealRelationship: this.editForm.idealRelationship,
         supportMeaning: this.editForm.supportMeaning,
-        photos: photos,
+        photoDetails,
       };
 
       // Only add secondary fields if they have values
@@ -508,15 +518,67 @@ export class ProfileComponent implements OnInit, OnDestroy {
     }
 
     // If not editing, save immediately
+    // Storage cleanup is handled by Cloud Function trigger on user document
+    if (!this.isEditing()) {
+      await this.savePhotosToProfile();
+    }
+  }
+
+  /**
+   * Handle drag and drop reordering of photos
+   * Profile photo (index 0) is locked and cannot be moved
+   */
+  async onPhotoDrop(event: CdkDragDrop<string[]>): Promise<void> {
+    // Adjust indices since profile photo is always at index 0 and locked
+    // The draggable items start at index 1 in the visual list
+    const fromIndex = event.previousIndex;
+    const toIndex = event.currentIndex;
+    
+    // Don't allow moving to/from position 0 (profile photo)
+    if (fromIndex === 0 || toIndex === 0) {
+      return;
+    }
+    
+    // Get current photos and reorder
+    const photos = [...this.editablePhotos()];
+    const profilePhoto = this.profilePhotoUrl();
+    
+    // Find the actual indices in the editablePhotos array
+    // (accounting for profile photo always being displayed first)
+    const sortedPhotos = [...photos].sort((a, b) => {
+      if (a === profilePhoto) return -1;
+      if (b === profilePhoto) return 1;
+      return 0;
+    });
+    
+    // Get the URLs at the visual positions
+    const movedUrl = sortedPhotos[fromIndex];
+    const targetUrl = sortedPhotos[toIndex];
+    
+    // Find their positions in the original array
+    const originalFromIndex = photos.indexOf(movedUrl);
+    const originalToIndex = photos.indexOf(targetUrl);
+    
+    if (originalFromIndex === -1 || originalToIndex === -1) {
+      return;
+    }
+    
+    // Perform the move in the original array
+    moveItemInArray(photos, originalFromIndex, originalToIndex);
+    this.editablePhotos.set(photos);
+    
+    // If not editing, save immediately
     if (!this.isEditing()) {
       await this.savePhotosToProfile();
     }
   }
 
   async setAsProfilePhoto(photoUrl: string): Promise<void> {
-    // If this photo is private, make it public first (profile photo can't be private)
+    // Private photos cannot be set as profile photo
     if (this.photoPrivacy().get(photoUrl)) {
-      await this.togglePhotoPrivacy(photoUrl);
+      this.uploadError.set('Private photos cannot be set as your profile photo. Make it public first.');
+      setTimeout(() => this.uploadError.set(null), 3000);
+      return;
     }
     
     this.profilePhotoUrl.set(photoUrl);
@@ -568,10 +630,35 @@ export class ProfileComponent implements OnInit, OnDestroy {
     });
   }
 
+  /**
+   * Build photoDetails array from current state
+   */
+  private buildPhotoDetails(): Photo[] {
+    const photos = this.editablePhotos();
+    const privacyMap = this.photoPrivacy();
+    const profilePhoto = this.profilePhotoUrl();
+    
+    // Sort with profile photo first, then by current order
+    const sortedPhotos = [...photos].sort((a, b) => {
+      if (a === profilePhoto) return -1;
+      if (b === profilePhoto) return 1;
+      return 0;
+    });
+    
+    return sortedPhotos.map((url, index) => ({
+      id: url.split('/').pop()?.split('?')[0] || `photo-${index}`,
+      url,
+      isPrivate: privacyMap.get(url) || false,
+      uploadedAt: new Date(), // Will be preserved by merge on server
+      order: index,
+    }));
+  }
+
   private async savePhotosToProfile(): Promise<void> {
     const profile = this.profile();
     if (!profile || !profile.onboarding) return;
 
+    const photoDetails = this.buildPhotoDetails();
     const photos = this.editablePhotos();
     const newProfilePhoto = this.profilePhotoUrl() || photos[0] || null;
 
@@ -579,7 +666,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
       photoURL: newProfilePhoto,
       onboarding: {
         ...profile.onboarding,
-        photos: photos,
+        photoDetails,
       },
     });
 

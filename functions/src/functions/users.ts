@@ -14,7 +14,7 @@
  * - tasks: individual trust task completion status
  */
 import { onDocumentUpdated, onDocumentCreated } from "firebase-functions/v2/firestore";
-import { db } from "../config/firebase";
+import { db, bucket } from "../config/firebase";
 import { Timestamp } from "firebase-admin/firestore";
 import * as logger from "firebase-functions/logger";
 import { 
@@ -24,6 +24,75 @@ import {
   TrustCategory,
   getPointsPerCategory,
 } from "../types/trust.types";
+
+/**
+ * Extract file path from a storage URL (handles both emulator and production formats)
+ */
+function extractFilePathFromUrl(imageUrl: string, bucketName: string): string | null {
+  // Production format: https://storage.googleapis.com/{bucket}/{filePath}
+  const productionPrefix = `https://storage.googleapis.com/${bucketName}/`;
+  if (imageUrl.startsWith(productionPrefix)) {
+    return imageUrl.replace(productionPrefix, "");
+  }
+
+  // Emulator format: http://{host}/v0/b/{bucket}/o/{encodedPath}?alt=media
+  const emulatorPattern = new RegExp(`/v0/b/${bucketName}/o/([^?]+)`);
+  const emulatorMatch = imageUrl.match(emulatorPattern);
+  if (emulatorMatch) {
+    // The path is URL-encoded in emulator URLs
+    return decodeURIComponent(emulatorMatch[1]);
+  }
+
+  return null;
+}
+
+/**
+ * Sync storage with photoDetails - delete orphaned photos
+ * Called when user document is updated and photos array changes
+ */
+async function syncStorageWithPhotos(
+  userId: string,
+  beforePhotos: string[],
+  afterPhotos: string[]
+): Promise<void> {
+  // Find photos that were removed
+  const removedPhotos = beforePhotos.filter(url => !afterPhotos.includes(url));
+  
+  if (removedPhotos.length === 0) {
+    return;
+  }
+
+  logger.info(`[${userId}] Syncing storage: ${removedPhotos.length} photos to delete`);
+  
+  const bucketName = bucket.name;
+  
+  for (const photoUrl of removedPhotos) {
+    const filePath = extractFilePathFromUrl(photoUrl, bucketName);
+    
+    if (!filePath) {
+      logger.warn(`[${userId}] Could not extract path from URL: ${photoUrl}`);
+      continue;
+    }
+    
+    // Verify the file belongs to this user (security check)
+    if (!filePath.startsWith(`users/${userId}/`)) {
+      logger.warn(`[${userId}] Skipping file that doesn't belong to user: ${filePath}`);
+      continue;
+    }
+    
+    try {
+      const file = bucket.file(filePath);
+      const [exists] = await file.exists();
+      
+      if (exists) {
+        await file.delete();
+        logger.info(`[${userId}] Deleted orphaned photo: ${filePath}`);
+      }
+    } catch (error) {
+      logger.error(`[${userId}] Failed to delete photo: ${filePath}`, error);
+    }
+  }
+}
 
 /**
  * Generate a geohash for a lat/lng coordinate
@@ -256,6 +325,20 @@ export const onUserUpdated = onDocumentUpdated(
     if (!beforeData || !afterData) {
       logger.warn(`Missing data for user update: ${userId}`);
       return;
+    }
+
+    // Sync storage with photos - delete removed photos
+    // Extract URLs from photoDetails
+    const beforePhotoDetails = beforeData.onboarding?.photoDetails || [];
+    const afterPhotoDetails = afterData.onboarding?.photoDetails || [];
+    const beforePhotos: string[] = beforePhotoDetails.map((p: { url: string }) => p.url);
+    const afterPhotos: string[] = afterPhotoDetails.map((p: { url: string }) => p.url);
+    
+    if (JSON.stringify(beforePhotos) !== JSON.stringify(afterPhotos)) {
+      // Photos changed - sync storage (fire and forget, don't block other updates)
+      syncStorageWithPhotos(userId, beforePhotos, afterPhotos).catch(error => {
+        logger.error(`[${userId}] Error syncing storage with photos:`, error);
+      });
     }
 
     // Calculate expected values

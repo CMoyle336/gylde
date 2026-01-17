@@ -269,6 +269,42 @@
   color: var(--color-danger);
 }
 
+.delete-warning-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.delete-warning-content strong {
+  color: var(--color-danger);
+}
+
+.delete-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  line-height: 1.6;
+}
+
+.delete-list li {
+  margin-bottom: 0.25rem;
+}
+
+.delete-confirm-instruction {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  margin: 0 0 0.5rem;
+}
+
+.delete-confirm-instruction strong {
+  color: var(--color-text-primary);
+  font-family: var(--font-mono, monospace);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+}
+
 /* Info variant (for disable) */
 .warning-box.info {
   background: rgba(var(--color-accent-rgb, 200, 170, 110), 0.1);

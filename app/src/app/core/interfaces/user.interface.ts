@@ -157,8 +157,7 @@ export interface OnboardingProfile {
   supportMeaning?: string;
 
   // Step 6: Photos
-  photos: string[]; // Legacy: array of URLs for backward compatibility
-  photoDetails?: Photo[]; // New: detailed photo objects with privacy info
+  photoDetails: Photo[]; // Photo objects with URL, privacy, and order info
 
   // Step 7: Verification
   verificationOptions: string[];

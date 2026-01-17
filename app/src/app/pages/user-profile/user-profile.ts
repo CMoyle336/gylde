@@ -89,35 +89,40 @@ export class UserProfileComponent implements OnInit, OnDestroy {
     return Array.from(privacyMap.values()).filter(isPrivate => isPrivate).length;
   });
 
-  // Reorder photos so the designated profile photo (photoURL) comes first
+  // Get photos in display order from photoDetails
   // Also filter out private photos if user doesn't have access
   protected readonly orderedPhotos = computed(() => {
     const p = this.profile();
-    const photos = p?.onboarding?.photos || [];
+    const photoDetails = p?.onboarding?.photoDetails || [];
     const photoURL = p?.photoURL;
-    const privacyMap = this.photoPrivacyMap();
     const access = this.photoAccess();
     
+    // Sort by order field
+    const sortedDetails = [...photoDetails].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    
     // Filter out private photos if no access
-    let visiblePhotos = photos;
+    let visibleDetails = sortedDetails;
     if (!access.hasAccess) {
-      visiblePhotos = photos.filter(url => !privacyMap.get(url));
+      visibleDetails = sortedDetails.filter(detail => !detail.isPrivate);
     }
     
-    if (!photoURL || visiblePhotos.length === 0) return visiblePhotos;
+    // Extract URLs
+    const photos = visibleDetails.map(d => d.url);
+    
+    if (!photoURL || photos.length === 0) return photos;
     
     // If photoURL is already first, no reordering needed
-    if (visiblePhotos[0] === photoURL) return visiblePhotos;
+    if (photos[0] === photoURL) return photos;
     
     // Find the index of photoURL in the array
-    const photoURLIndex = visiblePhotos.indexOf(photoURL);
+    const photoURLIndex = photos.indexOf(photoURL);
     if (photoURLIndex === -1) {
       // photoURL not in array, prepend it (profile photo is always visible)
-      return [photoURL, ...visiblePhotos];
+      return [photoURL, ...photos];
     }
     
     // Move photoURL to the front
-    const reordered = [...visiblePhotos];
+    const reordered = [...photos];
     reordered.splice(photoURLIndex, 1);
     reordered.unshift(photoURL);
     return reordered;

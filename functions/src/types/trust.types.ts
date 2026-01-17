@@ -119,8 +119,8 @@ export const TRUST_TASK_DEFINITIONS: TrustTaskDefinition[] = [
     name: "Add Multiple Photos",
     description: "Upload at least 3 photos to your profile",
     points: 7,
-    check: (data) => (data.onboarding?.photos?.length || 0) >= 3,
-    getValue: (data) => data.onboarding?.photos?.length || 0,
+    check: (data) => (data.onboarding?.photoDetails?.length || 0) >= 3,
+    getValue: (data) => data.onboarding?.photoDetails?.length || 0,
   },
   {
     id: "complete_gallery",
@@ -128,8 +128,8 @@ export const TRUST_TASK_DEFINITIONS: TrustTaskDefinition[] = [
     name: "Complete Photo Gallery",
     description: "Upload 5 or more photos for a complete profile",
     points: 5,
-    check: (data) => (data.onboarding?.photos?.length || 0) >= 5,
-    getValue: (data) => data.onboarding?.photos?.length || 0,
+    check: (data) => (data.onboarding?.photoDetails?.length || 0) >= 5,
+    getValue: (data) => data.onboarding?.photoDetails?.length || 0,
   },
 
   // ===== PROFILE (25 points) =====

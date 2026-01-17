@@ -193,7 +193,7 @@ export class MessagesComponent implements OnInit, OnDestroy, AfterViewInit {
       infinite: false  // Don't reserve space for infinite scrolling - we have finite data
     },
     devSettings: {
-      debug: true,
+      debug: false,
       immediateLog: true
     }
   });
@@ -343,15 +343,6 @@ export class MessagesComponent implements OnInit, OnDestroy, AfterViewInit {
       // CASE 2: Older messages prepended (infinite scroll up)
       else if (isPrepend && adapter.init) {
         const prependCount = confirmedCount - previousCount;
-        console.log('[Effect] CASE 2 - Prepend detected:', {
-          prependCount,
-          confirmedCount,
-          previousCount,
-          firstConfirmedId,
-          previousFirstId,
-          hasOlderMessages: this.hasOlderMessages(),
-          firstVisibleIndex: adapter.firstVisible?.$index
-        });
         
         // Update tracking state before async operation
         this.lastMessageCount = confirmedCount;
@@ -366,9 +357,7 @@ export class MessagesComponent implements OnInit, OnDestroy, AfterViewInit {
             const currentFirstVisibleIndex = adapter.firstVisible?.$index ?? 0;
             // After prepending, the same visual position is at currentIndex + prependCount
             const newFirstVisibleIndex = currentFirstVisibleIndex + prependCount;
-            
-            console.log('[Effect] Prepend reload at index:', newFirstVisibleIndex);
-            
+                        
             // Update boundaries
             adapter.fix({ 
               minIndex: 0, 
@@ -448,12 +437,6 @@ export class MessagesComponent implements OnInit, OnDestroy, AfterViewInit {
       }
       // CASE 4: Message deletion - reload at current position to maintain scroll
       else if (isDeletion && adapter.init) {
-        console.log('[Effect] CASE 4 - Deletion detected:', {
-          previousCount,
-          confirmedCount,
-          deletedCount: previousCount - confirmedCount
-        });
-        
         this.lastMessageCount = confirmedCount;
         this.lastMessageId = lastConfirmedId;
         this.firstMessageId = firstConfirmedId;
@@ -569,16 +552,9 @@ export class MessagesComponent implements OnInit, OnDestroy, AfterViewInit {
     const checkAdapter = () => {
       if (adapter.init) {
         this.bofSubscription = adapter.bof$.subscribe(async (bof) => {
-          console.log('[InfiniteScroll] bof$ emitted:', bof, {
-            hasOlderMessages: this.hasOlderMessages(),
-            loadingOlderMessages: this.loadingOlderMessages(),
-            isReloading: this.isReloading,
-            firstVisibleIndex: adapter.firstVisible?.$index
-          });
           
           // When at beginning of buffer and more messages exist, load them
           if (bof && this.hasOlderMessages() && !this.loadingOlderMessages() && !this.isReloading) {
-            console.log('[InfiniteScroll] Loading older messages...');
             await this.messageService.loadOlderMessages();
           }
         });

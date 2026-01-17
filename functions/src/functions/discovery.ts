@@ -385,8 +385,10 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
           lifestyle: onboarding?.lifestyle,
           connectionTypes: onboarding?.connectionTypes || [],
           tagline: onboarding?.tagline || "",
-          photoURL: data.photoURL || onboarding?.photos?.[0] || null,
-          photos: onboarding?.photos || [],
+          photoURL: data.photoURL || (onboarding?.photoDetails?.[0] as { url?: string })?.url || null,
+          photos: (onboarding?.photoDetails || [])
+            .sort((a: { order?: number }, b: { order?: number }) => (a.order ?? 0) - (b.order ?? 0))
+            .map((p: { url: string }) => p.url),
           identityVerified: data.identityVerified === true,
           values: onboarding?.values || [],
           supportOrientation: onboarding?.supportOrientation || '',

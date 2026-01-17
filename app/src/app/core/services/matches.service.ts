@@ -483,11 +483,17 @@ export class MatchesService {
       const showLastActive = data.settings?.privacy?.showLastActive !== false;
       const showLocation = data.settings?.privacy?.showLocation !== false;
 
+      // Get photos from photoDetails, sorted by order
+      const photoDetails = data.onboarding?.photoDetails || [];
+      const sortedPhotos = [...photoDetails]
+        .sort((a: { order?: number }, b: { order?: number }) => (a.order ?? 0) - (b.order ?? 0))
+        .map((p: { url: string }) => p.url);
+      
       profiles.push({
         uid: userId,
         displayName: data.displayName || 'Unknown',
-        photoURL: data.photoURL || data.onboarding?.photos?.[0] || null,
-        photos: data.onboarding?.photos || [],
+        photoURL: data.photoURL || sortedPhotos[0] || null,
+        photos: sortedPhotos,
         age,
         city: showLocation ? (data.onboarding?.city || null) : null,
         country: showLocation ? (data.onboarding?.country || null) : null,

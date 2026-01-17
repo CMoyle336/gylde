@@ -436,13 +436,9 @@ export class SettingsComponent implements OnInit {
   }
 
   async deleteAccount(): Promise<void> {
-    if (this.deleteConfirmation !== 'DELETE') {
-      this.dialogError.set('Please type DELETE to confirm');
-      return;
-    }
-
-    if (!this.currentPassword) {
-      this.dialogError.set('Please enter your password');
+    const expectedConfirmation = 'DELETE MY ACCOUNT';
+    if (this.deleteConfirmation !== expectedConfirmation) {
+      this.dialogError.set(`Please type "${expectedConfirmation}" exactly to confirm`);
       return;
     }
 
@@ -450,24 +446,28 @@ export class SettingsComponent implements OnInit {
     this.dialogError.set(null);
 
     try {
-      // Mark account for deletion
-      const currentSettings = this.settings();
-      const updatedSettings: UserSettings = {
-        ...currentSettings,
-        account: {
-          ...currentSettings.account,
-          scheduledForDeletion: true,
-          deletionScheduledAt: new Date(),
-        },
-      };
-
-      await this.saveSettings(updatedSettings);
+      // Call Cloud Function to permanently delete all user data
+      const deleteAccountFn = httpsCallable(this.functions, 'deleteAccount');
+      await deleteAccountFn({});
       
-      // Sign out and redirect
+      // Close dialog, sign out, and redirect to home
+      this.closeDialogs();
       await this.authService.signOutUser();
       this.router.navigate(['/']);
-    } catch (error) {
-      this.dialogError.set('Failed to delete account. Please try again.');
+    } catch (error: unknown) {
+      console.error('Error deleting account:', error);
+      
+      // Handle specific errors
+      if (error && typeof error === 'object' && 'code' in error) {
+        const code = (error as { code: string }).code;
+        if (code === 'functions/unauthenticated') {
+          this.dialogError.set('Session expired. Please sign in again and try.');
+        } else {
+          this.dialogError.set('Failed to delete account. Please try again or contact support.');
+        }
+      } else {
+        this.dialogError.set('Failed to delete account. Please try again or contact support.');
+      }
       this.dialogLoading.set(false);
     }
   }

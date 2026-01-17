@@ -9,6 +9,7 @@
  * - Image dimension validation
  * - OpenAI content moderation (NSFW detection)
  * - OpenAI Vision person detection (ensures photos contain real people)
+ * - Duplicate image detection (content hash)
  * - Rate limiting (optional)
  */
 import { onCall, HttpsError } from "firebase-functions/v2/https";
@@ -16,6 +17,7 @@ import { defineSecret } from "firebase-functions/params";
 import { bucket, db } from "../config/firebase";
 import * as logger from "firebase-functions/logger";
 import sharp from "sharp";
+import * as crypto from "crypto";
 import { moderateImage, detectPerson } from "../services/openai.service";
 
 // Define the OpenAI API key as a secret
@@ -32,6 +34,52 @@ const OPTIMIZED_MAX_WIDTH = 1200; // Max width for web-ready images
 const OPTIMIZED_MAX_HEIGHT = 1600; // Max height for web-ready images
 const JPEG_QUALITY = 85; // Quality for JPEG compression (0-100)
 const PNG_COMPRESSION = 8; // PNG compression level (0-9)
+
+/**
+ * Compute SHA-256 hash of image buffer for duplicate detection
+ */
+function computeImageHash(buffer: Buffer): string {
+  return crypto.createHash("sha256").update(buffer).digest("hex");
+}
+
+/**
+ * Check if an image with the given hash already exists for the user
+ * Returns the URL of the duplicate if found, null otherwise
+ */
+async function checkForDuplicateImage(
+  userId: string,
+  imageHash: string,
+  folder: string
+): Promise<string | null> {
+  try {
+    // List all files in the user's folder
+    const prefix = `users/${userId}/${folder}/`;
+    const [files] = await bucket.getFiles({ prefix });
+
+    // Check metadata of each file for matching hash
+    for (const file of files) {
+      const [metadata] = await file.getMetadata();
+      const storedHash = metadata.metadata?.imageHash;
+      
+      if (storedHash === imageHash) {
+        // Found a duplicate - return its URL
+        const emulatorHost = process.env.FIREBASE_STORAGE_EMULATOR_HOST;
+        if (emulatorHost) {
+          const encodedPath = encodeURIComponent(file.name);
+          return `http://${emulatorHost}/v0/b/${bucket.name}/o/${encodedPath}?alt=media`;
+        } else {
+          return `https://storage.googleapis.com/${bucket.name}/${file.name}`;
+        }
+      }
+    }
+
+    return null;
+  } catch (error) {
+    logger.warn("Error checking for duplicate images:", error);
+    // Don't block upload if duplicate check fails
+    return null;
+  }
+}
 
 interface ImageInput {
   imageData: string; // Base64 encoded image data
@@ -289,12 +337,23 @@ export const uploadProfileImage = onCall<UploadImageRequest, Promise<UploadImage
       }
     }
 
+    // Check for duplicate image (before expensive moderation)
+    const imageHash = computeImageHash(validation.buffer);
+    const duplicateUrl = await checkForDuplicateImage(userId, imageHash, folder);
+    if (duplicateUrl) {
+      logger.info(`Duplicate image detected for user ${userId}`, { hash: imageHash });
+      throw new HttpsError(
+        "already-exists",
+        "This image has already been uploaded. Please choose a different photo."
+      );
+    }
+
     // Check user's photo count (optional rate limiting)
     const userDoc = await db.collection("users").doc(userId).get();
     const userData = userDoc.data();
-    const currentPhotos = userData?.onboarding?.photos || [];
+    const currentPhotoDetails = userData?.onboarding?.photoDetails || [];
     
-    if (folder === "photos" && currentPhotos.length >= 20) {
+    if (folder === "photos" && currentPhotoDetails.length >= 20) {
       throw new HttpsError(
         "resource-exhausted",
         "Maximum of 20 photos allowed. Please delete a photo first."
@@ -372,6 +431,7 @@ export const uploadProfileImage = onCall<UploadImageRequest, Promise<UploadImage
             originalFileName: fileName || "unknown",
             originalSize: validation.buffer.length.toString(),
             optimizedSize: optimizedBuffer.length.toString(),
+            imageHash, // Store hash for duplicate detection
           },
         },
       });
@@ -450,6 +510,18 @@ async function processSingleImage(
       }
     }
 
+    // Check for duplicate image (before expensive moderation)
+    const imageHash = computeImageHash(validation.buffer);
+    const duplicateUrl = await checkForDuplicateImage(userId, imageHash, folder);
+    if (duplicateUrl) {
+      logger.info(`Duplicate image detected for user ${userId}`, { hash: imageHash, fileName });
+      return { 
+        success: false, 
+        error: "This image has already been uploaded. Please choose a different photo.",
+        fileName 
+      };
+    }
+
     // Content moderation using OpenAI
     if (apiKey) {
       const moderation = await moderateImage(imageData, mimeType, apiKey);
@@ -505,6 +577,7 @@ async function processSingleImage(
           originalFileName: fileName || "unknown",
           originalSize: validation.buffer.length.toString(),
           optimizedSize: optimizedBuffer.length.toString(),
+          imageHash, // Store hash for duplicate detection
         },
       },
     });
@@ -569,8 +642,8 @@ export const uploadProfileImages = onCall<UploadImagesRequest, Promise<UploadIma
     // Check user's current photo count
     const userDoc = await db.collection("users").doc(userId).get();
     const userData = userDoc.data();
-    const currentPhotos = userData?.onboarding?.photos || [];
-    const availableSlots = 20 - currentPhotos.length;
+    const currentPhotoDetails = userData?.onboarding?.photoDetails || [];
+    const availableSlots = 20 - currentPhotoDetails.length;
 
     if (folder === "photos" && images.length > availableSlots) {
       throw new HttpsError(
@@ -625,6 +698,27 @@ export const uploadProfileImages = onCall<UploadImagesRequest, Promise<UploadIma
 );
 
 /**
+ * Extract file path from a storage URL (handles both emulator and production formats)
+ */
+function extractFilePathFromUrl(imageUrl: string, bucketName: string): string | null {
+  // Production format: https://storage.googleapis.com/{bucket}/{filePath}
+  const productionPrefix = `https://storage.googleapis.com/${bucketName}/`;
+  if (imageUrl.startsWith(productionPrefix)) {
+    return imageUrl.replace(productionPrefix, "");
+  }
+
+  // Emulator format: http://{host}/v0/b/{bucket}/o/{encodedPath}?alt=media
+  const emulatorPattern = new RegExp(`/v0/b/${bucketName}/o/([^?]+)`);
+  const emulatorMatch = imageUrl.match(emulatorPattern);
+  if (emulatorMatch) {
+    // The path is URL-encoded in emulator URLs
+    return decodeURIComponent(emulatorMatch[1]);
+  }
+
+  return null;
+}
+
+/**
  * Callable function to delete a profile image
  */
 export const deleteProfileImage = onCall<{ imageUrl: string }, Promise<{ success: boolean }>>(
@@ -646,15 +740,13 @@ export const deleteProfileImage = onCall<{ imageUrl: string }, Promise<{ success
       throw new HttpsError("invalid-argument", "Missing required field: imageUrl");
     }
 
-    // Extract file path from URL and verify it belongs to this user
+    // Extract file path from URL (handles both emulator and production formats)
     const bucketName = bucket.name;
-    const urlPrefix = `https://storage.googleapis.com/${bucketName}/`;
+    const filePath = extractFilePathFromUrl(imageUrl, bucketName);
     
-    if (!imageUrl.startsWith(urlPrefix)) {
+    if (!filePath) {
       throw new HttpsError("permission-denied", "Invalid image URL");
     }
-
-    const filePath = imageUrl.replace(urlPrefix, "");
     
     // Verify the file belongs to this user
     if (!filePath.startsWith(`users/${userId}/`)) {

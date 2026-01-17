@@ -461,19 +461,26 @@
       <h3>{{ 'SETTINGS.DIALOGS.DELETE_TITLE' | translate }}</h3>
       <p>{{ 'SETTINGS.DIALOGS.DELETE_DESC' | translate }}</p>
       
-      <div class="warning-box">
+      <div class="warning-box danger">
         <mat-icon>warning</mat-icon>
-        <span>{{ 'SETTINGS.DIALOGS.DELETE_CONFIRM' | translate }}</span>
+        <div class="delete-warning-content">
+          <strong>This action is permanent and cannot be undone.</strong>
+          <ul class="delete-list">
+            <li>Your profile and all photos will be deleted</li>
+            <li>All your messages and conversations will be deleted</li>
+            <li>Your matches and favorites will be removed</li>
+            <li>Your account will be permanently removed</li>
+          </ul>
+        </div>
       </div>
 
-      <mat-form-field appearance="outline" class="full-width">
-        <mat-label>Confirmation</mat-label>
-        <input matInput [(ngModel)]="deleteConfirmation" placeholder="DELETE">
-      </mat-form-field>
+      <p class="delete-confirm-instruction">
+        Type <strong>DELETE MY ACCOUNT</strong> to confirm:
+      </p>
 
       <mat-form-field appearance="outline" class="full-width">
-        <mat-label>{{ 'SETTINGS.DIALOGS.CURRENT_PASSWORD' | translate }}</mat-label>
-        <input matInput type="password" [(ngModel)]="currentPassword">
+        <mat-label>Type confirmation</mat-label>
+        <input matInput [(ngModel)]="deleteConfirmation" placeholder="DELETE MY ACCOUNT" autocomplete="off">
       </mat-form-field>
 
       @if (dialogError()) {
@@ -483,7 +490,7 @@
       <div class="dialog-actions">
         <button mat-button (click)="closeDialogs()">{{ 'SETTINGS.DIALOGS.CANCEL' | translate }}</button>
         <button mat-flat-button color="warn" (click)="deleteAccount()" 
-                [disabled]="dialogLoading() || deleteConfirmation !== 'DELETE'">
+                [disabled]="dialogLoading() || deleteConfirmation !== 'DELETE MY ACCOUNT'">
           @if (dialogLoading()) {
             <mat-spinner diameter="20"></mat-spinner>
           } @else {

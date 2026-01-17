@@ -461,11 +461,10 @@ export const togglePhotoPrivacy = onCall(async (request) => {
     );
   }
 
-  // Get or initialize photoDetails
+  // Get photoDetails
   const existingPhotoDetails = userData?.onboarding?.photoDetails || [];
-  const photos = userData?.onboarding?.photos || [];
 
-  // Find or create the photo detail
+  // Find and update the photo detail
   let photoDetails = [...existingPhotoDetails];
   const existingIndex = photoDetails.findIndex((p: { url: string }) => p.url === photoUrl);
 
@@ -476,15 +475,8 @@ export const togglePhotoPrivacy = onCall(async (request) => {
       isPrivate,
     };
   } else {
-    // Create new photo detail entry
-    const order = photos.indexOf(photoUrl);
-    photoDetails.push({
-      id: `photo_${Date.now()}`,
-      url: photoUrl,
-      isPrivate,
-      uploadedAt: Timestamp.now(),
-      order: order >= 0 ? order : photoDetails.length,
-    });
+    // Photo not found in photoDetails - this shouldn't happen with the new structure
+    throw new HttpsError("not-found", "Photo not found in profile");
   }
 
   // Update user document
