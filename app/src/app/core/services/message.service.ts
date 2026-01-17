@@ -548,8 +548,8 @@ export class MessageService {
           if (isOwn && this._otherUserLastViewedAt) {
             isRead = messageCreatedAt <= this._otherUserLastViewedAt;
           } else if (isOwn) {
-            // No lastViewedAt data yet, fall back to stored read status
-            isRead = data.read;
+            // No lastViewedAt data yet, assume unread
+            isRead = false;
           }
 
           messages.push({
@@ -777,7 +777,8 @@ export class MessageService {
         if (isOwn && this._otherUserLastViewedAt) {
           isRead = messageCreatedAt <= this._otherUserLastViewedAt;
         } else if (isOwn) {
-          isRead = data.read;
+          // No lastViewedAt data yet, assume unread
+          isRead = false;
         }
 
         olderMessages.push({
@@ -972,7 +973,6 @@ export class MessageService {
       senderId: currentUser.uid,
       content: messageContent,
       createdAt: serverTimestamp(),
-      read: false,
       type: messageType,
     };
 

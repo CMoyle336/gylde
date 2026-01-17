@@ -9,7 +9,6 @@ export interface Message {
   senderId: string;
   content: string;
   createdAt: Date | FieldValue;
-  read: boolean;
   type: 'text' | 'image' | 'system';
   imageUrls?: string[]; // For image messages
   deletedFor?: string[]; // User IDs who deleted this message for themselves

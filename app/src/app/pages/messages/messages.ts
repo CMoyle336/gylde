@@ -6,9 +6,11 @@ import {
   computed,
   OnInit,
   OnDestroy,
+  AfterViewInit,
   effect,
   ViewChild,
 } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { Router, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { Datasource } from 'ngx-ui-scroll';
@@ -54,7 +56,7 @@ import {
     VirtualPhoneSettingsComponent,
   ],
 })
-export class MessagesComponent implements OnInit, OnDestroy {
+export class MessagesComponent implements OnInit, OnDestroy, AfterViewInit {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly messageService = inject(MessageService);
@@ -71,8 +73,10 @@ export class MessagesComponent implements OnInit, OnDestroy {
   // Datasource state tracking
   private lastMessageCount = 0;
   private lastMessageId: string | undefined = undefined;
+  private firstMessageId: string | undefined = undefined; // Track first message for prepend detection
   private isInitialLoad = true;
   private isReloading = false; // Prevent concurrent reloads
+  private bofSubscription: Subscription | null = null; // Subscription for beginning-of-file detection
 
   protected readonly gallery = signal<GalleryState>({
     isOpen: false,
@@ -253,18 +257,28 @@ export class MessagesComponent implements OnInit, OnDestroy {
       if (confirmedCount === 0) {
         this.lastMessageCount = 0;
         this.lastMessageId = undefined;
+        this.firstMessageId = undefined;
         this.isInitialLoad = true;
         return;
       }
 
       const lastConfirmedId = confirmedMessages[confirmedCount - 1]?.id;
+      const firstConfirmedId = confirmedMessages[0]?.id;
       const previousCount = this.lastMessageCount;
       const previousLastId = this.lastMessageId;
+      const previousFirstId = this.firstMessageId;
       
       // Detect the type of change
       const countIncreased = confirmedCount > previousCount;
       const lastIdChanged = lastConfirmedId !== previousLastId;
-      const structuralChange = countIncreased || lastIdChanged;
+      const firstIdChanged = firstConfirmedId !== previousFirstId;
+      
+      // Prepend = first ID changed but last ID stayed the same (older messages loaded)
+      const isPrepend = firstIdChanged && !lastIdChanged && countIncreased && previousCount > 0;
+      // Append = last ID changed (new messages at the end)
+      const isAppend = lastIdChanged && !firstIdChanged && countIncreased && previousCount > 0;
+      
+      const structuralChange = countIncreased || lastIdChanged || firstIdChanged;
       
       // Capture whether this is initial load before updating state
       const wasInitialLoad = this.isInitialLoad;
@@ -280,6 +294,7 @@ export class MessagesComponent implements OnInit, OnDestroy {
         this.isInitialLoad = false;
         this.lastMessageCount = confirmedCount;
         this.lastMessageId = lastConfirmedId;
+        this.firstMessageId = firstConfirmedId;
         const doReload = async () => {
           if (this.isReloading) return;
           this.isReloading = true;
@@ -322,41 +337,86 @@ export class MessagesComponent implements OnInit, OnDestroy {
         
         doReload();
       } 
-      // CASE 2: New messages added to the end - use append() for small additions, reload for large changes
-      else if (structuralChange && adapter.init) {
-        // Update tracking state before async operation to prevent duplicate processing
-        this.lastMessageCount = confirmedCount;
-        this.lastMessageId = lastConfirmedId;
-        this.isReloading = true;
+      // CASE 2: Older messages prepended (infinite scroll up)
+      else if (isPrepend && adapter.init) {
+        const prependCount = confirmedCount - previousCount;
         
-        const newMessageCount = confirmedCount - previousCount;
+        // Only use prepend for reasonable amounts (up to 50 messages = typical batch size)
+        if (prependCount > 0 && prependCount <= 50) {
+          // Update tracking state before async operation
+          this.lastMessageCount = confirmedCount;
+          this.firstMessageId = firstConfirmedId;
+          this.isReloading = true;
+          
+          const olderMessages = confirmedMessages.slice(0, prependCount);
+          
+          const doPrepend = async () => {
+            try {
+              // Prepend older messages to the buffer
+              // bof: true signals beginning of file if hasOlderMessages is false
+              await adapter.prepend({ 
+                items: olderMessages, 
+                bof: !this.hasOlderMessages() 
+              });
+              
+              // Wait for render to complete
+              await adapter.relax();
+            } finally {
+              this.isReloading = false;
+            }
+          };
+          
+          doPrepend();
+        } else {
+          // Too many messages prepended - use reload
+          this.lastMessageCount = confirmedCount;
+          this.lastMessageId = lastConfirmedId;
+          this.firstMessageId = firstConfirmedId;
+          this.isReloading = true;
+          
+          const doReload = async () => {
+            try {
+              adapter.fix({ maxIndex: confirmedCount - 1 });
+              // Keep current scroll position by reloading at first visible
+              const firstVisibleIndex = adapter.firstVisible?.$index ?? 0;
+              await adapter.reload(firstVisibleIndex + prependCount);
+              await adapter.relax();
+            } finally {
+              this.isReloading = false;
+            }
+          };
+          
+          doReload();
+        }
+      }
+      // CASE 3: New messages added to the end - use append()
+      else if (isAppend && adapter.init) {
+        const appendCount = confirmedCount - previousCount;
         
-        // Only use append for small additions (1-5 messages). For larger changes, use reload.
-        // This handles edge cases where previousCount might be stale or incorrect.
-        if (newMessageCount > 0 && newMessageCount <= 5) {
-          const newMessages = confirmedMessages.slice(-newMessageCount);
+        // Only use append for small additions (1-5 messages)
+        if (appendCount > 0 && appendCount <= 5) {
+          // Update tracking state before async operation
+          this.lastMessageCount = confirmedCount;
+          this.lastMessageId = lastConfirmedId;
+          this.isReloading = true;
+          
+          const newMessages = confirmedMessages.slice(-appendCount);
           
           const doAppend = async () => {
             try {
               // Update maxIndex to include new messages
               adapter.fix({ maxIndex: confirmedCount - 1 });
               
-              // Append new messages to the buffer with eof: true to signal end of data
+              // Append new messages to the buffer with eof: true
               await adapter.append({ items: newMessages, eof: true });
               
-              // Wait for initial render to complete
+              // Wait for render to complete
               await adapter.relax();
               
-              // First scroll to bottom
+              // Scroll to bottom
               adapter.fix({ scrollPosition: +Infinity });
-              
-              // Wait for the workflow cycle triggered by scroll to complete
               await adapter.relax();
-              
-              // Give browser time to apply layout
               await new Promise(resolve => setTimeout(resolve, 50));
-              
-              // Final scroll to ensure we're at the bottom
               adapter.fix({ scrollPosition: +Infinity });
             } finally {
               this.isReloading = false;
@@ -365,7 +425,12 @@ export class MessagesComponent implements OnInit, OnDestroy {
           
           doAppend();
         } else {
-          // Large structural change or message deletion - use reload
+          // Too many messages appended - use reload
+          this.lastMessageCount = confirmedCount;
+          this.lastMessageId = lastConfirmedId;
+          this.firstMessageId = firstConfirmedId;
+          this.isReloading = true;
+          
           const doReload = async () => {
             try {
               adapter.fix({ maxIndex: confirmedCount - 1 });
@@ -383,7 +448,30 @@ export class MessagesComponent implements OnInit, OnDestroy {
           doReload();
         }
       }
-      // CASE 3: Data-only changes (read status, timed image status, etc.) - use updater
+      // CASE 4: Other structural changes (both first and last changed, or complex changes) - use reload
+      else if (structuralChange && adapter.init) {
+        this.lastMessageCount = confirmedCount;
+        this.lastMessageId = lastConfirmedId;
+        this.firstMessageId = firstConfirmedId;
+        this.isReloading = true;
+        
+        const doReload = async () => {
+          try {
+            adapter.fix({ maxIndex: confirmedCount - 1 });
+            const startIndex = Math.max(0, confirmedCount - 1);
+            await adapter.reload(startIndex);
+            await adapter.relax();
+            adapter.fix({ scrollPosition: +Infinity });
+            await new Promise(resolve => setTimeout(resolve, 50));
+            adapter.fix({ scrollPosition: +Infinity });
+          } finally {
+            this.isReloading = false;
+          }
+        };
+        
+        doReload();
+      }
+      // CASE 5: Data-only changes (read status, timed image status, etc.) - use updater
       else if (!structuralChange && adapter.init) {
         const messageMap = new Map(confirmedMessages.map(m => [m.id, m]));
         let hadUpdates = false;
@@ -426,11 +514,41 @@ export class MessagesComponent implements OnInit, OnDestroy {
     this.conversationIdFromRoute = this.route.snapshot.paramMap.get('conversationId');
   }
 
+  ngAfterViewInit(): void {
+    // Subscribe to beginning-of-file detection for infinite scroll up
+    this.setupInfiniteScrollUp();
+  }
+
   ngOnDestroy(): void {
     this.messageService.closeConversation();
     this.stopSenderCountdowns();
     this.stopRecipientCountdowns();
     this.stopGalleryCountdown();
+    this.bofSubscription?.unsubscribe();
+  }
+
+  /**
+   * Set up infinite scroll for loading older messages when user scrolls to top
+   */
+  private setupInfiniteScrollUp(): void {
+    const adapter = this.messageDatasource.adapter;
+    
+    // Wait for adapter to be ready, then subscribe to bof$
+    const checkAdapter = () => {
+      if (adapter.init) {
+        this.bofSubscription = adapter.bof$.subscribe(async (bof) => {
+          // When at beginning of buffer and more messages exist, load them
+          if (bof && this.hasOlderMessages() && !this.loadingOlderMessages() && !this.isReloading) {
+            await this.messageService.loadOlderMessages();
+          }
+        });
+      } else {
+        // Retry after a short delay if adapter not ready
+        setTimeout(checkAdapter, 100);
+      }
+    };
+    
+    checkAdapter();
   }
 
   // ============================================
@@ -533,6 +651,7 @@ export class MessagesComponent implements OnInit, OnDestroy {
     // Reset state for new conversation
     this.lastMessageCount = 0;
     this.lastMessageId = undefined;
+    this.firstMessageId = undefined;
     this.isInitialLoad = true;
     this.isReloading = false;
     
