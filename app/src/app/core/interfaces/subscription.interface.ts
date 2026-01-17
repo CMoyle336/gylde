@@ -25,6 +25,7 @@ export interface SubscriptionFeature {
 export interface UserSubscription {
   tier: SubscriptionTier;
   status: 'active' | 'canceled' | 'past_due' | 'trialing';
+  billingInterval?: 'monthly' | 'quarterly';
   currentPeriodStart?: unknown;
   currentPeriodEnd?: unknown;
   cancelAtPeriodEnd?: boolean;

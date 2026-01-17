@@ -178,8 +178,46 @@ export const createSubscriptionCheckout = onCall(
           };
         }
 
-        // Determine if this is an upgrade or downgrade
+        // Determine if this is an upgrade, downgrade, or interval change
         const upgrading = isUpgrade(currentTier, tier);
+        const sameTier = currentTier === tier;
+        const isIntervalChange = sameTier && existingItem.price.id !== priceId;
+
+        // Handle interval changes (same tier, different billing period)
+        if (isIntervalChange) {
+          // Apply immediately with proration - user gets credit for unused time
+          const updatedSubscription = await stripe.subscriptions.update(existingSub.id, {
+            items: [
+              {
+                id: existingItem.id,
+                price: priceId,
+              },
+            ],
+            metadata: {
+              userId,
+              tier,
+            },
+            proration_behavior: "create_prorations", // Credit for unused time
+          });
+
+          console.log(`Interval change for user ${userId}: updated to ${interval} billing`);
+
+          // Clear any pending downgrade since this is a fresh update
+          await db.collection("users").doc(userId).collection("private").doc("data").set({
+            subscription: {
+              pendingDowngradeTier: null,
+              pendingDowngradeDate: null,
+            },
+          }, { merge: true });
+
+          const tierName = tier === "elite" ? "Elite" : "Connect";
+          const intervalName = interval === "quarterly" ? "quarterly" : "monthly";
+          return {
+            updated: true,
+            subscriptionId: updatedSubscription.id,
+            message: `Switched to ${tierName} ${intervalName} billing. Your new billing cycle starts now.`,
+          };
+        }
 
         if (upgrading) {
           // UPGRADE: Apply immediately with proration
@@ -554,6 +592,15 @@ async function updateUserSubscription(userId: string, subscription: Stripe.Subsc
   const currentPeriodEnd = subscriptionItem?.current_period_end
     ? new Date(subscriptionItem.current_period_end * 1000)
     : null;
+  
+  // Determine billing interval from the price
+  // interval_count of 3 months = quarterly, 1 month = monthly
+  const priceInterval = subscriptionItem?.price?.recurring?.interval;
+  const priceIntervalCount = subscriptionItem?.price?.recurring?.interval_count;
+  let billingInterval: "monthly" | "quarterly" = "monthly";
+  if (priceInterval === "month" && priceIntervalCount === 3) {
+    billingInterval = "quarterly";
+  }
 
   // Check if there's a pending downgrade that just took effect
   // This happens when the billing period renews at the lower tier
@@ -595,6 +642,7 @@ async function updateUserSubscription(userId: string, subscription: Stripe.Subsc
   const subscriptionData: Record<string, unknown> = {
     tier: isActive ? effectiveTier : "free",
     status: mappedStatus,
+    billingInterval,
     stripeSubscriptionId: subscription.id,
     currentPeriodStart,
     currentPeriodEnd,

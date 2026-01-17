@@ -67,6 +67,43 @@ export class SubscriptionService {
     return this.currentTier() === 'elite';
   });
 
+  readonly currentBillingInterval = computed(() => {
+    const sub = this._subscription();
+    
+    // Use stored billing interval if available
+    if (sub?.billingInterval) {
+      return sub.billingInterval;
+    }
+    
+    // Infer from period dates if billingInterval not stored (for existing subscriptions)
+    if (sub?.currentPeriodStart && sub?.currentPeriodEnd) {
+      let startDate: Date | null = null;
+      let endDate: Date | null = null;
+      
+      // Convert Firestore timestamps
+      if (typeof (sub.currentPeriodStart as { toDate?: () => Date }).toDate === 'function') {
+        startDate = (sub.currentPeriodStart as { toDate: () => Date }).toDate();
+      } else if (sub.currentPeriodStart instanceof Date) {
+        startDate = sub.currentPeriodStart;
+      }
+      
+      if (typeof (sub.currentPeriodEnd as { toDate?: () => Date }).toDate === 'function') {
+        endDate = (sub.currentPeriodEnd as { toDate: () => Date }).toDate();
+      } else if (sub.currentPeriodEnd instanceof Date) {
+        endDate = sub.currentPeriodEnd;
+      }
+      
+      if (startDate && endDate) {
+        // Calculate days between dates
+        const daysDiff = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+        // Quarterly is ~90 days, monthly is ~30 days
+        return daysDiff > 60 ? 'quarterly' : 'monthly';
+      }
+    }
+    
+    return null;
+  });
+
   readonly pendingDowngrade = computed(() => {
     const sub = this._subscription();
     

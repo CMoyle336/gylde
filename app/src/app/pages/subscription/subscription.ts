@@ -94,7 +94,18 @@ export class SubscriptionComponent implements OnInit {
   }
 
   protected isCurrentPlan(tier: SubscriptionTier): boolean {
-    return this.currentTier() === tier;
+    const currentTier = this.currentTier();
+    if (currentTier !== tier) return false;
+    
+    // If same tier but different billing interval, don't consider it "current"
+    // so the button remains clickable for interval changes
+    const currentBillingInterval = this.subscriptionService.currentBillingInterval();
+    const selectedBillingPeriod = this.billingPeriod();
+    if (currentTier !== 'free' && currentBillingInterval && currentBillingInterval !== selectedBillingPeriod) {
+      return false;
+    }
+    
+    return true;
   }
 
   protected canUpgrade(tier: SubscriptionTier): boolean {
@@ -105,13 +116,23 @@ export class SubscriptionComponent implements OnInit {
   }
 
   protected getButtonLabel(tier: SubscriptionTier): string {
-    if (this.isCurrentPlan(tier)) return 'Current Plan';
+    const currentTier = this.currentTier();
+    const currentBillingInterval = this.subscriptionService.currentBillingInterval();
+    const selectedBillingPeriod = this.billingPeriod();
+    
+    // Check if this is the current tier but different interval
+    if (currentTier === tier && currentTier !== 'free') {
+      if (currentBillingInterval && currentBillingInterval !== selectedBillingPeriod) {
+        return 'Switch Billing';
+      }
+      return 'Current Plan';
+    }
+    
     if (this.canUpgrade(tier)) return 'Upgrade';
     return 'Downgrade';
   }
 
   protected async selectPlan(plan: SubscriptionPlan): Promise<void> {
-    if (this.isCurrentPlan(plan.id)) return;
     if (plan.id === 'free') {
       // For downgrading to free, open the customer portal
       await this.manageSubscription();
@@ -122,9 +143,21 @@ export class SubscriptionComponent implements OnInit {
     const currentTier = this.currentTier();
     const isUpgrade = this.canUpgrade(plan.id);
     const hasExistingSubscription = currentTier !== 'free';
+    const currentBillingInterval = this.subscriptionService.currentBillingInterval();
+    const selectedBillingPeriod = this.billingPeriod();
+    
+    // Detect if this is an interval change (same tier, different billing period)
+    const isSameTier = currentTier === plan.id;
+    const isIntervalChange = isSameTier && hasExistingSubscription && 
+      currentBillingInterval !== null && currentBillingInterval !== selectedBillingPeriod;
+    
+    // If clicking current plan with same interval, do nothing
+    if (isSameTier && !isIntervalChange) return;
 
-    let action: 'upgrade' | 'downgrade' | 'new';
-    if (!hasExistingSubscription) {
+    let action: 'upgrade' | 'downgrade' | 'new' | 'interval-change';
+    if (isIntervalChange) {
+      action = 'interval-change';
+    } else if (!hasExistingSubscription) {
       action = 'new';
     } else if (isUpgrade) {
       action = 'upgrade';
@@ -140,7 +173,8 @@ export class SubscriptionComponent implements OnInit {
       currentTierName: this.getPlanName(currentTier),
       newTierName: plan.name,
       price: this.getPrice(plan),
-      billingPeriod: this.billingPeriod(),
+      billingPeriod: selectedBillingPeriod,
+      currentBillingPeriod: currentBillingInterval || undefined,
     };
 
     const dialogRef = this.dialog.open(SubscriptionConfirmDialogComponent, {

@@ -5,13 +5,14 @@ import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/materia
 import { SubscriptionTier } from '../../../core/interfaces';
 
 export interface SubscriptionConfirmDialogData {
-  action: 'upgrade' | 'downgrade' | 'new';
+  action: 'upgrade' | 'downgrade' | 'new' | 'interval-change';
   currentTier: SubscriptionTier;
   newTier: SubscriptionTier;
   newTierName: string;
   currentTierName: string;
   price: string;
   billingPeriod: 'monthly' | 'quarterly';
+  currentBillingPeriod?: 'monthly' | 'quarterly';
 }
 
 @Component({
@@ -20,8 +21,9 @@ export interface SubscriptionConfirmDialogData {
     <div class="confirm-dialog">
       <div class="dialog-header">
         <mat-icon [class.upgrade]="data.action === 'upgrade'" 
-                  [class.downgrade]="data.action === 'downgrade'">
-          {{ data.action === 'upgrade' ? 'trending_up' : data.action === 'downgrade' ? 'trending_down' : 'credit_card' }}
+                  [class.downgrade]="data.action === 'downgrade'"
+                  [class.interval-change]="data.action === 'interval-change'">
+          {{ getIcon() }}
         </mat-icon>
         <h2>{{ getTitle() }}</h2>
       </div>
@@ -47,6 +49,22 @@ export interface SubscriptionConfirmDialogData {
             <div>
               <p>You'll keep your current <strong>{{ data.currentTierName }}</strong> features until the end of your billing period.</p>
               <p>After that, your plan will automatically switch to <strong>{{ data.newTierName }}</strong>.</p>
+            </div>
+          </div>
+        } @else if (data.action === 'interval-change') {
+          <p class="main-message">
+            You're switching from <strong>{{ data.currentBillingPeriod }}</strong> to <strong>{{ data.billingPeriod }}</strong> billing.
+          </p>
+          <div class="info-box">
+            <mat-icon>{{ data.billingPeriod === 'quarterly' ? 'savings' : 'calendar_month' }}</mat-icon>
+            <div>
+              @if (data.billingPeriod === 'quarterly') {
+                <p>You'll save money with quarterly billing!</p>
+              } @else {
+                <p>You'll switch to monthly billing with more flexibility.</p>
+              }
+              <p>Your billing cycle will reset and you'll receive credit for any unused time.</p>
+              <p class="price-note">New price: <strong>{{ data.price }}</strong> {{ data.billingPeriod === 'quarterly' ? '/mo billed quarterly' : '/month' }}</p>
             </div>
           </div>
         } @else {
@@ -105,6 +123,10 @@ export interface SubscriptionConfirmDialogData {
 
     .dialog-header mat-icon.downgrade {
       color: #f59e0b;
+    }
+
+    .dialog-header mat-icon.interval-change {
+      color: #3b82f6;
     }
 
     .dialog-header h2 {
@@ -257,12 +279,27 @@ export class SubscriptionConfirmDialogComponent {
   protected readonly data = inject<SubscriptionConfirmDialogData>(MAT_DIALOG_DATA);
   private readonly dialogRef = inject(MatDialogRef<SubscriptionConfirmDialogComponent>);
 
+  protected getIcon(): string {
+    switch (this.data.action) {
+      case 'upgrade':
+        return 'trending_up';
+      case 'downgrade':
+        return 'trending_down';
+      case 'interval-change':
+        return 'swap_horiz';
+      default:
+        return 'credit_card';
+    }
+  }
+
   protected getTitle(): string {
     switch (this.data.action) {
       case 'upgrade':
         return 'Confirm Upgrade';
       case 'downgrade':
         return 'Confirm Downgrade';
+      case 'interval-change':
+        return 'Change Billing Period';
       default:
         return 'Confirm Subscription';
     }
@@ -274,6 +311,8 @@ export class SubscriptionConfirmDialogComponent {
         return 'Upgrade Now';
       case 'downgrade':
         return 'Schedule Downgrade';
+      case 'interval-change':
+        return 'Switch Billing';
       default:
         return 'Subscribe';
     }

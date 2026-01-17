@@ -325,3 +325,23 @@ mat-progress-spinner svg,
   --mdc-dialog-container-color: #ffffff;
   background: #ffffff !important;
 }
+
+/* ============================================
+   SIDENAV Z-INDEX FIX
+   Ensure sidenav stays behind dialog overlays
+   Only on desktop where sidenav is always visible
+   ============================================ */
+@media (min-width: 1024px) {
+  mat-sidenav.mat-sidenav {
+    z-index: 1 !important;
+  }
+
+  .mat-drawer {
+    z-index: 100 !important;
+  }
+}
+
+/* CDK overlay (dialogs, menus, etc.) should be above sidenav */
+.cdk-overlay-container {
+  z-index: 1000 !important;
+}

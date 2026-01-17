@@ -140,7 +140,7 @@
 /* Header */
 .subscription-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 1rem;
   margin-bottom: 2rem;
 }
@@ -163,6 +163,10 @@
 .back-btn:hover {
   background: var(--color-bg-hover);
   color: var(--color-text-primary);
+}
+
+.header-content {
+  flex: 1;
 }
 
 .header-content h1 {
