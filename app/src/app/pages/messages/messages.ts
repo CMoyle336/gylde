@@ -324,6 +324,7 @@ export class MessagesComponent implements OnInit, OnDestroy {
         // This handles: read status changes, timed image view status, etc.
         // Use adapter.fix({ updater }) which updates data in-place without structural changes
         const messageMap = new Map(confirmedMessages.map(m => [m.id, m]));
+        let hadUpdates = false;
         
         adapter.fix({
           updater: (item, update) => {
@@ -342,12 +343,19 @@ export class MessagesComponent implements OnInit, OnDestroy {
               currentMessage.isImageExpired !== freshMessage.isImageExpired;
             
             if (hasChanges) {
-              // Update the data object with fresh values
-              Object.assign(item.data, freshMessage);
+              // Replace item.data with fresh message to trigger OnPush change detection
+              // (OnPush requires new object reference, not just property mutations)
+              item.data = freshMessage;
               update();
+              hadUpdates = true;
             }
           }
         });
+        
+        // Force change detection for visible items if any updates occurred
+        if (hadUpdates) {
+          adapter.check();
+        }
       }
     });
   }
