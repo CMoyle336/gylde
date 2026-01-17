@@ -38,15 +38,29 @@
         (shareNumber)="onShareNumber()">
       </app-chat-header>
 
-      <!-- Messages with Virtual Scrolling -->
-      @if (messages().length === 0) {
-        <div class="messages-scroll empty-state">
-          <div class="start-chat">
-            <span class="material-icons-outlined">waving_hand</span>
-            <p>Start the conversation!</p>
+      <!-- Upgrade Prompt for Free Users -->
+      @if (!hasMessagingAccess()) {
+        <div class="upgrade-prompt">
+          <div class="upgrade-content">
+            <span class="material-icons-outlined upgrade-icon">lock</span>
+            <h3>Upgrade to Message</h3>
+            <p>You've received a message! Upgrade your plan to read and reply to messages.</p>
+            <button class="upgrade-btn" (click)="onUpgradeClicked()">
+              <span class="material-icons-outlined">arrow_upward</span>
+              View Plans
+            </button>
           </div>
         </div>
       } @else {
+        <!-- Messages with Virtual Scrolling -->
+        @if (messages().length === 0) {
+          <div class="messages-scroll empty-state">
+            <div class="start-chat">
+              <span class="material-icons-outlined">waving_hand</span>
+              <p>Start the conversation!</p>
+            </div>
+          </div>
+        } @else {
         <div class="messages-scroll">
           <!-- Loading older messages indicator -->
           @if (loadingOlderMessages()) {
@@ -87,17 +101,19 @@
             </app-message-bubble>
           }
         </div>
-      }
+        }
 
-      <!-- Chat Input -->
-      <app-chat-input
-        [isBlocked]="isOtherUserBlocked()"
-        [isAiPanelOpen]="isAiPanelOpen()"
-        [hasAiAccess]="hasAiAccess()"
-        (messageSent)="onMessageSent($event)"
-        (typing)="onTyping()"
-        (aiAssistToggled)="onAiAssistToggled()">
-      </app-chat-input>
+        <!-- Chat Input -->
+        <app-chat-input
+          [isBlocked]="isOtherUserBlocked()"
+          [isAiPanelOpen]="isAiPanelOpen()"
+          [hasAiAccess]="hasAiAccess()"
+          (messageSent)="onMessageSent($event)"
+          (typing)="onTyping()"
+          (draftChanged)="onDraftChanged($event)"
+          (aiAssistToggled)="onAiAssistToggled()">
+        </app-chat-input>
+      }
     } @else {
       <!-- No chat selected (desktop only) -->
       <div class="no-chat">

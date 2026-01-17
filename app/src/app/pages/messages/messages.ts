@@ -84,6 +84,7 @@ export class MessagesComponent implements OnInit, OnDestroy, AfterViewInit {
     currentIndex: 0,
   });
   protected readonly galleryCountdown = signal<number | null>(null);
+  protected readonly currentDraft = signal<string>('');
   protected readonly senderCountdowns = signal<Map<string, number>>(new Map());
   protected readonly recipientCountdowns = signal<Map<string, number>>(new Map());
   private galleryCountdownInterval: ReturnType<typeof setInterval> | null = null;
@@ -119,6 +120,11 @@ export class MessagesComponent implements OnInit, OnDestroy, AfterViewInit {
   protected readonly isAiPanelOpen = this.aiChatService.isOpen;
   protected readonly hasAiAccess = this.aiChatService.hasAccess;
 
+  // Messaging access (requires paid subscription)
+  protected readonly hasMessagingAccess = computed(() => {
+    return this.subscriptionService.capabilities().canMessage;
+  });
+
   // Virtual Phone state (Elite feature)
   protected readonly virtualPhone = signal<VirtualPhone | null>(null);
   protected readonly virtualPhoneLoading = signal(false);
@@ -148,7 +154,7 @@ export class MessagesComponent implements OnInit, OnDestroy, AfterViewInit {
         tagline: userProfile.onboarding?.tagline,
       } : undefined,
       recentMessages: this.messages(),
-      userDraft: '',
+      userDraft: this.currentDraft(),
       isEmptyThread: this.messages().length === 0,
     };
   });
@@ -724,10 +730,15 @@ export class MessagesComponent implements OnInit, OnDestroy, AfterViewInit {
 
   protected onMessageSent(event: SendMessageEvent): void {
     this.messageService.sendMessage(event.content, event.files, event.timer ?? undefined);
+    this.currentDraft.set(''); // Clear draft after sending
   }
 
   protected onTyping(): void {
     this.messageService.setTyping(true);
+  }
+
+  protected onDraftChanged(draft: string): void {
+    this.currentDraft.set(draft);
   }
 
   protected async onDeleteForMe(message: MessageDisplay): Promise<void> {
@@ -873,6 +884,10 @@ export class MessagesComponent implements OnInit, OnDestroy, AfterViewInit {
 
   protected onVirtualPhoneUpgrade(): void {
     this.subscriptionService.canPerformAction('hasVirtualPhone', true);
+  }
+
+  protected onUpgradeClicked(): void {
+    this.router.navigate(['/subscription']);
   }
 
   protected onVirtualPhoneSettingsClosed(): void {

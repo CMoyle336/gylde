@@ -132,6 +132,78 @@
   opacity: 0.5;
 }
 
+/* ============================================
+   UPGRADE PROMPT (for free users)
+   ============================================ */
+
+.upgrade-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: 2rem;
+  background: var(--color-bg-primary);
+}
+
+.upgrade-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 320px;
+  padding: 2rem;
+  background: var(--color-bg-secondary);
+  border-radius: 16px;
+  border: 1px solid var(--color-border);
+}
+
+.upgrade-icon {
+  font-size: 3rem;
+  color: var(--color-accent);
+  margin-bottom: 1rem;
+}
+
+.upgrade-content h3 {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 0.5rem;
+}
+
+.upgrade-content p {
+  font-size: 0.9375rem;
+  color: var(--color-text-secondary);
+  margin: 0 0 1.5rem;
+  line-height: 1.5;
+}
+
+.upgrade-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--color-accent);
+  color: #1a1720;
+  border: none;
+  border-radius: 8px;
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.upgrade-btn:hover {
+  background: var(--color-accent-light);
+  transform: translateY(-1px);
+}
+
+.upgrade-btn .material-icons-outlined {
+  font-size: 1.125rem;
+}
+
 .no-chat h3 {
   font-family: var(--font-display);
   font-size: 1rem;

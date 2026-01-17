@@ -277,7 +277,19 @@ export class AiAssistPanelComponent {
   // ============================================
 
   protected insertSuggestion(suggestion: ReplySuggestion): void {
-    this.insertText.emit(suggestion.text);
+    this.insertTextAndClose(suggestion.text);
+  }
+
+  /**
+   * Insert text into the composer and close panel on mobile
+   */
+  protected insertTextAndClose(text: string): void {
+    this.insertText.emit(text);
+    
+    // On mobile, close the panel after inserting
+    if (window.innerWidth < 1024) {
+      this.close();
+    }
   }
 
   protected async copySuggestion(suggestion: ReplySuggestion): Promise<void> {

@@ -52,6 +52,7 @@ export class ChatInputComponent {
   @Output() messageSent = new EventEmitter<SendMessageEvent>();
   @Output() typing = new EventEmitter<void>();
   @Output() aiAssistToggled = new EventEmitter<void>();
+  @Output() draftChanged = new EventEmitter<string>();
 
   protected readonly messageInput = signal('');
   protected readonly selectedImages = signal<ImagePreview[]>([]);
@@ -62,6 +63,7 @@ export class ChatInputComponent {
    */
   setMessageInput(value: string): void {
     this.messageInput.set(value);
+    this.draftChanged.emit(value);
     this.focusInput();
   }
 
@@ -110,6 +112,7 @@ export class ChatInputComponent {
 
   protected onInput(): void {
     this.typing.emit();
+    this.draftChanged.emit(this.messageInput());
   }
 
   protected openImagePicker(): void {

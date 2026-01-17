@@ -247,7 +247,7 @@
                     <p class="suggestion-text">{{ variant.text }}</p>
                     <p class="change-summary">{{ variant.changeSummary }}</p>
                     <div class="suggestion-actions">
-                      <button mat-stroked-button (click)="insertText.emit(variant.text)">
+                      <button mat-stroked-button (click)="insertTextAndClose(variant.text)">
                         <mat-icon>add</mat-icon>
                         Use this
                       </button>
