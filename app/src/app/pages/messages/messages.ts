@@ -190,7 +190,8 @@ export class MessagesComponent implements OnInit, OnDestroy, AfterViewInit {
       bufferSize: 20,
       padding: 0.5,
       minIndex: 0,
-      infinite: false  // Don't reserve space for infinite scrolling - we have finite data
+      infinite: false,  // Don't reserve space for infinite scrolling - we have finite data
+      inverse: true
     },
     devSettings: {
       debug: false,
