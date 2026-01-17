@@ -489,10 +489,8 @@ export class MessageService {
         for (const docSnapshot of snapshot.docs) {
           const data = docSnapshot.data() as Message;
           
-          // Skip messages deleted for this user (but not deletedForAll)
-          if (data.deletedFor?.includes(currentUser.uid) && !data.deletedForAll) {
-            continue;
-          }
+          // Check if message is deleted for this user (but not deletedForAll)
+          const isDeletedForMe = data.deletedFor?.includes(currentUser.uid) && !data.deletedForAll;
 
           // Get sender info from conversation
           let senderName: string | null = null;
@@ -552,19 +550,23 @@ export class MessageService {
             isRead = false;
           }
 
+          // Check if message is deleted (either for everyone or just for me)
+          const isDeleted = data.deletedForAll || isDeletedForMe;
+          
           messages.push({
             id: docSnapshot.id,
-            content: data.deletedForAll ? '' : data.content,
+            content: isDeleted ? '' : data.content,
             isOwn,
             createdAt: messageCreatedAt,
             read: isRead,
-            type: data.deletedForAll ? 'system' : data.type,
-            imageUrls: data.deletedForAll ? undefined : data.imageUrls,
+            type: isDeleted ? 'system' : data.type,
+            imageUrls: isDeleted ? undefined : data.imageUrls,
             isDeletedForAll: data.deletedForAll,
+            isDeletedForMe,
             senderId: data.senderId,
             senderName,
             senderPhoto,
-            imageTimer: data.imageTimer,
+            imageTimer: isDeleted ? undefined : data.imageTimer,
             imageViewedAt,
             isImageExpired,
             recipientViewedAt,
@@ -722,10 +724,8 @@ export class MessageService {
       for (const docSnapshot of snapshot.docs) {
         const data = docSnapshot.data() as Message;
         
-        // Skip messages deleted for this user (but not deletedForAll)
-        if (data.deletedFor?.includes(currentUser.uid) && !data.deletedForAll) {
-          continue;
-        }
+        // Check if message is deleted for this user (but not deletedForAll)
+        const isDeletedForMe = data.deletedFor?.includes(currentUser.uid) && !data.deletedForAll;
 
         // Get sender info
         let senderName: string | null = null;
@@ -781,19 +781,23 @@ export class MessageService {
           isRead = false;
         }
 
+        // Check if message is deleted (either for everyone or just for me)
+        const isDeleted = data.deletedForAll || isDeletedForMe;
+        
         olderMessages.push({
           id: docSnapshot.id,
-          content: data.deletedForAll ? '' : data.content,
+          content: isDeleted ? '' : data.content,
           isOwn,
           createdAt: messageCreatedAt,
           read: isRead,
-          type: data.deletedForAll ? 'system' : data.type,
-          imageUrls: data.deletedForAll ? undefined : data.imageUrls,
+          type: isDeleted ? 'system' : data.type,
+          imageUrls: isDeleted ? undefined : data.imageUrls,
           isDeletedForAll: data.deletedForAll,
+          isDeletedForMe,
           senderId: data.senderId,
           senderName,
           senderPhoto,
-          imageTimer: data.imageTimer,
+          imageTimer: isDeleted ? undefined : data.imageTimer,
           imageViewedAt,
           isImageExpired,
           recipientViewedAt,

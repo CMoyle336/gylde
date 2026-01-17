@@ -85,6 +85,7 @@ export interface MessageDisplay {
   type: 'text' | 'image' | 'system';
   imageUrls?: string[]; // For image messages
   isDeletedForAll?: boolean; // Show "message was deleted" placeholder
+  isDeletedForMe?: boolean; // Show "You deleted this message" placeholder
   // Sender info for displaying avatar/name in chat
   senderId: string;
   senderName: string | null;

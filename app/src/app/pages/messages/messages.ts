@@ -193,7 +193,7 @@ export class MessagesComponent implements OnInit, OnDestroy, AfterViewInit {
       infinite: false  // Don't reserve space for infinite scrolling - we have finite data
     },
     devSettings: {
-      debug: false,
+      debug: true,
       immediateLog: true
     }
   });
@@ -270,6 +270,7 @@ export class MessagesComponent implements OnInit, OnDestroy, AfterViewInit {
       
       // Detect the type of change
       const countIncreased = confirmedCount > previousCount;
+      const countDecreased = confirmedCount < previousCount;
       const lastIdChanged = lastConfirmedId !== previousLastId;
       const firstIdChanged = firstConfirmedId !== previousFirstId;
       
@@ -277,8 +278,10 @@ export class MessagesComponent implements OnInit, OnDestroy, AfterViewInit {
       const isPrepend = firstIdChanged && !lastIdChanged && countIncreased && previousCount > 0;
       // Append = last ID changed (new messages at the end)
       const isAppend = lastIdChanged && !firstIdChanged && countIncreased && previousCount > 0;
+      // Deletion = count decreased (message removed from signal)
+      const isDeletion = countDecreased && previousCount > 0;
       
-      const structuralChange = countIncreased || lastIdChanged || firstIdChanged;
+      const structuralChange = countIncreased || countDecreased || lastIdChanged || firstIdChanged;
       
       // Capture whether this is initial load before updating state
       const wasInitialLoad = this.isInitialLoad;
@@ -443,7 +446,37 @@ export class MessagesComponent implements OnInit, OnDestroy, AfterViewInit {
           doReload();
         }
       }
-      // CASE 4: Other structural changes (both first and last changed, or complex changes) - use reload
+      // CASE 4: Message deletion - reload at current position to maintain scroll
+      else if (isDeletion && adapter.init) {
+        console.log('[Effect] CASE 4 - Deletion detected:', {
+          previousCount,
+          confirmedCount,
+          deletedCount: previousCount - confirmedCount
+        });
+        
+        this.lastMessageCount = confirmedCount;
+        this.lastMessageId = lastConfirmedId;
+        this.firstMessageId = firstConfirmedId;
+        this.isReloading = true;
+        
+        const doReload = async () => {
+          try {
+            // Get current first visible index before reload
+            const currentFirstVisibleIndex = adapter.firstVisible?.$index ?? 0;
+            // Adjust index to stay in bounds after deletion
+            const safeIndex = Math.min(currentFirstVisibleIndex, Math.max(0, confirmedCount - 1));
+            
+            adapter.fix({ minIndex: 0, maxIndex: confirmedCount - 1 });
+            await adapter.reload(safeIndex);
+            await adapter.relax();
+          } finally {
+            this.isReloading = false;
+          }
+        };
+        
+        doReload();
+      }
+      // CASE 5: Other structural changes (both first and last changed, or complex changes) - use reload
       else if (structuralChange && adapter.init) {
         this.lastMessageCount = confirmedCount;
         this.lastMessageId = lastConfirmedId;
@@ -466,7 +499,7 @@ export class MessagesComponent implements OnInit, OnDestroy, AfterViewInit {
         
         doReload();
       }
-      // CASE 5: Data-only changes (read status, timed image status, etc.) - use updater
+      // CASE 6: Data-only changes (read status, timed image status, deletion status, etc.) - use updater
       else if (!structuralChange && adapter.init) {
         const messageMap = new Map(confirmedMessages.map(m => [m.id, m]));
         let hadUpdates = false;
@@ -485,7 +518,11 @@ export class MessagesComponent implements OnInit, OnDestroy, AfterViewInit {
               currentMessage.recipientViewExpired !== freshMessage.recipientViewExpired ||
               currentMessage.read !== freshMessage.read ||
               currentMessage.imageViewedAt !== freshMessage.imageViewedAt ||
-              currentMessage.isImageExpired !== freshMessage.isImageExpired;
+              currentMessage.isImageExpired !== freshMessage.isImageExpired ||
+              currentMessage.isDeletedForAll !== freshMessage.isDeletedForAll ||
+              currentMessage.isDeletedForMe !== freshMessage.isDeletedForMe ||
+              currentMessage.content !== freshMessage.content ||
+              currentMessage.type !== freshMessage.type;
             
             if (hasChanges) {
               // Replace item.data with fresh message to trigger OnPush change detection

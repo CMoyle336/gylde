@@ -1,7 +1,7 @@
 <div class="message" 
      [class.own]="message.isOwn" 
      [class.image-message]="message.type === 'image'" 
-     [class.deleted]="message.isDeletedForAll" 
+     [class.deleted]="message.isDeletedForAll || message.isDeletedForMe" 
      [class.with-avatar]="!message.isOwn">
       
   <!-- Sender Avatar (for messages from others) -->
@@ -18,8 +18,14 @@
   }
 
   <div class="message-content">
-    <!-- Deleted for everyone placeholder -->
-    @if (message.isDeletedForAll) {
+    <!-- Deleted message placeholder -->
+    @if (message.isDeletedForMe) {
+      <div class="bubble deleted-bubble">
+        <span class="material-icons-outlined deleted-icon">block</span>
+        <span class="deleted-text">You deleted this message</span>
+      </div>
+    }
+    @else if (message.isDeletedForAll) {
       <div class="bubble deleted-bubble">
         <span class="material-icons-outlined deleted-icon">block</span>
         <span class="deleted-text">{{ message.isOwn ? 'You deleted this message' : 'This message was deleted' }}</span>
