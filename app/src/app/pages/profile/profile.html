@@ -140,10 +140,47 @@
           <div class="info-item full-width">
             <label class="field-label">Tagline</label>
             @if (isEditing()) {
-              <mat-form-field appearance="outline" class="full-width-field">
-                <input matInput [(ngModel)]="editForm.tagline" placeholder="A short phrase about you..." maxlength="100">
-                <mat-hint align="end">{{ editForm.tagline.length }}/100</mat-hint>
-              </mat-form-field>
+              <div class="input-with-ai">
+                <mat-form-field appearance="outline" class="full-width-field">
+                  <input matInput [(ngModel)]="editForm.tagline" placeholder="A short phrase about you..." maxlength="100">
+                  <mat-hint align="end">{{ editForm.tagline.length }}/100</mat-hint>
+                </mat-form-field>
+                @if (isElite() && editForm.tagline.length >= 3) {
+                  <button type="button" 
+                          class="ai-polish-btn" 
+                          [class.loading]="polishingField() === 'tagline'"
+                          [disabled]="polishingField() !== null"
+                          (click)="polishText('tagline')"
+                          matTooltip="Polish with AI">
+                    @if (polishingField() === 'tagline') {
+                      <span class="ai-spinner"></span>
+                    } @else {
+                      <mat-icon>auto_awesome</mat-icon>
+                    }
+                  </button>
+                }
+              </div>
+              @if (polishSuggestions()?.field === 'tagline') {
+                <div class="ai-suggestions">
+                  <div class="suggestion-header">
+                    <mat-icon>auto_awesome</mat-icon>
+                    <span>AI Suggestions</span>
+                    <button class="close-btn" (click)="dismissPolishSuggestions()">
+                      <mat-icon>close</mat-icon>
+                    </button>
+                  </div>
+                  <div class="suggestion-item primary" (click)="applyPolish(polishSuggestions()!.polished)">
+                    <span>{{ polishSuggestions()!.polished }}</span>
+                    <mat-icon>add</mat-icon>
+                  </div>
+                  @for (alt of polishSuggestions()!.alternatives; track alt) {
+                    <div class="suggestion-item" (click)="applyPolish(alt)">
+                      <span>{{ alt }}</span>
+                      <mat-icon>add</mat-icon>
+                    </div>
+                  }
+                </div>
+              }
             } @else {
               <span class="info-value tagline-value" [class.empty]="!profile.onboarding?.tagline">
                 {{ profile.onboarding?.tagline || 'Not set' }}
@@ -402,12 +439,49 @@
           <div class="info-item">
             <label class="field-label">My ideal relationship</label>
             @if (isEditing()) {
-              <mat-form-field appearance="outline" class="full-width-field">
-                <textarea matInput 
-                          [(ngModel)]="editForm.idealRelationship" 
-                          placeholder="Describe your ideal relationship..."
-                          rows="3"></textarea>
-              </mat-form-field>
+              <div class="input-with-ai">
+                <mat-form-field appearance="outline" class="full-width-field">
+                  <textarea matInput 
+                            [(ngModel)]="editForm.idealRelationship" 
+                            placeholder="Describe your ideal relationship..."
+                            rows="3"></textarea>
+                </mat-form-field>
+                @if (isElite() && editForm.idealRelationship.length >= 10) {
+                  <button type="button" 
+                          class="ai-polish-btn" 
+                          [class.loading]="polishingField() === 'idealRelationship'"
+                          [disabled]="polishingField() !== null"
+                          (click)="polishText('idealRelationship')"
+                          matTooltip="Polish with AI">
+                    @if (polishingField() === 'idealRelationship') {
+                      <span class="ai-spinner"></span>
+                    } @else {
+                      <mat-icon>auto_awesome</mat-icon>
+                    }
+                  </button>
+                }
+              </div>
+              @if (polishSuggestions()?.field === 'idealRelationship') {
+                <div class="ai-suggestions">
+                  <div class="suggestion-header">
+                    <mat-icon>auto_awesome</mat-icon>
+                    <span>AI Suggestions</span>
+                    <button class="close-btn" (click)="dismissPolishSuggestions()">
+                      <mat-icon>close</mat-icon>
+                    </button>
+                  </div>
+                  <div class="suggestion-item primary" (click)="applyPolish(polishSuggestions()!.polished)">
+                    <span>{{ polishSuggestions()!.polished }}</span>
+                    <mat-icon>add</mat-icon>
+                  </div>
+                  @for (alt of polishSuggestions()!.alternatives; track alt) {
+                    <div class="suggestion-item" (click)="applyPolish(alt)">
+                      <span>{{ alt }}</span>
+                      <mat-icon>add</mat-icon>
+                    </div>
+                  }
+                </div>
+              }
             } @else {
               <span class="info-value multiline">{{ profile.onboarding?.idealRelationship || 'Not set' }}</span>
             }
@@ -416,12 +490,49 @@
           <div class="info-item">
             <label class="field-label">What support means to me</label>
             @if (isEditing()) {
-              <mat-form-field appearance="outline" class="full-width-field">
-                <textarea matInput 
-                          [(ngModel)]="editForm.supportMeaning" 
-                          placeholder="What does support mean to you?"
-                          rows="3"></textarea>
-              </mat-form-field>
+              <div class="input-with-ai">
+                <mat-form-field appearance="outline" class="full-width-field">
+                  <textarea matInput 
+                            [(ngModel)]="editForm.supportMeaning" 
+                            placeholder="What does support mean to you?"
+                            rows="3"></textarea>
+                </mat-form-field>
+                @if (isElite() && editForm.supportMeaning.length >= 10) {
+                  <button type="button" 
+                          class="ai-polish-btn" 
+                          [class.loading]="polishingField() === 'supportMeaning'"
+                          [disabled]="polishingField() !== null"
+                          (click)="polishText('supportMeaning')"
+                          matTooltip="Polish with AI">
+                    @if (polishingField() === 'supportMeaning') {
+                      <span class="ai-spinner"></span>
+                    } @else {
+                      <mat-icon>auto_awesome</mat-icon>
+                    }
+                  </button>
+                }
+              </div>
+              @if (polishSuggestions()?.field === 'supportMeaning') {
+                <div class="ai-suggestions">
+                  <div class="suggestion-header">
+                    <mat-icon>auto_awesome</mat-icon>
+                    <span>AI Suggestions</span>
+                    <button class="close-btn" (click)="dismissPolishSuggestions()">
+                      <mat-icon>close</mat-icon>
+                    </button>
+                  </div>
+                  <div class="suggestion-item primary" (click)="applyPolish(polishSuggestions()!.polished)">
+                    <span>{{ polishSuggestions()!.polished }}</span>
+                    <mat-icon>add</mat-icon>
+                  </div>
+                  @for (alt of polishSuggestions()!.alternatives; track alt) {
+                    <div class="suggestion-item" (click)="applyPolish(alt)">
+                      <span>{{ alt }}</span>
+                      <mat-icon>add</mat-icon>
+                    </div>
+                  }
+                </div>
+              }
             } @else {
               <span class="info-value multiline">{{ profile.onboarding?.supportMeaning || 'Not set' }}</span>
             }

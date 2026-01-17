@@ -451,4 +451,56 @@ export class AiChatService {
       return {};
     }
   }
+
+  // ============================================
+  // PROFILE TEXT POLISH
+  // ============================================
+
+  /**
+   * Polish profile text using AI
+   * For Elite users to improve their profile content
+   */
+  async polishProfileText(
+    text: string,
+    fieldType: 'tagline' | 'idealRelationship' | 'supportMeaning' | 'generic',
+    maxLength?: number,
+    profileContext?: {
+      displayName?: string;
+      age?: number;
+      city?: string;
+      genderIdentity?: string;
+      tagline?: string;
+      aboutMeItems?: string[];
+      connectionTypes?: string[];
+      supportOrientation?: string;
+      idealRelationship?: string;
+      supportMeaning?: string;
+      occupation?: string;
+      education?: string;
+      interests?: string[];
+    }
+  ): Promise<{ polished: string; suggestions: string[] }> {
+    if (!this.hasAccess()) {
+      throw new Error('Elite subscription required');
+    }
+
+    try {
+      const fn = httpsCallable<
+        { text: string; fieldType: string; maxLength?: number; profileContext?: unknown },
+        { polished: string; suggestions: string[] }
+      >(this.functions, 'aiPolishProfileText');
+
+      const result = await fn({
+        text,
+        fieldType,
+        maxLength,
+        profileContext,
+      });
+
+      return result.data;
+    } catch (error) {
+      console.error('AI polish failed:', error);
+      return { polished: text, suggestions: [] };
+    }
+  }
 }

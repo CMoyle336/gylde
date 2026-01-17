@@ -953,3 +953,244 @@ Modified message:`;
     return { text: modifiedText };
   }
 });
+
+// ============================================
+// Profile Text Polish (OpenAI Integration)
+// ============================================
+
+interface ProfilePolishRequest {
+  text: string;
+  fieldType: 'tagline' | 'idealRelationship' | 'supportMeaning' | 'generic';
+  maxLength?: number;
+  profileContext?: {
+    displayName?: string;
+    age?: number;
+    city?: string;
+    genderIdentity?: string;
+    tagline?: string;
+    aboutMeItems?: string[];
+    connectionTypes?: string[];
+    supportOrientation?: string;
+    idealRelationship?: string;
+    supportMeaning?: string;
+    occupation?: string;
+    education?: string;
+    interests?: string[];
+  };
+}
+
+interface ProfilePolishResponse {
+  polished: string;
+  suggestions: string[];
+}
+
+/**
+ * Polish profile text using AI.
+ * For Elite users to improve their profile content.
+ */
+export const aiPolishProfileText = onCall(async (request) => {
+  const { auth, data } = request;
+
+  if (!auth) {
+    throw new HttpsError("unauthenticated", "Must be authenticated");
+  }
+
+  await verifyEliteSubscription(auth.uid);
+
+  const req = data as ProfilePolishRequest;
+  
+  if (!req.text || req.text.trim().length === 0) {
+    throw new HttpsError("invalid-argument", "Text is required");
+  }
+
+  logger.info("AI profile polish requested", {
+    fieldType: req.fieldType,
+    textLength: req.text.length,
+    hasContext: !!req.profileContext,
+  });
+
+  // Get field-specific guidance
+  const fieldGuidance = getFieldGuidance(req.fieldType, req.profileContext?.supportOrientation);
+  const maxLength = req.maxLength || 500;
+
+  // Build profile context for AI
+  const profileContextStr = buildProfileContext(req.profileContext);
+
+  try {
+    const openai = getOpenAIClient();
+
+    const prompt = `You are helping someone improve their dating profile text. Use their profile context to make personalized, authentic suggestions.
+
+${profileContextStr}
+
+FIELD BEING EDITED: ${req.fieldType}
+${fieldGuidance}
+
+ORIGINAL TEXT THEY WROTE:
+"${req.text}"
+
+CHARACTER LIMIT: ${maxLength} characters
+
+RULES:
+- Preserve their authentic voice and personality - don't make them sound generic
+- Use context from their profile to make suggestions that feel personal and consistent
+- Fix grammar and spelling without changing their unique style
+- Make it more engaging and memorable
+- Keep it genuine - no clichés or generic phrases
+- Maintain the original meaning and intent
+- Stay within the character limit
+- Make them sound interesting, not desperate or boastful
+- Reference their interests, occupation, or other details naturally when appropriate
+
+Respond in JSON format:
+{
+  "polished": "The improved version of their text (primary suggestion)",
+  "suggestions": [
+    "Alternative polished version 1",
+    "Alternative polished version 2"
+  ]
+}`;
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" },
+      max_tokens: 400,
+      temperature: 0.7,
+    });
+
+    const content = response.choices[0]?.message?.content;
+    if (!content) {
+      throw new Error("No response from AI");
+    }
+
+    const parsed = JSON.parse(content) as ProfilePolishResponse;
+    
+    // Ensure we stay within limits
+    const polished = parsed.polished?.substring(0, maxLength) || req.text;
+    const suggestions = (parsed.suggestions || [])
+      .map(s => s.substring(0, maxLength))
+      .slice(0, 2);
+
+    return {
+      polished: cleanText(polished),
+      suggestions: suggestions.map(s => cleanText(s)),
+    };
+  } catch (error: any) {
+    logger.error("OpenAI profile polish failed:", error);
+    
+    // Return original text on failure
+    return {
+      polished: req.text,
+      suggestions: [],
+    };
+  }
+});
+
+/**
+ * Build profile context string for AI prompt
+ */
+function buildProfileContext(context?: ProfilePolishRequest['profileContext']): string {
+  if (!context) {
+    return "PROFILE CONTEXT: Limited information available";
+  }
+
+  const lines: string[] = ["ABOUT THIS PERSON:"];
+
+  if (context.displayName) {
+    lines.push(`- Name: ${context.displayName}`);
+  }
+  if (context.age) {
+    lines.push(`- Age: ${context.age}`);
+  }
+  if (context.city) {
+    lines.push(`- Location: ${context.city}`);
+  }
+  if (context.genderIdentity) {
+    lines.push(`- Gender: ${context.genderIdentity}`);
+  }
+  if (context.occupation) {
+    lines.push(`- Occupation: ${context.occupation}`);
+  }
+  if (context.education) {
+    lines.push(`- Education: ${context.education}`);
+  }
+  if (context.tagline) {
+    lines.push(`- Their tagline: "${context.tagline}"`);
+  }
+  if (context.aboutMeItems && context.aboutMeItems.length > 0) {
+    lines.push(`- About them: ${context.aboutMeItems.join(", ")}`);
+  }
+  if (context.interests && context.interests.length > 0) {
+    lines.push(`- Interests: ${context.interests.join(", ")}`);
+  }
+  if (context.connectionTypes && context.connectionTypes.length > 0) {
+    lines.push(`- Looking for: ${context.connectionTypes.join(", ")}`);
+  }
+  if (context.supportOrientation) {
+    lines.push(`- Support orientation: ${context.supportOrientation} (IMPORTANT - this defines their role in the relationship dynamic)`);
+  }
+  if (context.idealRelationship) {
+    lines.push(`- Their ideal relationship: "${context.idealRelationship}"`);
+  }
+  if (context.supportMeaning) {
+    lines.push(`- What support means to them: "${context.supportMeaning}"`);
+  }
+
+  return lines.join("\n");
+}
+
+/**
+ * Get field-specific guidance for the AI
+ */
+function getFieldGuidance(fieldType: string, supportOrientation?: string): string {
+  switch (fieldType) {
+    case 'tagline':
+      return `
+TAGLINE GUIDANCE:
+- This is a short phrase that appears prominently on their profile
+- Should be catchy, memorable, and reflect their personality
+- Think of it like a personal slogan or attention-grabber
+- Avoid clichés like "living my best life" or "looking for my other half"
+- Maximum 100 characters typically
+- Should hint at their unique qualities or what makes them special`;
+
+    case 'idealRelationship':
+      return `
+IDEAL RELATIONSHIP GUIDANCE:
+- This describes what kind of relationship/connection they're seeking
+- Should be specific enough to attract compatible matches
+- Balance between being open and having clear preferences
+- Show emotional intelligence and self-awareness
+- Avoid negativity ("no drama") - focus on what they DO want
+- Should align with their connection types and support orientation`;
+
+    case 'supportMeaning':
+      const orientationContext = supportOrientation 
+        ? `
+CRITICAL CONTEXT - Their Support Orientation is "${supportOrientation}":
+- This is the MOST important context for this field
+- Their answer should authentically reflect this orientation
+- If they're a "provider/supporter", they might focus on what they enjoy giving
+- If they're seeking support, they should express their needs genuinely
+- If they're "mutual/equal", emphasize reciprocity and partnership`
+        : "";
+      
+      return `
+SUPPORT MEANING GUIDANCE:
+- This explains what support means to them in a relationship
+- Should show emotional depth and vulnerability
+- Avoid transactional or purely financial language
+- Focus on emotional connection, understanding, and care
+- Show they understand healthy relationship dynamics
+- Be authentic about their needs and what they offer
+${orientationContext}`;
+
+    default:
+      return `
+GENERAL GUIDANCE:
+- Make it sound natural and authentic
+- Show personality without being try-hard
+- Be specific rather than generic`;
+  }
+}

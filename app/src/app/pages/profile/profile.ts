@@ -16,6 +16,8 @@ import { ImageUploadService } from '../../core/services/image-upload.service';
 import { AuthService } from '../../core/services/auth.service';
 import { PhotoAccessService } from '../../core/services/photo-access.service';
 import { PlacesService, PlaceSuggestion } from '../../core/services/places.service';
+import { SubscriptionService } from '../../core/services/subscription.service';
+import { AiChatService } from '../../core/services/ai-chat.service';
 import { OnboardingProfile, GeoLocation } from '../../core/interfaces';
 import { Photo } from '../../core/interfaces/photo.interface';
 import { ALL_CONNECTION_TYPES, getConnectionTypeLabel, SUPPORT_ORIENTATION_OPTIONS, getSupportOrientationLabel } from '../../core/constants/connection-types';
@@ -82,6 +84,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
   private readonly authService = inject(AuthService);
   private readonly photoAccessService = inject(PhotoAccessService);
   private readonly placesService = inject(PlacesService);
+  protected readonly subscriptionService = inject(SubscriptionService);
+  private readonly aiChatService = inject(AiChatService);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly dialog = inject(MatDialog);
 
@@ -126,6 +130,11 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   // Max photos allowed
   protected readonly maxPhotos = MAX_PHOTOS_PER_USER;
+
+  // AI Polish state (Elite feature)
+  protected readonly isElite = computed(() => this.subscriptionService.isElite());
+  protected readonly polishingField = signal<string | null>(null);
+  protected readonly polishSuggestions = signal<{ field: string; polished: string; alternatives: string[] } | null>(null);
 
   // Check if user has any private photos
   protected readonly hasPrivatePhotos = computed(() => {
@@ -947,5 +956,95 @@ export class ProfileComponent implements OnInit, OnDestroy {
         maximumAge: 300000,
       }
     );
+  }
+
+  // ============================================
+  // AI POLISH (Elite Feature)
+  // ============================================
+
+  protected async polishText(field: 'tagline' | 'idealRelationship' | 'supportMeaning'): Promise<void> {
+    const text = this.editForm[field];
+    if (!text || text.trim().length < 3) {
+      return;
+    }
+
+    this.polishingField.set(field);
+    this.polishSuggestions.set(null);
+
+    try {
+      const maxLength = field === 'tagline' ? 100 : 500;
+      const profileContext = this.buildProfileContext();
+      const result = await this.aiChatService.polishProfileText(text, field, maxLength, profileContext);
+      
+      this.polishSuggestions.set({
+        field,
+        polished: result.polished,
+        alternatives: result.suggestions,
+      });
+    } catch (error) {
+      console.error('AI polish failed:', error);
+    } finally {
+      this.polishingField.set(null);
+    }
+  }
+
+  /**
+   * Build profile context for AI polish
+   */
+  private buildProfileContext() {
+    const profile = this.profile();
+    if (!profile) return undefined;
+
+    const onboarding = profile.onboarding;
+    
+    // Calculate age from birthDate
+    let age: number | undefined;
+    if (onboarding?.birthDate) {
+      const birthDate = new Date(onboarding.birthDate);
+      const today = new Date();
+      age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+    }
+
+    return {
+      displayName: profile.displayName || undefined,
+      age,
+      city: onboarding?.city,
+      genderIdentity: onboarding?.genderIdentity,
+      tagline: this.editForm.tagline || onboarding?.tagline,
+      connectionTypes: onboarding?.connectionTypes,
+      supportOrientation: onboarding?.supportOrientation,
+      idealRelationship: this.editForm.idealRelationship || onboarding?.idealRelationship,
+      supportMeaning: this.editForm.supportMeaning || onboarding?.supportMeaning,
+      occupation: this.editForm.occupation || onboarding?.occupation,
+      education: this.editForm.education || onboarding?.education,
+    };
+  }
+
+  protected applyPolish(text: string): void {
+    const suggestion = this.polishSuggestions();
+    if (!suggestion) return;
+
+    const field = suggestion.field;
+    switch (field) {
+      case 'tagline':
+        this.editForm.tagline = text;
+        break;
+      case 'idealRelationship':
+        this.editForm.idealRelationship = text;
+        break;
+      case 'supportMeaning':
+        this.editForm.supportMeaning = text;
+        break;
+    }
+    
+    this.polishSuggestions.set(null);
+  }
+
+  protected dismissPolishSuggestions(): void {
+    this.polishSuggestions.set(null);
   }
 }
