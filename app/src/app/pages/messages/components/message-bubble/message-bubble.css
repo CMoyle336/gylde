@@ -281,8 +281,20 @@
   grid-template-columns: repeat(2, 1fr);
 }
 
+.image-grid.grid-2 .image-item {
+  /* Fixed height for 2-image grid: smaller but consistent */
+  height: 150px;
+  min-height: 150px;
+}
+
 .image-grid.grid-many {
   grid-template-columns: repeat(2, 1fr);
+}
+
+.image-grid.grid-many .image-item {
+  /* Fixed height for multi-image grid */
+  height: 120px;
+  min-height: 120px;
 }
 
 .image-item {
@@ -295,15 +307,21 @@
   border-radius: 8px;
   aspect-ratio: 4 / 3;
   width: 100%;
+  /* Fixed height based on aspect ratio to prevent layout shift when images load */
+  min-height: 150px;
 }
 
 .image-grid.single .image-item {
   max-width: 400px;
+  /* Fixed height for single images: 400px * 0.75 = 300px (4:3 aspect ratio) */
+  height: 300px;
+  min-height: 300px;
 }
 
 .image-item img {
   width: 100%;
-  height: auto;
+  /* Use 100% height to fill container, not auto which causes layout shift */
+  height: 100%;
   display: block;
   object-fit: cover;
   transition: transform 0.15s;
@@ -508,5 +526,13 @@
 
   .image-grid.single .image-item {
     max-width: 100%;
+    /* Mobile fixed height: 260px * 0.75 = 195px (4:3 aspect ratio) */
+    height: 195px;
+    min-height: 195px;
+  }
+  
+  .image-item {
+    /* Smaller min-height for grid images on mobile */
+    min-height: 100px;
   }
 }

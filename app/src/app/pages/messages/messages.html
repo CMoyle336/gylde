@@ -61,17 +61,31 @@
             </div>
           }
           
+          <!-- Confirmed messages in virtual scroll -->
           <div *uiScroll="let message of messageDatasource; let i = index; let isLast = last">
             <app-message-bubble
               [message]="message"
               [senderCountdown]="getSenderCountdown(message.id)"
               [recipientCountdown]="getRecipientCountdown(message.id)"
-              [isLast]="isLast"
+              [isLast]="isLast && pendingMessages().length === 0"
               (openGallery)="onOpenGallery($event)"
               (deleteForMe)="onDeleteForMe($event)"
               (deleteForEveryone)="onDeleteForEveryone($event)">
             </app-message-bubble>
           </div>
+          
+          <!-- Pending messages (being sent) - shown outside virtual scroll -->
+          @for (message of pendingMessages(); track message.id; let isLast = $last) {
+            <app-message-bubble
+              [message]="message"
+              [senderCountdown]="null"
+              [recipientCountdown]="null"
+              [isLast]="isLast"
+              (openGallery)="onOpenGallery($event)"
+              (deleteForMe)="onDeleteForMe($event)"
+              (deleteForEveryone)="onDeleteForEveryone($event)">
+            </app-message-bubble>
+          }
         </div>
       }
 

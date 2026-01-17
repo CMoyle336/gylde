@@ -72,6 +72,7 @@ export class MessagesComponent implements OnInit, OnDestroy {
   private lastMessageCount = 0;
   private lastMessageId: string | undefined = undefined;
   private isInitialLoad = true;
+  private isReloading = false; // Prevent concurrent reloads
 
   protected readonly gallery = signal<GalleryState>({
     isOpen: false,
@@ -103,6 +104,11 @@ export class MessagesComponent implements OnInit, OnDestroy {
     const convo = this.activeConversation();
     if (!convo?.otherUser?.uid) return false;
     return this.blockService.isUserBlocked(convo.otherUser.uid);
+  });
+
+  // Pending messages (being sent) - shown separately from virtual scroll
+  protected readonly pendingMessages = computed(() => {
+    return this.messages().filter(m => m.pending);
   });
 
   // AI Assist panel state
@@ -152,12 +158,13 @@ export class MessagesComponent implements OnInit, OnDestroy {
   /**
    * Datasource for ngx-ui-scroll
    * Uses standard indices: 0 = oldest, N-1 = newest
-   * startIndex is set dynamically when messages load
+   * Only returns confirmed messages (not pending/optimistic ones)
    */
   protected messageDatasource = new Datasource<MessageDisplay>({
     get: (index: number, count: number, success: (items: MessageDisplay[]) => void) => {
-      const allMessages = this.messages();
-      const total = allMessages.length;
+      // Filter out pending messages - they're not part of the virtual scroll
+      const confirmedMessages = this.messages().filter(m => !m.pending);
+      const total = confirmedMessages.length;
       
       if (total === 0) {
         success([]);
@@ -172,14 +179,18 @@ export class MessagesComponent implements OnInit, OnDestroy {
         return;
       }
 
-      const items = allMessages.slice(start, end);
+      const items = confirmedMessages.slice(start, end);
       success(items);
     },
     settings: {
       bufferSize: 20,
       padding: 0.5,
-      minIndex: 0,
+      minIndex: 0
     },
+    devSettings: {
+      debug: true,
+      immediateLog: true
+    }
   });
 
   constructor() {
@@ -228,102 +239,86 @@ export class MessagesComponent implements OnInit, OnDestroy {
     });
 
     // React to message changes and update the datasource
+    // SIMPLIFIED APPROACH: Use reload() for structural changes only
     effect(() => {
       const messages = this.messages();
-      const messageCount = messages.length;
       const adapter = this.messageDatasource.adapter;
       
-      const lastMessageId = messages[messageCount - 1]?.id;
-
-      if (messageCount === 0) {
+      // Filter out pending messages for the datasource - they cause too many issues
+      // We'll show them separately or let Firestore confirmation handle them
+      const confirmedMessages = messages.filter(m => !m.pending);
+      const confirmedCount = confirmedMessages.length;
+      
+      if (confirmedCount === 0) {
         this.lastMessageCount = 0;
         this.lastMessageId = undefined;
         this.isInitialLoad = true;
         return;
       }
 
-      const hasNewMessages = messageCount > this.lastMessageCount || 
-        (messageCount === this.lastMessageCount && lastMessageId !== this.lastMessageId);
-      const hadMessages = this.lastMessageCount > 0;
+      const lastConfirmedId = confirmedMessages[confirmedCount - 1]?.id;
       
-      // If this is the first load or conversation change, reload the datasource
-      if (this.isInitialLoad) {
-        this.isInitialLoad = false;
-        this.lastMessageCount = messageCount;
-        this.lastMessageId = lastMessageId;
-        
-        const reloadIndex = Math.max(0, messageCount - 1);
-        
-        const doReload = () => {
-          adapter.reload(reloadIndex);
+      // Detect structural changes (count changed or different messages)
+      const structuralChange = confirmedCount !== this.lastMessageCount || 
+        lastConfirmedId !== this.lastMessageId;
+      
+      // Capture whether this is initial load before updating state
+      const wasInitialLoad = this.isInitialLoad;
+      
+      // Update tracking state immediately
+      this.isInitialLoad = false;
+      this.lastMessageCount = confirmedCount;
+      this.lastMessageId = lastConfirmedId;
+      
+      // Skip if already reloading to prevent concurrent operations
+      if (this.isReloading) {
+        return;
+      }
+      
+      // Handle all structural changes (initial load, new messages, conversation switch) with reload
+      if (wasInitialLoad || structuralChange) {
+        const doReload = async () => {
+          // Prevent concurrent reloads
+          if (this.isReloading) return;
+          this.isReloading = true;
           
-          // Wait for loading to complete, then scroll to bottom
-          const loadingSub = adapter.isLoading$.subscribe((isLoading) => {
-            if (!isLoading && adapter.itemsCount > 0) {
-              loadingSub.unsubscribe();
-              adapter.fix({
-                scrollPosition: +Infinity
+          try {
+            // Wait for adapter to be ready
+            if (!adapter.init) {
+              await new Promise<void>(resolve => {
+                const sub = adapter.init$.subscribe((ready) => {
+                  if (ready) {
+                    sub.unsubscribe();
+                    resolve();
+                  }
+                });
               });
             }
-          });
+            
+            // Update maxIndex so scroller knows the boundaries
+            adapter.fix({ maxIndex: confirmedCount - 1 });
+            
+            // Reload starting from the last message (bottom)
+            const startIndex = Math.max(0, confirmedCount - 1);
+            await adapter.reload(startIndex);
+            
+            // Wait for all fetch cycles to complete
+            await adapter.relax();
+            
+            // Scroll to absolute bottom
+            adapter.fix({ scrollPosition: +Infinity });
+            
+            // Give browser time to apply scroll, then verify
+            await new Promise(resolve => setTimeout(resolve, 50));
+            
+            // Double-check scroll position after a short delay
+            adapter.fix({ scrollPosition: +Infinity });
+          } finally {
+            this.isReloading = false;
+          }
         };
         
-        if (adapter.init) {
-          doReload();
-        } else {
-          const sub = adapter.init$.subscribe((ready) => {
-            if (ready) {
-              sub.unsubscribe();
-              doReload();
-            }
-          });
-        }
-      } else if (hasNewMessages && hadMessages) {
-        // New message added - append to the end (bottom)
-        // If count increased, slice from lastMessageCount
-        // If count is same but lastMessageId changed, get messages after the old lastMessageId
-        let newMessages: MessageDisplay[];
-        
-        if (messageCount > this.lastMessageCount) {
-          // Count increased - simple slice
-          newMessages = messages.slice(this.lastMessageCount);
-        } else {
-          // Count same but lastMessageId changed - find new messages by ID
-          const oldLastIndex = messages.findIndex(m => m.id === this.lastMessageId);
-          if (oldLastIndex === -1) {
-            // Old message not found - just get the last message
-            newMessages = [messages[messageCount - 1]];
-          } else {
-            // Get everything after the old last message
-            newMessages = messages.slice(oldLastIndex + 1);
-          }
-        }
-        
-        this.lastMessageCount = messageCount;
-        this.lastMessageId = lastMessageId;
-        
-        if (adapter.init && newMessages.length > 0) {
-          adapter.append({
-            items: newMessages,
-            eof: true,
-          });
-          
-          // Wait for append to complete, then scroll to bottom
-          adapter.relax(() => {
-            adapter.fix({
-              scrollPosition: +Infinity
-            });
-          });
-        }
-      } else {
-        // Existing messages may have been updated (read status, viewed, etc.)
-        // Refresh the visible items to reflect changes
-        this.lastMessageCount = messageCount;
-        this.lastMessageId = lastMessageId;
-        
-        if (adapter.init) {
-          adapter.check();
-        }
+        doReload();
       }
     });
   }
@@ -438,7 +433,9 @@ export class MessagesComponent implements OnInit, OnDestroy {
   protected onConversationSelected(conversation: ConversationDisplay): void {
     // Reset state for new conversation
     this.lastMessageCount = 0;
+    this.lastMessageId = undefined;
     this.isInitialLoad = true;
+    this.isReloading = false;
     
     this.messageService.openConversation(conversation);
     this.router.navigate(['/messages', conversation.id], { replaceUrl: true });
