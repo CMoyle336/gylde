@@ -193,7 +193,7 @@ export class MessagesComponent implements OnInit, OnDestroy, AfterViewInit {
       infinite: false  // Don't reserve space for infinite scrolling - we have finite data
     },
     devSettings: {
-      debug: true,
+      debug: false,
       immediateLog: true
     }
   });
@@ -340,54 +340,49 @@ export class MessagesComponent implements OnInit, OnDestroy, AfterViewInit {
       // CASE 2: Older messages prepended (infinite scroll up)
       else if (isPrepend && adapter.init) {
         const prependCount = confirmedCount - previousCount;
+        console.log('[Effect] CASE 2 - Prepend detected:', {
+          prependCount,
+          confirmedCount,
+          previousCount,
+          firstConfirmedId,
+          previousFirstId,
+          hasOlderMessages: this.hasOlderMessages(),
+          firstVisibleIndex: adapter.firstVisible?.$index
+        });
         
-        // Only use prepend for reasonable amounts (up to 50 messages = typical batch size)
-        if (prependCount > 0 && prependCount <= 50) {
-          // Update tracking state before async operation
-          this.lastMessageCount = confirmedCount;
-          this.firstMessageId = firstConfirmedId;
-          this.isReloading = true;
-          
-          const olderMessages = confirmedMessages.slice(0, prependCount);
-          
-          const doPrepend = async () => {
-            try {
-              // Prepend older messages to the buffer
-              // bof: true signals beginning of file if hasOlderMessages is false
-              await adapter.prepend({ 
-                items: olderMessages, 
-                bof: !this.hasOlderMessages() 
-              });
-              
-              // Wait for render to complete
-              await adapter.relax();
-            } finally {
-              this.isReloading = false;
-            }
-          };
-          
-          doPrepend();
-        } else {
-          // Too many messages prepended - use reload
-          this.lastMessageCount = confirmedCount;
-          this.lastMessageId = lastConfirmedId;
-          this.firstMessageId = firstConfirmedId;
-          this.isReloading = true;
-          
-          const doReload = async () => {
-            try {
-              adapter.fix({ maxIndex: confirmedCount - 1 });
-              // Keep current scroll position by reloading at first visible
-              const firstVisibleIndex = adapter.firstVisible?.$index ?? 0;
-              await adapter.reload(firstVisibleIndex + prependCount);
-              await adapter.relax();
-            } finally {
-              this.isReloading = false;
-            }
-          };
-          
-          doReload();
-        }
+        // Update tracking state before async operation
+        this.lastMessageCount = confirmedCount;
+        this.firstMessageId = firstConfirmedId;
+        this.isReloading = true;
+        
+        // Use reload to keep buffer indices in sync with signal indices
+        // Reload at current position + prependCount to maintain scroll position
+        const doReload = async () => {
+          try {
+            // Get current first visible index before reload
+            const currentFirstVisibleIndex = adapter.firstVisible?.$index ?? 0;
+            // After prepending, the same visual position is at currentIndex + prependCount
+            const newFirstVisibleIndex = currentFirstVisibleIndex + prependCount;
+            
+            console.log('[Effect] Prepend reload at index:', newFirstVisibleIndex);
+            
+            // Update boundaries
+            adapter.fix({ 
+              minIndex: 0, 
+              maxIndex: confirmedCount - 1 
+            });
+            
+            // Reload at the adjusted index to maintain scroll position
+            await adapter.reload(newFirstVisibleIndex);
+            
+            // Wait for render to complete
+            await adapter.relax();
+          } finally {
+            this.isReloading = false;
+          }
+        };
+        
+        doReload();
       }
       // CASE 3: New messages added to the end - use append()
       else if (isAppend && adapter.init) {
@@ -537,8 +532,16 @@ export class MessagesComponent implements OnInit, OnDestroy, AfterViewInit {
     const checkAdapter = () => {
       if (adapter.init) {
         this.bofSubscription = adapter.bof$.subscribe(async (bof) => {
+          console.log('[InfiniteScroll] bof$ emitted:', bof, {
+            hasOlderMessages: this.hasOlderMessages(),
+            loadingOlderMessages: this.loadingOlderMessages(),
+            isReloading: this.isReloading,
+            firstVisibleIndex: adapter.firstVisible?.$index
+          });
+          
           // When at beginning of buffer and more messages exist, load them
           if (bof && this.hasOlderMessages() && !this.loadingOlderMessages() && !this.isReloading) {
+            console.log('[InfiniteScroll] Loading older messages...');
             await this.messageService.loadOlderMessages();
           }
         });
