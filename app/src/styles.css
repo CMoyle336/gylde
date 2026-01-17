@@ -211,3 +211,74 @@ mat-progress-spinner svg,
   box-shadow: none !important;
   overflow: visible;
 }
+
+/* ============================================
+   VERIFF SDK OVERRIDES
+   Global styles to override Veriff's inline styles
+   ============================================ */
+
+#veriff-root {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  padding: 1.5rem 0 !important;
+  width: 100% !important;
+}
+
+/* Veriff form container */
+#veriff-root .veriff-container,
+#veriff-root form {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  gap: 1rem !important;
+}
+
+/* Veriff submit button */
+#veriff-root .veriff-submit,
+#veriff-root #veriff-submit-btn,
+#veriff-root input[type="submit"] {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  max-width: 320px !important;
+  height: 48px !important;
+  padding: 0 1.5rem !important;
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  font-family: inherit !important;
+  line-height: 48px !important;
+  border-radius: 10px !important;
+  margin: 0 auto !important;
+  text-align: center !important;
+  box-sizing: border-box !important;
+}
+
+/* Veriff description text */
+#veriff-root .veriff-description,
+#veriff-root p {
+  color: #a8a4b0 !important;
+  font-size: 0.875rem !important;
+  line-height: 1.6 !important;
+  opacity: 1 !important;
+  text-align: center !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 1rem !important;
+}
+
+#veriff-root a {
+  color: #c9a962 !important;
+  text-decoration: none !important;
+}
+
+#veriff-root a:hover {
+  text-decoration: underline !important;
+}

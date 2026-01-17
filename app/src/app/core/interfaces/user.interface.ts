@@ -59,6 +59,8 @@ export interface UserProfile {
   identityVerified?: boolean; // true if identity verification completed
   identityVerificationSessionId?: string; // Veriff session ID for tracking
   identityVerificationStatus?: 'pending' | 'approved' | 'declined' | 'cancelled'; // Verification status
+  identityVerificationPaid?: boolean; // true if user has paid for verification
+  identityVerificationPaidAt?: unknown; // When verification was paid for
   geohash?: string | null; // encoded location for distance-based queries
   isElite?: boolean; // true if user has Elite subscription (for badge display)
   

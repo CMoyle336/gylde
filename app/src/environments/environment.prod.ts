@@ -16,4 +16,14 @@ export const environment = {
   veriff: {
     apiKey: '', // TODO: Add your production Veriff API key
   },
+
+  // Stripe Payment Processing
+  stripe: {
+    publishableKey: '', // TODO: Add your Stripe live publishable key (pk_live_...)
+  },
+
+  // Pricing
+  pricing: {
+    identityVerification: 499, // $4.99 in cents
+  },
 };

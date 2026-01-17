@@ -33,11 +33,7 @@
             "outputMode": "server",
             "ssr": {
               "entry": "src/server.ts"
-            },
-            "externalDependencies": [
-              "@veriff/js-sdk",
-              "@veriff/incontext-sdk"
-            ]
+            }
           },
           "configurations": {
             "production": {

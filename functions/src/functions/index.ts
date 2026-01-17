@@ -14,6 +14,7 @@ export * from "./blocks";
 export * from "./verification";
 export * from "./ai-chat";
 export * from "./virtual-phone";
+export * from "./payments";
 
 // Future function modules:
 // export * from "./matches";

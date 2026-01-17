@@ -105,17 +105,28 @@ export class MessageService {
     const filter = this._conversationFilter();
     const blockedUserIds = this.blockService.blockedUserIds();
     
-    // First filter by archive/unread status
+    // First, filter out empty conversations the user hasn't opened yet
+    // This prevents showing conversations where someone else started a chat but hasn't messaged
+    const visibleConvos = convos.filter(c => {
+      // If user has opened/viewed this conversation, always show it
+      if (c.hasBeenOpened) return true;
+      // If there are messages, show it (even if user hasn't opened yet)
+      if (c.lastMessage) return true;
+      // Otherwise, this is an empty conversation the user hasn't seen - hide it
+      return false;
+    });
+    
+    // Then filter by archive/unread status
     let filtered: ConversationDisplay[];
     switch (filter) {
       case 'unread':
-        filtered = convos.filter(c => c.unreadCount > 0 && !c.isArchived);
+        filtered = visibleConvos.filter(c => c.unreadCount > 0 && !c.isArchived);
         break;
       case 'archived':
-        filtered = convos.filter(c => c.isArchived);
+        filtered = visibleConvos.filter(c => c.isArchived);
         break;
       default: // 'all'
-        filtered = convos.filter(c => !c.isArchived);
+        filtered = visibleConvos.filter(c => !c.isArchived);
     }
     
     // Then filter out blocked users (but keep the conversation visible so they can access chat history)
@@ -180,6 +191,11 @@ export class MessageService {
           const otherUserLastViewedAt = data.lastViewedAt?.[otherUserId]
             ? this.toDate(data.lastViewedAt[otherUserId])
             : null;
+          
+          // Check if current user has ever opened this conversation
+          // Use 'in' operator to check key existence, not value truthiness
+          // This handles serverTimestamp() sentinel values that haven't resolved yet
+          const hasBeenOpened = data.lastViewedAt ? currentUser.uid in data.lastViewedAt : false;
 
           // If this is the active conversation, update typing status and lastViewedAt
           if (this.activeConversationId === docSnapshot.id) {
@@ -202,6 +218,18 @@ export class MessageService {
             }
           }
 
+          const isArchived = data.archivedBy?.includes(currentUser.uid) || false;
+          const unreadCount = data.unreadCount?.[currentUser.uid] || 0;
+          const lastMessageSenderId = data.lastMessage?.senderId;
+          
+          // Auto-unarchive if: archived + has unread messages + last message from other user
+          if (isArchived && unreadCount > 0 && lastMessageSenderId && lastMessageSenderId !== currentUser.uid) {
+            // Trigger unarchive asynchronously (don't await to avoid blocking)
+            this.unarchiveConversation(docSnapshot.id).catch(err => 
+              console.error('Error auto-unarchiving conversation:', err)
+            );
+          }
+
           return {
             id: docSnapshot.id,
             otherUser: {
@@ -213,9 +241,10 @@ export class MessageService {
             lastMessageTime: data.lastMessage?.createdAt
               ? this.toDate(data.lastMessage.createdAt)
               : null,
-            unreadCount: data.unreadCount?.[currentUser.uid] || 0,
-            isArchived: data.archivedBy?.includes(currentUser.uid) || false,
+            unreadCount,
+            isArchived,
             otherUserLastViewedAt,
+            hasBeenOpened,
           };
         });
 
@@ -1235,10 +1264,10 @@ export class MessageService {
         [currentUser.uid]: 0,
         [otherUserId]: 0,
       },
-      // Initialize lastViewedAt for both users (they've just opened/created the conversation)
+      // Only set lastViewedAt for the creator - the other user won't see this
+      // conversation until a message is sent (prevents empty convos showing up)
       lastViewedAt: {
         [currentUser.uid]: serverTimestamp(),
-        [otherUserId]: serverTimestamp(),
       },
     };
 

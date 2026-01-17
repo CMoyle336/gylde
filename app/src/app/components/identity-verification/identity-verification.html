@@ -1,0 +1,229 @@
+<div class="dialog-overlay" (click)="close()">
+  <div class="dialog" (click)="$event.stopPropagation()">
+    <!-- Header -->
+    <div class="dialog-header">
+      <div class="dialog-title">
+        @if (step() === 'payment') {
+          <button class="back-btn" (click)="goBack()">
+            <mat-icon>arrow_back</mat-icon>
+          </button>
+        }
+        <mat-icon>verified_user</mat-icon>
+        <h2>
+          @switch (step()) {
+            @case ('info') { Verify Your Identity }
+            @case ('payment') { Complete Payment }
+            @case ('verifying') { Identity Verification }
+            @case ('pending') { Verification Pending }
+            @case ('success') { Verified! }
+            @default { Verify Your Identity }
+          }
+        </h2>
+      </div>
+      <button class="close-btn" (click)="close()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <!-- Content -->
+    <div class="dialog-content">
+      @switch (step()) {
+        <!-- Info Step -->
+        @case ('info') {
+          <div class="info-step">
+            <div class="verification-icon">
+              <mat-icon>shield</mat-icon>
+            </div>
+            
+            <p class="intro-text">
+              Verify your identity to earn <strong>20 trust points</strong> and show others 
+              you're a real person. This helps build trust with potential connections.
+            </p>
+
+            <ul class="benefits-list">
+              <li class="benefit-item">
+                <mat-icon>check</mat-icon>
+                <span>Get a verified badge on your profile</span>
+              </li>
+              <li class="benefit-item">
+                <mat-icon>check</mat-icon>
+                <span>Increases visibility in search results</span>
+              </li>
+              <li class="benefit-item">
+                <mat-icon>check</mat-icon>
+                <span>Build trust with potential connections</span>
+              </li>
+              <li class="benefit-item">
+                <mat-icon>check</mat-icon>
+                <span>Quick process - takes just a few minutes</span>
+              </li>
+            </ul>
+
+            <div class="price-box">
+              <div class="price-label">One-time verification fee</div>
+              <div class="price-value">{{ priceFormatted }}</div>
+              <div class="price-note">Secure payment powered by Stripe</div>
+            </div>
+
+            @if (error()) {
+              <div class="error-message">
+                <mat-icon>error</mat-icon>
+                {{ error() }}
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Payment Step -->
+        @case ('payment') {
+          <div class="payment-step">
+            <div class="payment-summary">
+              <div class="summary-row">
+                <span>Identity Verification</span>
+                <span>{{ priceFormatted }}</span>
+              </div>
+              <div class="summary-divider"></div>
+              <div class="summary-row total">
+                <span>Total</span>
+                <span>{{ priceFormatted }}</span>
+              </div>
+            </div>
+
+            <div class="card-input-container">
+              <label class="card-label">Card Information</label>
+              <div id="card-element" class="card-element"></div>
+            </div>
+
+            @if (error()) {
+              <div class="error-message">
+                <mat-icon>error</mat-icon>
+                {{ error() }}
+              </div>
+            }
+
+            <div class="security-note">
+              <mat-icon>lock</mat-icon>
+              <span>Your payment is secure and encrypted</span>
+            </div>
+          </div>
+        }
+
+        <!-- Verifying Step -->
+        @case ('verifying') {
+          <div class="verifying-step">
+            @if (loading()) {
+              <div class="loading-state">
+                <mat-spinner diameter="32"></mat-spinner>
+                <span>Initializing verification...</span>
+              </div>
+            }
+
+            <div id="veriff-root" [class.hidden]="loading()"></div>
+
+            @if (error()) {
+              <div class="error-message">
+                <mat-icon>error</mat-icon>
+                {{ error() }}
+              </div>
+            }
+
+            <p class="privacy-note">
+              Your ID is processed securely by 
+              <a href="https://www.veriff.com" target="_blank" rel="noopener">Veriff</a>.
+              We don't store your ID information.
+            </p>
+          </div>
+        }
+
+        <!-- Pending Step -->
+        @case ('pending') {
+          <div class="status-step pending">
+            <div class="status-icon">
+              <mat-icon>hourglass_top</mat-icon>
+            </div>
+            <h3>Verification In Progress</h3>
+            <p>
+              Your identity verification is being reviewed. 
+              This typically takes a few minutes, but can take up to 24 hours.
+              We'll update your trust score once it's complete.
+            </p>
+          </div>
+        }
+
+        <!-- Success Step -->
+        @case ('success') {
+          <div class="status-step success">
+            <div class="status-icon">
+              <mat-icon>check_circle</mat-icon>
+            </div>
+            <h3>Identity Verified!</h3>
+            <p>
+              Your identity has been verified and your trust score has been updated.
+              You now have a verified badge on your profile.
+            </p>
+          </div>
+        }
+
+        <!-- Failed Step -->
+        @case ('failed') {
+          <div class="status-step failed">
+            <div class="status-icon">
+              <mat-icon>error</mat-icon>
+            </div>
+            <h3>Verification Failed</h3>
+            <p>
+              We couldn't verify your identity. This could be due to image quality 
+              or document issues. Please try again with a valid ID.
+            </p>
+          </div>
+        }
+      }
+    </div>
+
+    <!-- Actions -->
+    <div class="dialog-actions">
+      @switch (step()) {
+        @case ('info') {
+          <button mat-button (click)="close()">Cancel</button>
+          <button 
+            mat-flat-button 
+            color="primary" 
+            (click)="startPayment()"
+            [disabled]="loading()">
+            @if (loading()) {
+              <mat-spinner diameter="20"></mat-spinner>
+            } @else {
+              Continue to Payment
+            }
+          </button>
+        }
+        @case ('payment') {
+          <button mat-button (click)="goBack()" [disabled]="loading()">Back</button>
+          <button 
+            mat-flat-button 
+            color="primary" 
+            (click)="processPayment()"
+            [disabled]="loading()">
+            @if (loading()) {
+              <mat-spinner diameter="20"></mat-spinner>
+            } @else {
+              Pay {{ priceFormatted }}
+            }
+          </button>
+        }
+        @case ('verifying') {
+          <button mat-button (click)="close()">Close</button>
+        }
+        @case ('pending') {
+          <button mat-flat-button color="primary" (click)="close()">Done</button>
+        }
+        @case ('success') {
+          <button mat-flat-button color="primary" (click)="close()">Done</button>
+        }
+        @case ('failed') {
+          <button mat-button (click)="close()">Close</button>
+        }
+      }
+    </div>
+  </div>
+</div>

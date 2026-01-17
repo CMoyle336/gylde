@@ -154,10 +154,10 @@
   }
 </div>
 
-<!-- Veriff Identity Verification Dialog -->
-@if (showVeriffDialog()) {
-  <app-veriff-dialog
-    (closed)="onVeriffClosed()"
+<!-- Identity Verification Dialog -->
+@if (showVerificationDialog()) {
+  <app-identity-verification
+    (closed)="onVerificationClosed()"
     (verificationStarted)="onVerificationStarted($event)"
   />
 }

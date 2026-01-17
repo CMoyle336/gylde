@@ -4,7 +4,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { SubscriptionService } from '../../core/services/subscription.service';
-import { VeriffDialogComponent } from '../../components/veriff-dialog';
+import { IdentityVerificationComponent } from '../../components/identity-verification';
 import { 
   TrustCategory,
   TrustCategoryDefinition,
@@ -43,7 +43,7 @@ interface TrustCategoryDisplay extends TrustCategoryDefinition {
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
-    VeriffDialogComponent,
+    IdentityVerificationComponent,
   ],
 })
 export class TrustComponent {
@@ -113,13 +113,13 @@ export class TrustComponent {
     return TRUST_TASK_UI.length;
   });
 
-  // Veriff identity verification dialog
-  protected readonly showVeriffDialog = signal(false);
+  // Identity verification dialog
+  protected readonly showVerificationDialog = signal(false);
 
   protected onTaskAction(task: TrustTaskDisplay): void {
     // Special handling for identity verification
     if (task.id === 'identity_verified') {
-      this.showVeriffDialog.set(true);
+      this.showVerificationDialog.set(true);
       return;
     }
 
@@ -128,8 +128,8 @@ export class TrustComponent {
     }
   }
 
-  protected onVeriffClosed(): void {
-    this.showVeriffDialog.set(false);
+  protected onVerificationClosed(): void {
+    this.showVerificationDialog.set(false);
   }
 
   protected onVerificationStarted(sessionId: string): void {

@@ -23,4 +23,15 @@ export const environment = {
   veriff: {
     apiKey: 'f7236cc5-6816-44be-9af4-5914a8067e82', // TODO: Add your Veriff API key
   },
+
+  // Stripe Payment Processing
+  // Get your keys at: https://dashboard.stripe.com/apikeys
+  stripe: {
+    publishableKey: 'pk_test_51SpemHFd7ok3RIzwYr7GAhAcctfRysm9YffzNoX7KHeT8Jl1jUnzYIaFBGFQs8wawRYYn9QLPgLsdsVylPZxXqXn00KgPe9UlK', // TODO: Add your Stripe publishable key (pk_test_... or pk_live_...)
+  },
+
+  // Pricing
+  pricing: {
+    identityVerification: 499, // $4.99 in cents
+  },
 };

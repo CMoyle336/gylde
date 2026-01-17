@@ -71,6 +71,8 @@ export interface ConversationDisplay {
   isBlocked?: boolean;
   // Last time the other user viewed this conversation (for read receipts)
   otherUserLastViewedAt?: Date | null;
+  // Whether the current user has ever opened/accessed this conversation
+  hasBeenOpened?: boolean;
 }
 
 /**

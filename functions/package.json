@@ -19,6 +19,7 @@
     "firebase-functions": "^7.0.0",
     "openai": "^6.16.0",
     "sharp": "^0.34.5",
+    "stripe": "^20.2.0",
     "twilio": "^5.11.2"
   },
   "devDependencies": {
