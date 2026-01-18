@@ -1,0 +1,32 @@
+# Gylde robots.txt
+# https://gylde.com
+
+User-agent: *
+
+# Allow crawling of public pages
+Allow: /
+Allow: /about
+Allow: /how-it-works
+Allow: /safety
+Allow: /guidelines
+Allow: /privacy
+Allow: /terms
+
+# Disallow authenticated/private areas
+Disallow: /discover
+Disallow: /messages
+Disallow: /profile
+Disallow: /settings
+Disallow: /subscription
+Disallow: /onboarding
+Disallow: /user/
+
+# Disallow API and assets that don't need indexing
+Disallow: /api/
+Disallow: /*.json$
+
+# Crawl delay (be nice to our servers)
+Crawl-delay: 1
+
+# Sitemap location
+Sitemap: https://gylde.com/sitemap.xml
