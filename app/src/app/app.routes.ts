@@ -7,6 +7,11 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/home/home').then((m) => m.HomeComponent),
   },
   {
+    // Firebase email action handler (verify email, reset password, etc.)
+    path: '__/auth/action',
+    loadComponent: () => import('./pages/auth-action/auth-action').then((m) => m.AuthActionComponent),
+  },
+  {
     path: 'onboarding',
     canActivate: [onboardingIncompleteGuard],
     loadComponent: () => import('./pages/onboarding/onboarding').then((m) => m.OnboardingComponent),

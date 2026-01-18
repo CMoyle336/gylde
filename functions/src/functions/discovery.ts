@@ -166,7 +166,7 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
       let query: FirebaseFirestore.Query = db.collection("users");
 
       // 1. Base filters (always applied)
-      query = query.where("uid", "!=", currentUserId); // Exclude current user
+      // Note: We filter out currentUserId in memory to avoid inequality filter complexity
       query = query.where("onboardingCompleted", "==", true);
       query = query.where("isSearchable", "==", true);
 
@@ -303,7 +303,10 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
 
       // === FETCH TRUST SCORES FROM PRIVATE SUBCOLLECTION ===
       // Batch fetch trust scores for all matched profiles
-      const userIds = snapshot.docs.map((doc) => doc.id).filter((id) => !blockedUserIds.has(id));
+      // Also filter out current user and blocked users
+      const userIds = snapshot.docs
+        .map((doc) => doc.id)
+        .filter((id) => id !== currentUserId && !blockedUserIds.has(id));
       const trustScoreMap = new Map<string, number>();
 
       // Fetch in batches of 10 (Firestore limit for parallel reads)
@@ -328,8 +331,8 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
         // Stop once we have enough (accounting for filtering)
         if (profiles.length >= pageLimit) break;
 
-        // Skip blocked users
-        if (blockedUserIds.has(doc.id)) continue;
+        // Skip current user and blocked users
+        if (doc.id === currentUserId || blockedUserIds.has(doc.id)) continue;
 
         // Get trust score from map
         const trustScore = trustScoreMap.get(doc.id) ?? 0;

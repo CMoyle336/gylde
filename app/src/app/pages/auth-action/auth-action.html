@@ -1,0 +1,94 @@
+<div class="auth-action-container">
+  <mat-card class="auth-action-card">
+    <div class="card-header">
+      <mat-icon class="header-icon">{{ getIcon() }}</mat-icon>
+      <h1>{{ getTitle() }}</h1>
+    </div>
+
+    <div class="card-content">
+      <!-- Loading State -->
+      @if (state().status === 'loading') {
+        <div class="loading-state">
+          <mat-spinner diameter="48"></mat-spinner>
+          <p>{{ state().message }}</p>
+        </div>
+      }
+
+      <!-- Success State -->
+      @if (state().status === 'success') {
+        <div class="success-state">
+          <mat-icon class="status-icon success">check_circle</mat-icon>
+          <p>{{ state().message }}</p>
+          <button mat-raised-button color="primary" (click)="goToLogin()">
+            Continue to Gylde
+          </button>
+        </div>
+      }
+
+      <!-- Error State -->
+      @if (state().status === 'error') {
+        <div class="error-state">
+          <mat-icon class="status-icon error">error</mat-icon>
+          <p>{{ state().message }}</p>
+          <button mat-raised-button color="primary" (click)="goToLogin()">
+            Go to Homepage
+          </button>
+        </div>
+      }
+
+      <!-- Password Reset Input -->
+      @if (state().status === 'input' && mode() === 'resetPassword') {
+        <div class="password-reset-form">
+          <p class="email-info">Resetting password for: <strong>{{ state().email }}</strong></p>
+          
+          <form [formGroup]="passwordForm" (ngSubmit)="submitNewPassword()">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>New Password</mat-label>
+              <input 
+                matInput 
+                [type]="hidePassword() ? 'password' : 'text'" 
+                formControlName="password"
+                autocomplete="new-password"
+              />
+              <button mat-icon-button matSuffix type="button" (click)="togglePasswordVisibility()">
+                <mat-icon>{{ hidePassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+              </button>
+              @if (passwordForm.get('password')?.hasError('required') && passwordForm.get('password')?.touched) {
+                <mat-error>Password is required</mat-error>
+              }
+              @if (passwordForm.get('password')?.hasError('minlength') && passwordForm.get('password')?.touched) {
+                <mat-error>Password must be at least 8 characters</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Confirm Password</mat-label>
+              <input 
+                matInput 
+                [type]="hideConfirmPassword() ? 'password' : 'text'" 
+                formControlName="confirmPassword"
+                autocomplete="new-password"
+              />
+              <button mat-icon-button matSuffix type="button" (click)="toggleConfirmPasswordVisibility()">
+                <mat-icon>{{ hideConfirmPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+              </button>
+              @if (passwordForm.get('confirmPassword')?.hasError('required') && passwordForm.get('confirmPassword')?.touched) {
+                <mat-error>Please confirm your password</mat-error>
+              }
+            </mat-form-field>
+
+            <button 
+              mat-raised-button 
+              color="primary" 
+              type="submit"
+              [disabled]="passwordForm.invalid"
+              class="submit-btn"
+            >
+              Reset Password
+            </button>
+          </form>
+        </div>
+      }
+    </div>
+  </mat-card>
+</div>

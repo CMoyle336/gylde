@@ -10,6 +10,11 @@ export const serverRoutes: ServerRoute[] = [
     path: 'user/:userId',
     renderMode: RenderMode.Client
   },
+  {
+    // Firebase auth action handler (uses query params)
+    path: '__/auth/action',
+    renderMode: RenderMode.Client
+  },
   // Catch-all for other routes
   {
     path: '**',

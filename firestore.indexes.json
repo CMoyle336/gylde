@@ -1,20 +1,19 @@
 {
   "indexes": [
     {
-      "collectionGroup": "favorites",
-      "queryScope": "COLLECTION_GROUP",
+      "collectionGroup": "photoAccessRequests",
+      "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "toUserId", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "requestedAt", "order": "DESCENDING" }
       ]
     },
     {
-      "collectionGroup": "favorites",
-      "queryScope": "COLLECTION_GROUP",
+      "collectionGroup": "profileViews",
+      "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "toUserId", "order": "ASCENDING" },
-        { "fieldPath": "private", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
+        { "fieldPath": "viewedUserId", "order": "ASCENDING" },
+        { "fieldPath": "viewedAt", "order": "ASCENDING" }
       ]
     },
     {
@@ -46,17 +45,180 @@
       "collectionGroup": "activities",
       "queryScope": "COLLECTION",
       "fields": [
+        { "fieldPath": "toUserId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "activities",
+      "queryScope": "COLLECTION",
+      "fields": [
         { "fieldPath": "fromUserId", "order": "ASCENDING" },
         { "fieldPath": "type", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     },
     {
+      "collectionGroup": "conversations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "participants", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "updatedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "favorites",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "toUserId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "favorites",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "toUserId", "order": "ASCENDING" },
+        { "fieldPath": "private", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+
+    {
       "collectionGroup": "users",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "onboardingCompleted", "order": "ASCENDING" },
+        { "fieldPath": "onboarding.connectionTypes", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "identityVerified", "order": "ASCENDING" },
         { "fieldPath": "isSearchable", "order": "ASCENDING" },
+        { "fieldPath": "onboarding.children", "order": "ASCENDING" },
+        { "fieldPath": "onboarding.drinker", "order": "ASCENDING" },
+        { "fieldPath": "onboarding.education", "order": "ASCENDING" },
+        { "fieldPath": "onboarding.ethnicity", "order": "ASCENDING" },
+        { "fieldPath": "onboarding.genderIdentity", "order": "ASCENDING" },
+        { "fieldPath": "onboarding.relationshipStatus", "order": "ASCENDING" },
+        { "fieldPath": "onboarding.smoker", "order": "ASCENDING" },
+        { "fieldPath": "onboarding.supportOrientation", "order": "ASCENDING" },
+        { "fieldPath": "onboardingCompleted", "order": "ASCENDING" },
+        { "fieldPath": "sortableLastActive", "order": "DESCENDING" },
+        { "fieldPath": "uid", "order": "ASCENDING" },
+        { "fieldPath": "geohash", "order": "ASCENDING" },
+        { "fieldPath": "onboarding.birthDate", "order": "ASCENDING" }
+      ]
+    },
+
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "onboarding.connectionTypes", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "isSearchable", "order": "ASCENDING" },
+        { "fieldPath": "onboarding.genderIdentity", "order": "ASCENDING" },
+        { "fieldPath": "onboarding.supportOrientation", "order": "ASCENDING" },
+        { "fieldPath": "onboardingCompleted", "order": "ASCENDING" },
+        { "fieldPath": "sortableLastActive", "order": "DESCENDING" },
+        { "fieldPath": "uid", "order": "ASCENDING" },
+        { "fieldPath": "onboarding.birthDate", "order": "ASCENDING" }
+      ]
+    },
+
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isSearchable", "order": "ASCENDING" },
+        { "fieldPath": "onboarding.genderIdentity", "order": "ASCENDING" },
+        { "fieldPath": "onboarding.supportOrientation", "order": "ASCENDING" },
+        { "fieldPath": "onboardingCompleted", "order": "ASCENDING" },
+        { "fieldPath": "sortableLastActive", "order": "DESCENDING" },
+        { "fieldPath": "uid", "order": "ASCENDING" },
+        { "fieldPath": "onboarding.birthDate", "order": "ASCENDING" }
+      ]
+    },
+
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isSearchable", "order": "ASCENDING" },
+        { "fieldPath": "onboarding.genderIdentity", "order": "ASCENDING" },
+        { "fieldPath": "onboardingCompleted", "order": "ASCENDING" },
+        { "fieldPath": "sortableLastActive", "order": "DESCENDING" },
+        { "fieldPath": "uid", "order": "ASCENDING" }
+      ]
+    },
+
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isSearchable", "order": "ASCENDING" },
+        { "fieldPath": "onboarding.supportOrientation", "order": "ASCENDING" },
+        { "fieldPath": "onboardingCompleted", "order": "ASCENDING" },
+        { "fieldPath": "sortableLastActive", "order": "DESCENDING" },
+        { "fieldPath": "uid", "order": "ASCENDING" }
+      ]
+    },
+
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "identityVerified", "order": "ASCENDING" },
+        { "fieldPath": "isSearchable", "order": "ASCENDING" },
+        { "fieldPath": "onboardingCompleted", "order": "ASCENDING" },
+        { "fieldPath": "sortableLastActive", "order": "DESCENDING" },
+        { "fieldPath": "uid", "order": "ASCENDING" }
+      ]
+    },
+
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "identityVerified", "order": "ASCENDING" },
+        { "fieldPath": "isSearchable", "order": "ASCENDING" },
+        { "fieldPath": "onboarding.genderIdentity", "order": "ASCENDING" },
+        { "fieldPath": "onboarding.supportOrientation", "order": "ASCENDING" },
+        { "fieldPath": "onboardingCompleted", "order": "ASCENDING" },
+        { "fieldPath": "sortableLastActive", "order": "DESCENDING" },
+        { "fieldPath": "uid", "order": "ASCENDING" }
+      ]
+    },
+
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "onboarding.connectionTypes", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "isSearchable", "order": "ASCENDING" },
+        { "fieldPath": "onboardingCompleted", "order": "ASCENDING" },
+        { "fieldPath": "sortableLastActive", "order": "DESCENDING" },
+        { "fieldPath": "uid", "order": "ASCENDING" }
+      ]
+    },
+
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "onboarding.connectionTypes", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "identityVerified", "order": "ASCENDING" },
+        { "fieldPath": "isSearchable", "order": "ASCENDING" },
+        { "fieldPath": "onboarding.genderIdentity", "order": "ASCENDING" },
+        { "fieldPath": "onboarding.supportOrientation", "order": "ASCENDING" },
+        { "fieldPath": "onboardingCompleted", "order": "ASCENDING" },
+        { "fieldPath": "sortableLastActive", "order": "DESCENDING" },
+        { "fieldPath": "uid", "order": "ASCENDING" }
+      ]
+    },
+
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isSearchable", "order": "ASCENDING" },
+        { "fieldPath": "onboardingCompleted", "order": "ASCENDING" },
         { "fieldPath": "sortableLastActive", "order": "DESCENDING" },
         { "fieldPath": "uid", "order": "ASCENDING" }
       ]
@@ -65,18 +227,19 @@
       "collectionGroup": "users",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "onboardingCompleted", "order": "ASCENDING" },
         { "fieldPath": "isSearchable", "order": "ASCENDING" },
+        { "fieldPath": "onboardingCompleted", "order": "ASCENDING" },
         { "fieldPath": "sortableLastActive", "order": "ASCENDING" },
         { "fieldPath": "uid", "order": "ASCENDING" }
       ]
     },
+
     {
       "collectionGroup": "users",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "onboardingCompleted", "order": "ASCENDING" },
         { "fieldPath": "isSearchable", "order": "ASCENDING" },
+        { "fieldPath": "onboardingCompleted", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" },
         { "fieldPath": "uid", "order": "ASCENDING" }
       ]
@@ -85,18 +248,19 @@
       "collectionGroup": "users",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "onboardingCompleted", "order": "ASCENDING" },
         { "fieldPath": "isSearchable", "order": "ASCENDING" },
+        { "fieldPath": "onboardingCompleted", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "ASCENDING" },
         { "fieldPath": "uid", "order": "ASCENDING" }
       ]
     },
+
     {
       "collectionGroup": "users",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "onboardingCompleted", "order": "ASCENDING" },
         { "fieldPath": "isSearchable", "order": "ASCENDING" },
+        { "fieldPath": "onboardingCompleted", "order": "ASCENDING" },
         { "fieldPath": "onboarding.birthDate", "order": "ASCENDING" },
         { "fieldPath": "uid", "order": "ASCENDING" }
       ]
@@ -105,29 +269,138 @@
       "collectionGroup": "users",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "onboardingCompleted", "order": "ASCENDING" },
         { "fieldPath": "isSearchable", "order": "ASCENDING" },
+        { "fieldPath": "onboardingCompleted", "order": "ASCENDING" },
         { "fieldPath": "onboarding.birthDate", "order": "DESCENDING" },
         { "fieldPath": "uid", "order": "ASCENDING" }
       ]
     },
+
     {
       "collectionGroup": "users",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "onboardingCompleted", "order": "ASCENDING" },
         { "fieldPath": "isSearchable", "order": "ASCENDING" },
+        { "fieldPath": "onboardingCompleted", "order": "ASCENDING" },
         { "fieldPath": "geohash", "order": "ASCENDING" },
         { "fieldPath": "uid", "order": "ASCENDING" }
       ]
     },
+
     {
       "collectionGroup": "users",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "onboardingCompleted", "order": "ASCENDING" },
         { "fieldPath": "isSearchable", "order": "ASCENDING" },
+        { "fieldPath": "onboarding.genderIdentity", "order": "ASCENDING" },
+        { "fieldPath": "onboarding.supportOrientation", "order": "ASCENDING" },
+        { "fieldPath": "onboardingCompleted", "order": "ASCENDING" },
+        { "fieldPath": "geohash", "order": "ASCENDING" },
+        { "fieldPath": "uid", "order": "ASCENDING" }
+      ]
+    },
+
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isSearchable", "order": "ASCENDING" },
+        { "fieldPath": "onboarding.genderIdentity", "order": "ASCENDING" },
+        { "fieldPath": "onboarding.supportOrientation", "order": "ASCENDING" },
+        { "fieldPath": "onboardingCompleted", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" },
+        { "fieldPath": "uid", "order": "ASCENDING" }
+      ]
+    },
+
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isSearchable", "order": "ASCENDING" },
+        { "fieldPath": "onboarding.genderIdentity", "order": "ASCENDING" },
+        { "fieldPath": "onboarding.supportOrientation", "order": "ASCENDING" },
+        { "fieldPath": "onboardingCompleted", "order": "ASCENDING" },
+        { "fieldPath": "onboarding.birthDate", "order": "DESCENDING" },
+        { "fieldPath": "uid", "order": "ASCENDING" }
+      ]
+    },
+
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isSearchable", "order": "ASCENDING" },
+        { "fieldPath": "onboarding.lifestyle", "order": "ASCENDING" },
+        { "fieldPath": "onboardingCompleted", "order": "ASCENDING" },
+        { "fieldPath": "sortableLastActive", "order": "DESCENDING" },
+        { "fieldPath": "uid", "order": "ASCENDING" }
+      ]
+    },
+
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isSearchable", "order": "ASCENDING" },
+        { "fieldPath": "onboarding.ethnicity", "order": "ASCENDING" },
+        { "fieldPath": "onboardingCompleted", "order": "ASCENDING" },
+        { "fieldPath": "sortableLastActive", "order": "DESCENDING" },
+        { "fieldPath": "uid", "order": "ASCENDING" }
+      ]
+    },
+
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isSearchable", "order": "ASCENDING" },
+        { "fieldPath": "onboarding.relationshipStatus", "order": "ASCENDING" },
+        { "fieldPath": "onboardingCompleted", "order": "ASCENDING" },
+        { "fieldPath": "sortableLastActive", "order": "DESCENDING" },
+        { "fieldPath": "uid", "order": "ASCENDING" }
+      ]
+    },
+
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isSearchable", "order": "ASCENDING" },
+        { "fieldPath": "onboarding.genderIdentity", "order": "ASCENDING" },
+        { "fieldPath": "onboarding.lifestyle", "order": "ASCENDING" },
+        { "fieldPath": "onboarding.supportOrientation", "order": "ASCENDING" },
+        { "fieldPath": "onboardingCompleted", "order": "ASCENDING" },
+        { "fieldPath": "sortableLastActive", "order": "DESCENDING" },
+        { "fieldPath": "uid", "order": "ASCENDING" }
+      ]
+    },
+
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
         { "fieldPath": "identityVerified", "order": "ASCENDING" },
+        { "fieldPath": "isSearchable", "order": "ASCENDING" },
+        { "fieldPath": "onboarding.genderIdentity", "order": "ASCENDING" },
+        { "fieldPath": "onboarding.lifestyle", "order": "ASCENDING" },
+        { "fieldPath": "onboarding.supportOrientation", "order": "ASCENDING" },
+        { "fieldPath": "onboardingCompleted", "order": "ASCENDING" },
+        { "fieldPath": "sortableLastActive", "order": "DESCENDING" },
+        { "fieldPath": "uid", "order": "ASCENDING" }
+      ]
+    },
+
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "onboarding.connectionTypes", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "isSearchable", "order": "ASCENDING" },
+        { "fieldPath": "onboarding.genderIdentity", "order": "ASCENDING" },
+        { "fieldPath": "onboarding.lifestyle", "order": "ASCENDING" },
+        { "fieldPath": "onboarding.supportOrientation", "order": "ASCENDING" },
+        { "fieldPath": "onboardingCompleted", "order": "ASCENDING" },
         { "fieldPath": "sortableLastActive", "order": "DESCENDING" },
         { "fieldPath": "uid", "order": "ASCENDING" }
       ]

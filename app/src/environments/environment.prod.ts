@@ -10,23 +10,17 @@ export const environment = {
     appId: '1:786713739296:web:c6495e7d8e278982213c45',
     measurementId: 'G-ETS6XP4QJ9',
   },
-  googleMapsApiKey: 'AIzaSyC6M7RmuWYXJaIkoqSLBa8zY189JMzqvNI', // TODO: Add your Google Maps API key
+  firestoreLogLevel: 'info',
+  googleMapsApiKey: 'AIzaSyAGjBhUWHSCD9Y0db3zP7ede1nxaGdYSXc', // TODO: Add your Google Maps API key
 
   // Veriff Identity Verification
   veriff: {
-    apiKey: '', // TODO: Add your production Veriff API key
+    apiKey: '15f10df8-d53e-4240-956b-81b185630119'
   },
 
   // Stripe Payment Processing
   stripe: {
-    publishableKey: '', // TODO: Add your Stripe live publishable key (pk_live_...)
-    // Stripe Price IDs for subscriptions
-    prices: {
-      plus_monthly: '', // TODO: Add Stripe Price ID for Plus monthly
-      plus_quarterly: '', // TODO: Add Stripe Price ID for Plus quarterly
-      elite_monthly: '', // TODO: Add Stripe Price ID for Elite monthly
-      elite_quarterly: '', // TODO: Add Stripe Price ID for Elite quarterly
-    },
+    publishableKey: 'pk_test_51SpemHFd7ok3RIzwYr7GAhAcctfRysm9YffzNoX7KHeT8Jl1jUnzYIaFBGFQs8wawRYYn9QLPgLsdsVylPZxXqXn00KgPe9UlK'
   },
 
   // Pricing
