@@ -15,7 +15,7 @@ export const environment = {
   // Get yours at: https://console.cloud.google.com/apis/credentials
   // Enable: Geocoding API, Places API
 
-  googleMapsApiKey: 'AIzaSyAYYyJaYZmU8JTpDewuHLaNW6Vo7NvJzME',
+  googleMapsApiKey: 'AIzaSyBQL4icE8gXeV2Br-n62ROsJbgfbgDZelI',
   // googleMapsApiKey: 'AIzaSyC6M7RmuWYXJaIkoqSLBa8zY189JMzqvNI', // TODO: Add your Google Maps API key
 
   // Veriff Identity Verification

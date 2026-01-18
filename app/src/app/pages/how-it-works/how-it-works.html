@@ -1,15 +1,9 @@
-<div class="how-it-works-page">
-  <!-- Header -->
-  <header class="page-header">
-    <div class="header-container">
-      <a routerLink="/" class="header-logo">Gylde</a>
-      <nav class="header-nav">
-        <a routerLink="/about" class="nav-link">About Us</a>
-        <a routerLink="/" class="nav-link">Home</a>
-      </nav>
-    </div>
-  </header>
+<app-public-header
+  (signInClicked)="navigateToAuth()"
+  (getStartedClicked)="navigateToAuth()"
+/>
 
+<div class="how-it-works-page">
   <!-- Hero Section -->
   <section class="hero-section">
     <div class="hero-backdrop"></div>

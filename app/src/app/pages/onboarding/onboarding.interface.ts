@@ -39,6 +39,6 @@ export interface OnboardingData {
   // Step 6: Photos
   photos: string[];
 
-  // Step 7: Verification
+  // Verification (completed after onboarding)
   verificationOptions: string[];
 }

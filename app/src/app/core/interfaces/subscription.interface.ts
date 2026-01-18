@@ -64,7 +64,7 @@ export function getSubscriptionCapabilities(tier: SubscriptionTier): Subscriptio
         hasVirtualPhone: true,
         hasPriorityVisibility: true,
         canSeeWhoViewedProfile: true,
-        maxPhotos: 10,
+        maxPhotos: 20,
         canAccessPrivatePhotos: true,
       };
     case 'plus':
@@ -75,7 +75,7 @@ export function getSubscriptionCapabilities(tier: SubscriptionTier): Subscriptio
         hasVirtualPhone: false,
         hasPriorityVisibility: false,
         canSeeWhoViewedProfile: true,
-        maxPhotos: 8,
+        maxPhotos: 6,
         canAccessPrivatePhotos: true,
       };
     case 'free':
@@ -87,7 +87,7 @@ export function getSubscriptionCapabilities(tier: SubscriptionTier): Subscriptio
         hasVirtualPhone: false,
         hasPriorityVisibility: false,
         canSeeWhoViewedProfile: true,
-        maxPhotos: 5,
+        maxPhotos: 3,
         canAccessPrivatePhotos: false, // Only paid tiers can request/view private photos
       };
   }
@@ -107,7 +107,7 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     features: [
       { id: 'browse', label: 'Browse unlimited profiles', included: true },
       { id: 'favorites', label: 'Save favorites', included: true },
-      { id: 'photos', label: 'Upload up to 5 photos', included: true },
+      { id: 'photos', label: 'Upload up to 3 photos', included: true },
       { id: 'views', label: 'See who viewed you', included: true },
       { id: 'verify', label: 'Verify your profile', included: true },
       { id: 'messaging', label: 'Send messages', included: false },
@@ -128,7 +128,7 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     features: [
       { id: 'browse', label: 'Browse unlimited profiles', included: true },
       { id: 'favorites', label: 'Save favorites', included: true },
-      { id: 'photos', label: 'Upload up to 8 photos', included: true },
+      { id: 'photos', label: 'Upload up to 6 photos', included: true },
       { id: 'views', label: 'See who viewed you', included: true },
       { id: 'verify', label: 'Verify your profile', included: true },
       { id: 'messaging', label: 'Send unlimited messages', included: true, highlight: true },
@@ -148,7 +148,7 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     features: [
       { id: 'browse', label: 'Browse unlimited profiles', included: true },
       { id: 'favorites', label: 'Save favorites', included: true },
-      { id: 'photos', label: 'Upload up to 10 photos', included: true },
+      { id: 'photos', label: 'Upload up to 20 photos', included: true },
       { id: 'views', label: 'See who viewed you', included: true },
       { id: 'verify', label: 'Verify your profile', included: true },
       { id: 'messaging', label: 'Send unlimited messages', included: true },

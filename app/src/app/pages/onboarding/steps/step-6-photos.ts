@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, computed, signal } from '@a
 import { TranslateModule } from '@ngx-translate/core';
 import { OnboardingService } from '../onboarding.service';
 import { ImageUploadService } from '../../../core/services/image-upload.service';
-import { MAX_PHOTOS_PER_USER } from '../../../core/constants/app-config';
+import { SubscriptionService } from '../../../core/services/subscription.service';
 
 interface PhotoUpload {
   url: string;
@@ -26,8 +26,9 @@ interface UploadingPhoto {
 export class Step6PhotosComponent {
   protected readonly onboarding = inject(OnboardingService);
   private readonly imageUploadService = inject(ImageUploadService);
+  private readonly subscriptionService = inject(SubscriptionService);
   
-  protected readonly maxPhotos = MAX_PHOTOS_PER_USER;
+  protected readonly maxPhotos = computed(() => this.subscriptionService.capabilities().maxPhotos);
   protected readonly uploading = signal(false);
   protected readonly uploadError = signal<string | null>(null);
 
@@ -40,7 +41,7 @@ export class Step6PhotosComponent {
   protected readonly photos = computed(() => this.onboarding.data().photos);
   protected readonly emptySlots = computed(() => {
     const photoCount = this.photoPreviews().length + this.uploadingPhotos().length;
-    return Array(Math.max(0, this.maxPhotos - photoCount - 1)).fill(null);
+    return Array(Math.max(0, this.maxPhotos() - photoCount - 1)).fill(null);
   });
 
   /**
@@ -98,7 +99,7 @@ export class Step6PhotosComponent {
       if (isPrimary && currentPreviews.length === 0) {
         this.photoPreviews.set([{ url: downloadUrl, preview }]);
         this.onboarding.updateData({ photos: [downloadUrl] });
-      } else if (currentPreviews.length < this.maxPhotos) {
+      } else if (currentPreviews.length < this.maxPhotos()) {
         this.photoPreviews.set([...currentPreviews, { url: downloadUrl, preview }]);
         this.onboarding.updateData({ photos: [...currentUrls, downloadUrl] });
       }
@@ -122,10 +123,11 @@ export class Step6PhotosComponent {
 
     const currentPreviews = this.photoPreviews();
     const currentUploading = this.uploadingPhotos().length;
-    const availableSlots = this.maxPhotos - currentPreviews.length - currentUploading;
+    const maxAllowed = this.maxPhotos();
+    const availableSlots = maxAllowed - currentPreviews.length - currentUploading;
 
     if (availableSlots <= 0) {
-      this.uploadError.set(`Maximum of ${this.maxPhotos} photos allowed`);
+      this.uploadError.set(`Maximum of ${maxAllowed} photos allowed`);
       input.value = '';
       return;
     }
@@ -134,7 +136,7 @@ export class Step6PhotosComponent {
     const filesToUpload = Array.from(input.files).slice(0, availableSlots);
     
     if (filesToUpload.length < input.files.length) {
-      this.uploadError.set(`Only ${availableSlots} more photo(s) can be added. Maximum is ${this.maxPhotos}.`);
+      this.uploadError.set(`Only ${availableSlots} more photo(s) can be added. Maximum is ${maxAllowed}.`);
     }
 
     // Validate all files first

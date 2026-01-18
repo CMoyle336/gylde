@@ -1,16 +1,22 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
+import { PublicHeaderComponent } from '../../components/public-header/public-header';
 import { PublicFooterComponent } from '../../components/public-footer/public-footer';
 
 @Component({
   selector: 'app-safety',
   standalone: true,
-  imports: [CommonModule, RouterLink, PublicFooterComponent],
+  imports: [CommonModule, PublicHeaderComponent, PublicFooterComponent],
   templateUrl: './safety.html',
   styleUrl: './safety.css',
 })
 export class SafetyComponent {
+  private readonly router = inject(Router);
+
+  protected navigateToAuth(): void {
+    this.router.navigate(['/']);
+  }
   readonly tips = [
     {
       icon: 'chat',

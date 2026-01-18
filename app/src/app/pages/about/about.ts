@@ -1,16 +1,22 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
+import { PublicHeaderComponent } from '../../components/public-header/public-header';
 import { PublicFooterComponent } from '../../components/public-footer/public-footer';
 
 @Component({
   selector: 'app-about',
   standalone: true,
-  imports: [CommonModule, RouterLink, PublicFooterComponent],
+  imports: [CommonModule, RouterLink, PublicHeaderComponent, PublicFooterComponent],
   templateUrl: './about.html',
   styleUrl: './about.css',
 })
 export class AboutComponent {
+  private readonly router = inject(Router);
+
+  protected navigateToAuth(): void {
+    this.router.navigate(['/']);
+  }
   readonly values = [
     {
       icon: 'verified',

@@ -21,7 +21,6 @@ import { AiChatService } from '../../core/services/ai-chat.service';
 import { OnboardingProfile, GeoLocation } from '../../core/interfaces';
 import { Photo } from '../../core/interfaces/photo.interface';
 import { ALL_CONNECTION_TYPES, getConnectionTypeLabel, SUPPORT_ORIENTATION_OPTIONS, getSupportOrientationLabel } from '../../core/constants/connection-types';
-import { MAX_PHOTOS_PER_USER } from '../../core/constants/app-config';
 import { PhotoAccessDialogComponent } from '../../components/photo-access-dialog';
 
 type LocationStatus = 'idle' | 'detecting' | 'success' | 'error';
@@ -128,8 +127,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
   // Pending requests count (for badge)
   protected readonly pendingRequestsCount = this.photoAccessService.pendingRequestsCount;
 
-  // Max photos allowed
-  protected readonly maxPhotos = MAX_PHOTOS_PER_USER;
+  // Max photos allowed based on subscription tier
+  protected readonly maxPhotos = computed(() => this.subscriptionService.capabilities().maxPhotos);
 
   // AI Polish state (Elite feature)
   protected readonly isElite = computed(() => this.subscriptionService.isElite());
@@ -427,11 +426,12 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
     const currentPhotos = this.editablePhotos();
     const currentUploading = this.uploadingPhotos().length;
-    const availableSlots = this.maxPhotos - currentPhotos.length - currentUploading;
+    const maxAllowed = this.maxPhotos();
+    const availableSlots = maxAllowed - currentPhotos.length - currentUploading;
     
     // Check if user can upload more photos
     if (availableSlots <= 0) {
-      this.uploadError.set(`Maximum of ${this.maxPhotos} photos allowed`);
+      this.uploadError.set(`Maximum of ${maxAllowed} photos allowed for your subscription tier`);
       input.value = '';
       return;
     }
@@ -440,7 +440,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     const filesToUpload = Array.from(files).slice(0, availableSlots);
     
     if (filesToUpload.length < files.length) {
-      this.uploadError.set(`Only ${availableSlots} more photo(s) can be added. Maximum is ${this.maxPhotos}.`);
+      this.uploadError.set(`Only ${availableSlots} more photo(s) can be added. Maximum is ${maxAllowed}.`);
     }
 
     // Validate all files FIRST before any processing

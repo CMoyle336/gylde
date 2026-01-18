@@ -118,7 +118,7 @@
     }
 
     <!-- Add Photo Button -->
-    @if (photoPreviews().length > 0 && (photoPreviews().length + uploadingPhotos().length) < maxPhotos) {
+    @if (photoPreviews().length > 0 && (photoPreviews().length + uploadingPhotos().length) < maxPhotos()) {
       <div class="photo-slot">
         <label class="photo-upload-btn">
           <input 

@@ -11,7 +11,6 @@ import { Step3IntentComponent } from './steps/step-3-intent';
 import { Step4SupportComponent } from './steps/step-4-support';
 import { Step5PromptsComponent } from './steps/step-5-prompts';
 import { Step6PhotosComponent } from './steps/step-6-photos';
-import { Step7VerificationComponent } from './steps/step-7-verification';
 
 @Component({
   selector: 'app-onboarding',
@@ -26,7 +25,6 @@ import { Step7VerificationComponent } from './steps/step-7-verification';
     Step4SupportComponent,
     Step5PromptsComponent,
     Step6PhotosComponent,
-    Step7VerificationComponent,
   ],
 })
 export class OnboardingComponent {
@@ -84,7 +82,7 @@ export class OnboardingComponent {
           uploadedAt: new Date(),
           order: index,
         })),
-        verificationOptions: data.verificationOptions,
+        verificationOptions: [],
       };
 
       // Only add optional fields if they have values

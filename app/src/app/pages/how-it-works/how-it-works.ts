@@ -1,18 +1,24 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
+import { PublicHeaderComponent } from '../../components/public-header/public-header';
 import { PublicFooterComponent } from '../../components/public-footer/public-footer';
 import { SeoService } from '../../core/services/seo.service';
 
 @Component({
   selector: 'app-how-it-works',
   standalone: true,
-  imports: [CommonModule, RouterLink, PublicFooterComponent],
+  imports: [CommonModule, RouterLink, PublicHeaderComponent, PublicFooterComponent],
   templateUrl: './how-it-works.html',
   styleUrl: './how-it-works.css',
 })
 export class HowItWorksComponent implements OnInit {
+  private readonly router = inject(Router);
   private readonly seoService = inject(SeoService);
+
+  protected navigateToAuth(): void {
+    this.router.navigate(['/']);
+  }
 
   readonly steps = [
     {

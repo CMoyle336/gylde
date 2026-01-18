@@ -39,9 +39,6 @@
         @case (6) {
           <app-step-6-photos />
         }
-        @case (7) {
-          <app-step-7-verification />
-        }
       }
     </div>
   </main>
@@ -66,7 +63,7 @@
     </button>
 
     <div class="footer-actions">
-      @if (onboarding.currentStep() === 4 || onboarding.currentStep() === 7) {
+      @if (onboarding.currentStep() === 4) {
         <button 
           type="button" 
           class="btn-skip" 

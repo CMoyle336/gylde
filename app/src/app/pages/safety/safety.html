@@ -1,15 +1,9 @@
-<div class="safety-page">
-  <!-- Header -->
-  <header class="page-header">
-    <div class="header-container">
-      <a routerLink="/" class="header-logo">Gylde</a>
-      <a routerLink="/" class="back-link">
-        <span class="material-icons-outlined">arrow_back</span>
-        Back to Home
-      </a>
-    </div>
-  </header>
+<app-public-header
+  (signInClicked)="navigateToAuth()"
+  (getStartedClicked)="navigateToAuth()"
+/>
 
+<div class="safety-page">
   <!-- Hero Section -->
   <section class="hero-section">
     <div class="hero-backdrop"></div>

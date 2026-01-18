@@ -27,7 +27,7 @@ export class OnboardingService {
   private readonly _currentStep = signal(1);
   private readonly _data = signal<OnboardingData>({ ...INITIAL_DATA });
 
-  readonly totalSteps = 7;
+  readonly totalSteps = 6;
   readonly currentStep = this._currentStep.asReadonly();
   readonly data = this._data.asReadonly();
 
@@ -54,8 +54,6 @@ export class OnboardingService {
         return data.idealRelationship.trim().length >= 20;
       case 6:
         return data.photos.length >= 1;
-      case 7:
-        return true; // Optional step
       default:
         return false;
     }

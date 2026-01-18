@@ -35,6 +35,24 @@ const OPTIMIZED_MAX_HEIGHT = 1600; // Max height for web-ready images
 const JPEG_QUALITY = 85; // Quality for JPEG compression (0-100)
 const PNG_COMPRESSION = 8; // PNG compression level (0-9)
 
+// Subscription tier type
+type SubscriptionTier = "free" | "plus" | "elite";
+
+/**
+ * Get max photos allowed based on subscription tier
+ */
+function getMaxPhotosForTier(tier: SubscriptionTier): number {
+  switch (tier) {
+    case "elite":
+      return 20;
+    case "plus":
+      return 6;
+    case "free":
+    default:
+      return 3;
+  }
+}
+
 /**
  * Compute SHA-256 hash of image buffer for duplicate detection
  */
@@ -348,15 +366,17 @@ export const uploadProfileImage = onCall<UploadImageRequest, Promise<UploadImage
       );
     }
 
-    // Check user's photo count (optional rate limiting)
+    // Check user's photo count based on subscription tier
     const userDoc = await db.collection("users").doc(userId).get();
     const userData = userDoc.data();
     const currentPhotoDetails = userData?.onboarding?.photoDetails || [];
+    const subscriptionTier = (userData?.subscription?.tier || "free") as SubscriptionTier;
+    const maxPhotos = getMaxPhotosForTier(subscriptionTier);
 
-    if (folder === "photos" && currentPhotoDetails.length >= 20) {
+    if (folder === "photos" && currentPhotoDetails.length >= maxPhotos) {
       throw new HttpsError(
         "resource-exhausted",
-        "Maximum of 20 photos allowed. Please delete a photo first."
+        `Maximum of ${maxPhotos} photos allowed for your subscription tier. Please delete a photo or upgrade your subscription.`
       );
     }
 
@@ -639,16 +659,18 @@ export const uploadProfileImages = onCall<UploadImagesRequest, Promise<UploadIma
       throw new HttpsError("invalid-argument", "Maximum 10 images per upload batch");
     }
 
-    // Check user's current photo count
+    // Check user's current photo count and subscription tier
     const userDoc = await db.collection("users").doc(userId).get();
     const userData = userDoc.data();
     const currentPhotoDetails = userData?.onboarding?.photoDetails || [];
-    const availableSlots = 20 - currentPhotoDetails.length;
+    const subscriptionTier = (userData?.subscription?.tier || "free") as SubscriptionTier;
+    const maxPhotos = getMaxPhotosForTier(subscriptionTier);
+    const availableSlots = maxPhotos - currentPhotoDetails.length;
 
     if (folder === "photos" && images.length > availableSlots) {
       throw new HttpsError(
         "resource-exhausted",
-        `You can only upload ${availableSlots} more photo(s). Maximum is 20.`
+        `You can only upload ${availableSlots} more photo(s). Maximum is ${maxPhotos} for your subscription tier.`
       );
     }
 
@@ -671,7 +693,7 @@ export const uploadProfileImages = onCall<UploadImagesRequest, Promise<UploadIma
             image,
             folder,
             currentPhotoDetails.length + results.filter((r) => r.success).length + idx,
-            20,
+            maxPhotos,
             apiKey
           )
         )

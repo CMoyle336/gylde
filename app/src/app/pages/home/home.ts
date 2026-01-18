@@ -1,35 +1,25 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { TranslateModule } from '@ngx-translate/core';
 import { AuthModalComponent } from '../../components/auth-modal/auth-modal';
+import { PublicHeaderComponent } from '../../components/public-header/public-header';
+import { PublicFooterComponent } from '../../components/public-footer/public-footer';
 import { AuthService } from '../../core/services/auth.service';
 import { AuthResult } from '../../core/interfaces';
-import { PublicFooterComponent } from '../../components/public-footer/public-footer';
 
 @Component({
   selector: 'app-home',
   templateUrl: './home.html',
   styleUrl: './home.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [TranslateModule, AuthModalComponent, PublicFooterComponent],
+  imports: [AuthModalComponent, PublicHeaderComponent, PublicFooterComponent],
 })
 export class HomeComponent {
   private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
 
   protected readonly isAuthenticated = this.authService.isAuthenticated;
-  protected readonly user = this.authService.user;
   protected readonly authModalOpen = signal(false);
   protected readonly authModalMode = signal<'login' | 'signup'>('login');
-  protected readonly mobileMenuOpen = signal(false);
-
-  protected toggleMobileMenu(): void {
-    this.mobileMenuOpen.update(v => !v);
-  }
-
-  protected closeMobileMenu(): void {
-    this.mobileMenuOpen.set(false);
-  }
 
   protected openAuthModal(mode: 'login' | 'signup'): void {
     this.authModalMode.set(mode);
@@ -44,20 +34,10 @@ export class HomeComponent {
     this.authModalOpen.set(false);
     
     if (result.isNewUser) {
-      // New user or incomplete onboarding - go to onboarding
       this.router.navigate(['/onboarding']);
     } else {
-      // Existing user with completed onboarding - go to discover
       this.router.navigate(['/discover']);
     }
-  }
-
-  protected goToDashboard(): void {
-    this.router.navigate(['/discover']);
-  }
-
-  protected async logout(): Promise<void> {
-    await this.authService.signOutUser();
   }
 
   protected beginJourney(): void {
