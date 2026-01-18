@@ -49,10 +49,7 @@ export class SubscriptionService {
 
   readonly currentTier = computed<SubscriptionTier>(() => {
     const sub = this._subscription();
-    // Map legacy tiers to new model (Firestore may still have old tier names)
-    const tier = sub?.tier as string | undefined;
-    if (tier === 'plus' || tier === 'elite' || tier === 'premium') return 'premium';
-    return 'free';
+    return sub?.tier === 'premium' ? 'premium' : 'free';
   });
 
   readonly capabilities = computed<SubscriptionCapabilities>(() => {

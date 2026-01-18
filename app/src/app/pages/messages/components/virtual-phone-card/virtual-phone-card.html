@@ -1,6 +1,6 @@
 <div class="virtual-phone-card">
   @if (isPremium && virtualPhone) {
-    <!-- Elite user with virtual number -->
+    <!-- Premium user with virtual number -->
     <div class="vp-number-display">
       <div class="vp-info">
         <span class="material-icons-outlined vp-icon">phone_android</span>
@@ -27,13 +27,13 @@
       </div>
     </div>
   } @else if (isPremium && loading) {
-    <!-- Elite user, loading -->
+    <!-- Premium user, loading -->
     <div class="vp-loading">
       <div class="loading-spinner small"></div>
       <span>Loading...</span>
     </div>
   } @else if (isPremium && !hasVerifiedPhone) {
-    <!-- Elite user, need to verify phone first -->
+    <!-- Premium user, need to verify phone first -->
     <div class="vp-promo vp-needs-phone">
       <div class="vp-promo-text">
         <span class="material-icons-outlined">phone_locked</span>
@@ -45,7 +45,7 @@
       </a>
     </div>
   } @else if (isPremium) {
-    <!-- Elite user, can get virtual number -->
+    <!-- Premium user, can get virtual number -->
     <div class="vp-promo">
       <div class="vp-promo-text">
         <span class="material-icons-outlined">shield</span>
@@ -65,7 +65,7 @@
       <p class="vp-error">{{ error }}</p>
     }
   } @else {
-    <!-- Non-Elite user, show upgrade prompt -->
+    <!-- Non-Premium user, show upgrade prompt -->
     <div class="vp-promo">
       <div class="vp-promo-text">
         <span class="material-icons-outlined">shield</span>

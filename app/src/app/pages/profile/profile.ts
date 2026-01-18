@@ -1012,7 +1012,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
   }
 
   // ============================================
-  // AI POLISH (Elite Feature)
+  // AI POLISH (Premium Feature)
   // ============================================
 
   protected async polishText(field: 'tagline' | 'idealRelationship' | 'supportMeaning'): Promise<void> {

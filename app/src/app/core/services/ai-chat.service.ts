@@ -1,7 +1,7 @@
 /**
  * AI Chat Assistance Service
  * 
- * Provides AI-powered messaging assistance for Elite subscribers.
+ * Provides AI-powered messaging assistance for Premium subscribers.
  * The AI is a private "sidecar" that helps users - it never sends messages automatically.
  * 
  * All AI operations are processed via Cloud Functions.
@@ -458,7 +458,7 @@ export class AiChatService {
 
   /**
    * Polish profile text using AI
-   * For Elite users to improve their profile content
+   * For Premium users to improve their profile content
    */
   async polishProfileText(
     text: string,
@@ -481,7 +481,7 @@ export class AiChatService {
     }
   ): Promise<{ polished: string; suggestions: string[] }> {
     if (!this.hasAccess()) {
-      throw new Error('Elite subscription required');
+      throw new Error('Premium subscription required');
     }
 
     try {

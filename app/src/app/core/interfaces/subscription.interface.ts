@@ -5,9 +5,6 @@
 
 export type SubscriptionTier = 'free' | 'premium';
 
-// Keep legacy types for backwards compatibility during migration
-export type LegacySubscriptionTier = 'free' | 'plus' | 'elite';
-
 export interface UserSubscription {
   tier: SubscriptionTier;
   status: 'active' | 'canceled' | 'past_due' | 'trialing';
@@ -50,11 +47,8 @@ export interface SubscriptionCapabilities {
 /**
  * Get capabilities for a given subscription tier
  */
-export function getSubscriptionCapabilities(tier: SubscriptionTier | LegacySubscriptionTier): SubscriptionCapabilities {
-  // Map legacy tiers to new tiers
-  const normalizedTier: SubscriptionTier = (tier === 'plus' || tier === 'elite') ? 'premium' : 'free';
-  
-  switch (normalizedTier) {
+export function getSubscriptionCapabilities(tier: SubscriptionTier): SubscriptionCapabilities {
+  switch (tier) {
     case 'premium':
       return {
         // Messaging

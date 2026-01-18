@@ -36,7 +36,7 @@ service cloud.firestore {
       // Protected fields can only be set by Cloud Functions (admin SDK bypasses rules)
       allow create: if isOwner(userId)
         && !request.resource.data.keys().hasAny([
-          'profileProgress', 'subscription', 'isElite',
+          'profileProgress', 'subscription', 'isPremium',
           'identityVerified', 'identityVerificationStatus', 'identityVerificationCompletedAt',
           'identityVerificationPaid', 'identityVerificationPaidAt',
           'stripeCustomerId', 'stripeSubscriptionId',
@@ -44,7 +44,7 @@ service cloud.firestore {
         ]);
       allow update: if isOwner(userId)
         && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
-          'profileProgress', 'subscription', 'isElite',
+          'profileProgress', 'subscription', 'isPremium',
           'identityVerified', 'identityVerificationStatus', 'identityVerificationCompletedAt',
           'identityVerificationPaid', 'identityVerificationPaidAt',
           'stripeCustomerId', 'stripeSubscriptionId',

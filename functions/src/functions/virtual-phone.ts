@@ -2,7 +2,7 @@
  * Virtual Phone Cloud Functions
  *
  * Handles provisioning, managing, and releasing virtual phone numbers
- * for Elite subscribers using Twilio.
+ * for Premium subscribers using Twilio.
  */
 
 import {onCall, onRequest, HttpsError} from "firebase-functions/v2/https";
@@ -27,14 +27,15 @@ function getTwilioClient() {
 }
 
 /**
- * Verify user has Elite subscription
+ * Verify user has Premium subscription
  */
-async function verifyEliteSubscription(uid: string): Promise<void> {
+async function verifyPremiumSubscription(uid: string): Promise<void> {
   const userDoc = await db.collection("users").doc(uid).collection("private").doc("data").get();
   const userData = userDoc.data();
+  const tier = userData?.subscription?.tier || "free";
 
-  if (!userData?.subscription?.tier || userData.subscription.tier !== "elite") {
-    throw new HttpsError("permission-denied", "Virtual phone numbers are only available for Elite subscribers");
+  if (tier !== "premium") {
+    throw new HttpsError("permission-denied", "Virtual phone numbers are only available for Premium subscribers");
   }
 }
 
@@ -85,8 +86,8 @@ export const provisionVirtualNumber = onCall(
 
     const uid = request.auth.uid;
 
-    // Verify Elite subscription
-    await verifyEliteSubscription(uid);
+    // Verify Premium subscription
+    await verifyPremiumSubscription(uid);
 
     // Verify user has a verified phone number for forwarding
     const forwardingNumber = await getVerifiedPhoneNumber(uid);

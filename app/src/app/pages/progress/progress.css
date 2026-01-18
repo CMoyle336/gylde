@@ -151,8 +151,8 @@
   color: var(--color-accent);
 }
 
-/* Elite Upsell */
-.elite-upsell {
+/* Premium Upsell */
+.premium-upsell {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -227,7 +227,7 @@
 }
 
 @media (max-width: 768px) {
-  .elite-upsell {
+  .premium-upsell {
     flex-direction: column;
     text-align: center;
   }

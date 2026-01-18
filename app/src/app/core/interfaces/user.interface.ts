@@ -8,7 +8,7 @@ import { ReputationTier } from './reputation.interface';
 import { UserSubscription } from './subscription.interface';
 
 /**
- * Virtual phone number data (Elite feature)
+ * Virtual phone number data (Premium feature)
  * Stored in users/{uid}/private/data for security
  */
 export interface VirtualPhone {
@@ -64,7 +64,6 @@ export interface UserProfile {
   identityVerificationPaidAt?: unknown; // When verification was paid for
   geohash?: string | null; // encoded location for distance-based queries
   isPremium?: boolean; // true if user has Premium subscription (for badge display)
-  isElite?: boolean; // @deprecated - use isPremium instead (kept for migration)
   reputationTier?: ReputationTier; // Denormalized from reputation data for efficient display
   
   // NOTE: profileProgress (trust score) and subscription are stored in users/{uid}/private/data

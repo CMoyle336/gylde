@@ -1,10 +1,10 @@
 /**
  * AI Chat Assistance Cloud Functions
  *
- * These functions provide AI-powered messaging assistance for Elite subscribers.
+ * These functions provide AI-powered messaging assistance for Premium subscribers.
  * The AI is a private "sidecar" that helps users - it never sends messages automatically.
  *
- * IMPORTANT: All AI operations should verify the user has Elite subscription before processing.
+ * IMPORTANT: All AI operations should verify the user has Premium subscription before processing.
  */
 
 import {onCall, HttpsError} from "firebase-functions/v2/https";
@@ -149,10 +149,10 @@ interface SafetyRequest {
 }
 
 // ============================================
-// HELPER: Check Elite Subscription
+// HELPER: Check Premium Subscription
 // ============================================
 
-async function verifyEliteSubscription(userId: string): Promise<void> {
+async function verifyPremiumSubscription(userId: string): Promise<void> {
   const privateDoc = await db
     .collection("users")
     .doc(userId)
@@ -162,10 +162,10 @@ async function verifyEliteSubscription(userId: string): Promise<void> {
 
   const tier = privateDoc.data()?.subscription?.tier || "free";
 
-  if (tier !== "elite") {
+  if (tier !== "premium") {
     throw new HttpsError(
       "permission-denied",
-      "AI assistance is only available for Elite subscribers"
+      "AI assistance is only available for Premium subscribers"
     );
   }
 }
@@ -192,7 +192,7 @@ export const aiGetReplySuggestions = onCall({secrets: [openaiApiKey]}, async (re
     throw new HttpsError("unauthenticated", "Must be authenticated");
   }
 
-  await verifyEliteSubscription(auth.uid);
+  await verifyPremiumSubscription(auth.uid);
 
   const req = data as ReplyRequest;
   logger.info("AI reply suggestions requested", {
@@ -328,7 +328,7 @@ export const aiRewriteMessage = onCall({secrets: [openaiApiKey]}, async (request
     throw new HttpsError("unauthenticated", "Must be authenticated");
   }
 
-  await verifyEliteSubscription(auth.uid);
+  await verifyPremiumSubscription(auth.uid);
 
   const req = data as RewriteRequest;
   logger.info("AI rewrite requested", {
@@ -433,7 +433,7 @@ export const aiGetConversationStarters = onCall({secrets: [openaiApiKey]}, async
     throw new HttpsError("unauthenticated", "Must be authenticated");
   }
 
-  await verifyEliteSubscription(auth.uid);
+  await verifyPremiumSubscription(auth.uid);
 
   const req = data as StarterRequest;
   const recipientName = req.recipientProfile?.displayName || "them";
@@ -552,7 +552,7 @@ export const aiGetCoachInsights = onCall({secrets: [openaiApiKey]}, async (reque
     throw new HttpsError("unauthenticated", "Must be authenticated");
   }
 
-  await verifyEliteSubscription(auth.uid);
+  await verifyPremiumSubscription(auth.uid);
 
   const req = data as CoachRequest;
   logger.info("AI coach insights requested", {
@@ -649,7 +649,7 @@ export const aiCheckMessageSafety = onCall({secrets: [openaiApiKey]}, async (req
     throw new HttpsError("unauthenticated", "Must be authenticated");
   }
 
-  await verifyEliteSubscription(auth.uid);
+  await verifyPremiumSubscription(auth.uid);
 
   const req = data as SafetyRequest;
   const message = req.messageToAnalyze;
@@ -903,7 +903,7 @@ export const aiModifySuggestion = onCall({secrets: [openaiApiKey]}, async (reque
     throw new HttpsError("unauthenticated", "Must be authenticated");
   }
 
-  await verifyEliteSubscription(auth.uid);
+  await verifyPremiumSubscription(auth.uid);
 
   const {text, instruction} = data as { text: string; instruction: string };
 
@@ -989,7 +989,7 @@ interface ProfilePolishResponse {
 
 /**
  * Polish profile text using AI.
- * For Elite users to improve their profile content.
+ * For Premium users to improve their profile content.
  */
 export const aiPolishProfileText = onCall({secrets: [openaiApiKey]}, async (request) => {
   const {auth, data} = request;
@@ -998,7 +998,7 @@ export const aiPolishProfileText = onCall({secrets: [openaiApiKey]}, async (requ
     throw new HttpsError("unauthenticated", "Must be authenticated");
   }
 
-  await verifyEliteSubscription(auth.uid);
+  await verifyPremiumSubscription(auth.uid);
 
   const req = data as ProfilePolishRequest;
 

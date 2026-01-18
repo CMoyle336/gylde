@@ -23,14 +23,6 @@ const getStripe = (): Stripe => {
 // Subscription tier type - simplified to free/premium
 type SubscriptionTier = "free" | "premium";
 
-// Legacy tier mapping for backwards compatibility
-function normalizeTier(tier: string): SubscriptionTier {
-  if (tier === "plus" || tier === "elite" || tier === "premium") {
-    return "premium";
-  }
-  return "free";
-}
-
 // Price ID for premium subscription
 // Set via: firebase functions:secrets:set STRIPE_PRICE_PREMIUM_MONTHLY
 const getPriceId = (): string => {
@@ -57,9 +49,8 @@ export const createSubscriptionCheckout = onCall(
     const {tier} = request.data as { tier: string };
     const userId = request.auth.uid;
 
-    // Validate tier - only accept 'premium' (or legacy 'plus'/'elite' which map to premium)
-    const normalizedTier = normalizeTier(tier);
-    if (normalizedTier !== "premium") {
+    // Validate tier - only accept 'premium'
+    if (tier !== "premium") {
       throw new HttpsError("invalid-argument", "Invalid subscription tier");
     }
 

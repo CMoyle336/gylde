@@ -41,12 +41,10 @@ export const requestPhotoAccess = onCall(async (request) => {
   }
 
   // Check subscription - only premium users can request private photos
-  // (plus/elite are legacy tier names that map to premium)
   const privateData = privateDataDoc.data();
   const subscriptionTier = privateData?.subscription?.tier || "free";
-  const isPremium = subscriptionTier === "premium" || subscriptionTier === "plus" || subscriptionTier === "elite";
 
-  if (!isPremium) {
+  if (subscriptionTier !== "premium") {
     throw new HttpsError(
       "permission-denied",
       "Upgrade to Premium to request private photos"

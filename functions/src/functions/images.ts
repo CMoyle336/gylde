@@ -36,21 +36,13 @@ const JPEG_QUALITY = 85; // Quality for JPEG compression (0-100)
 const PNG_COMPRESSION = 8; // PNG compression level (0-9)
 
 // Subscription tier type
-type SubscriptionTier = "free" | "plus" | "elite";
+type SubscriptionTier = "free" | "premium";
 
 /**
  * Get max photos allowed based on subscription tier
  */
 function getMaxPhotosForTier(tier: SubscriptionTier): number {
-  switch (tier) {
-  case "elite":
-    return 20;
-  case "plus":
-    return 6;
-  case "free":
-  default:
-    return 3;
-  }
+  return tier === "premium" ? 10 : 3;
 }
 
 /**

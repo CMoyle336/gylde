@@ -138,7 +138,7 @@ export class MessagesComponent implements OnInit, OnDestroy, AfterViewInit {
   protected readonly remainingMessages = this.messageService.remainingMessages;
   protected readonly isMessageLimitReached = this.messageService.isMessageLimitReached;
 
-  // Virtual Phone state (Elite feature)
+  // Virtual Phone state (Premium feature)
   protected readonly virtualPhone = signal<VirtualPhone | null>(null);
   protected readonly virtualPhoneLoading = signal(false);
   protected readonly virtualPhoneProvisioning = signal(false);

@@ -30,10 +30,7 @@ export const environment = {
     publishableKey: 'pk_test_51SpemHFd7ok3RIzwYr7GAhAcctfRysm9YffzNoX7KHeT8Jl1jUnzYIaFBGFQs8wawRYYn9QLPgLsdsVylPZxXqXn00KgPe9UlK',
     // Stripe Price IDs for subscriptions (create these in Stripe Dashboard)
     prices: {
-      plus_monthly: '', // TODO: Add Stripe Price ID for Plus monthly
-      plus_quarterly: '', // TODO: Add Stripe Price ID for Plus quarterly
-      elite_monthly: '', // TODO: Add Stripe Price ID for Elite monthly
-      elite_quarterly: '', // TODO: Add Stripe Price ID for Elite quarterly
+      premium_monthly: '', // TODO: Add Stripe Price ID for Premium monthly ($49.99)
     },
   },
 
