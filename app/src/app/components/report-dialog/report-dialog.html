@@ -1,0 +1,80 @@
+<h2 mat-dialog-title>
+  <mat-icon>flag</mat-icon>
+  Report User
+</h2>
+
+<div mat-dialog-content>
+  @if (submitted()) {
+    <!-- Success State -->
+    <div class="success-state">
+      <mat-icon class="success-icon">check_circle</mat-icon>
+      <h3>Report Submitted</h3>
+      <p>
+        Thank you for helping keep Gylde safe. Our Trust & Safety team will review 
+        your report and take appropriate action.
+      </p>
+      <p class="note">
+        The reported user will not be notified that you submitted this report.
+      </p>
+    </div>
+  } @else {
+    <!-- Report Form -->
+    <p class="intro-text">
+      Report <strong>{{ data.displayName }}</strong> for violating our community guidelines. 
+      Your report will be reviewed by our Trust & Safety team.
+    </p>
+
+    <div class="reason-section">
+      <label class="section-label">Why are you reporting this user?</label>
+      <mat-radio-group [(ngModel)]="selectedReason" class="reason-list">
+        @for (reason of reasons; track reason.value) {
+          <mat-radio-button [value]="reason.value">
+            {{ reason.label }}
+          </mat-radio-button>
+        }
+      </mat-radio-group>
+    </div>
+
+    <div class="details-section">
+      <label class="section-label" for="details">Additional details (optional)</label>
+      <textarea
+        id="details"
+        [(ngModel)]="details"
+        placeholder="Provide any additional context that might help us investigate..."
+        rows="4"
+        maxlength="1000">
+      </textarea>
+      <span class="char-count">{{ details.length }} / 1000</span>
+    </div>
+
+    @if (error()) {
+      <div class="error-message">
+        <mat-icon>error</mat-icon>
+        {{ error() }}
+      </div>
+    }
+  }
+</div>
+
+<div mat-dialog-actions align="end">
+  @if (submitted()) {
+    <button mat-flat-button color="primary" (click)="close()">
+      Done
+    </button>
+  } @else {
+    <button mat-button (click)="close()" [disabled]="loading()">
+      Cancel
+    </button>
+    <button 
+      mat-flat-button 
+      color="warn" 
+      (click)="submitReport()"
+      [disabled]="loading() || !selectedReason">
+      @if (loading()) {
+        <mat-spinner diameter="20"></mat-spinner>
+      } @else {
+        Submit Report
+      }
+    </button>
+  }
+</div>

@@ -9,6 +9,21 @@ import {UserDisplayInfo} from "../types";
 import * as logger from "firebase-functions/logger";
 
 /**
+ * Check if a user has premium subscription
+ */
+async function isPremiumUser(userId: string): Promise<boolean> {
+  const privateDoc = await db
+    .collection("users")
+    .doc(userId)
+    .collection("private")
+    .doc("data")
+    .get();
+  
+  const tier = privateDoc.data()?.subscription?.tier;
+  return tier === "premium";
+}
+
+/**
  * Triggered when a user favorites another user.
  * Creates an activity record for the recipient (unless the favorite is private).
  */
@@ -37,17 +52,23 @@ export const onFavoriteCreated = onDocumentCreated(
       // Get the user's display info
       const fromUser = await UserService.getDisplayInfo(fromUserId);
 
-      // Only create activity if the favorite is not private
+      // Only create activity if the favorite is not private AND recipient is premium
+      // (only premium users can see who favorited them)
       if (!isPrivate) {
-        // Create activity for the favorited user
-        await ActivityService.createActivity(
-          toUserId,
-          "favorite",
-          fromUserId,
-          fromUser.displayName || "Someone",
-          fromUser.photoURL || null,
-          `/user/${fromUserId}` // Link to the user's profile who favorited them
-        );
+        const recipientIsPremium = await isPremiumUser(toUserId);
+        if (recipientIsPremium) {
+          // Create activity for the favorited user
+          await ActivityService.createActivity(
+            toUserId,
+            "favorite",
+            fromUserId,
+            fromUser.displayName || "Someone",
+            fromUser.photoURL || null,
+            `/user/${fromUserId}` // Link to the user's profile who favorited them
+          );
+        } else {
+          logger.info(`Skipping favorite activity for ${toUserId} - not a premium user`);
+        }
       }
 
       // Check for mutual favorite (match)

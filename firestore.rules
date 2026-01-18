@@ -178,24 +178,6 @@ service cloud.firestore {
         allow write: if false;
       }
       
-      // ------------------------------------------
-      // REPORTS SUBCOLLECTION
-      // Reports filed against this user by other users
-      // Users can create reports on others; only admins can update/delete
-      // ------------------------------------------
-      match /reports/{reportId} {
-        // Owner can read reports against them (for transparency)
-        // Note: Actual moderation happens via Cloud Functions
-        allow read: if isOwner(userId);
-        
-        // Reports are created by Cloud Functions (reportUser callable)
-        // This ensures proper validation and reputation recalculation
-        allow create: if false;
-        
-        // Only admins can update/delete reports (moderation)
-        allow update, delete: if isAuthenticated() 
-          && request.auth.token.admin == true;
-      }
     }
 
     // ============================================
@@ -302,6 +284,20 @@ service cloud.firestore {
       
       // No updates or deletes
       allow update, delete: if false;
+    }
+
+    // ============================================
+    // REPORTS
+    // User reports for Trust & Safety
+    // ============================================
+    match /reports/{reportId} {
+      // Users can read their own submitted reports (for transparency)
+      allow read: if isAuthenticated() 
+        && request.auth.uid == resource.data.reporterId;
+      
+      // All writes handled by Cloud Functions (reportUser callable)
+      // This ensures proper validation and reputation recalculation
+      allow create, update, delete: if false;
     }
 
     // ============================================

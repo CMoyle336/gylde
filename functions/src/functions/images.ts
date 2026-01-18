@@ -42,7 +42,7 @@ type SubscriptionTier = "free" | "premium";
  * Get max photos allowed based on subscription tier
  */
 function getMaxPhotosForTier(tier: SubscriptionTier): number {
-  return tier === "premium" ? 10 : 3;
+  return tier === "premium" ? 20 : 3;
 }
 
 /**

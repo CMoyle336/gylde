@@ -43,12 +43,13 @@ import { UserProfile } from '../interfaces/user.interface';
 interface MessagePermissionResult {
   allowed: boolean;
   reason: string | null;
-  dailyLimit: number;
+  dailyLimit: number; // -1 for unlimited (premium)
   sentToday: number;
-  remaining: number;
+  remaining: number; // -1 for unlimited (premium)
   senderTier?: ReputationTier;
   recipientTier?: ReputationTier;
   requiredTier?: ReputationTier;
+  isPremium?: boolean;
 }
 
 export type ConversationFilter = 'all' | 'unread' | 'archived';
@@ -89,8 +90,11 @@ export class MessageService {
   readonly messageBlocked = this._messageBlocked.asReadonly();
   
   // Computed: whether user has exhausted their daily limit
+  // Returns false for premium users (remaining = -1 means unlimited)
   readonly isMessageLimitReached = computed(() => {
     const remaining = this._remainingMessages();
+    // -1 means unlimited (premium), so never reached
+    if (remaining === -1) return false;
     return remaining !== null && remaining <= 0;
   });
   
@@ -1076,9 +1080,12 @@ export class MessageService {
   /**
    * Decrement the local remaining message count after sending
    * Called internally after a message is successfully sent
+   * Does nothing for premium users (remaining = -1 means unlimited)
    */
   private decrementRemainingMessages(): void {
     const current = this._remainingMessages();
+    // -1 means unlimited (premium), don't decrement
+    if (current === -1) return;
     if (current !== null && current > 0) {
       this._remainingMessages.set(current - 1);
     }
@@ -1100,8 +1107,9 @@ export class MessageService {
     if (!currentUser || !activeConversation || (!hasText && !hasImages)) return;
 
     // Check local remaining message count (already set when conversation opened)
+    // -1 means unlimited (premium), so always allow
     const remaining = this._remainingMessages();
-    if (remaining !== null && remaining <= 0) {
+    if (remaining !== null && remaining !== -1 && remaining <= 0) {
       // Daily limit reached - show error
       this._messageBlocked.set({
         reason: 'daily_limit_reached',

@@ -18,6 +18,8 @@ import { UiScrollModule } from 'ngx-ui-scroll';
 import { Firestore, doc, getDoc, updateDoc } from '@angular/fire/firestore';
 import { Functions, httpsCallable } from '@angular/fire/functions';
 import { Auth } from '@angular/fire/auth';
+import { MatDialog } from '@angular/material/dialog';
+import { ReportDialogComponent, ReportDialogData } from '../../components/report-dialog';
 import { MessageService, ConversationFilter, ReputationFilter } from '../../core/services/message.service';
 import { BlockService } from '../../core/services/block.service';
 import { SubscriptionService } from '../../core/services/subscription.service';
@@ -67,6 +69,7 @@ export class MessagesComponent implements OnInit, OnDestroy, AfterViewInit {
   private readonly firestore = inject(Firestore);
   private readonly functions = inject(Functions);
   private readonly auth = inject(Auth);
+  private readonly dialog = inject(MatDialog);
 
   @ViewChild(ChatInputComponent) chatInput!: ChatInputComponent;
 
@@ -748,6 +751,21 @@ export class MessagesComponent implements OnInit, OnDestroy, AfterViewInit {
 
     const numberMessage = `Here's my private number: ${phone.number}`;
     this.chatInput?.setMessageInput(numberMessage);
+  }
+
+  protected onReportUser(): void {
+    const activeConvo = this.activeConversation();
+    if (!activeConvo?.otherUser) return;
+
+    this.dialog.open<ReportDialogComponent, ReportDialogData>(ReportDialogComponent, {
+      data: {
+        userId: activeConvo.otherUser.uid,
+        displayName: activeConvo.otherUser.displayName || 'This user',
+        conversationId: activeConvo.id,
+      },
+      width: '500px',
+      maxWidth: '95vw',
+    });
   }
 
   // ============================================

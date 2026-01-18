@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output, signal, computed } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, output, signal, computed } from '@angular/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
@@ -11,6 +11,7 @@ import {
   RELATIONSHIP_STYLE, 
   LIFESTYLE_PREFERENCES 
 } from '../../../../core/constants/connection-types';
+import { SubscriptionService } from '../../../../core/services/subscription.service';
 
 export interface FilterOption {
   label: string;
@@ -62,6 +63,11 @@ const TIER_VISUAL_CONFIG: Record<string, { icon: string; color: string; descript
   ],
 })
 export class DiscoverFiltersComponent {
+  private readonly subscriptionService = inject(SubscriptionService);
+
+  // Premium status
+  protected readonly isPremium = this.subscriptionService.isPremium;
+
   // Inputs
   readonly filters = input.required<DiscoveryFilters>();
   readonly connectionTypeOptions = input.required<FilterOption[]>();
@@ -91,6 +97,11 @@ export class DiscoverFiltersComponent {
   protected readonly showAdvancedFilters = signal(false);
 
   protected toggleAdvancedFilters(): void {
+    // If not premium and trying to open, show upgrade prompt
+    if (!this.isPremium() && !this.showAdvancedFilters()) {
+      this.subscriptionService.showUpgradePrompt('advancedFilters');
+      return;
+    }
     this.showAdvancedFilters.update(v => !v);
   }
 

@@ -149,15 +149,28 @@ export class ProfileComponent implements OnInit, OnDestroy {
     return this.reputationData()?.tier ?? 'new';
   });
 
-  // Messaging limits from reputation
+  // Messaging limits from reputation (premium users have unlimited)
   protected readonly messagingStatus = computed(() => {
+    // Premium users have unlimited messaging
+    if (this.isPremium()) {
+      return {
+        dailyLimit: -1, // -1 means unlimited
+        sentToday: 0,
+        remaining: -1, // -1 means unlimited
+        isUnlimited: true,
+      };
+    }
+
     const rep = this.reputationData();
     const tier = rep?.tier ?? 'new';
     const config = TIER_CONFIG[tier];
+    const dailyLimit = rep?.dailyMessageLimit ?? config.dailyMessages;
+    const sentToday = rep?.messagesSentToday ?? 0;
     return {
-      dailyLimit: rep?.dailyMessageLimit ?? config.dailyMessages,
-      sentToday: rep?.messagesSentToday ?? 0,
-      remaining: (rep?.dailyMessageLimit ?? config.dailyMessages) - (rep?.messagesSentToday ?? 0),
+      dailyLimit,
+      sentToday,
+      remaining: Math.max(0, dailyLimit - sentToday),
+      isUnlimited: false,
     };
   });
 

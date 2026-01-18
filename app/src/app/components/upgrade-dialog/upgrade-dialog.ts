@@ -52,7 +52,7 @@ const FEATURE_MESSAGES: Partial<Record<keyof SubscriptionCapabilities, { title: 
   },
   maxPhotos: {
     title: 'Upload More Photos',
-    description: 'Upload up to 10 photos to showcase more of yourself.',
+    description: 'Upload up to 20 photos to showcase more of yourself.',
     icon: 'photo_library',
   },
   canAccessPrivatePhotos: {

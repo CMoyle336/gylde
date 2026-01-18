@@ -37,7 +37,8 @@
         (viewProfile)="onViewProfile()"
         (archiveChat)="onArchiveChat()"
         (unarchiveChat)="onUnarchiveChat()"
-        (shareNumber)="onShareNumber()">
+        (shareNumber)="onShareNumber()"
+        (reportUser)="onReportUser()">
       </app-chat-header>
 
       <!-- Upgrade Prompt for Free Users -->
@@ -139,8 +140,9 @@
           </div>
         } @else {
           <!-- Message Limit Warning (when running low but not blocked) -->
+          <!-- Don't show warning for unlimited (-1) or when not running low -->
           @if (remainingMessages(); as remaining) {
-            @if (remaining <= 3 && remaining > 0) {
+            @if (remaining > 0 && remaining <= 3) {
               <div class="message-limit-warning">
                 <span class="material-icons-outlined">info</span>
                 <span>{{ remaining }} message{{ remaining === 1 ? '' : 's' }} remaining today</span>

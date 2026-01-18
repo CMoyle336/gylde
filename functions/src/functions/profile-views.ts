@@ -9,6 +9,21 @@ import * as logger from "firebase-functions/logger";
 const db = getFirestore();
 
 /**
+ * Check if a user has premium subscription
+ */
+async function isPremiumUser(userId: string): Promise<boolean> {
+  const privateDoc = await db
+    .collection("users")
+    .doc(userId)
+    .collection("private")
+    .doc("data")
+    .get();
+  
+  const tier = privateDoc.data()?.subscription?.tier;
+  return tier === "premium";
+}
+
+/**
  * Trigger: When a profile view record is created
  * Creates or updates the corresponding activity record for the viewed user
  */
@@ -31,6 +46,14 @@ export const onProfileViewCreated = onDocumentCreated(
     logger.info(`Profile view: ${viewerName} (${viewerId}) viewed ${viewedUserId}`);
 
     try {
+      // Only create view activities for premium users
+      // (only premium users can see who viewed their profile)
+      const viewedUserIsPremium = await isPremiumUser(viewedUserId);
+      if (!viewedUserIsPremium) {
+        logger.info(`Skipping view activity for ${viewedUserId} - not a premium user`);
+        return;
+      }
+
       const activitiesRef = db
         .collection("users")
         .doc(viewedUserId)

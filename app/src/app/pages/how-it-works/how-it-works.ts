@@ -42,7 +42,7 @@ export class HowItWorksComponent implements OnInit {
         'Quick ID verification with Veriff',
         'Photo matching ensures profile authenticity',
         'Earn a verification badge on your profile',
-        'Boost your Trust Score significantly'
+        'Stand out and build trust with connections'
       ]
     },
     {

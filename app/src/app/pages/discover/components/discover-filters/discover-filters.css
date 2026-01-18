@@ -287,6 +287,31 @@
   height: 1.25rem;
 }
 
+.show-more-btn.premium-locked {
+  border-color: var(--color-accent);
+  background: rgba(201, 169, 98, 0.05);
+}
+
+.show-more-btn.premium-locked:hover {
+  background: rgba(201, 169, 98, 0.1);
+  border-color: var(--color-accent-light);
+}
+
+.show-more-btn .premium-icon {
+  color: var(--color-accent);
+}
+
+.show-more-btn .premium-badge {
+  padding: 0.125rem 0.5rem;
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-light));
+  border-radius: 4px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--color-bg-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
 /* Filter Actions */
 .filter-actions {
   display: flex;

@@ -1,0 +1,220 @@
+:host {
+  display: block;
+}
+
+/* Override Material Dialog container background for theme support */
+::ng-deep .mat-mdc-dialog-container .mdc-dialog__surface {
+  background: var(--color-bg-primary) !important;
+}
+
+h2[mat-dialog-title] {
+  background: var(--color-bg-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 1.25rem 1.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  border-bottom: 1px solid var(--color-border);
+}
+
+h2[mat-dialog-title] mat-icon {
+  color: var(--color-error);
+}
+
+[mat-dialog-content] {
+  padding: 1.5rem;
+  min-width: 400px;
+  max-width: 500px;
+  background: var(--color-bg-primary);
+}
+
+.intro-text {
+  margin: 0 0 1.5rem;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.intro-text strong {
+  color: var(--color-text-primary);
+}
+
+/* Reason Selection */
+.reason-section {
+  margin-bottom: 1.5rem;
+}
+
+.section-label {
+  display: block;
+  margin-bottom: 0.75rem;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.reason-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.reason-list mat-radio-button {
+  /* Selected state colors */
+  --mdc-radio-selected-icon-color: var(--color-accent);
+  --mdc-radio-selected-hover-icon-color: var(--color-accent);
+  --mdc-radio-selected-pressed-icon-color: var(--color-accent);
+  --mdc-radio-selected-focus-icon-color: var(--color-accent);
+  
+  /* Unselected state colors */
+  --mdc-radio-unselected-icon-color: var(--color-text-secondary);
+  --mdc-radio-unselected-hover-icon-color: var(--color-text-primary);
+  --mdc-radio-unselected-pressed-icon-color: var(--color-text-primary);
+  --mdc-radio-unselected-focus-icon-color: var(--color-text-primary);
+  
+  /* Ripple/focus ring colors - use semi-transparent accent */
+  --mat-radio-checked-ripple-color: rgba(201, 169, 98, 0.2);
+  --mat-radio-ripple-color: rgba(128, 128, 128, 0.2);
+  
+  /* Label text */
+  --mat-radio-label-text-color: var(--color-text-primary);
+  
+  /* State layer (hover/focus background) - needs to be visible in both themes */
+  --mat-radio-state-layer-size: 40px;
+}
+
+/* Fix focus/hover state visibility in light mode */
+::ng-deep .reason-list .mdc-radio:hover .mdc-radio__native-control:not([disabled]) ~ .mdc-radio__background::before {
+  opacity: 0.08;
+  background-color: var(--color-text-primary);
+}
+
+::ng-deep .reason-list .mdc-radio .mdc-radio__native-control:focus ~ .mdc-radio__background::before {
+  opacity: 0.12;
+  background-color: var(--color-accent);
+}
+
+/* Details Section */
+.details-section {
+  margin-bottom: 1rem;
+}
+
+.details-section textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  font-family: inherit;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  resize: vertical;
+  min-height: 100px;
+}
+
+.details-section textarea:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.details-section textarea::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+.char-count {
+  display: block;
+  text-align: right;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--color-text-tertiary);
+}
+
+/* Error Message */
+.error-message {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: rgba(239, 83, 80, 0.1);
+  border: 1px solid rgba(239, 83, 80, 0.3);
+  border-radius: 8px;
+  color: var(--color-error);
+  font-size: 0.875rem;
+}
+
+.error-message mat-icon {
+  font-size: 1.25rem;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+/* Success State */
+.success-state {
+  text-align: center;
+  padding: 1rem 0;
+}
+
+.success-icon {
+  font-size: 4rem;
+  width: 4rem;
+  height: 4rem;
+  color: var(--color-success, #4caf50);
+  margin-bottom: 1rem;
+}
+
+.success-state h3 {
+  margin: 0 0 1rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.success-state p {
+  margin: 0 0 0.75rem;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.success-state .note {
+  font-size: 0.875rem;
+  color: var(--color-text-tertiary);
+  font-style: italic;
+}
+
+/* Dialog Actions */
+[mat-dialog-actions] {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--color-border);
+  gap: 0.5rem;
+  background: var(--color-bg-primary);
+}
+
+[mat-dialog-actions] button[mat-button] {
+  color: var(--color-text-secondary);
+}
+
+[mat-dialog-actions] button[mat-flat-button][color="warn"] {
+  background: var(--color-error);
+  color: white;
+}
+
+[mat-dialog-actions] mat-spinner {
+  display: inline-block;
+}
+
+/* Responsive */
+@media (max-width: 520px) {
+  [mat-dialog-content] {
+    min-width: unset;
+    padding: 1rem;
+  }
+
+  h2[mat-dialog-title] {
+    padding: 1rem;
+  }
+
+  [mat-dialog-actions] {
+    padding: 0.75rem 1rem;
+  }
+}

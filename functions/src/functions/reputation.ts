@@ -22,7 +22,6 @@ import {
   ReputationData,
   ReputationSignals,
   MessageMetrics,
-  UserReport,
   ReportReason,
   REPUTATION_CONFIG,
   scoreToTier,
@@ -380,7 +379,7 @@ export const reportUser = onCall<{
     logger.info(`User ${reporterId} reporting user ${userId} for ${reason}`);
 
     try {
-      // Get reporter's reputation tier (for weighting reports)
+      // Get reporter's private data (reputation tier and reporting history)
       const reporterPrivateDoc = await db
         .collection("users")
         .doc(reporterId)
@@ -388,40 +387,132 @@ export const reportUser = onCall<{
         .doc("data")
         .get();
 
-      const reporterTier = (reporterPrivateDoc.data()?.reputation?.tier ??
-        "new") as ReputationTier;
-
-      // Create report record
-      const report: Omit<UserReport, "createdAt"> & {createdAt: FieldValue} = {
-        reportedByUserId: reporterId,
-        reportedByTier: reporterTier,
-        reason,
-        details: details || undefined,
-        conversationId: conversationId || undefined,
-        createdAt: FieldValue.serverTimestamp(),
-        status: "pending",
+      const reporterData = reporterPrivateDoc.data() || {};
+      const reporterTier = (reporterData?.reputation?.tier ?? "new") as ReputationTier;
+      const reportingStats = reporterData?.reportingStats || {
+        totalSubmitted: 0,
+        dismissedCount: 0,
+        lastReportAt: null,
       };
 
-      await db
-        .collection("users")
-        .doc(userId)
+      // === RATE LIMITING BASED ON REPUTATION TIER ===
+      // Higher reputation = more trusted = higher limits
+      const rateLimits: Record<ReputationTier, { daily: number; weekly: number }> = {
+        new: {daily: 2, weekly: 5},
+        active: {daily: 3, weekly: 10},
+        established: {daily: 5, weekly: 15},
+        trusted: {daily: 7, weekly: 20},
+        distinguished: {daily: 10, weekly: 30},
+      };
+      const limits = rateLimits[reporterTier];
+
+      // === CHECK FOR ABUSE: High dismissal rate ===
+      // If > 50% of reports are dismissed and they've submitted at least 5, restrict
+      if (reportingStats.totalSubmitted >= 5) {
+        const dismissalRate = reportingStats.dismissedCount / reportingStats.totalSubmitted;
+        if (dismissalRate > 0.5) {
+          logger.warn(`User ${reporterId} has high report dismissal rate: ${dismissalRate}`);
+          throw new HttpsError(
+            "permission-denied",
+            "Your reporting privileges have been restricted due to a pattern of unsubstantiated reports. Please contact support if you believe this is an error."
+          );
+        }
+      }
+
+      // === CHECK: Duplicate report on same user within 24 hours ===
+      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const duplicateReports = await db
         .collection("reports")
-        .add(report);
+        .where("reporterId", "==", reporterId)
+        .where("reportedUserId", "==", userId)
+        .where("createdAt", ">", oneDayAgo)
+        .limit(1)
+        .get();
 
-      // Increment reports received counter
-      await db
-        .collection("users")
-        .doc(userId)
-        .collection("private")
-        .doc("data")
-        .set(
-          {
-            reportsReceived: FieldValue.increment(1),
-          },
-          {merge: true}
+      if (!duplicateReports.empty) {
+        throw new HttpsError(
+          "already-exists",
+          "You have already reported this user recently. Our team is reviewing your previous report."
         );
+      }
 
-      // Trigger real-time reputation recalculation
+      // === CHECK: Daily report limit ===
+      const dailyReports = await db
+        .collection("reports")
+        .where("reporterId", "==", reporterId)
+        .where("createdAt", ">", oneDayAgo)
+        .count()
+        .get();
+
+      if (dailyReports.data().count >= limits.daily) {
+        throw new HttpsError(
+          "resource-exhausted",
+          `You have reached your daily report limit (${limits.daily}). Please try again tomorrow.`
+        );
+      }
+
+      // === CHECK: Weekly report limit ===
+      const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      const weeklyReports = await db
+        .collection("reports")
+        .where("reporterId", "==", reporterId)
+        .where("createdAt", ">", oneWeekAgo)
+        .count()
+        .get();
+
+      if (weeklyReports.data().count >= limits.weekly) {
+        throw new HttpsError(
+          "resource-exhausted",
+          `You have reached your weekly report limit (${limits.weekly}). Please try again later.`
+        );
+      }
+
+      // Create report record in top-level /reports collection
+      const report = {
+        reporterId,
+        reportedUserId: userId,
+        reporterTier: reporterTier,
+        reason,
+        details: details?.trim() || null,
+        conversationId: conversationId || null,
+        status: "pending" as const,
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+        reviewedBy: null,
+        reviewNotes: null,
+        actionTaken: null,
+      };
+
+      await db.collection("reports").add(report);
+
+      // Update both reporter's and reported user's stats
+      const batch = db.batch();
+
+      // Increment reports received counter on reported user
+      batch.set(
+        db.collection("users").doc(userId).collection("private").doc("data"),
+        {
+          reportsReceived: FieldValue.increment(1),
+          lastReportedAt: FieldValue.serverTimestamp(),
+        },
+        {merge: true}
+      );
+
+      // Update reporter's reporting stats
+      batch.set(
+        db.collection("users").doc(reporterId).collection("private").doc("data"),
+        {
+          reportingStats: {
+            totalSubmitted: FieldValue.increment(1),
+            lastReportAt: FieldValue.serverTimestamp(),
+          },
+        },
+        {merge: true}
+      );
+
+      await batch.commit();
+
+      // Trigger real-time reputation recalculation for reported user
       await recalculateReputation(userId);
 
       logger.info(`Report created for user ${userId}, reputation recalculated`);

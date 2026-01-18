@@ -38,7 +38,11 @@
               <div class="status-item">
                 <span class="status-label">Daily Messages</span>
                 <span class="status-value">
-                  {{ messagingStatus().remaining }} / {{ messagingStatus().dailyLimit }} remaining
+                  @if (messagingStatus().isUnlimited) {
+                    Unlimited
+                  } @else {
+                    {{ messagingStatus().remaining }} / {{ messagingStatus().dailyLimit }} remaining
+                  }
                 </span>
               </div>
             </div>

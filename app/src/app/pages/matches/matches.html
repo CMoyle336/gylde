@@ -1,6 +1,7 @@
 <div class="matches-page">
   <!-- Tabs -->
   <div class="matches-tabs">
+    <!-- Free Tabs -->
     <button
       type="button"
       class="tab-btn"
@@ -8,32 +9,6 @@
       (click)="setTab('my-matches')">
       <span class="material-icons-outlined">favorite</span>
       <span class="tab-label">My Matches</span>
-    </button>
-    <button
-      type="button"
-      class="tab-btn"
-      [class.active]="activeTab() === 'favorited-me'"
-      (click)="setTab('favorited-me')">
-      <span class="tab-icon-wrapper">
-        <span class="material-icons-outlined">volunteer_activism</span>
-        @if (favoritedMeCount() > 0) {
-          <span class="tab-badge">{{ favoritedMeCount() > 99 ? '99+' : favoritedMeCount() }}</span>
-        }
-      </span>
-      <span class="tab-label">Favorited Me</span>
-    </button>
-    <button
-      type="button"
-      class="tab-btn"
-      [class.active]="activeTab() === 'viewed-me'"
-      (click)="setTab('viewed-me')">
-      <span class="tab-icon-wrapper">
-        <span class="material-icons-outlined">visibility</span>
-        @if (viewedMeCount() > 0) {
-          <span class="tab-badge">{{ viewedMeCount() > 99 ? '99+' : viewedMeCount() }}</span>
-        }
-      </span>
-      <span class="tab-label">Viewed Me</span>
     </button>
     <button
       type="button"
@@ -50,6 +25,50 @@
       (click)="setTab('my-views')">
       <span class="material-icons-outlined">history</span>
       <span class="tab-label">Recently Viewed</span>
+    </button>
+
+    <!-- Premium Tabs -->
+    <button
+      type="button"
+      class="tab-btn"
+      [class.active]="activeTab() === 'favorited-me'"
+      [class.premium-locked]="!isPremium()"
+      (click)="setTab('favorited-me')">
+      <span class="tab-icon-wrapper">
+        @if (!isPremium()) {
+          <span class="material-icons-outlined premium-icon">star</span>
+        } @else {
+          <span class="material-icons-outlined">volunteer_activism</span>
+          @if (favoritedMeCount() > 0) {
+            <span class="tab-badge">{{ favoritedMeCount() > 99 ? '99+' : favoritedMeCount() }}</span>
+          }
+        }
+      </span>
+      <span class="tab-label">Favorited Me</span>
+      @if (!isPremium()) {
+        <span class="premium-badge">Premium</span>
+      }
+    </button>
+    <button
+      type="button"
+      class="tab-btn"
+      [class.active]="activeTab() === 'viewed-me'"
+      [class.premium-locked]="!isPremium()"
+      (click)="setTab('viewed-me')">
+      <span class="tab-icon-wrapper">
+        @if (!isPremium()) {
+          <span class="material-icons-outlined premium-icon">star</span>
+        } @else {
+          <span class="material-icons-outlined">visibility</span>
+          @if (viewedMeCount() > 0) {
+            <span class="tab-badge">{{ viewedMeCount() > 99 ? '99+' : viewedMeCount() }}</span>
+          }
+        }
+      </span>
+      <span class="tab-label">Viewed Me</span>
+      @if (!isPremium()) {
+        <span class="premium-badge">Premium</span>
+      }
     </button>
   </div>
 

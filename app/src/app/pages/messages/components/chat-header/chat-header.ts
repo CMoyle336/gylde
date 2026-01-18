@@ -7,6 +7,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatDividerModule } from '@angular/material/divider';
 import { ConversationDisplay } from '../../../../core/interfaces';
 
 export interface UserStatus {
@@ -19,7 +20,7 @@ export interface UserStatus {
   templateUrl: './chat-header.html',
   styleUrl: './chat-header.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, MatMenuModule],
+  imports: [CommonModule, MatMenuModule, MatDividerModule],
 })
 export class ChatHeaderComponent {
   @Input() conversation: ConversationDisplay | null = null;
@@ -33,6 +34,7 @@ export class ChatHeaderComponent {
   @Output() archiveChat = new EventEmitter<void>();
   @Output() unarchiveChat = new EventEmitter<void>();
   @Output() shareNumber = new EventEmitter<void>();
+  @Output() reportUser = new EventEmitter<void>();
 
   protected getStatusText(): string {
     const status = this.otherUserStatus;
@@ -82,5 +84,9 @@ export class ChatHeaderComponent {
 
   protected onShareNumber(): void {
     this.shareNumber.emit();
+  }
+
+  protected onReportUser(): void {
+    this.reportUser.emit();
   }
 }

@@ -111,9 +111,16 @@
   </div>
 
   <!-- Show More Filters Toggle -->
-  <button type="button" class="show-more-btn" (click)="toggleAdvancedFilters()">
-    <mat-icon>{{ showAdvancedFilters() ? 'expand_less' : 'expand_more' }}</mat-icon>
+  <button type="button" class="show-more-btn" [class.premium-locked]="!isPremium()" (click)="toggleAdvancedFilters()">
+    @if (!isPremium()) {
+      <mat-icon class="premium-icon">star</mat-icon>
+    } @else {
+      <mat-icon>{{ showAdvancedFilters() ? 'expand_less' : 'expand_more' }}</mat-icon>
+    }
     {{ showAdvancedFilters() ? 'Less filters' : 'More filters' }}
+    @if (!isPremium()) {
+      <span class="premium-badge">Premium</span>
+    }
   </button>
 
   <!-- Advanced Filters -->

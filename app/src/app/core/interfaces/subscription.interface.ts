@@ -60,7 +60,7 @@ export function getSubscriptionCapabilities(tier: SubscriptionTier): Subscriptio
         priorityVisibility: true,
         
         // Photos
-        maxPhotos: 10,
+        maxPhotos: 20,
         canAccessPrivatePhotos: true,
         
         // Activity

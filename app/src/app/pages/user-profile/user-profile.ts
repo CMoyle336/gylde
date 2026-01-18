@@ -8,7 +8,9 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatDialog } from '@angular/material/dialog';
 import { Firestore, doc, getDoc } from '@angular/fire/firestore';
+import { ReportDialogComponent, ReportDialogData } from '../../components/report-dialog';
 import { UserProfile, ReputationTier, shouldShowPublicBadge, getTierDisplay } from '../../core/interfaces';
 import { Photo, PhotoAccessSummary } from '../../core/interfaces/photo.interface';
 import { FavoriteService } from '../../core/services/favorite.service';
@@ -50,6 +52,7 @@ export class UserProfileComponent implements OnInit, OnDestroy {
   private readonly blockService = inject(BlockService);
   private readonly subscriptionService = inject(SubscriptionService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly dialog = inject(MatDialog);
 
   protected readonly profile = signal<UserProfile | null>(null);
   protected readonly loading = signal(true);
@@ -324,8 +327,17 @@ export class UserProfileComponent implements OnInit, OnDestroy {
   }
 
   protected onReport(): void {
-    // TODO: Implement report functionality
-    console.log('Report user:', this.profile()?.uid);
+    const p = this.profile();
+    if (!p) return;
+
+    this.dialog.open<ReportDialogComponent, ReportDialogData>(ReportDialogComponent, {
+      data: {
+        userId: p.uid,
+        displayName: p.displayName || 'This user',
+      },
+      width: '500px',
+      maxWidth: '95vw',
+    });
   }
 
   protected async requestPhotoAccess(): Promise<void> {

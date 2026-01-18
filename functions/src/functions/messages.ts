@@ -361,15 +361,15 @@ export async function trackReply(
 /**
  * Check if a user can send a message to another user
  * Enforces:
- * - Daily message limit based on sender's tier
- * - Tier-based messaging permissions (who can message whom)
+ * - Daily message limit based on sender's tier (bypassed for premium users)
+ * - Tier-based messaging permissions (bypassed for premium users)
  *
  * Returns:
  * - allowed: boolean - whether messaging is allowed
  * - reason: string - if not allowed, explains why
- * - dailyLimit: number - sender's daily message limit
+ * - dailyLimit: number - sender's daily message limit (-1 for unlimited)
  * - sentToday: number - messages sent today
- * - remaining: number - messages remaining today
+ * - remaining: number - messages remaining today (-1 for unlimited)
  */
 export const checkMessagePermission = onCall<{
   recipientId: string;
@@ -404,12 +404,48 @@ export const checkMessagePermission = onCall<{
         db.collection("users").doc(recipientId).collection("private").doc("data").get(),
       ]);
 
-      const senderReputation = senderPrivateDoc.data()?.reputation as ReputationData | undefined;
+      const senderPrivateData = senderPrivateDoc.data();
+      const senderReputation = senderPrivateData?.reputation as ReputationData | undefined;
       const recipientReputation = recipientPrivateDoc.data()?.reputation as ReputationData | undefined;
 
       const senderTier: ReputationTier = senderReputation?.tier ?? "new";
       const recipientTier: ReputationTier = recipientReputation?.tier ?? "new";
 
+      // Check if sender is a premium subscriber - they bypass all restrictions
+      const isPremium = senderPrivateData?.subscription?.tier === "premium";
+
+      if (isPremium) {
+        // Premium users have unlimited messaging to anyone
+        // Still need to check blocked status though
+        const [blockedDoc, blockedByDoc] = await Promise.all([
+          db.collection("users").doc(senderId).collection("blocks").doc(recipientId).get(),
+          db.collection("users").doc(senderId).collection("blockedBy").doc(recipientId).get(),
+        ]);
+
+        if (blockedDoc.exists || blockedByDoc.exists) {
+          return {
+            allowed: false,
+            reason: "blocked",
+            dailyLimit: -1, // Unlimited
+            sentToday: 0,
+            remaining: -1, // Unlimited
+            isPremium: true,
+          };
+        }
+
+        return {
+          allowed: true,
+          reason: null,
+          dailyLimit: -1, // Unlimited
+          sentToday: 0,
+          remaining: -1, // Unlimited
+          senderTier,
+          recipientTier,
+          isPremium: true,
+        };
+      }
+
+      // Non-premium users: apply reputation-based restrictions
       const tierConfig = getTierConfig(senderTier);
       const dailyLimit = tierConfig.dailyMessages;
 
@@ -500,6 +536,7 @@ function getMinimumTierToMessage(recipientTier: ReputationTier): ReputationTier 
 /**
  * Get current user's messaging status
  * Returns daily limit, messages sent, and remaining
+ * Premium users have unlimited messaging
  */
 export const getMessagingStatus = onCall<void>(
   {region: "us-central1"},
@@ -518,8 +555,25 @@ export const getMessagingStatus = onCall<void>(
         .doc("data")
         .get();
 
-      const reputation = privateDoc.data()?.reputation as ReputationData | undefined;
+      const privateData = privateDoc.data();
+      const reputation = privateData?.reputation as ReputationData | undefined;
       const tier: ReputationTier = reputation?.tier ?? "new";
+
+      // Check if user is premium - they have unlimited messaging
+      const isPremium = privateData?.subscription?.tier === "premium";
+
+      if (isPremium) {
+        return {
+          tier,
+          dailyLimit: -1, // Unlimited
+          sentToday: 0,
+          remaining: -1, // Unlimited
+          canMessageTiers: ["new", "active", "established", "trusted", "distinguished"],
+          isPremium: true,
+        };
+      }
+
+      // Non-premium users: apply reputation-based limits
       const tierConfig = getTierConfig(tier);
 
       const today = new Date().toISOString().split("T")[0];
@@ -536,6 +590,7 @@ export const getMessagingStatus = onCall<void>(
         canMessageTiers: tierConfig.canMessage === "all"
           ? ["new", "active", "established", "trusted", "distinguished"]
           : tierConfig.canMessage,
+        isPremium: false,
       };
     } catch (error) {
       logger.error("Error getting messaging status:", error);

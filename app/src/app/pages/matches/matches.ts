@@ -6,8 +6,12 @@ import { TranslateModule } from '@ngx-translate/core';
 import { MatchesService, MatchTab } from '../../core/services/matches.service';
 import { FavoriteService } from '../../core/services/favorite.service';
 import { MessageService } from '../../core/services/message.service';
+import { SubscriptionService } from '../../core/services/subscription.service';
 import { ProfileCardComponent, ProfileCardData } from '../../components/profile-card';
 import { ProfileCardSkeletonComponent } from '../../components/profile-card-skeleton';
+
+// Tabs that require premium subscription
+const PREMIUM_TABS: MatchTab[] = ['favorited-me', 'viewed-me'];
 
 const VALID_TABS: MatchTab[] = ['my-matches', 'favorited-me', 'viewed-me', 'my-favorites', 'my-views'];
 
@@ -31,6 +35,9 @@ export class MatchesComponent implements OnInit {
   private readonly matchesService = inject(MatchesService);
   private readonly favoriteService = inject(FavoriteService);
   private readonly messageService = inject(MessageService);
+  private readonly subscriptionService = inject(SubscriptionService);
+
+  protected readonly isPremium = this.subscriptionService.isPremium;
 
   protected readonly loading = this.matchesService.loading;
   protected readonly initialized = this.matchesService.initialized;
@@ -67,6 +74,13 @@ export class MatchesComponent implements OnInit {
   }
 
   protected setTab(tab: MatchTab): void {
+    // Check if this is a premium tab and user isn't premium
+    if (PREMIUM_TABS.includes(tab) && !this.isPremium()) {
+      const feature = tab === 'favorited-me' ? 'canSeeWhoFavorited' : 'canSeeWhoViewedProfile';
+      this.subscriptionService.showUpgradePrompt(feature);
+      return;
+    }
+    
     this.matchesService.setTab(tab);
     this.updateUrlWithTab(tab);
   }

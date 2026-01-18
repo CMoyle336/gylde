@@ -39,7 +39,7 @@ const getPriceId = (): string => {
 export const createSubscriptionCheckout = onCall(
   {
     region: "us-central1",
-    secrets: ["STRIPE_SECRET_KEY"],
+    secrets: ["STRIPE_SECRET_KEY", "STRIPE_PRICE_PREMIUM_MONTHLY"],
   },
   async (request) => {
     if (!request.auth) {
