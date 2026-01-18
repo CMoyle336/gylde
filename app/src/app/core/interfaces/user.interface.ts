@@ -4,6 +4,7 @@
 
 import { GeoLocation } from './geo.interface';
 import { Photo } from './photo.interface';
+import { ReputationTier } from './reputation.interface';
 import { UserSubscription } from './subscription.interface';
 
 /**
@@ -63,6 +64,7 @@ export interface UserProfile {
   identityVerificationPaidAt?: unknown; // When verification was paid for
   geohash?: string | null; // encoded location for distance-based queries
   isElite?: boolean; // true if user has Elite subscription (for badge display)
+  reputationTier?: ReputationTier; // Denormalized from reputation data for efficient display
   
   // NOTE: profileProgress (trust score) and subscription are stored in users/{uid}/private/data
   // for security - only the user can read them, only Cloud Functions can write

@@ -58,6 +58,10 @@ const INCOME_OPTIONS = [
 
 const VERIFICATION_OPTIONS = ['identity', 'photo', 'income'];
 
+// Reputation tiers (matching app/src/app/core/interfaces/reputation.interface.ts)
+const REPUTATION_TIERS = ['new', 'active', 'established', 'trusted', 'distinguished'] as const;
+type ReputationTier = typeof REPUTATION_TIERS[number];
+
 // Cities in Michigan area for realistic location clustering
 const MICHIGAN_CITIES = [
   { city: 'Detroit', state: 'MI', lat: 42.3314, lng: -83.0458 },
@@ -109,6 +113,15 @@ export interface SeedUser {
   phoneNumberVerified: boolean;
   identityVerified: boolean;
   identityVerificationStatus: 'pending' | 'approved' | 'declined' | null;
+  
+  // Reputation (denormalized for display, full data in private subcollection)
+  reputationTier: ReputationTier;
+  reputation: {
+    tier: ReputationTier;
+    dailyMessageLimit: number;
+    messagesSentToday: number;
+    canMessageMinTier: ReputationTier;
+  };
   
   settings: {
     privacy: {
@@ -345,6 +358,40 @@ export function generateUsers(count: number, seed?: number): SeedUser[] {
       identityVerified ? 'approved' : 
       (identityRoll > 0.5 ? 'pending' : null);
 
+    // Generate reputation tier with realistic distribution
+    // 30% new, 35% active, 20% established, 12% trusted, 3% distinguished
+    const reputationRoll = Math.random();
+    let reputationTier: ReputationTier;
+    if (reputationRoll < 0.30) {
+      reputationTier = 'new';
+    } else if (reputationRoll < 0.65) {
+      reputationTier = 'active';
+    } else if (reputationRoll < 0.85) {
+      reputationTier = 'established';
+    } else if (reputationRoll < 0.97) {
+      reputationTier = 'trusted';
+    } else {
+      reputationTier = 'distinguished';
+    }
+
+    // Daily message limits by tier (matching backend config)
+    const dailyMessageLimits: Record<ReputationTier, number> = {
+      new: 5,
+      active: 15,
+      established: 30,
+      trusted: 50,
+      distinguished: 100,
+    };
+
+    // canMessageMinTier by tier (matching backend config)
+    const canMessageMinTiers: Record<ReputationTier, ReputationTier> = {
+      new: 'active',
+      active: 'new',
+      established: 'new',
+      trusted: 'new',
+      distinguished: 'new',
+    };
+
     const user: SeedUser = {
       uid,
       email,
@@ -360,6 +407,15 @@ export function generateUsers(count: number, seed?: number): SeedUser[] {
       phoneNumberVerified: hasPhoneVerified,
       identityVerified,
       identityVerificationStatus,
+      
+      // Reputation fields
+      reputationTier,
+      reputation: {
+        tier: reputationTier,
+        dailyMessageLimit: dailyMessageLimits[reputationTier],
+        messagesSentToday: 0,
+        canMessageMinTier: canMessageMinTiers[reputationTier],
+      },
       
       settings: {
         privacy: {

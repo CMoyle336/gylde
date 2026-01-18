@@ -1,6 +1,8 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output, computed } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { ReputationTier, shouldShowPublicBadge } from '../../core/interfaces';
+import { ReputationBadgeComponent } from '../reputation-badge';
 
 /**
  * Common profile data interface for the profile card component.
@@ -22,6 +24,7 @@ export interface ProfileCardData {
   connectionTypes?: string[];
   tagline?: string; // Short phrase displayed on card
   interactionDate?: Date; // For matches page - when the interaction happened
+  reputationTier?: ReputationTier; // User's reputation tier for public badge
 }
 
 @Component({
@@ -29,7 +32,7 @@ export interface ProfileCardData {
   templateUrl: './profile-card.html',
   styleUrl: './profile-card.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatIconModule, MatTooltipModule],
+  imports: [MatIconModule, MatTooltipModule, ReputationBadgeComponent],
 })
 export class ProfileCardComponent {
   // Inputs
@@ -41,6 +44,16 @@ export class ProfileCardComponent {
   readonly messageClick = output<ProfileCardData>();
   readonly viewClick = output<ProfileCardData>();
   readonly favoriteClick = output<ProfileCardData>();
+
+  // Computed: whether to show public reputation badge (only active+ tiers)
+  protected readonly showReputationBadge = computed(() => {
+    const tier = this.profile().reputationTier;
+    return tier ? shouldShowPublicBadge(tier) : false;
+  });
+
+  protected readonly reputationTier = computed(() => {
+    return this.profile().reputationTier ?? 'new';
+  });
 
   protected get photoUrl(): string | null {
     const p = this.profile();

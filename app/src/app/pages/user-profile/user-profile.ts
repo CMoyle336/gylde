@@ -9,7 +9,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Firestore, doc, getDoc } from '@angular/fire/firestore';
-import { UserProfile } from '../../core/interfaces';
+import { UserProfile, ReputationTier, shouldShowPublicBadge, getTierDisplay } from '../../core/interfaces';
 import { Photo, PhotoAccessSummary } from '../../core/interfaces/photo.interface';
 import { FavoriteService } from '../../core/services/favorite.service';
 import { MessageService } from '../../core/services/message.service';
@@ -19,6 +19,7 @@ import { PhotoAccessService } from '../../core/services/photo-access.service';
 import { BlockService, BlockStatus } from '../../core/services/block.service';
 import { SubscriptionService } from '../../core/services/subscription.service';
 import { ProfileSkeletonComponent } from './components';
+import { ReputationBadgeComponent } from '../../components/reputation-badge';
 import { formatConnectionTypes as formatConnectionTypesUtil, getSupportOrientationLabel } from '../../core/constants/connection-types';
 
 @Component({
@@ -34,6 +35,7 @@ import { formatConnectionTypes as formatConnectionTypesUtil, getSupportOrientati
     MatMenuModule,
     MatProgressSpinnerModule,
     ProfileSkeletonComponent,
+    ReputationBadgeComponent,
   ],
 })
 export class UserProfileComponent implements OnInit, OnDestroy {
@@ -73,6 +75,20 @@ export class UserProfileComponent implements OnInit, OnDestroy {
   protected readonly isFavorited = computed(() => {
     const p = this.profile();
     return p ? this.favoritedUserIds().has(p.uid) : false;
+  });
+
+  // Reputation badge - only shown for active tier and above
+  protected readonly showReputationBadge = computed(() => {
+    const tier = this.profile()?.reputationTier;
+    return tier ? shouldShowPublicBadge(tier) : false;
+  });
+
+  protected readonly reputationTier = computed((): ReputationTier => {
+    return this.profile()?.reputationTier ?? 'new';
+  });
+
+  protected readonly reputationDisplay = computed(() => {
+    return getTierDisplay(this.reputationTier());
   });
 
   // Has private photos that viewer can't see

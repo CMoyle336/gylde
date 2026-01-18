@@ -183,12 +183,29 @@
         <!-- Header with Name & Actions -->
         <div class="profile-header">
           <div class="name-location">
-            <h1 class="profile-name">
-              {{ profile.displayName || 'Anonymous' }}
-              @if (age()) {
-                <span class="age">, {{ age() }}</span>
-              }
-            </h1>
+            <div class="name-row">
+              <h1 class="profile-name">
+                {{ profile.displayName || 'Anonymous' }}
+                @if (age()) {
+                  <span class="age">, {{ age() }}</span>
+                }
+              </h1>
+              <!-- Badges: Identity Verified + Reputation -->
+              <div class="profile-badges">
+                @if (profile.identityVerified) {
+                  <span class="verified-badge" matTooltip="Identity verified">
+                    <mat-icon>verified</mat-icon>
+                  </span>
+                }
+                @if (showReputationBadge()) {
+                  <app-reputation-badge 
+                    [tier]="reputationTier()" 
+                    mode="badge" 
+                    size="medium"
+                    [matTooltip]="reputationDisplay().description" />
+                }
+              </div>
+            </div>
             @if (profile.settings?.privacy?.showLocation !== false && profile.onboarding?.city; as city) {
               <div class="location">
                 <mat-icon>location_on</mat-icon>

@@ -35,6 +35,9 @@ interface SearchFilters {
   // Verification & Trust
   verifiedOnly?: boolean;
 
+  // Reputation filter - "X and above" style (not exclusion)
+  minReputationTier?: ReputationTier | null;
+
   // Activity filters
   onlineNow?: boolean; // Active within last 15 minutes
   activeRecently?: boolean; // Active within last 24 hours
@@ -58,7 +61,7 @@ interface SearchFilters {
 }
 
 interface SearchSort {
-  field: "distance" | "lastActive" | "newest" | "age";
+  field: "distance" | "lastActive" | "newest" | "age" | "reputation";
   direction: "asc" | "desc";
 }
 
@@ -463,6 +466,15 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
         );
       }
 
+      // Reputation tier filter - "X and above" style
+      // Filter to profiles at or above the specified tier
+      if (filters.minReputationTier) {
+        const minTierRank = REPUTATION_TIER_ORDER.indexOf(filters.minReputationTier);
+        filteredCandidates = filteredCandidates.filter(
+          (p) => p.tierRank >= minTierRank
+        );
+      }
+
       // === APPLY IN-MEMORY SORTING ===
       // Reputation tier provides a secondary ranking boost:
       // Higher tier users appear first when primary sort values are equal
@@ -488,6 +500,10 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
           comparison = distA - distB;
           break;
         }
+        case "reputation":
+          // Higher tier rank = better reputation
+          comparison = a.tierRank - b.tierRank;
+          break;
         default:
           comparison = a.lastActiveTimestamp - b.lastActiveTimestamp;
         }

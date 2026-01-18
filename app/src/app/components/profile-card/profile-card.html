@@ -37,7 +37,10 @@
           <span class="card-age">, {{ profile().age }}</span>
         }
         @if (isVerified) {
-          <mat-icon class="verified-icon" title="Verified profile">verified</mat-icon>
+          <mat-icon class="verified-icon" title="Identity verified">verified</mat-icon>
+        }
+        @if (showReputationBadge()) {
+          <app-reputation-badge [tier]="reputationTier()" mode="icon" size="small" />
         }
       </h3>
       @if (profile().city) {

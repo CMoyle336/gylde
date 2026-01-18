@@ -29,7 +29,8 @@ const DEFAULT_FILTERS: DiscoveryFilters = {
   height: [],
   income: [],
   onlineNow: false,
-  activeRecently: false
+  activeRecently: false,
+  minReputationTier: null,
 };
 
 const DEFAULT_SORT: DiscoverySort = {
@@ -87,7 +88,8 @@ export class DiscoveryService {
       filters.height.length > 0 ||
       filters.income.length > 0 ||
       filters.onlineNow ||
-      filters.activeRecently
+      filters.activeRecently ||
+      filters.minReputationTier !== null
     );
   });
 
@@ -111,6 +113,7 @@ export class DiscoveryService {
     if (filters.income.length > 0) count++;
     if (filters.onlineNow) count++;
     if (filters.activeRecently) count++;
+    if (filters.minReputationTier !== null) count++;
 
     return count;
   });
@@ -445,7 +448,16 @@ export class DiscoveryService {
     { value: { field: 'lastActive', direction: 'desc' }, label: 'Recently Active' },
     { value: { field: 'distance', direction: 'asc' }, label: 'Nearest' },
     { value: { field: 'newest', direction: 'desc' }, label: 'Newest Profiles' },
+    { value: { field: 'reputation', direction: 'desc' }, label: 'Prioritize Trusted' },
     { value: { field: 'age', direction: 'asc' }, label: 'Age (Youngest)' },
     { value: { field: 'age', direction: 'desc' }, label: 'Age (Oldest)' },
+  ];
+
+  // Reputation filter options - "X and above" style, not exclusion
+  readonly reputationTierOptions: { value: string | null; label: string }[] = [
+    { value: null, label: 'All members' },
+    { value: 'active', label: 'Active and above' },
+    { value: 'established', label: 'Established and above' },
+    { value: 'trusted', label: 'Trusted and above' },
   ];
 }

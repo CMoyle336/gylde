@@ -254,6 +254,9 @@ async function seedFirestoreUsers(db: FirebaseFirestore.Firestore, users: SeedUs
         identityVerified: user.identityVerified,
         identityVerificationStatus: user.identityVerificationStatus,
         
+        // Reputation tier (denormalized for efficient queries)
+        reputationTier: user.reputationTier,
+        
         // Activity tracking fields (will be updated by favorites/messages seeding)
         favoritesCount: 0,  // Will be updated after seeding favorites
         lastMessageSentAt: null,  // Will be updated after seeding messages
@@ -272,6 +275,48 @@ async function seedFirestoreUsers(db: FirebaseFirestore.Firestore, users: SeedUs
   }
 
   console.log(`✅ Created ${totalCreated} Firestore profiles`);
+
+  // Seed private subcollection with reputation data
+  console.log('  🔐 Creating private data with reputation...');
+  let privateDataCreated = 0;
+
+  for (let i = 0; i < users.length; i += batchSize) {
+    const batch = db.batch();
+    const batchUsers = users.slice(i, i + batchSize);
+
+    for (const user of batchUsers) {
+      const privateRef = db.collection('users').doc(user.uid).collection('private').doc('data');
+      
+      // Calculate profile progress based on filled fields (simplified)
+      let profileProgress = 50; // Base for completed onboarding
+      if (user.onboarding.height) profileProgress += 5;
+      if (user.onboarding.ethnicity) profileProgress += 5;
+      if (user.onboarding.relationshipStatus) profileProgress += 5;
+      if (user.onboarding.education) profileProgress += 5;
+      if (user.onboarding.occupation) profileProgress += 5;
+      if (user.onboarding.income) profileProgress += 5;
+      if (user.identityVerified) profileProgress += 10;
+      if (user.phoneNumberVerified) profileProgress += 5;
+      profileProgress = Math.min(100, profileProgress);
+
+      batch.set(privateRef, {
+        profileProgress,
+        reputation: {
+          tier: user.reputation.tier,
+          dailyMessageLimit: user.reputation.dailyMessageLimit,
+          messagesSentToday: user.reputation.messagesSentToday,
+          canMessageMinTier: user.reputation.canMessageMinTier,
+          lastCalculatedAt: FieldValue.serverTimestamp(),
+          tierChangedAt: FieldValue.serverTimestamp(),
+        },
+      });
+    }
+    
+    await batch.commit();
+    privateDataCreated += batchUsers.length;
+  }
+
+  console.log(`  ✓ Created private data for ${privateDataCreated} users`);
 }
 
 async function seedFavorites(
@@ -582,34 +627,36 @@ async function seedPhotoAccessRequests(
 // ============================================================================
 
 function printLoginCredentials(users: SeedUser[]) {
-  console.log('\n' + '='.repeat(80));
+  console.log('\n' + '='.repeat(95));
   console.log('📋 TEST LOGIN CREDENTIALS');
-  console.log('='.repeat(80));
+  console.log('='.repeat(95));
   console.log('\nAll passwords: password123\n');
-  console.log('Email                          | Name                    | Support   | Verified');
-  console.log('-'.repeat(80));
+  console.log('Email                          | Name                    | Reputation    | Support   | Verified');
+  console.log('-'.repeat(95));
   
   // Show first 10 users
   const displayUsers = users.slice(0, 10);
   for (const user of displayUsers) {
     const email = user.email.padEnd(30);
     const name = user.displayName.padEnd(23);
+    const reputation = user.reputationTier.padEnd(13);
     const support = user.onboarding.supportOrientation.padEnd(9);
     const verified = [
       user.emailVerified ? '✉' : '',
       user.phoneNumberVerified ? '📱' : '',
       user.identityVerified ? '🆔' : '',
     ].join('') || '-';
-    console.log(`${email} | ${name} | ${support} | ${verified}`);
+    console.log(`${email} | ${name} | ${reputation} | ${support} | ${verified}`);
   }
   
   if (users.length > 10) {
     console.log(`... and ${users.length - 10} more users`);
   }
   
-  console.log('-'.repeat(80));
+  console.log('-'.repeat(95));
   console.log('Verification legend: ✉ = Email, 📱 = Phone, 🆔 = Identity');
-  console.log('='.repeat(80));
+  console.log('Reputation tiers: new, active, established, trusted, distinguished');
+  console.log('='.repeat(95));
 }
 
 async function clearAuthUsers(auth: ReturnType<typeof getAuth>) {

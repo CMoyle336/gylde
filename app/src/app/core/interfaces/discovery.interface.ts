@@ -70,13 +70,16 @@ export interface DiscoveryFilters {
   // Activity filters
   onlineNow: boolean;
   activeRecently: boolean;
+
+  // Reputation filter - "X and above" style filter (not exclusion)
+  minReputationTier: ReputationTier | null;
 }
 
 /**
  * Sorting options for discovery
  */
 export interface DiscoverySort {
-  field: 'distance' | 'lastActive' | 'newest' | 'age';
+  field: 'distance' | 'lastActive' | 'newest' | 'age' | 'reputation';
   direction: 'asc' | 'desc';
 }
 

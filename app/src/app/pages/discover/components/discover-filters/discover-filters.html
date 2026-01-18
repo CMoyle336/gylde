@@ -13,6 +13,18 @@
       </mat-form-field>
     </div>
 
+    <!-- Reputation -->
+    <div class="filter-group compact">
+      <label class="filter-label">Member Status</label>
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-select [value]="filters().minReputationTier" (selectionChange)="updateFilter('minReputationTier', $event.value)">
+          @for (option of reputationTierOptions(); track option.value) {
+            <mat-option [value]="option.value">{{ option.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+
     <!-- Toggles -->
     <div class="toggles-row">
       <div class="toggle-item compact">

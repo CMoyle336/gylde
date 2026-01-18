@@ -50,10 +50,13 @@ export interface TierDisplay {
   description: string;
   icon: string;
   color: string;
+  /** Whether this tier shows a public badge on profiles (new members have no badge) */
+  showPublicBadge: boolean;
 }
 
 /**
  * UI display configuration for each tier
+ * Note: "new" users get no public badge - the absence of a badge is neutral, not negative
  */
 export const TIER_DISPLAY: Record<ReputationTier, TierDisplay> = {
   new: {
@@ -61,30 +64,35 @@ export const TIER_DISPLAY: Record<ReputationTier, TierDisplay> = {
     description: 'Just getting started',
     icon: 'fiber_new',
     color: '#94a3b8', // slate-400
+    showPublicBadge: false, // No badge shown publicly for new users
   },
   active: {
     label: 'Active',
     description: 'Engaged member',
     icon: 'trending_up',
     color: '#3b82f6', // blue-500
+    showPublicBadge: true,
   },
   established: {
     label: 'Established',
-    description: 'Active and engaged',
+    description: 'Long-standing member',
     icon: 'star_half',
     color: '#c9a962', // brand gold
+    showPublicBadge: true,
   },
   trusted: {
     label: 'Trusted',
     description: 'Consistently respectful',
     icon: 'star',
     color: '#f59e0b', // amber-500
+    showPublicBadge: true,
   },
   distinguished: {
     label: 'Distinguished',
-    description: 'Exemplary member',
+    description: 'Exemplary community member',
     icon: 'workspace_premium',
     color: '#10b981', // emerald-500
+    showPublicBadge: true,
   },
 };
 
@@ -166,6 +174,14 @@ export interface ReportUserRequest {
  */
 export function getTierDisplay(tier: ReputationTier): TierDisplay {
   return TIER_DISPLAY[tier];
+}
+
+/**
+ * Check if a tier should show a public badge
+ * New users don't get a badge - absence of badge is neutral
+ */
+export function shouldShowPublicBadge(tier: ReputationTier): boolean {
+  return TIER_DISPLAY[tier].showPublicBadge;
 }
 
 /**
