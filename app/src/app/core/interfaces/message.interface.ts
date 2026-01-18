@@ -27,11 +27,15 @@ export interface Message {
 export interface Conversation {
   id: string;
   participants: string[]; // Array of user UIDs (always 2 for 1:1)
-  participantInfo: {
+  // DEPRECATED: participantInfo is no longer written to new conversations.
+  // User profiles (displayName, photoURL, reputationTier) are fetched fresh
+  // from user documents to ensure data is always current.
+  // This field may exist on old conversations for backward compatibility.
+  participantInfo?: {
     [uid: string]: {
       displayName: string | null;
       photoURL: string | null;
-      reputationTier?: string; // User's reputation tier for filtering
+      reputationTier?: string;
     };
   };
   lastMessage: {

@@ -192,8 +192,33 @@ export class UserProfileComponent implements OnInit, OnDestroy {
       this.loading.set(true);
       this.error.set(null);
 
-      // Run block check and profile fetch in parallel
+      // Start all independent fetches in parallel for faster page load:
+      // - Block status check
+      // - User profile document
+      // - Photo access status subscription
+      // - Last viewed by (when did this user view me?)
+      // - Record profile view (fire and forget)
+      
       const userRef = doc(this.firestore, 'users', userId);
+      
+      // Set up photo access subscription immediately (doesn't need profile data)
+      this.accessStatusUnsubscribe?.();
+      this.accessStatusUnsubscribe = this.photoAccessService.subscribeToAccessStatus(
+        userId,
+        (status) => {
+          this.photoAccess.set(status);
+        }
+      );
+      
+      // Start lastViewedBy fetch in parallel (doesn't need profile data)
+      const lastViewedPromise = this.activityService.getLastViewedBy(userId);
+      
+      // Record view in background immediately (doesn't need profile data)
+      this.activityService.recordProfileView(userId).catch(err => {
+        console.error('Error recording profile view:', err);
+      });
+      
+      // Fetch block status and profile in parallel
       const [blockStatus, userSnap] = await Promise.all([
         this.blockService.checkBlockStatus(userId),
         getDoc(userRef),
@@ -237,26 +262,7 @@ export class UserProfileComponent implements OnInit, OnDestroy {
       }
       this.photoPrivacyMap.set(privacyMap);
 
-      // Set up real-time subscription for photo access status
-      // This will update automatically when access is granted/denied
-      this.accessStatusUnsubscribe?.(); // Clean up any existing subscription
-      this.accessStatusUnsubscribe = this.photoAccessService.subscribeToAccessStatus(
-        userId,
-        (status) => {
-          this.photoAccess.set(status);
-        }
-      );
-
-      // Record profile view and get last viewed in parallel
-      // These don't block the UI - fire and forget for recordProfileView
-      const lastViewedPromise = this.activityService.getLastViewedBy(userId);
-      
-      // Record view in background (don't await - it's not critical for page load)
-      this.activityService.recordProfileView(userId).catch(err => {
-        console.error('Error recording profile view:', err);
-      });
-
-      // Wait for lastViewedBy since we display it
+      // Wait for lastViewedBy since we display it (already started above)
       const lastViewed = await lastViewedPromise;
       this.lastViewedMe.set(lastViewed);
     } catch (err) {
@@ -291,10 +297,7 @@ export class UserProfileComponent implements OnInit, OnDestroy {
     const p = this.profile();
     if (!p) return;
 
-    const conversationId = await this.messageService.startConversation(
-      p.uid,
-      { displayName: p.displayName || null, photoURL: p.photoURL || null, reputationTier: p.reputationTier }
-    );
+    const conversationId = await this.messageService.startConversation(p.uid);
 
     if (conversationId) {
       this.messageService.openConversation({

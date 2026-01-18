@@ -24,6 +24,7 @@ import {
   QueryDocumentSnapshot,
   DocumentData,
   increment,
+  documentId,
 } from '@angular/fire/firestore';
 import { Functions, httpsCallable } from '@angular/fire/functions';
 import { AuthService } from './auth.service';
@@ -125,6 +126,16 @@ export class MessageService {
   
   // Track the last message we processed to detect new incoming messages
   private lastProcessedMessageId: string | null = null;
+  
+  // Cache for participant profiles (fetched fresh when conversations load)
+  // Key: user ID, Value: { displayName, photoURL, reputationTier, fetchedAt }
+  private participantCache = new Map<string, {
+    displayName: string | null;
+    photoURL: string | null;
+    reputationTier?: string;
+    fetchedAt: number;
+  }>();
+  private static readonly PARTICIPANT_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
   readonly conversations = this._conversations.asReadonly();
   readonly activeConversation = this._activeConversation.asReadonly();
@@ -224,6 +235,9 @@ export class MessageService {
   /**
    * Subscribe to real-time conversation updates for the current user
    * Also handles typing status for the active conversation to reduce listeners
+   * 
+   * Fetches fresh participant profiles to ensure displayName, photoURL, and 
+   * reputationTier are always current (not stale denormalized data).
    */
   subscribeToConversations(): void {
     const currentUser = this.authService.user();
@@ -240,14 +254,32 @@ export class MessageService {
 
     this.conversationsUnsubscribe = onSnapshot(
       q,
-      (snapshot) => {
+      async (snapshot) => {
+        // Collect all unique participant IDs (excluding current user)
+        const participantIds = new Set<string>();
+        for (const docSnapshot of snapshot.docs) {
+          const data = docSnapshot.data() as Conversation;
+          const otherUserId = data.participants.find((id) => id !== currentUser.uid);
+          if (otherUserId) {
+            participantIds.add(otherUserId);
+          }
+        }
+
+        // Fetch fresh participant profiles for users not in cache or with stale cache
+        await this.fetchParticipantProfiles(Array.from(participantIds));
+
+        // Now build the conversation display list with fresh profile data
         const conversations: ConversationDisplay[] = snapshot.docs.map((docSnapshot) => {
           const data = docSnapshot.data() as Conversation;
           
           const otherUserId = data.participants.find((id) => id !== currentUser.uid) || '';
-          const otherUserInfo = data.participantInfo?.[otherUserId] || {
-            displayName: 'Unknown User',
-            photoURL: null,
+          
+          // Get fresh profile from cache (just fetched above)
+          const cachedProfile = this.participantCache.get(otherUserId);
+          const otherUserInfo = cachedProfile || {
+            displayName: data.participantInfo?.[otherUserId]?.displayName || 'Unknown User',
+            photoURL: data.participantInfo?.[otherUserId]?.photoURL || null,
+            reputationTier: data.participantInfo?.[otherUserId]?.reputationTier,
           };
 
           // Extract the other user's lastViewedAt for read receipts
@@ -320,6 +352,72 @@ export class MessageService {
         this._loading.set(false);
       }
     );
+  }
+
+  /**
+   * Fetch participant profiles in batches and update the cache.
+   * Only fetches profiles that are missing or stale in the cache.
+   */
+  private async fetchParticipantProfiles(userIds: string[]): Promise<void> {
+    const now = Date.now();
+    
+    // Filter to only users that need fetching (not in cache or stale)
+    const idsToFetch = userIds.filter(uid => {
+      const cached = this.participantCache.get(uid);
+      if (!cached) return true;
+      return (now - cached.fetchedAt) > MessageService.PARTICIPANT_CACHE_TTL;
+    });
+
+    if (idsToFetch.length === 0) return;
+
+    // Firestore 'in' queries support max 30 values, batch if needed
+    const BATCH_SIZE = 30;
+    
+    for (let i = 0; i < idsToFetch.length; i += BATCH_SIZE) {
+      const batch = idsToFetch.slice(i, i + BATCH_SIZE);
+      
+      try {
+        const usersRef = collection(this.firestore, 'users');
+        const q = query(usersRef, where(documentId(), 'in', batch));
+        const snapshot = await getDocs(q);
+        
+        for (const docSnap of snapshot.docs) {
+          const data = docSnap.data();
+          this.participantCache.set(docSnap.id, {
+            displayName: data['displayName'] || null,
+            photoURL: data['photoURL'] || null,
+            reputationTier: data['reputationTier'] || 'new',
+            fetchedAt: now,
+          });
+        }
+        
+        // For any IDs that weren't found, cache a placeholder
+        for (const uid of batch) {
+          if (!this.participantCache.has(uid) || 
+              this.participantCache.get(uid)!.fetchedAt !== now) {
+            this.participantCache.set(uid, {
+              displayName: 'Unknown User',
+              photoURL: null,
+              reputationTier: 'new',
+              fetchedAt: now,
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching participant profiles:', error);
+        // On error, use cached values or placeholders
+        for (const uid of batch) {
+          if (!this.participantCache.has(uid)) {
+            this.participantCache.set(uid, {
+              displayName: 'Unknown User',
+              photoURL: null,
+              reputationTier: 'new',
+              fetchedAt: now,
+            });
+          }
+        }
+      }
+    }
   }
 
   /**
@@ -1377,12 +1475,11 @@ export class MessageService {
   }
 
   /**
-   * Start or get an existing conversation with another user
+   * Start or get an existing conversation with another user.
+   * Only stores participant UIDs - profile data (displayName, photoURL, 
+   * reputationTier) is fetched fresh from user documents when needed.
    */
-  async startConversation(
-    otherUserId: string,
-    otherUserInfo: { displayName: string | null; photoURL: string | null; reputationTier?: string }
-  ): Promise<string> {
+  async startConversation(otherUserId: string): Promise<string> {
     const currentUser = this.authService.user();
     if (!currentUser) throw new Error('Not authenticated');
 
@@ -1403,21 +1500,10 @@ export class MessageService {
       return existingConv.id;
     }
 
-    // Create new conversation
+    // Create new conversation - only store UIDs, not profile data
+    // Profile data is fetched fresh when conversations are loaded
     const newConversation: Omit<Conversation, 'id'> = {
       participants: [currentUser.uid, otherUserId],
-      participantInfo: {
-        [currentUser.uid]: {
-          displayName: currentUser.displayName,
-          photoURL: currentUser.photoURL,
-          // Current user's reputationTier will be fetched from their profile
-        },
-        [otherUserId]: {
-          displayName: otherUserInfo.displayName,
-          photoURL: otherUserInfo.photoURL,
-          reputationTier: otherUserInfo.reputationTier,
-        },
-      },
       lastMessage: null,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),

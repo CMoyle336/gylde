@@ -187,10 +187,7 @@ export class DiscoverComponent implements OnInit {
 
   protected async onMessageProfile(profile: ProfileCardData): Promise<void> {
     const photoURL = profile.photos?.[0] || profile.photoURL || null;
-    const conversationId = await this.messageService.startConversation(
-      profile.uid,
-      { displayName: profile.displayName, photoURL, reputationTier: profile.reputationTier }
-    );
+    const conversationId = await this.messageService.startConversation(profile.uid);
     
     if (conversationId) {
       this.messageService.openConversation({

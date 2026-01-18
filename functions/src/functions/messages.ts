@@ -72,11 +72,11 @@ export const onMessageCreated = onDocumentCreated(
         return;
       }
 
-      // Get sender info from conversation's participantInfo
-      const participantInfo = conversationData.participantInfo || {};
-      const senderInfo = participantInfo[senderId] || {};
-      const senderName = senderInfo.displayName || "Someone";
-      const senderPhoto = senderInfo.photoURL || null;
+      // Fetch sender's profile directly (not from conversation's stale participantInfo)
+      const senderDoc = await db.collection("users").doc(senderId).get();
+      const senderData = senderDoc.data() || {};
+      const senderName = senderData.displayName || "Someone";
+      const senderPhoto = senderData.photoURL || null;
 
       // === ACTIVITY NOTIFICATION ===
       // Create or update activity for the recipient
