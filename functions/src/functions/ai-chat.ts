@@ -8,18 +8,21 @@
  */
 
 import {onCall, HttpsError} from "firebase-functions/v2/https";
+import {defineSecret} from "firebase-functions/params";
 import {getFirestore} from "firebase-admin/firestore";
 import * as logger from "firebase-functions/logger";
 import OpenAI from "openai";
 
 const db = getFirestore();
 
+// Define the OpenAI API key as a secret
+const openaiApiKey = defineSecret("OPENAI_API_KEY");
+
 // ============================================
 // OpenAI Client
 // ============================================
 
-function getOpenAIClient(): OpenAI {
-  const apiKey = process.env.OPENAI_API_KEY;
+function getOpenAIClient(apiKey: string): OpenAI {
   if (!apiKey) {
     throw new HttpsError("failed-precondition", "OpenAI API key not configured");
   }
@@ -182,7 +185,7 @@ function generateId(): string {
 /**
  * Get AI-generated reply suggestions based on conversation context.
  */
-export const aiGetReplySuggestions = onCall(async (request) => {
+export const aiGetReplySuggestions = onCall({secrets: [openaiApiKey]}, async (request) => {
   const {auth, data} = request;
 
   if (!auth) {
@@ -199,7 +202,7 @@ export const aiGetReplySuggestions = onCall(async (request) => {
   });
 
   try {
-    const openai = getOpenAIClient();
+    const openai = getOpenAIClient(openaiApiKey.value());
 
     // Build conversation context
     const conversationHistory = req.recentMessages
@@ -318,7 +321,7 @@ ${toneExample}
 /**
  * Rewrite a user's draft message with a different tone.
  */
-export const aiRewriteMessage = onCall(async (request) => {
+export const aiRewriteMessage = onCall({secrets: [openaiApiKey]}, async (request) => {
   const {auth, data} = request;
 
   if (!auth) {
@@ -335,7 +338,7 @@ export const aiRewriteMessage = onCall(async (request) => {
   });
 
   try {
-    const openai = getOpenAIClient();
+    const openai = getOpenAIClient(openaiApiKey.value());
 
     const voiceStyle = req.userVoice === "polished" ?
       "STYLE: Polished, well-crafted language with proper grammar and thoughtful phrasing." :
@@ -423,7 +426,7 @@ Respond in JSON format:
 /**
  * Get conversation starters for an empty or stalled conversation.
  */
-export const aiGetConversationStarters = onCall(async (request) => {
+export const aiGetConversationStarters = onCall({secrets: [openaiApiKey]}, async (request) => {
   const {auth, data} = request;
 
   if (!auth) {
@@ -441,7 +444,7 @@ export const aiGetConversationStarters = onCall(async (request) => {
   });
 
   try {
-    const openai = getOpenAIClient();
+    const openai = getOpenAIClient(openaiApiKey.value());
 
     // Build profile context
     const profileInfo: string[] = [];
@@ -542,7 +545,7 @@ Respond in JSON format:
 /**
  * Get tone analysis and advice for the conversation.
  */
-export const aiGetCoachInsights = onCall(async (request) => {
+export const aiGetCoachInsights = onCall({secrets: [openaiApiKey]}, async (request) => {
   const {auth, data} = request;
 
   if (!auth) {
@@ -558,7 +561,7 @@ export const aiGetCoachInsights = onCall(async (request) => {
   });
 
   try {
-    const openai = getOpenAIClient();
+    const openai = getOpenAIClient(openaiApiKey.value());
 
     // Build conversation context
     const conversationContext = req.recentMessages
@@ -639,7 +642,7 @@ Labels to use: genuine-interest, curious, playful, guarded, polite-neutral, enth
 /**
  * Analyze a message for safety concerns using AI.
  */
-export const aiCheckMessageSafety = onCall(async (request) => {
+export const aiCheckMessageSafety = onCall({secrets: [openaiApiKey]}, async (request) => {
   const {auth, data} = request;
 
   if (!auth) {
@@ -658,7 +661,7 @@ export const aiCheckMessageSafety = onCall(async (request) => {
   });
 
   try {
-    const openai = getOpenAIClient();
+    const openai = getOpenAIClient(openaiApiKey.value());
 
     // First, use OpenAI moderation API for content policy violations
     const moderationResult = await openai.moderations.create({
@@ -893,7 +896,7 @@ Only flag genuine concerns - don't be overly paranoid about normal conversation.
 /**
  * Modify an AI suggestion with a specific instruction.
  */
-export const aiModifySuggestion = onCall(async (request) => {
+export const aiModifySuggestion = onCall({secrets: [openaiApiKey]}, async (request) => {
   const {auth, data} = request;
 
   if (!auth) {
@@ -910,7 +913,7 @@ export const aiModifySuggestion = onCall(async (request) => {
   });
 
   try {
-    const openai = getOpenAIClient();
+    const openai = getOpenAIClient(openaiApiKey.value());
 
     const prompt = `Modify this dating app message according to the instruction.
 
@@ -988,7 +991,7 @@ interface ProfilePolishResponse {
  * Polish profile text using AI.
  * For Elite users to improve their profile content.
  */
-export const aiPolishProfileText = onCall(async (request) => {
+export const aiPolishProfileText = onCall({secrets: [openaiApiKey]}, async (request) => {
   const {auth, data} = request;
 
   if (!auth) {
@@ -1017,7 +1020,7 @@ export const aiPolishProfileText = onCall(async (request) => {
   const profileContextStr = buildProfileContext(req.profileContext);
 
   try {
-    const openai = getOpenAIClient();
+    const openai = getOpenAIClient(openaiApiKey.value());
 
     const prompt = `You are helping someone improve their dating profile text. Use their profile context to make personalized, authentic suggestions.
 
