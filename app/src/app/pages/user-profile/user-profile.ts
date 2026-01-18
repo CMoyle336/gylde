@@ -293,7 +293,7 @@ export class UserProfileComponent implements OnInit, OnDestroy {
 
     const conversationId = await this.messageService.startConversation(
       p.uid,
-      { displayName: p.displayName || null, photoURL: p.photoURL || null }
+      { displayName: p.displayName || null, photoURL: p.photoURL || null, reputationTier: p.reputationTier }
     );
 
     if (conversationId) {
@@ -303,6 +303,7 @@ export class UserProfileComponent implements OnInit, OnDestroy {
           uid: p.uid,
           displayName: p.displayName || 'Unknown',
           photoURL: p.photoURL,
+          reputationTier: p.reputationTier,
         },
         lastMessage: null,
         lastMessageTime: null,

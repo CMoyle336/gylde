@@ -189,7 +189,7 @@ export class DiscoverComponent implements OnInit {
     const photoURL = profile.photos?.[0] || profile.photoURL || null;
     const conversationId = await this.messageService.startConversation(
       profile.uid,
-      { displayName: profile.displayName, photoURL }
+      { displayName: profile.displayName, photoURL, reputationTier: profile.reputationTier }
     );
     
     if (conversationId) {
@@ -199,6 +199,7 @@ export class DiscoverComponent implements OnInit {
           uid: profile.uid,
           displayName: profile.displayName || 'Unknown',
           photoURL,
+          reputationTier: profile.reputationTier,
         },
         lastMessage: null,
         lastMessageTime: null,

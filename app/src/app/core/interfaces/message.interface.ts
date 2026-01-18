@@ -31,6 +31,7 @@ export interface Conversation {
     [uid: string]: {
       displayName: string | null;
       photoURL: string | null;
+      reputationTier?: string; // User's reputation tier for filtering
     };
   };
   lastMessage: {
@@ -63,6 +64,7 @@ export interface ConversationDisplay {
     uid: string;
     displayName: string | null;
     photoURL: string | null;
+    reputationTier?: string; // For filtering by reputation
   };
   lastMessage: string | null;
   lastMessageTime: Date | null;

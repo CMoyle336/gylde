@@ -18,7 +18,7 @@ import { UiScrollModule } from 'ngx-ui-scroll';
 import { Firestore, doc, getDoc, updateDoc } from '@angular/fire/firestore';
 import { Functions, httpsCallable } from '@angular/fire/functions';
 import { Auth } from '@angular/fire/auth';
-import { MessageService, ConversationFilter } from '../../core/services/message.service';
+import { MessageService, ConversationFilter, ReputationFilter } from '../../core/services/message.service';
 import { BlockService } from '../../core/services/block.service';
 import { SubscriptionService } from '../../core/services/subscription.service';
 import { AiChatService } from '../../core/services/ai-chat.service';
@@ -99,6 +99,7 @@ export class MessagesComponent implements OnInit, OnDestroy, AfterViewInit {
   protected readonly loading = this.messageService.loading;
   protected readonly isOtherUserTyping = this.messageService.isOtherUserTyping;
   protected readonly conversationFilter = this.messageService.conversationFilter;
+  protected readonly reputationFilter = this.messageService.reputationFilter;
   protected readonly otherUserStatus = this.messageService.otherUserStatus;
   protected readonly totalUnreadCount = this.messageService.totalUnreadCount;
   protected readonly archivedCount = this.messageService.archivedCount;
@@ -684,12 +685,25 @@ export class MessagesComponent implements OnInit, OnDestroy, AfterViewInit {
     this.isInitialLoad = true;
     this.isReloading = false;
     
-    this.messageService.openConversation(conversation);
+    // Check if we're navigating from /messages (no conversation) to /messages/{id}
+    // In this case, the component will be destroyed and recreated, so don't open here
+    // The effect will handle opening after the new component mounts
+    // Only call openConversation directly if we're switching between conversations
+    // (i.e., already have a conversationIdFromRoute, meaning component won't recreate)
+    if (this.conversationIdFromRoute) {
+      // Already on /messages/{id}, switching to another - component stays, open directly
+      this.messageService.openConversation(conversation);
+    }
+    
     this.router.navigate(['/messages', conversation.id], { replaceUrl: true });
   }
 
   protected onFilterChanged(filter: ConversationFilter): void {
     this.messageService.setConversationFilter(filter);
+  }
+
+  protected onReputationFilterChanged(tier: ReputationFilter): void {
+    this.messageService.setReputationFilter(tier);
   }
 
   // ============================================

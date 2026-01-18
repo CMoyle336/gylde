@@ -346,3 +346,77 @@ mat-progress-spinner svg,
 .cdk-overlay-container {
   z-index: 1000 !important;
 }
+
+/* ============================================
+   CHAT FILTER DROPDOWN PANELS
+   Custom styling for the messages page filter dropdowns
+   ============================================ */
+.chat-filter-panel {
+  background: var(--color-bg-elevated) !important;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 12px !important;
+  box-shadow: var(--shadow-lg) !important;
+  margin-top: 4px;
+  min-width: 180px !important;
+}
+
+.chat-filter-panel .mat-mdc-option {
+  min-height: 40px;
+  padding: 0 12px;
+  font-size: 0.8125rem;
+  color: var(--color-text-primary);
+}
+
+.chat-filter-panel .mat-mdc-option:hover:not(.mdc-list-item--disabled) {
+  background: var(--color-bg-hover);
+}
+
+.chat-filter-panel .mat-mdc-option.mdc-list-item--selected:not(.mdc-list-item--disabled) {
+  background: rgba(201, 169, 98, 0.15);
+}
+
+.chat-filter-panel .mat-mdc-option .mdc-list-item__primary-text {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.chat-filter-panel .mat-mdc-option mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  color: var(--color-text-muted);
+}
+
+.chat-filter-panel .mat-mdc-option.mdc-list-item--selected mat-icon {
+  color: var(--color-accent);
+}
+
+/* Reputation filter panel - keep tier colors */
+.reputation-filter-panel .mat-mdc-option mat-icon {
+  color: inherit;
+}
+
+.reputation-filter-panel .mat-mdc-option.mdc-list-item--selected mat-icon {
+  color: inherit;
+}
+
+/* Option badges */
+.chat-filter-panel .option-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: var(--color-accent);
+  color: #0d0b0e;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  border-radius: 9px;
+  margin-left: auto;
+}
+
+.chat-filter-panel .option-badge.muted {
+  background: var(--color-text-muted);
+}

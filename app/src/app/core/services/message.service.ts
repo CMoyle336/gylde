@@ -52,6 +52,9 @@ interface MessagePermissionResult {
 
 export type ConversationFilter = 'all' | 'unread' | 'archived';
 
+// Reputation filter for conversations (null = no filter, tier = filter to that tier and above)
+export type ReputationFilter = string | null;
+
 @Injectable({
   providedIn: 'root',
 })
@@ -69,6 +72,7 @@ export class MessageService {
   private readonly _sending = signal(false);
   private readonly _isOtherUserTyping = signal(false);
   private readonly _conversationFilter = signal<ConversationFilter>('all');
+  private readonly _reputationFilter = signal<ReputationFilter>(null);
   private readonly _otherUserStatus = signal<{ isOnline: boolean; lastActiveAt: Date | null } | null>(null);
   
   // Message permission state (fetched once when conversation opens)
@@ -129,14 +133,19 @@ export class MessageService {
   readonly sending = this._sending.asReadonly();
   readonly isOtherUserTyping = this._isOtherUserTyping.asReadonly();
   readonly conversationFilter = this._conversationFilter.asReadonly();
+  readonly reputationFilter = this._reputationFilter.asReadonly();
   readonly otherUserStatus = this._otherUserStatus.asReadonly();
   readonly loadingOlderMessages = this._loadingOlderMessages.asReadonly();
   readonly hasOlderMessages = this._hasOlderMessages.asReadonly();
 
-  // Filtered conversations based on current filter and block status
+  // Reputation tier order for filtering (must match backend)
+  private readonly REPUTATION_TIER_ORDER = ['new', 'active', 'established', 'trusted', 'distinguished'];
+
+  // Filtered conversations based on current filter, reputation filter, and block status
   readonly filteredConversations = computed(() => {
     const convos = this._conversations();
     const filter = this._conversationFilter();
+    const reputationFilter = this._reputationFilter();
     const blockedUserIds = this.blockService.blockedUserIds();
     
     // First, filter out empty conversations the user hasn't opened yet
@@ -161,6 +170,18 @@ export class MessageService {
         break;
       default: // 'all'
         filtered = visibleConvos.filter(c => !c.isArchived);
+    }
+    
+    // Apply reputation filter if set (filter to tier and above)
+    if (reputationFilter) {
+      const minTierIndex = this.REPUTATION_TIER_ORDER.indexOf(reputationFilter);
+      if (minTierIndex >= 0) {
+        filtered = filtered.filter(c => {
+          const userTier = c.otherUser?.reputationTier || 'new';
+          const userTierIndex = this.REPUTATION_TIER_ORDER.indexOf(userTier);
+          return userTierIndex >= minTierIndex;
+        });
+      }
     }
     
     // Then filter out blocked users (but keep the conversation visible so they can access chat history)
@@ -190,6 +211,14 @@ export class MessageService {
    */
   setConversationFilter(filter: ConversationFilter): void {
     this._conversationFilter.set(filter);
+  }
+
+  /**
+   * Set the reputation filter for conversations
+   * @param tier - The minimum reputation tier to show (null = show all)
+   */
+  setReputationFilter(tier: ReputationFilter): void {
+    this._reputationFilter.set(tier);
   }
 
   /**
@@ -270,6 +299,7 @@ export class MessageService {
               uid: otherUserId,
               displayName: otherUserInfo.displayName,
               photoURL: otherUserInfo.photoURL,
+              reputationTier: otherUserInfo.reputationTier,
             },
             lastMessage: data.lastMessage?.content || null,
             lastMessageTime: data.lastMessage?.createdAt
@@ -1351,7 +1381,7 @@ export class MessageService {
    */
   async startConversation(
     otherUserId: string,
-    otherUserInfo: { displayName: string | null; photoURL: string | null }
+    otherUserInfo: { displayName: string | null; photoURL: string | null; reputationTier?: string }
   ): Promise<string> {
     const currentUser = this.authService.user();
     if (!currentUser) throw new Error('Not authenticated');
@@ -1380,8 +1410,13 @@ export class MessageService {
         [currentUser.uid]: {
           displayName: currentUser.displayName,
           photoURL: currentUser.photoURL,
+          // Current user's reputationTier will be fetched from their profile
         },
-        [otherUserId]: otherUserInfo,
+        [otherUserId]: {
+          displayName: otherUserInfo.displayName,
+          photoURL: otherUserInfo.photoURL,
+          reputationTier: otherUserInfo.reputationTier,
+        },
       },
       lastMessage: null,
       createdAt: serverTimestamp(),
