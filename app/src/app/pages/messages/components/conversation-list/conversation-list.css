@@ -294,19 +294,36 @@
 
 /* Mobile adjustments */
 @media (max-width: 768px) {
+  :host {
+    width: 100%;
+    overflow: hidden;
+  }
+
   .conversation-list {
     width: 100%;
+    max-width: 100%;
     padding: 0;
+    overflow: hidden;
   }
 
   .conversation-list.hidden-on-mobile {
     display: none;
   }
 
+  .conversation-scroll {
+    overflow-x: hidden;
+  }
+
   .conversation-item {
     border-radius: 0;
     padding: 1rem;
     border-bottom: 1px solid var(--color-border);
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  .conversation-info {
+    overflow: hidden;
   }
 
   .conversation-avatar {
