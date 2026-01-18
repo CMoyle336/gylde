@@ -5,7 +5,8 @@
 
 :host {
   display: block;
-  min-height: 100vh;
+  min-height: 100vh; /* Fallback */
+  min-height: 100dvh;
   background: var(--color-bg-primary);
   color: var(--color-text-primary);
   font-family: var(--font-body);
@@ -14,7 +15,8 @@
 .onboarding {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  min-height: 100vh; /* Fallback */
+  min-height: 100dvh;
   position: relative;
 }
 

@@ -8,7 +8,8 @@
   --sidebar-width-collapsed: 72px;
   
   display: block;
-  height: 100vh;
+  height: 100vh; /* Fallback */
+  height: 100dvh; /* Dynamic viewport height - accounts for mobile browser UI */
   background: var(--color-bg-primary);
   color: var(--color-text-primary);
   font-family: var(--font-body);
@@ -19,7 +20,8 @@
    ============================================ */
 
 .shell-container {
-  height: 100vh;
+  height: 100vh; /* Fallback */
+  height: 100dvh; /* Dynamic viewport height */
   background: var(--color-bg-primary);
 }
 

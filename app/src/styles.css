@@ -90,7 +90,8 @@ html {
 }
 
 body {
-  min-height: 100vh;
+  min-height: 100vh; /* Fallback for older browsers */
+  min-height: 100dvh; /* Dynamic viewport height - accounts for mobile browser UI */
   background-color: var(--color-bg-primary);
   color: var(--color-text-primary);
   font-family: var(--font-body);
