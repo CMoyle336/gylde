@@ -36,14 +36,14 @@ service cloud.firestore {
       // Protected fields can only be set by Cloud Functions (admin SDK bypasses rules)
       allow create: if isOwner(userId)
         && !request.resource.data.keys().hasAny([
-          'trustScore', 'subscription', 'isElite',
+          'profileProgress', 'subscription', 'isElite',
           'identityVerified', 'identityVerificationStatus', 'identityVerificationCompletedAt',
           'identityVerificationPaid', 'identityVerificationPaidAt',
           'stripeCustomerId', 'stripeSubscriptionId'
         ]);
       allow update: if isOwner(userId)
         && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
-          'trustScore', 'subscription', 'isElite',
+          'profileProgress', 'subscription', 'isElite',
           'identityVerified', 'identityVerificationStatus', 'identityVerificationCompletedAt',
           'identityVerificationPaid', 'identityVerificationPaidAt',
           'stripeCustomerId', 'stripeSubscriptionId'
@@ -166,7 +166,7 @@ service cloud.firestore {
       
       // ------------------------------------------
       // PRIVATE SUBCOLLECTION
-      // Contains sensitive data: trustScore, subscription
+      // Contains sensitive data: profileProgress (trust score), subscription
       // Only the owner can read; only Cloud Functions can write
       // ------------------------------------------
       match /private/{docId} {

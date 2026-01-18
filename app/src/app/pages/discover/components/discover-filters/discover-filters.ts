@@ -21,10 +21,6 @@ export interface DistanceOption {
   value: number | null;
 }
 
-export interface TrustScoreOption {
-  label: string;
-  value: number;
-}
 
 @Component({
   selector: 'app-discover-filters',
@@ -53,7 +49,6 @@ export class DiscoverFiltersComponent {
   readonly incomeOptions = input.required<string[]>();
   readonly supportOrientationOptions = input.required<FilterOption[]>();
   readonly distanceOptions = input.required<DistanceOption[]>();
-  readonly trustScoreOptions = input.required<TrustScoreOption[]>();
 
   // Connection type groups for organized display
   protected readonly relationshipGoals = () => RELATIONSHIP_GOALS;

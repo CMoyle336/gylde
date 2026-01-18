@@ -64,7 +64,7 @@ export interface UserProfile {
   geohash?: string | null; // encoded location for distance-based queries
   isElite?: boolean; // true if user has Elite subscription (for badge display)
   
-  // NOTE: trustScore and subscription are stored in users/{uid}/private/data
+  // NOTE: profileProgress (trust score) and subscription are stored in users/{uid}/private/data
   // for security - only the user can read them, only Cloud Functions can write
   
   onboardingCompleted: boolean;

@@ -632,3 +632,100 @@ Cursor must:
 - Favor clarity and defensibility over cleverness
 
 The goal is a clean, secure, and legally survivable platform.
+
+
+# Gylde Reputation Engine — 10-Step Framework
+
+## 1. Reputation Is Felt, Not Explained
+- Users should experience reputation through outcomes, not formulas.
+- Avoid exposing mechanics or point calculations.
+- Make consequences obvious; keep inputs opaque.
+
+---
+
+## 2. Use Tiers — Never Show a Raw Score
+- Raw numbers invite gaming and anxiety.
+- Tiers communicate status, trust, and progression.
+- Limit to 5–6 tiers maximum.
+
+---
+
+## 3. Define a Clear Reputation Tier Ladder
+Example ladder:
+- **New / Unrated** – Limited reach, onboarding phase
+- **Verified** – Identity verified, baseline visibility
+- **Established** – Consistent activity, positive engagement
+- **Trusted** – Strong behavior signals, prioritized reach
+- **Highly Trusted / Distinguished** – Long-term, exemplary behavior
+
+Tier names should feel earned, not purchased.
+
+---
+
+## 4. Display Reputation as Status, Not a Score
+- Show tier name with a subtle icon or badge.
+- Add a short descriptor (e.g., “Consistently respectful and responsive”).
+- Never show numeric values, progress bars, or negative labels.
+
+---
+
+## 5. Teach Reputation Through Friction and Rewards
+- Users learn reputation exists by what they can and cannot do.
+- Use neutral prompts:
+  - “Increase your reputation to unlock more connections.”
+  - “Highly Trusted members appear more often in discovery.”
+- Avoid punitive language or visible penalties.
+
+---
+
+## 6. Let Reputation Shape Discovery and Visibility
+- Higher tiers:
+  - Rank higher in search results
+  - Appear more frequently in recommendations
+- Lower tiers:
+  - Remain searchable but receive less amplification
+
+This is the most powerful and subtle lever.
+
+---
+
+## 7. Tie Reputation to Outreach Capacity
+- Gate:
+  - Number of new conversations per day/week
+  - Messaging richness (attachments, voice notes, long-form intros)
+- Prevents spam and low-effort mass outreach.
+
+---
+
+## 8. Control Who Can Message Whom
+- New users: message Verified or Established members only
+- Trusted users: message anyone
+- Highly Trusted users:
+  - Appear in priority inboxes
+  - Bypass certain filters
+
+Creates aspiration without exclusion.
+
+---
+
+## 9. Implement Quiet Reputation Decay
+- Reputation should:
+  - Build slowly
+  - Degrade faster
+  - Recover gradually
+- Negative signals:
+  - Low response rates
+  - High block/report ratios
+  - Burst messaging behavior
+- Weight signals by the reputation of the other party.
+
+---
+
+## 10. Never Let Money Override Reputation
+- Spending can enhance experience, not credibility.
+- No paid bypasses for trust limits.
+- Behavior must always dominate status.
+
+This is your philosophical wedge against competitors.
+
+

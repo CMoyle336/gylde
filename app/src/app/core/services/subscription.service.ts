@@ -16,7 +16,7 @@ import {
  * Private user data structure (stored in users/{uid}/private/data)
  */
 interface PrivateUserData {
-  trustScore: number;
+  profileProgress: number;
   trust?: TrustData;
   subscription: UserSubscription;
   updatedAt?: unknown;
@@ -34,14 +34,14 @@ export class SubscriptionService {
 
   // Current subscription state - loaded from private subcollection
   private readonly _subscription = signal<UserSubscription | null>(null);
-  private readonly _trustScore = signal<number>(0);
+  private readonly _profileProgress = signal<number>(0);
   private readonly _trustData = signal<TrustData | null>(null);
   private readonly _loading = signal(false);
   private unsubscribe: (() => void) | null = null;
 
   // Public signals
   readonly subscription = this._subscription.asReadonly();
-  readonly trustScore = this._trustScore.asReadonly();
+  readonly profileProgress = this._profileProgress.asReadonly();
   readonly trustData = this._trustData.asReadonly();
   readonly loading = this._loading.asReadonly();
 
@@ -183,7 +183,7 @@ export class SubscriptionService {
     const user = this.authService.user();
     if (!user) {
       this._subscription.set(null);
-      this._trustScore.set(0);
+      this._profileProgress.set(0);
       return;
     }
 
@@ -201,12 +201,12 @@ export class SubscriptionService {
       (data) => {
         if (data) {
           this._subscription.set(data.subscription ?? { tier: 'free', status: 'active' });
-          this._trustScore.set(data.trustScore ?? 0);
+          this._profileProgress.set(data.profileProgress ?? 0);
           this._trustData.set(data.trust ?? null);
         } else {
           // Private doc doesn't exist yet - default to free
           this._subscription.set({ tier: 'free', status: 'active' });
-          this._trustScore.set(0);
+          this._profileProgress.set(0);
           this._trustData.set(null);
         }
         this._loading.set(false);

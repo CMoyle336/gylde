@@ -29,7 +29,6 @@ interface SearchFilters {
 
   // Verification & Trust
   verifiedOnly?: boolean;
-  minTrustScore?: number; // 0-100, minimum trust score required
 
   // Activity filters
   onlineNow?: boolean; // Active within last 15 minutes
@@ -54,7 +53,7 @@ interface SearchFilters {
 }
 
 interface SearchSort {
-  field: "distance" | "lastActive" | "newest" | "age" | "trustScore";
+  field: "distance" | "lastActive" | "newest" | "age";
   direction: "asc" | "desc";
 }
 
@@ -89,7 +88,7 @@ interface SearchResult {
   identityVerified: boolean;
   values: string[];
   supportOrientation: string;
-  trustScore: number; // 0-100 trust score (from private subcollection)
+  profileProgress: number; // 0-100 profile completion percentage (from private subcollection)
   // Secondary fields
   ethnicity?: string;
   relationshipStatus?: string;
@@ -127,7 +126,7 @@ interface SavedView {
  *   (onboardingCompleted, isSearchable, genderIdentity, lifestyle, age range)
  * - IN-MEMORY: All user-changeable filters (distance, verification, activity,
  *   connectionTypes, supportOrientation, ethnicity, relationshipStatus, children,
- *   smoker, drinker, education, height, income, trustScore)
+ *   smoker, drinker, education, height, income)
  * - IN-MEMORY: All sorting
  * - IN-MEMORY: Offset-based pagination
  *
@@ -226,20 +225,20 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
         .map((doc) => doc.id)
         .filter((id) => id !== currentUserId && !blockedUserIds.has(id));
 
-      const trustScoreMap = new Map<string, number>();
+      const profileProgressMap = new Map<string, number>();
 
-      // Fetch trust scores in batches of 10
+      // Fetch profile progress (trust score) in batches of 10
       const batchSize = 10;
       for (let i = 0; i < candidateIds.length; i += batchSize) {
         const batch = candidateIds.slice(i, i + batchSize);
-        const trustDocs = await Promise.all(
+        const privateDocs = await Promise.all(
           batch.map((uid) =>
             db.collection("users").doc(uid).collection("private").doc("data").get()
           )
         );
-        trustDocs.forEach((doc, idx) => {
-          const trustScore = doc.exists ? (doc.data()?.trustScore ?? 0) : 0;
-          trustScoreMap.set(batch[idx], trustScore);
+        privateDocs.forEach((doc, idx) => {
+          const progress = doc.exists ? (doc.data()?.profileProgress ?? 0) : 0;
+          profileProgressMap.set(batch[idx], progress);
         });
       }
 
@@ -262,7 +261,7 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
 
         const data = doc.data();
         const onboarding = data.onboarding || {};
-        const trustScore = trustScoreMap.get(doc.id) ?? 0;
+        const profileProgress = profileProgressMap.get(doc.id) ?? 0;
 
         // Calculate distance
         let distance: number | undefined;
@@ -318,7 +317,7 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
           identityVerified: data.identityVerified === true,
           values: onboarding.values || [],
           supportOrientation: onboarding.supportOrientation || "",
-          trustScore,
+          profileProgress,
           ethnicity: onboarding.ethnicity,
           relationshipStatus: onboarding.relationshipStatus,
           children: onboarding.children,
@@ -340,13 +339,6 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
 
       // === APPLY IN-MEMORY FILTERS ===
       let filteredCandidates = allCandidates;
-
-      // Trust score filter
-      if (filters.minTrustScore && filters.minTrustScore > 0) {
-        filteredCandidates = filteredCandidates.filter(
-          (p) => p.trustScore >= (filters.minTrustScore ?? 0)
-        );
-      }
 
       // Distance filter
       if (filters.maxDistance && searcherLocation) {
@@ -479,9 +471,6 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
           comparison = distA - distB;
           break;
         }
-        case "trustScore":
-          comparison = a.trustScore - b.trustScore;
-          break;
         default:
           comparison = a.lastActiveTimestamp - b.lastActiveTimestamp;
         }
@@ -517,7 +506,7 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
         identityVerified: p.identityVerified,
         values: p.values,
         supportOrientation: p.supportOrientation,
-        trustScore: p.trustScore,
+        profileProgress: p.profileProgress,
         ethnicity: p.ethnicity,
         relationshipStatus: p.relationshipStatus,
         children: p.children,

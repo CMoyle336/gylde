@@ -27,7 +27,7 @@ export interface DiscoverableProfile {
   photos: string[];
   verified: boolean;
   supportOrientation: string;
-  trustScore: number; // 0-100 trust score (fetched from private data by Cloud Function)
+  profileProgress: number; // 0-100 profile completion percentage (fetched from private data by Cloud Function)
   // Secondary profile fields
   ethnicity?: string;
   relationshipStatus?: string;
@@ -68,16 +68,13 @@ export interface DiscoveryFilters {
   // Activity filters
   onlineNow: boolean;
   activeRecently: boolean;
-
-  // Trust score filter (Cloud Function reads from private subcollection)
-  minTrustScore: number; // 0-100, minimum trust score required
 }
 
 /**
  * Sorting options for discovery
  */
 export interface DiscoverySort {
-  field: 'distance' | 'lastActive' | 'newest' | 'age' | 'trustScore';
+  field: 'distance' | 'lastActive' | 'newest' | 'age';
   direction: 'asc' | 'desc';
 }
 

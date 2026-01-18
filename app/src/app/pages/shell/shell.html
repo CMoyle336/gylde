@@ -21,10 +21,10 @@
     <!-- User Profile Section -->
     <div class="sidebar-profile-wrapper">
       <a 
-        routerLink="/trust"
+        routerLink="/progress"
         class="sidebar-profile"
         (click)="onNavItemClick()"
-        [matTooltip]="'Trust Score'"
+        [matTooltip]="'Profile Progress'"
         [matTooltipDisabled]="sidenavExpanded()"
         matTooltipPosition="right">
         <div class="profile-avatar">
@@ -38,9 +38,9 @@
           <span class="profile-name">{{ currentUser()?.displayName || 'Your Profile' }}</span>
           <div class="profile-completion-mini">
             <div class="completion-bar-mini">
-              <div class="completion-fill-mini" [style.width.%]="trustScore()"></div>
+              <div class="completion-fill-mini" [style.width.%]="profileProgress()"></div>
             </div>
-            <span class="completion-text">{{ trustScore() }}%</span>
+            <span class="completion-text">{{ profileProgress() }}%</span>
           </div>
         </div>
       </a>
@@ -178,7 +178,7 @@
           <span class="material-icons-outlined">{{ sidenavOpen() ? 'close' : 'menu' }}</span>
         </button>
         <span class="mobile-logo">Gylde</span>
-        <button type="button" class="mobile-profile-btn" routerLink="/trust" (click)="onNavItemClick()">
+        <button type="button" class="mobile-profile-btn" routerLink="/progress" (click)="onNavItemClick()">
           @if (userPhotoURL()) {
             <img [src]="userPhotoURL()" alt="Profile" class="mobile-avatar">
           } @else {

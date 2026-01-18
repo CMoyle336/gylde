@@ -50,21 +50,28 @@ export class TrustComponent {
   private readonly router = inject(Router);
   protected readonly subscriptionService = inject(SubscriptionService);
 
-  // Elite members get a badge, not automatic trust score
+  // Elite members get a badge
   protected readonly isElite = this.subscriptionService.isElite;
 
-  // Trust score and data from private subcollection (via subscription service)
-  protected readonly trustScore = this.subscriptionService.trustScore;
+  // Trust/progress data from private subcollection (via subscription service)
   protected readonly trustData = this.subscriptionService.trustData;
   protected readonly loading = this.subscriptionService.loading;
 
-  protected readonly trustLevel = computed(() => {
-    const score = this.trustScore();
-    if (score >= 90) return { label: 'Excellent', color: '#10b981' };
-    if (score >= 70) return { label: 'Good', color: '#c9a962' };
-    if (score >= 50) return { label: 'Fair', color: '#f59e0b' };
-    if (score >= 25) return { label: 'Building', color: '#f97316' };
-    return { label: 'New', color: '#94a3b8' };
+  // Profile progress as percentage (0-100)
+  protected readonly profileProgress = computed(() => {
+    const completed = this.completedTasks();
+    const total = this.totalTasks();
+    if (total === 0) return 0;
+    return Math.round((completed / total) * 100);
+  });
+
+  protected readonly progressLevel = computed(() => {
+    const progress = this.profileProgress();
+    if (progress >= 90) return { label: 'Complete', color: '#10b981' };
+    if (progress >= 70) return { label: 'Almost There', color: '#c9a962' };
+    if (progress >= 50) return { label: 'Good Progress', color: '#f59e0b' };
+    if (progress >= 25) return { label: 'Getting Started', color: '#f97316' };
+    return { label: 'Just Beginning', color: '#94a3b8' };
   });
 
   /**

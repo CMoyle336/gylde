@@ -9,9 +9,9 @@
  * - geohash: encoded location for distance-based queries
  *
  * Private data maintained:
- * - trustScore: calculated from trust tasks
+ * - profileProgress: percentage calculated from completed profile tasks
  * - subscription: tier and status
- * - tasks: individual trust task completion status
+ * - tasks: individual task completion status
  */
 import {onDocumentUpdated, onDocumentCreated} from "firebase-functions/v2/firestore";
 import {db, bucket} from "../config/firebase";
@@ -245,7 +245,7 @@ function calculateDenormalizedFields(data: FirebaseFirestore.DocumentData) {
     encodeGeohash(location.latitude, location.longitude, 9) :
     null;
 
-  // Note: trustScore is stored ONLY in users/{uid}/private/data for security
+  // Note: profileProgress is stored ONLY in users/{uid}/private/data for security
   // It is not written to the public user document
 
   return {isSearchable, identityVerified, sortableLastActive, geohash};
@@ -282,8 +282,8 @@ export const onUserCreated = onDocumentCreated(
 
     // Store sensitive data in private subcollection (only user can read, only functions can write)
     await db.collection("users").doc(userId).collection("private").doc("data").set({
-      // Trust data
-      trustScore: trustData.score,
+      // Profile progress data
+      profileProgress: trustData.score,
       trust: trustData,
 
       // Subscription data
@@ -300,7 +300,7 @@ export const onUserCreated = onDocumentCreated(
     logger.info(`Set denormalized fields for new user ${userId}:`, {
       isSearchable,
       identityVerified,
-      trustScore: trustData.score,
+      profileProgress: trustData.score,
       earnedPoints: trustData.earnedPoints,
       maxScore: trustData.maxScore,
       geohash: geohash?.substring(0, 4),
@@ -386,22 +386,22 @@ export const onUserUpdated = onDocumentUpdated(
     const privateDocRef = db.collection("users").doc(userId).collection("private").doc("data");
     const privateDoc = await privateDocRef.get();
     const existingData = privateDoc.exists ? privateDoc.data() : null;
-    const existingTrustScore = existingData?.trustScore ?? null;
+    const existingProgress = existingData?.profileProgress ?? null;
     const existingTasks = existingData?.trust?.tasks as Record<string, TrustTask> | undefined;
 
     // Calculate new trust data, preserving completedAt timestamps for already-completed tasks
     const trustData = calculateTrustData(afterData, existingTasks);
 
     // Only update if score changed or this is a new document
-    if (trustData.score !== existingTrustScore || !privateDoc.exists) {
-      logger.info(`Updating trust data for user ${userId}: ${existingTrustScore} -> ${trustData.score}`, {
+    if (trustData.score !== existingProgress || !privateDoc.exists) {
+      logger.info(`Updating trust data for user ${userId}: ${existingProgress} -> ${trustData.score}`, {
         earnedPoints: trustData.earnedPoints,
         maxScore: trustData.maxScore,
         completedTasks: Object.values(trustData.tasks).filter((t) => t.completed).length,
       });
 
       await privateDocRef.set({
-        trustScore: trustData.score,
+        profileProgress: trustData.score,
         trust: trustData,
         updatedAt: Timestamp.now(),
       }, {merge: true});

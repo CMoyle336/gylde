@@ -167,11 +167,11 @@ export const routes: Routes = [
         },
       },
       {
-        path: 'trust',
+        path: 'progress',
         loadComponent: () => import('./pages/trust/trust').then((m) => m.TrustComponent),
         data: {
           seo: {
-            title: 'Trust Score',
+            title: 'Profile Progress',
             noIndex: true,
           },
         },

@@ -4,7 +4,7 @@
       <mat-spinner diameter="48"></mat-spinner>
     </div>
   } @else {
-    <!-- Hero Section with Trust Score -->
+    <!-- Hero Section with Profile Progress -->
     <div class="hero-section">
       <div class="hero-content">
         <div class="score-ring-container">
@@ -26,37 +26,37 @@
               r="54"
               fill="none"
               stroke-width="8"
-              [style.stroke]="trustLevel().color"
-              [attr.stroke-dasharray]="getStrokeDasharray(trustScore())"
+              [style.stroke]="progressLevel().color"
+              [attr.stroke-dasharray]="getStrokeDasharray(profileProgress())"
               stroke-linecap="round"
             />
           </svg>
           <div class="score-content">
-            <span class="score-value">{{ trustScore() }}</span>
-            <span class="score-label">Trust Score</span>
+            <span class="score-value">{{ profileProgress() }}%</span>
+            <span class="score-label">Complete</span>
           </div>
         </div>
 
         <div class="hero-info">
-          <h1 class="hero-title">Your Trust Score</h1>
-          <div class="trust-level" [style.color]="trustLevel().color">
+          <h1 class="hero-title">Profile Progress</h1>
+          <div class="trust-level" [style.color]="progressLevel().color">
             <span class="material-icons-outlined">{{ 
-              trustScore() >= 70 ? 'verified' : 
-              trustScore() >= 50 ? 'shield' : 'security' 
+              profileProgress() >= 80 ? 'verified' : 
+              profileProgress() >= 50 ? 'trending_up' : 'edit_note' 
             }}</span>
-            {{ trustLevel().label }}
+            {{ progressLevel().label }}
           </div>
           <p class="hero-description">
             @if (isElite()) {
               As an Elite member, you have access to AI assistance for your profile and conversations, plus a private virtual phone number.
             } @else {
-              Your trust score helps others feel confident connecting with you. 
-              Complete the tasks below to increase your score and build trust.
+              Complete your profile to stand out and make meaningful connections. 
+              A complete profile helps others know you're serious about dating.
             }
           </p>
           <div class="progress-summary">
             <span class="material-icons-outlined">task_alt</span>
-            <span>{{ completedTasks() }} of {{ totalTasks() }} tasks completed</span>
+            <span>{{ completedTasks() }} of {{ totalTasks() }} items completed</span>
           </div>
         </div>
       </div>
@@ -141,12 +141,11 @@
       <div class="info-card">
         <span class="material-icons-outlined info-icon">info</span>
         <div class="info-content">
-          <h3>Why Trust Matters</h3>
+          <h3>Why Complete Your Profile?</h3>
           <p>
-            A higher trust score makes you more visible to other members and shows 
-            that you're a genuine person looking for real connections. Verified 
-            members get priority in search results and are more likely to receive 
-            messages.
+            A complete profile helps you stand out and shows others you're serious 
+            about making real connections. Verified members with detailed profiles 
+            are more likely to receive messages and get quality matches.
           </p>
         </div>
       </div>

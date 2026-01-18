@@ -29,8 +29,7 @@ const DEFAULT_FILTERS: DiscoveryFilters = {
   height: [],
   income: [],
   onlineNow: false,
-  activeRecently: false,
-  minTrustScore: 0,
+  activeRecently: false
 };
 
 const DEFAULT_SORT: DiscoverySort = {
@@ -88,8 +87,7 @@ export class DiscoveryService {
       filters.height.length > 0 ||
       filters.income.length > 0 ||
       filters.onlineNow ||
-      filters.activeRecently ||
-      filters.minTrustScore > 0
+      filters.activeRecently
     );
   });
 
@@ -113,7 +111,6 @@ export class DiscoveryService {
     if (filters.income.length > 0) count++;
     if (filters.onlineNow) count++;
     if (filters.activeRecently) count++;
-    if (filters.minTrustScore > 0) count++;
 
     return count;
   });
@@ -446,19 +443,9 @@ export class DiscoveryService {
 
   readonly sortOptions: { value: DiscoverySort; label: string }[] = [
     { value: { field: 'lastActive', direction: 'desc' }, label: 'Recently Active' },
-    { value: { field: 'trustScore', direction: 'desc' }, label: 'Highest Trust Score' },
     { value: { field: 'distance', direction: 'asc' }, label: 'Nearest' },
     { value: { field: 'newest', direction: 'desc' }, label: 'Newest Profiles' },
     { value: { field: 'age', direction: 'asc' }, label: 'Age (Youngest)' },
     { value: { field: 'age', direction: 'desc' }, label: 'Age (Oldest)' },
-  ];
-
-  // Trust score options for filtering (Cloud Function reads from private subcollection)
-  readonly trustScoreOptions: { value: number; label: string }[] = [
-    { value: 0, label: 'Any trust score' },
-    { value: 25, label: '25% or higher' },
-    { value: 50, label: '50% or higher' },
-    { value: 70, label: '70% or higher' },
-    { value: 90, label: '90% or higher' },
   ];
 }

@@ -14,7 +14,7 @@ import { MessageService } from '../../core/services/message.service';
 import { MatchesService } from '../../core/services/matches.service';
 import { BlockService } from '../../core/services/block.service';
 import { SubscriptionService } from '../../core/services/subscription.service';
-import { ActivityDisplay } from '../../core/interfaces';
+import { ActivityDisplay, TRUST_TASK_UI } from '../../core/interfaces';
 import { PhotoAccessDialogComponent } from '../../components/photo-access-dialog';
 
 @Component({
@@ -49,8 +49,17 @@ export class ShellComponent implements OnInit, OnDestroy {
   // Message state
   protected readonly messageUnreadCount = this.messageService.totalUnreadCount;
   protected readonly activeConversation = this.messageService.activeConversation;
-  // Trust score from private subcollection (via subscription service)
-  protected readonly trustScore = this.subscriptionService.trustScore;
+  // Profile progress from private subcollection (via subscription service)
+  private readonly trustData = this.subscriptionService.trustData;
+  
+  protected readonly profileProgress = computed(() => {
+    const data = this.trustData();
+    if (!data?.tasks) return 0;
+    const completed = Object.values(data.tasks).filter(t => t.completed).length;
+    const total = TRUST_TASK_UI.length;
+    if (total === 0) return 0;
+    return Math.round((completed / total) * 100);
+  });
   
   // Sidebar state - initialize from localStorage
   protected readonly sidenavOpen = signal(false);
