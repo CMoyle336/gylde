@@ -103,16 +103,60 @@
         </div>
         }
 
-        <!-- Chat Input -->
-        <app-chat-input
-          [isBlocked]="isOtherUserBlocked()"
-          [isAiPanelOpen]="isAiPanelOpen()"
-          [hasAiAccess]="hasAiAccess()"
-          (messageSent)="onMessageSent($event)"
-          (typing)="onTyping()"
-          (draftChanged)="onDraftChanged($event)"
-          (aiAssistToggled)="onAiAssistToggled()">
-        </app-chat-input>
+        <!-- Message Restriction Alert (replaces chat input when blocked) -->
+        @if (messageBlocked(); as blocked) {
+          <div class="message-restriction-alert">
+            <span class="material-icons-outlined alert-icon">
+              @switch (blocked.reason) {
+                @case ('daily_limit_reached') { schedule }
+                @case ('tier_restriction') { trending_up }
+                @case ('blocked') { block }
+                @default { warning }
+              }
+            </span>
+            <div class="alert-content">
+              @switch (blocked.reason) {
+                @case ('daily_limit_reached') {
+                  <h4>Daily Limit Reached</h4>
+                  <p>You've used all your messages for today. Your limit resets at midnight.</p>
+                }
+                @case ('tier_restriction') {
+                  <h4>Improve Your Reputation</h4>
+                  <p>Build your reputation to unlock messaging with this user. Complete your profile and verify your identity to get started.</p>
+                }
+                @case ('blocked') {
+                  <h4>Cannot Message</h4>
+                  <p>You cannot exchange messages with this user.</p>
+                }
+                @default {
+                  <h4>Unable to Send</h4>
+                  <p>Unable to send messages at this time.</p>
+                }
+              }
+            </div>
+          </div>
+        } @else {
+          <!-- Message Limit Warning (when running low but not blocked) -->
+          @if (remainingMessages(); as remaining) {
+            @if (remaining <= 3 && remaining > 0) {
+              <div class="message-limit-warning">
+                <span class="material-icons-outlined">info</span>
+                <span>{{ remaining }} message{{ remaining === 1 ? '' : 's' }} remaining today</span>
+              </div>
+            }
+          }
+
+          <!-- Chat Input -->
+          <app-chat-input
+            [isBlocked]="isOtherUserBlocked()"
+            [isAiPanelOpen]="isAiPanelOpen()"
+            [hasAiAccess]="hasAiAccess()"
+            (messageSent)="onMessageSent($event)"
+            (typing)="onTyping()"
+            (draftChanged)="onDraftChanged($event)"
+            (aiAssistToggled)="onAiAssistToggled()">
+          </app-chat-input>
+        }
       }
     } @else {
       <!-- No chat selected (desktop only) -->

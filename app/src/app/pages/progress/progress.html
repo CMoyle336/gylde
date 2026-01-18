@@ -4,28 +4,6 @@
       <mat-spinner diameter="48"></mat-spinner>
     </div>
   } @else {
-    <!-- Reputation Section -->
-    <div class="reputation-section">
-      <div class="reputation-content">
-        <app-reputation-badge [tier]="reputationTier()" mode="full" size="large" />
-        <div class="reputation-details">
-          <h2>Your Reputation Status</h2>
-          <p class="reputation-description">
-            Your reputation reflects your behavior on the platform. 
-            Higher tiers unlock more messaging capacity and visibility.
-          </p>
-          <div class="messaging-status">
-            <div class="status-item">
-              <span class="status-label">Daily Messages</span>
-              <span class="status-value">
-                {{ messagingStatus().remaining }} / {{ messagingStatus().dailyLimit }} remaining
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- Hero Section with Profile Progress -->
     <div class="hero-section">
       <div class="hero-content">
@@ -83,25 +61,6 @@
         </div>
       </div>
     </div>
-
-    <!-- Elite Upsell - Only show if not Elite -->
-    @if (!isElite()) {
-      <div class="elite-upsell">
-        <div class="upsell-content">
-          <div class="upsell-icon">
-            <span class="material-icons-outlined">auto_awesome</span>
-          </div>
-          <div class="upsell-text">
-            <h3>Get AI-powered dating help</h3>
-            <p>Upgrade to Elite for an AI assistant that helps craft your profile, suggests conversation starters, and a private virtual phone number.</p>
-          </div>
-        </div>
-        <button class="upsell-btn" (click)="goToSubscription()">
-          Upgrade to Elite
-          <span class="material-icons-outlined">arrow_forward</span>
-        </button>
-      </div>
-    }
 
     <!-- Categories Section -->
     <div class="categories-section">

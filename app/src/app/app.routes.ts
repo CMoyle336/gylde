@@ -168,7 +168,7 @@ export const routes: Routes = [
       },
       {
         path: 'progress',
-        loadComponent: () => import('./pages/trust/trust').then((m) => m.TrustComponent),
+        loadComponent: () => import('./pages/progress/progress').then((m) => m.ProgressComponent),
         data: {
           seo: {
             title: 'Profile Progress',

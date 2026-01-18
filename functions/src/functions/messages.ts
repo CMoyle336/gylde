@@ -155,6 +155,8 @@ export const onMessageCreated = onDocumentCreated(
       }
 
       // Write sender metrics update
+      // Note: Use nested object structure for reputation fields
+      // (dot notation in keys doesn't work with set+merge, creates literal field names)
       await db
         .collection("users")
         .doc(senderId)
@@ -163,9 +165,11 @@ export const onMessageCreated = onDocumentCreated(
         .set(
           {
             messageMetrics: senderMetricsUpdate,
-            // Also update reputation's daily counter
-            "reputation.messagesSentToday": sentToday,
-            "reputation.lastMessageDate": today,
+            // Update reputation's daily counter using nested object (not dot notation)
+            reputation: {
+              messagesSentToday: sentToday,
+              lastMessageDate: today,
+            },
           },
           {merge: true}
         );
@@ -482,7 +486,7 @@ export const checkMessagePermission = onCall<{
  */
 function getMinimumTierToMessage(recipientTier: ReputationTier): ReputationTier {
   // Check each tier from lowest to highest
-  const tiers: ReputationTier[] = ["new", "verified", "established", "trusted", "distinguished"];
+  const tiers: ReputationTier[] = ["new", "active", "established", "trusted", "distinguished"];
 
   for (const tier of tiers) {
     if (canTierMessage(tier, recipientTier)) {
@@ -530,7 +534,7 @@ export const getMessagingStatus = onCall<void>(
         sentToday,
         remaining: Math.max(0, tierConfig.dailyMessages - sentToday),
         canMessageTiers: tierConfig.canMessage === "all"
-          ? ["new", "verified", "established", "trusted", "distinguished"]
+          ? ["new", "active", "established", "trusted", "distinguished"]
           : tierConfig.canMessage,
       };
     } catch (error) {

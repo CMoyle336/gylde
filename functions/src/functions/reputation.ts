@@ -501,7 +501,7 @@ export async function initializeReputation(userId: string): Promise<void> {
     tierChangedAt: now,
     createdAt: now,
     dailyMessageLimit: REPUTATION_CONFIG.tiers.new.dailyMessages,
-    canMessageMinTier: "verified",
+    canMessageMinTier: "active",
     signals: getDefaultSignals(),
     messagesSentToday: 0,
     lastMessageDate: today,
@@ -531,3 +531,38 @@ export async function initializeReputation(userId: string): Promise<void> {
 
   logger.info(`Reputation initialized for user ${userId}`);
 }
+
+// ============================================================================
+// DEVELOPMENT/DEBUG FUNCTIONS
+// ============================================================================
+
+/**
+ * Manually trigger reputation recalculation for the current user
+ * This is intended for development/testing purposes
+ */
+export const refreshMyReputation = onCall<void>(
+  {region: "us-central1"},
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Must be logged in");
+    }
+
+    const userId = request.auth.uid;
+
+    try {
+      logger.info(`Manual reputation refresh requested for user ${userId}`);
+
+      const newReputation = await recalculateReputation(userId);
+
+      return {
+        success: true,
+        tier: newReputation.tier,
+        dailyMessageLimit: newReputation.dailyMessageLimit,
+        messagesSentToday: newReputation.messagesSentToday,
+      };
+    } catch (error) {
+      logger.error(`Error refreshing reputation for ${userId}:`, error);
+      throw new HttpsError("internal", "Failed to refresh reputation");
+    }
+  }
+);

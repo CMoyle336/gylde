@@ -13,7 +13,7 @@
  */
 export type ReputationTier =
   | 'new'
-  | 'verified'
+  | 'active'
   | 'established'
   | 'trusted'
   | 'distinguished';
@@ -23,7 +23,7 @@ export type ReputationTier =
  */
 export const REPUTATION_TIER_ORDER: ReputationTier[] = [
   'new',
-  'verified',
+  'active',
   'established',
   'trusted',
   'distinguished',
@@ -62,10 +62,10 @@ export const TIER_DISPLAY: Record<ReputationTier, TierDisplay> = {
     icon: 'fiber_new',
     color: '#94a3b8', // slate-400
   },
-  verified: {
-    label: 'Verified',
-    description: 'Identity confirmed',
-    icon: 'verified_user',
+  active: {
+    label: 'Active',
+    description: 'Engaged member',
+    icon: 'trending_up',
     color: '#3b82f6', // blue-500
   },
   established: {
@@ -104,12 +104,12 @@ export const TIER_CONFIG: Record<ReputationTier, TierConfig> = {
   new: {
     minTier: 'new',
     dailyMessages: 5,
-    canMessageTiers: ['verified', 'established'],
+    canMessageTiers: ['active', 'established'],
   },
-  verified: {
-    minTier: 'verified',
+  active: {
+    minTier: 'active',
     dailyMessages: 15,
-    canMessageTiers: ['new', 'verified', 'established'],
+    canMessageTiers: ['new', 'active', 'established'],
   },
   established: {
     minTier: 'established',

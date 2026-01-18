@@ -18,7 +18,7 @@ import {Timestamp} from "firebase-admin/firestore";
  */
 export type ReputationTier =
   | "new"
-  | "verified"
+  | "active"
   | "established"
   | "trusted"
   | "distinguished";
@@ -28,7 +28,7 @@ export type ReputationTier =
  */
 export const REPUTATION_TIER_ORDER: ReputationTier[] = [
   "new",
-  "verified",
+  "active",
   "established",
   "trusted",
   "distinguished",
@@ -170,12 +170,12 @@ export const REPUTATION_CONFIG = {
     new: {
       minScore: 0,
       dailyMessages: 5,
-      canMessage: ["verified", "established"] as ReputationTier[],
+      canMessage: ["active", "established"] as ReputationTier[],
     },
-    verified: {
+    active: {
       minScore: 200,
       dailyMessages: 15,
-      canMessage: ["new", "verified", "established"] as ReputationTier[],
+      canMessage: ["new", "active", "established"] as ReputationTier[],
     },
     established: {
       minScore: 400,
@@ -236,7 +236,7 @@ export function scoreToTier(score: number): ReputationTier {
   if (score >= tiers.distinguished.minScore) return "distinguished";
   if (score >= tiers.trusted.minScore) return "trusted";
   if (score >= tiers.established.minScore) return "established";
-  if (score >= tiers.verified.minScore) return "verified";
+  if (score >= tiers.active.minScore) return "active";
   return "new";
 }
 

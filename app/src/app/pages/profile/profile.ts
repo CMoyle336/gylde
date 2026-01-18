@@ -11,6 +11,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog } from '@angular/material/dialog';
+import { Functions, httpsCallable } from '@angular/fire/functions';
 import { UserProfileService } from '../../core/services/user-profile.service';
 import { ImageUploadService } from '../../core/services/image-upload.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -18,10 +19,12 @@ import { PhotoAccessService } from '../../core/services/photo-access.service';
 import { PlacesService, PlaceSuggestion } from '../../core/services/places.service';
 import { SubscriptionService } from '../../core/services/subscription.service';
 import { AiChatService } from '../../core/services/ai-chat.service';
-import { OnboardingProfile, GeoLocation } from '../../core/interfaces';
+import { OnboardingProfile, GeoLocation, ReputationTier, TIER_CONFIG } from '../../core/interfaces';
 import { Photo } from '../../core/interfaces/photo.interface';
 import { ALL_CONNECTION_TYPES, getConnectionTypeLabel, SUPPORT_ORIENTATION_OPTIONS, getSupportOrientationLabel } from '../../core/constants/connection-types';
 import { PhotoAccessDialogComponent } from '../../components/photo-access-dialog';
+import { ReputationBadgeComponent } from '../../components/reputation-badge';
+import { environment } from '../../../environments/environment';
 
 type LocationStatus = 'idle' | 'detecting' | 'success' | 'error';
 
@@ -75,6 +78,7 @@ interface UploadingPhoto {
     MatIconModule,
     MatProgressSpinnerModule,
     MatTooltipModule,
+    ReputationBadgeComponent,
   ],
 })
 export class ProfileComponent implements OnInit, OnDestroy {
@@ -87,8 +91,15 @@ export class ProfileComponent implements OnInit, OnDestroy {
   private readonly aiChatService = inject(AiChatService);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly dialog = inject(MatDialog);
+  private readonly functions = inject(Functions);
+
+  // Development mode flag
+  protected readonly isDev = !environment.production;
 
   protected readonly uploadError = signal<string | null>(null);
+  
+  // Reputation refresh state (dev only)
+  protected readonly refreshingReputation = signal(false);
 
   @ViewChild('photoInput') photoInput!: ElementRef<HTMLInputElement>;
 
@@ -129,6 +140,48 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   // Max photos allowed based on subscription tier
   protected readonly maxPhotos = computed(() => this.subscriptionService.capabilities().maxPhotos);
+
+  // Reputation data from subscription service
+  protected readonly reputationData = this.subscriptionService.reputationData;
+
+  // Reputation tier for display
+  protected readonly reputationTier = computed<ReputationTier>(() => {
+    return this.reputationData()?.tier ?? 'new';
+  });
+
+  // Messaging limits from reputation
+  protected readonly messagingStatus = computed(() => {
+    const rep = this.reputationData();
+    const tier = rep?.tier ?? 'new';
+    const config = TIER_CONFIG[tier];
+    return {
+      dailyLimit: rep?.dailyMessageLimit ?? config.dailyMessages,
+      sentToday: rep?.messagesSentToday ?? 0,
+      remaining: (rep?.dailyMessageLimit ?? config.dailyMessages) - (rep?.messagesSentToday ?? 0),
+    };
+  });
+
+  /**
+   * Manually refresh reputation (development only)
+   */
+  async refreshReputation(): Promise<void> {
+    if (!this.isDev) return;
+    
+    this.refreshingReputation.set(true);
+    try {
+      const refreshFn = httpsCallable<void, { success: boolean; tier: string }>(
+        this.functions,
+        'refreshMyReputation'
+      );
+      const result = await refreshFn();
+      console.log('Reputation refreshed:', result.data);
+      // The subscription service will pick up the changes from Firestore
+    } catch (error) {
+      console.error('Failed to refresh reputation:', error);
+    } finally {
+      this.refreshingReputation.set(false);
+    }
+  }
 
   // AI Polish state (Elite feature)
   protected readonly isElite = computed(() => this.subscriptionService.isElite());

@@ -25,6 +25,7 @@ import {
   DocumentData,
   increment,
 } from '@angular/fire/firestore';
+import { Functions, httpsCallable } from '@angular/fire/functions';
 import { AuthService } from './auth.service';
 import { StorageService } from './storage.service';
 import { BlockService } from './block.service';
@@ -33,8 +34,21 @@ import {
   Conversation,
   ConversationDisplay,
   MessageDisplay,
+  ReputationTier,
 } from '../interfaces';
 import { UserProfile } from '../interfaces/user.interface';
+
+/** Result from the checkMessagePermission Cloud Function */
+interface MessagePermissionResult {
+  allowed: boolean;
+  reason: string | null;
+  dailyLimit: number;
+  sentToday: number;
+  remaining: number;
+  senderTier?: ReputationTier;
+  recipientTier?: ReputationTier;
+  requiredTier?: ReputationTier;
+}
 
 export type ConversationFilter = 'all' | 'unread' | 'archived';
 
@@ -43,6 +57,7 @@ export type ConversationFilter = 'all' | 'unread' | 'archived';
 })
 export class MessageService {
   private readonly firestore = inject(Firestore);
+  private readonly functions = inject(Functions);
   private readonly storageService = inject(StorageService);
   private readonly authService = inject(AuthService);
   private readonly blockService = inject(BlockService);
@@ -55,6 +70,25 @@ export class MessageService {
   private readonly _isOtherUserTyping = signal(false);
   private readonly _conversationFilter = signal<ConversationFilter>('all');
   private readonly _otherUserStatus = signal<{ isOnline: boolean; lastActiveAt: Date | null } | null>(null);
+  
+  // Message permission state (fetched once when conversation opens)
+  private readonly _messagePermission = signal<MessagePermissionResult | null>(null);
+  readonly messagePermission = this._messagePermission.asReadonly();
+  
+  // Local remaining message count (decremented after each send)
+  private readonly _remainingMessages = signal<number | null>(null);
+  readonly remainingMessages = this._remainingMessages.asReadonly();
+  
+  // Message blocked state (for UI to show error messages)
+  private readonly _messageBlocked = signal<{ reason: string; requiredTier?: ReputationTier } | null>(null);
+  readonly messageBlocked = this._messageBlocked.asReadonly();
+  
+  // Computed: whether user has exhausted their daily limit
+  readonly isMessageLimitReached = computed(() => {
+    const remaining = this._remainingMessages();
+    return remaining !== null && remaining <= 0;
+  });
+  
   // Track the other user's lastViewedAt for read receipts on our messages
   private _otherUserLastViewedAt: Date | null = null;
 
@@ -277,12 +311,20 @@ export class MessageService {
     this._isOtherUserTyping.set(false);
     this._otherUserStatus.set(null);
     this._hasOlderMessages.set(true);
+    this._messageBlocked.set(null);
+    this._messagePermission.set(null);
+    this._remainingMessages.set(null); // Reset until permission is checked
     this.oldestMessageDoc = null;
     this.hasMarkedAsRead = false; // Reset read marker
     this.lastProcessedMessageId = null; // Reset message tracking
     
     // Initialize other user's lastViewedAt for read receipts
     this._otherUserLastViewedAt = conversation.otherUserLastViewedAt ?? null;
+    
+    // Check message permission once when opening (sets remaining messages)
+    if (conversation.otherUser?.uid) {
+      this.checkMessagePermission(conversation.otherUser.uid).catch(() => {});
+    }
     
     // Track active conversation ID for typing status extraction from conversations listener
     this.activeConversationId = conversation.id;
@@ -314,6 +356,9 @@ export class MessageService {
     this._isOtherUserTyping.set(false);
     this._otherUserStatus.set(null);
     this._hasOlderMessages.set(true);
+    this._messageBlocked.set(null);
+    this._messagePermission.set(null);
+    this._remainingMessages.set(null);
     this.oldestMessageDoc = null;
     this.activeConversationId = null;
     this.hasMarkedAsRead = false;
@@ -849,6 +894,69 @@ export class MessageService {
   }
 
   /**
+   * Clear the message blocked state
+   * Call this when the user dismisses an error message
+   */
+  clearMessageBlocked(): void {
+    this._messageBlocked.set(null);
+  }
+
+  /**
+   * Check if the current user can send a message to a recipient
+   * Uses the checkMessagePermission Cloud Function to enforce:
+   * - Daily message limits based on reputation tier
+   * - Tier-based messaging permissions
+   * - Block status
+   * 
+   * Called once when opening a conversation, not on every message.
+   */
+  async checkMessagePermission(recipientId: string): Promise<MessagePermissionResult> {
+    try {
+      const checkFn = httpsCallable<{ recipientId: string }, MessagePermissionResult>(
+        this.functions,
+        'checkMessagePermission'
+      );
+      const result = await checkFn({ recipientId });
+      this._messagePermission.set(result.data);
+      
+      // Initialize local remaining count from server
+      this._remainingMessages.set(result.data.remaining);
+      
+      // If not allowed, set the blocked state
+      if (!result.data.allowed) {
+        this._messageBlocked.set({
+          reason: result.data.reason ?? 'unknown',
+          requiredTier: result.data.requiredTier,
+        });
+      }
+      
+      return result.data;
+    } catch (error) {
+      console.error('Error checking message permission:', error);
+      // Default to allowed if check fails to avoid blocking users
+      this._remainingMessages.set(100); // Generous fallback
+      return {
+        allowed: true,
+        reason: null,
+        dailyLimit: 0,
+        sentToday: 0,
+        remaining: 100,
+      };
+    }
+  }
+
+  /**
+   * Decrement the local remaining message count after sending
+   * Called internally after a message is successfully sent
+   */
+  private decrementRemainingMessages(): void {
+    const current = this._remainingMessages();
+    if (current !== null && current > 0) {
+      this._remainingMessages.set(current - 1);
+    }
+  }
+
+  /**
    * Send a message in the active conversation
    * Supports text only, images only, or both text and images
    * @param content Text content
@@ -862,6 +970,21 @@ export class MessageService {
     const hasImages = files.length > 0;
 
     if (!currentUser || !activeConversation || (!hasText && !hasImages)) return;
+
+    // Check local remaining message count (already set when conversation opened)
+    const remaining = this._remainingMessages();
+    if (remaining !== null && remaining <= 0) {
+      // Daily limit reached - show error
+      this._messageBlocked.set({
+        reason: 'daily_limit_reached',
+      });
+      return;
+    }
+    
+    // Check if already blocked for other reasons (tier restriction, blocked user)
+    if (this._messageBlocked()) {
+      return;
+    }
 
     // Record send time to suppress typing updates for a short period
     // This prevents the rapid true/false/true cycle when sending quickly
@@ -1042,6 +1165,9 @@ export class MessageService {
       currentUser.uid,
       activeConversation.otherUser.uid
     );
+    
+    // Decrement local remaining message count
+    this.decrementRemainingMessages();
     
     // The Firestore listener will receive the real message and replace the pending one
   }

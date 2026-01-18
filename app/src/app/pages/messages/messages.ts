@@ -125,6 +125,12 @@ export class MessagesComponent implements OnInit, OnDestroy, AfterViewInit {
     return this.subscriptionService.capabilities().canMessage;
   });
 
+  // Message permission from reputation system
+  protected readonly messagePermission = this.messageService.messagePermission;
+  protected readonly messageBlocked = this.messageService.messageBlocked;
+  protected readonly remainingMessages = this.messageService.remainingMessages;
+  protected readonly isMessageLimitReached = this.messageService.isMessageLimitReached;
+
   // Virtual Phone state (Elite feature)
   protected readonly virtualPhone = signal<VirtualPhone | null>(null);
   protected readonly virtualPhoneLoading = signal(false);

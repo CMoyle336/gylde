@@ -81,7 +81,7 @@ export function getSubscriptionCapabilities(tier: SubscriptionTier): Subscriptio
     case 'free':
     default:
       return {
-        canMessage: false,
+        canMessage: true, // All users can send messages
         canVerifyProfile: true, // Free users can verify their identity
         hasAIAssistant: false,
         hasVirtualPhone: false,
@@ -110,7 +110,7 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
       { id: 'photos', label: 'Upload up to 3 photos', included: true },
       { id: 'views', label: 'See who viewed you', included: true },
       { id: 'verify', label: 'Verify your profile', included: true },
-      { id: 'messaging', label: 'Send messages', included: false },
+      { id: 'messaging', label: 'Send messages', included: true },
       { id: 'private-photos', label: 'Request & view private photos', included: false },
       { id: 'priority', label: 'Priority in search results', included: false, highlight: false },
       { id: 'ai', label: 'AI assistant', included: false },

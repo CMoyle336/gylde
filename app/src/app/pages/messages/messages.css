@@ -204,6 +204,57 @@
   font-size: 1.125rem;
 }
 
+/* Message Restriction Alert (replaces chat input when blocked) */
+.message-restriction-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, var(--color-bg-secondary) 0%, var(--color-bg-elevated) 100%);
+  border-top: 1px solid var(--color-border);
+}
+
+.message-restriction-alert .alert-icon {
+  font-size: 2rem;
+  color: var(--color-accent);
+  flex-shrink: 0;
+}
+
+.message-restriction-alert .alert-content {
+  flex: 1;
+}
+
+.message-restriction-alert h4 {
+  margin: 0 0 0.5rem 0;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.message-restriction-alert p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+/* Message Limit Warning (when running low) */
+.message-limit-warning {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(251, 191, 36, 0.1);
+  border-top: 1px solid rgba(251, 191, 36, 0.2);
+  color: var(--color-accent);
+  font-size: 0.8125rem;
+}
+
+.message-limit-warning .material-icons-outlined {
+  font-size: 1rem;
+}
+
 .no-chat h3 {
   font-family: var(--font-display);
   font-size: 1rem;
