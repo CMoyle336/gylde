@@ -259,6 +259,11 @@
    ============================================ */
 
 @media (max-width: 768px) {
+  .messages-layout {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+
   .chat-area {
     display: none;
   }
