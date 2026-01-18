@@ -57,7 +57,7 @@ export class AiChatService {
   readonly starterMessages = computed(() => this._state().starterMessages);
 
   /**
-   * Check if user has AI assistant access (Elite tier)
+   * Check if user has AI assistant access (Premium tier)
    */
   readonly hasAccess = computed(() => {
     return this.subscriptionService.capabilities().hasAIAssistant;

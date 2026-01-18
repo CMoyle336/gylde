@@ -22,7 +22,7 @@ export class VirtualPhoneCardComponent {
   @Input() loading = false;
   @Input() provisioning = false;
   @Input() error: string | null = null;
-  @Input() isElite = false;
+  @Input() isPremium = false;
   @Input() hasVerifiedPhone = false;
 
   @Output() copyNumber = new EventEmitter<void>();

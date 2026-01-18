@@ -177,16 +177,6 @@ export const routes: Routes = [
         },
       },
       {
-        path: 'subscription',
-        loadComponent: () => import('./pages/subscription/subscription').then((m) => m.SubscriptionComponent),
-        data: {
-          seo: {
-            title: 'Subscription',
-            noIndex: true,
-          },
-        },
-      },
-      {
         path: 'user/:userId',
         loadComponent: () => import('./pages/user-profile/user-profile').then((m) => m.UserProfileComponent),
         data: {

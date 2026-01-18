@@ -18,26 +18,30 @@
       <div class="settings-group">
         <div class="subscription-status">
           <div class="current-plan">
-            <div class="plan-badge" [class.elite]="subscriptionService.isElite()" [class.plus]="subscriptionService.currentTier() === 'plus'">
+            <div class="plan-badge" [class.premium]="subscriptionService.isPremium()">
               <mat-icon>{{ subscriptionService.getTierBadge(subscriptionService.currentTier()) }}</mat-icon>
               <span class="plan-name">{{ subscriptionService.getTierDisplayName(subscriptionService.currentTier()) }}</span>
             </div>
             <span class="plan-status">
-              @if (subscriptionService.currentTier() === 'free') {
-                Free plan
+              @if (subscriptionService.isPremium()) {
+                @if (subscriptionService.pendingCancellation(); as cancellation) {
+                  Cancels {{ cancellation.formattedDate }}
+                } @else {
+                  Active subscription
+                }
               } @else {
-                Active subscription
+                Free plan
               }
             </span>
           </div>
           <button 
             class="manage-btn" 
-            (click)="goToSubscription()"
-            [class.upgrade]="subscriptionService.currentTier() === 'free'">
-            @if (subscriptionService.currentTier() === 'free') {
-              Upgrade
-            } @else {
+            (click)="handleSubscriptionAction()"
+            [class.upgrade]="!subscriptionService.isPremium()">
+            @if (subscriptionService.isPremium()) {
               Manage Plan
+            } @else {
+              Upgrade
             }
             <mat-icon>arrow_forward</mat-icon>
           </button>

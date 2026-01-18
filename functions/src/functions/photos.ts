@@ -10,7 +10,7 @@ const db = getFirestore();
 
 /**
  * Request access to view a user's private photos
- * Requires a paid subscription (Connect or Elite tier)
+ * Requires a paid subscription (Premium tier)
  */
 export const requestPhotoAccess = onCall(async (request) => {
   const {auth, data} = request;
@@ -40,14 +40,16 @@ export const requestPhotoAccess = onCall(async (request) => {
     throw new HttpsError("not-found", "Your profile was not found");
   }
 
-  // Check subscription - only plus/elite can request private photos
+  // Check subscription - only premium users can request private photos
+  // (plus/elite are legacy tier names that map to premium)
   const privateData = privateDataDoc.data();
   const subscriptionTier = privateData?.subscription?.tier || "free";
+  const isPremium = subscriptionTier === "premium" || subscriptionTier === "plus" || subscriptionTier === "elite";
 
-  if (subscriptionTier === "free") {
+  if (!isPremium) {
     throw new HttpsError(
       "permission-denied",
-      "Upgrade to Connect or Elite to request private photos"
+      "Upgrade to Premium to request private photos"
     );
   }
 

@@ -1,54 +1,74 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { SubscriptionCapabilities, SUBSCRIPTION_PLANS } from '../../core/interfaces';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { Functions, httpsCallable } from '@angular/fire/functions';
+import { 
+  SubscriptionCapabilities, 
+  SUBSCRIPTION_PRICE, 
+  PREMIUM_FEATURES 
+} from '../../core/interfaces';
 
 interface UpgradeDialogData {
   feature?: keyof SubscriptionCapabilities;
 }
 
-const FEATURE_MESSAGES: Record<keyof SubscriptionCapabilities, { title: string; description: string; icon: string }> = {
-  canMessage: {
-    title: 'Unlock Messaging',
-    description: 'Upgrade to Connect or Elite to send messages and start meaningful conversations.',
+const FEATURE_MESSAGES: Partial<Record<keyof SubscriptionCapabilities, { title: string; description: string; icon: string }>> = {
+  unlimitedMessaging: {
+    title: 'Unlimited Messaging',
+    description: 'Send unlimited messages without daily limits based on your reputation tier.',
     icon: 'chat_bubble',
   },
-  canVerifyProfile: {
-    title: 'Verify Your Profile',
-    description: 'Upgrade to Connect or Elite to verify your profile and build trust with other members.',
-    icon: 'verified_user',
+  canMessageAnyTier: {
+    title: 'Message Anyone',
+    description: 'Message any member regardless of their reputation tier.',
+    icon: 'send',
   },
   hasAIAssistant: {
-    title: 'Unlock AI Assistant',
-    description: 'Upgrade to Elite for an AI assistant that helps craft your profile and suggests conversation starters.',
+    title: 'AI Assistant',
+    description: 'Get an AI assistant that helps craft your profile and suggests conversation starters.',
     icon: 'auto_awesome',
   },
   hasVirtualPhone: {
-    title: 'Get a Virtual Phone Number',
-    description: 'Upgrade to Elite for a private virtual phone number to protect your real number while dating.',
+    title: 'Virtual Phone Number',
+    description: 'Get a private virtual phone number to protect your real number while dating.',
     icon: 'phone_android',
   },
-  hasPriorityVisibility: {
+  priorityVisibility: {
     title: 'Priority Visibility',
-    description: 'Upgrade to Elite to appear first in search results and get more matches.',
+    description: 'Appear first in search results and get more matches.',
     icon: 'trending_up',
   },
   canSeeWhoViewedProfile: {
     title: 'See Who Viewed You',
-    description: 'Upgrade to Connect or Elite to see who has been viewing your profile.',
+    description: 'See who has been viewing your profile.',
     icon: 'visibility',
+  },
+  canSeeWhoFavorited: {
+    title: 'See Who Favorited You',
+    description: 'See who has added you to their favorites.',
+    icon: 'favorite',
   },
   maxPhotos: {
     title: 'Upload More Photos',
-    description: 'Upgrade to add more photos and showcase more of yourself.',
+    description: 'Upload up to 10 photos to showcase more of yourself.',
     icon: 'photo_library',
   },
   canAccessPrivatePhotos: {
     title: 'Access Private Photos',
-    description: 'Upgrade to request and share private photos with your connections.',
+    description: 'Request and share private photos with your connections.',
     icon: 'lock_open',
+  },
+  advancedFilters: {
+    title: 'Advanced Filters',
+    description: 'Use advanced filters like income, education, and more to find your perfect match.',
+    icon: 'tune',
+  },
+  readReceipts: {
+    title: 'Read Receipts',
+    description: 'Know when your messages have been read.',
+    icon: 'done_all',
   },
 };
 
@@ -60,33 +80,63 @@ const FEATURE_MESSAGES: Record<keyof SubscriptionCapabilities, { title: string; 
   imports: [
     MatButtonModule,
     MatIconModule,
+    MatProgressSpinnerModule,
   ],
 })
 export class UpgradeDialogComponent {
   private readonly dialogRef = inject(MatDialogRef<UpgradeDialogComponent>);
-  private readonly router = inject(Router);
+  private readonly functions = inject(Functions);
   private readonly data = inject<UpgradeDialogData>(MAT_DIALOG_DATA, { optional: true });
 
-  protected readonly plans = SUBSCRIPTION_PLANS.filter(p => p.id !== 'free');
+  protected readonly loading = signal(false);
+  protected readonly error = signal<string | null>(null);
+
+  protected readonly price = SUBSCRIPTION_PRICE;
+  protected readonly priceFormatted = `$${(SUBSCRIPTION_PRICE.monthly / 100).toFixed(2)}`;
+  protected readonly features = PREMIUM_FEATURES;
   
-  protected readonly featureInfo = this.data?.feature 
-    ? FEATURE_MESSAGES[this.data.feature]
-    : {
-        title: 'Upgrade Your Experience',
-        description: 'Unlock premium features to connect with more members.',
-        icon: 'star',
-      };
+  protected readonly featureInfo: { title: string; description: string; icon: string } = 
+    (this.data?.feature && FEATURE_MESSAGES[this.data.feature]) ?? {
+      title: 'Upgrade to Premium',
+      description: 'Unlock all premium features for the best Gylde experience.',
+      icon: 'star',
+    };
 
   protected close(): void {
-    this.dialogRef.close();
+    this.dialogRef.close(false);
   }
 
-  protected goToSubscription(): void {
-    this.dialogRef.close();
-    this.router.navigate(['/subscription']);
-  }
+  protected async subscribe(): Promise<void> {
+    this.loading.set(true);
+    this.error.set(null);
 
-  protected formatPrice(cents: number): string {
-    return `$${(cents / 100).toFixed(2)}`;
+    try {
+      const createCheckout = httpsCallable<
+        { tier: 'premium' },
+        { sessionId?: string; url?: string; updated?: boolean; message?: string }
+      >(this.functions, 'createSubscriptionCheckout');
+
+      const result = await createCheckout({ tier: 'premium' });
+
+      // Check if this was a direct subscription update (already subscribed)
+      if (result.data.updated) {
+        this.dialogRef.close(true);
+        return;
+      }
+
+      // Redirect to Stripe Checkout
+      if (result.data.url) {
+        window.location.href = result.data.url;
+      }
+    } catch (err: unknown) {
+      console.error('Error creating checkout:', err);
+      const error = err as { code?: string; message?: string };
+      if (error.code === 'already-exists') {
+        this.error.set(error.message || 'You are already a premium subscriber.');
+      } else {
+        this.error.set('Failed to start checkout. Please try again.');
+      }
+      this.loading.set(false);
+    }
   }
 }

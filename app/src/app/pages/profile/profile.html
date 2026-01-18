@@ -182,7 +182,7 @@
                   <input matInput [(ngModel)]="editForm.tagline" placeholder="A short phrase about you..." maxlength="100">
                   <mat-hint align="end">{{ editForm.tagline.length }}/100</mat-hint>
                 </mat-form-field>
-                @if (isElite() && editForm.tagline.length >= 3) {
+                @if (isPremium() && editForm.tagline.length >= 3) {
                   <button type="button" 
                           class="ai-polish-btn" 
                           [class.loading]="polishingField() === 'tagline'"
@@ -483,7 +483,7 @@
                             placeholder="Describe your ideal relationship..."
                             rows="3"></textarea>
                 </mat-form-field>
-                @if (isElite() && editForm.idealRelationship.length >= 10) {
+                @if (isPremium() && editForm.idealRelationship.length >= 10) {
                   <button type="button" 
                           class="ai-polish-btn" 
                           [class.loading]="polishingField() === 'idealRelationship'"
@@ -534,7 +534,7 @@
                             placeholder="What does support mean to you?"
                             rows="3"></textarea>
                 </mat-form-field>
-                @if (isElite() && editForm.supportMeaning.length >= 10) {
+                @if (isPremium() && editForm.supportMeaning.length >= 10) {
                   <button type="button" 
                           class="ai-polish-btn" 
                           [class.loading]="polishingField() === 'supportMeaning'"

@@ -1,6 +1,8 @@
 /**
  * Stripe Subscription Cloud Functions
  * Handles subscription checkout, management, and webhook events
+ * 
+ * Simplified to free/premium model at $49.99/month
  */
 import {onCall, onRequest, HttpsError} from "firebase-functions/v2/https";
 import {db} from "../config/firebase";
@@ -18,37 +20,29 @@ const getStripe = (): Stripe => {
   });
 };
 
-// Subscription tier type
-type SubscriptionTier = "free" | "plus" | "elite";
+// Subscription tier type - simplified to free/premium
+type SubscriptionTier = "free" | "premium";
 
-// Tier order for determining upgrade vs downgrade
-const TIER_ORDER: Record<SubscriptionTier, number> = {
-  free: 0,
-  plus: 1,
-  elite: 2,
-};
-
-/**
- * Determine if changing from one tier to another is an upgrade or downgrade
- */
-function isUpgrade(fromTier: SubscriptionTier, toTier: SubscriptionTier): boolean {
-  return TIER_ORDER[toTier] > TIER_ORDER[fromTier];
+// Legacy tier mapping for backwards compatibility
+function normalizeTier(tier: string): SubscriptionTier {
+  if (tier === "plus" || tier === "elite" || tier === "premium") {
+    return "premium";
+  }
+  return "free";
 }
 
-// Price ID configuration - these should be set as environment variables or secrets
-// Format: STRIPE_PRICE_PLUS_MONTHLY, STRIPE_PRICE_PLUS_QUARTERLY, etc.
-const getPriceId = (tier: SubscriptionTier, interval: "monthly" | "quarterly"): string => {
-  const key = `STRIPE_PRICE_${tier.toUpperCase()}_${interval.toUpperCase()}`;
-  const priceId = process.env[key];
+// Price ID for premium subscription
+// Set via: firebase functions:secrets:set STRIPE_PRICE_PREMIUM_MONTHLY
+const getPriceId = (): string => {
+  const priceId = process.env.STRIPE_PRICE_PREMIUM_MONTHLY;
   if (!priceId) {
-    throw new Error(`Price ID not configured for ${tier} ${interval}`);
+    throw new Error("Price ID not configured for premium subscription");
   }
   return priceId;
 };
 
 /**
- * Create a Stripe Checkout Session for subscription
- * Handles new subscriptions and upgrades/downgrades
+ * Create a Stripe Checkout Session for premium subscription
  */
 export const createSubscriptionCheckout = onCall(
   {
@@ -60,19 +54,13 @@ export const createSubscriptionCheckout = onCall(
       throw new HttpsError("unauthenticated", "User must be authenticated");
     }
 
-    const {tier, interval} = request.data as {
-      tier: SubscriptionTier;
-      interval: "monthly" | "quarterly";
-    };
+    const {tier} = request.data as { tier: string };
     const userId = request.auth.uid;
 
-    // Validate tier
-    if (!tier || !["plus", "elite"].includes(tier)) {
+    // Validate tier - only accept 'premium' (or legacy 'plus'/'elite' which map to premium)
+    const normalizedTier = normalizeTier(tier);
+    if (normalizedTier !== "premium") {
       throw new HttpsError("invalid-argument", "Invalid subscription tier");
-    }
-
-    if (!interval || !["monthly", "quarterly"].includes(interval)) {
-      throw new HttpsError("invalid-argument", "Invalid billing interval");
     }
 
     try {
@@ -102,242 +90,24 @@ export const createSubscriptionCheckout = onCall(
         });
       }
 
-      // Get the price ID for the selected plan
-      const priceId = getPriceId(tier, interval);
+      // Get the price ID for premium
+      const priceId = getPriceId();
 
-      // Check for existing active subscriptions and handle upgrade/downgrade
+      // Check for existing active subscriptions
       const existingSubscriptions = await stripe.subscriptions.list({
         customer: customerId,
         status: "active",
         limit: 10,
       });
 
-      // If user has an active subscription, update it instead of creating new
+      // If user has an active subscription, they're already premium
       if (existingSubscriptions.data.length > 0) {
-        const existingSub = existingSubscriptions.data[0];
-        const existingItem = existingSub.items.data[0];
-        const stripeTier = (existingSub.metadata?.tier as SubscriptionTier) || "plus";
-
-        // Check Firestore for pending downgrade
-        const privateDoc = await db.collection("users").doc(userId).collection("private").doc("data").get();
-        const privateData = privateDoc.data();
-        const pendingDowngradeTier = privateData?.subscription?.pendingDowngradeTier as SubscriptionTier | null;
-        const firestoreTier = (privateData?.subscription?.tier as SubscriptionTier) || stripeTier;
-
-        // If there's a pending downgrade, the Stripe tier is the pending tier, not the current tier
-        // The user's actual current tier is in Firestore
-        const currentTier = pendingDowngradeTier ? firestoreTier : stripeTier;
-
-        // Check if trying to subscribe to the same plan
-        if (existingItem.price.id === priceId) {
-          // If there's a pending downgrade to this tier, inform the user
-          if (pendingDowngradeTier === tier) {
-            throw new HttpsError(
-              "already-exists",
-              "You already have a scheduled downgrade to this plan"
-            );
-          }
-          throw new HttpsError(
-            "already-exists",
-            "You are already subscribed to this plan"
-          );
-        }
-
-        // If user is trying to go back to their current tier (canceling downgrade)
-        if (pendingDowngradeTier && tier === firestoreTier) {
-          // Cancel the pending downgrade by reverting to the original price
-          const originalPriceId = getPriceId(firestoreTier, interval);
-          const updatedSubscription = await stripe.subscriptions.update(existingSub.id, {
-            items: [
-              {
-                id: existingItem.id,
-                price: originalPriceId,
-              },
-            ],
-            metadata: {
-              userId,
-              tier: firestoreTier,
-            },
-            proration_behavior: "none",
-          });
-
-          console.log(`Cancelled downgrade for user ${userId}, staying on ${firestoreTier}`);
-
-          // Clear the pending downgrade in Firestore
-          await db.collection("users").doc(userId).collection("private").doc("data").set({
-            subscription: {
-              pendingDowngradeTier: null,
-              pendingDowngradeDate: null,
-            },
-          }, {merge: true});
-
-          return {
-            updated: true,
-            subscriptionId: updatedSubscription.id,
-            message: `Downgrade cancelled. You'll continue with your ${firestoreTier === "elite" ? "Elite" : "Connect"} subscription.`,
-          };
-        }
-
-        // Determine if this is an upgrade, downgrade, or interval change
-        const upgrading = isUpgrade(currentTier, tier);
-        const sameTier = currentTier === tier;
-        const isIntervalChange = sameTier && existingItem.price.id !== priceId;
-
-        // Handle interval changes (same tier, different billing period)
-        if (isIntervalChange) {
-          // Apply immediately with proration - user gets credit for unused time
-          const updatedSubscription = await stripe.subscriptions.update(existingSub.id, {
-            items: [
-              {
-                id: existingItem.id,
-                price: priceId,
-              },
-            ],
-            metadata: {
-              userId,
-              tier,
-            },
-            proration_behavior: "create_prorations", // Credit for unused time
-          });
-
-          console.log(`Interval change for user ${userId}: updated to ${interval} billing`);
-
-          // Clear any pending downgrade since this is a fresh update
-          await db.collection("users").doc(userId).collection("private").doc("data").set({
-            subscription: {
-              pendingDowngradeTier: null,
-              pendingDowngradeDate: null,
-            },
-          }, {merge: true});
-
-          const tierName = tier === "elite" ? "Elite" : "Connect";
-          const intervalName = interval === "quarterly" ? "quarterly" : "monthly";
-          return {
-            updated: true,
-            subscriptionId: updatedSubscription.id,
-            message: `Switched to ${tierName} ${intervalName} billing. Your new billing cycle starts now.`,
-          };
-        }
-
-        if (upgrading) {
-          // UPGRADE: Apply immediately with proration
-          // User pays the difference now, gets access immediately
-          const updatedSubscription = await stripe.subscriptions.update(existingSub.id, {
-            items: [
-              {
-                id: existingItem.id,
-                price: priceId,
-              },
-            ],
-            metadata: {
-              userId,
-              tier,
-            },
-            proration_behavior: "create_prorations", // Credit for unused time, charge difference
-          });
-
-          console.log(`Upgraded subscription ${updatedSubscription.id} for user ${userId} from ${currentTier} to ${tier}`);
-
-          // Update Firestore immediately for upgrades
-          await db.collection("users").doc(userId).update({
-            isElite: tier === "elite",
-          });
-
-          const subscriptionItem = updatedSubscription.items?.data?.[0];
-          const currentPeriodEnd = subscriptionItem?.current_period_end ?
-            new Date(subscriptionItem.current_period_end * 1000) :
-            null;
-
-          await db.collection("users").doc(userId).collection("private").doc("data").set({
-            subscription: {
-              tier,
-              status: "active",
-              stripeSubscriptionId: updatedSubscription.id,
-              currentPeriodEnd,
-              pendingDowngradeTier: null, // Clear any pending downgrade
-              pendingDowngradeDate: null,
-            },
-          }, {merge: true});
-
-          // Log the plan change
-          await db.collection("users").doc(userId).collection("payments").add({
-            type: "subscription_upgrade",
-            previousTier: currentTier,
-            newTier: tier,
-            subscriptionId: updatedSubscription.id,
-            interval,
-            createdAt: FieldValue.serverTimestamp(),
-          });
-
-          return {
-            updated: true,
-            subscriptionId: updatedSubscription.id,
-            message: `Successfully upgraded to ${tier === "elite" ? "Elite" : "Connect"}! You now have access to all features.`,
-          };
-        } else {
-          // DOWNGRADE: Schedule for end of billing period
-          // User keeps current tier until period ends, then switches to new tier
-          const updatedSubscription = await stripe.subscriptions.update(existingSub.id, {
-            items: [
-              {
-                id: existingItem.id,
-                price: priceId,
-              },
-            ],
-            metadata: {
-              userId,
-              tier,
-              pendingFrom: currentTier, // Track what they're downgrading from
-            },
-            proration_behavior: "none", // No proration - new price at next billing cycle
-          });
-
-          console.log(`Scheduled downgrade for subscription ${updatedSubscription.id} for user ${userId} from ${currentTier} to ${tier}`);
-
-          // Get the date when the downgrade takes effect
-          const subscriptionItem = updatedSubscription.items?.data?.[0];
-          const currentPeriodEnd = subscriptionItem?.current_period_end ?
-            new Date(subscriptionItem.current_period_end * 1000) :
-            null;
-
-          // Store pending downgrade info but KEEP current tier active
-          await db.collection("users").doc(userId).collection("private").doc("data").set({
-            subscription: {
-              tier: currentTier, // Keep current tier until period ends
-              status: "active",
-              stripeSubscriptionId: updatedSubscription.id,
-              currentPeriodEnd,
-              pendingDowngradeTier: tier, // The tier they're downgrading to
-              pendingDowngradeDate: currentPeriodEnd, // When it takes effect
-            },
-          }, {merge: true});
-
-          // Log the scheduled downgrade
-          await db.collection("users").doc(userId).collection("payments").add({
-            type: "subscription_downgrade_scheduled",
-            previousTier: currentTier,
-            newTier: tier,
-            subscriptionId: updatedSubscription.id,
-            effectiveDate: currentPeriodEnd,
-            interval,
-            createdAt: FieldValue.serverTimestamp(),
-          });
-
-          const effectiveDateStr = currentPeriodEnd ?
-            currentPeriodEnd.toLocaleDateString("en-US", {month: "long", day: "numeric", year: "numeric"}) :
-            "your next billing date";
-
-          return {
-            updated: true,
-            scheduled: true,
-            subscriptionId: updatedSubscription.id,
-            effectiveDate: currentPeriodEnd?.toISOString(),
-            message: `Your plan will change to ${tier === "plus" ? "Connect" : "Explorer"} on ${effectiveDateStr}. You'll keep your current features until then.`,
-          };
-        }
+        throw new HttpsError(
+          "already-exists",
+          "You are already a premium subscriber"
+        );
       }
 
-      // No existing subscription - create new checkout session
       // Determine success and cancel URLs
       const baseUrl = process.env.FUNCTIONS_EMULATOR ?
         "http://localhost:4200" :
@@ -354,17 +124,16 @@ export const createSubscriptionCheckout = onCall(
             quantity: 1,
           },
         ],
-        success_url: `${baseUrl}/subscription?success=true&session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${baseUrl}/subscription?canceled=true`,
+        success_url: `${baseUrl}/discover?subscription=success&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${baseUrl}/discover?subscription=canceled`,
         metadata: {
           userId,
-          tier,
-          interval,
+          tier: "premium",
         },
         subscription_data: {
           metadata: {
             userId,
-            tier,
+            tier: "premium",
           },
         },
       });
@@ -379,7 +148,7 @@ export const createSubscriptionCheckout = onCall(
       console.error("Error creating checkout session:", error);
       if (error instanceof HttpsError) throw error;
       if (error instanceof Error && error.message.includes("Price ID not configured")) {
-        throw new HttpsError("failed-precondition", "Subscription plans not configured");
+        throw new HttpsError("failed-precondition", "Subscription not configured");
       }
       throw new HttpsError("internal", "Failed to create checkout session");
     }
@@ -420,7 +189,7 @@ export const createCustomerPortal = onCall(
       // Create Customer Portal session
       const session = await stripe.billingPortal.sessions.create({
         customer: customerId,
-        return_url: `${baseUrl}/subscription`,
+        return_url: `${baseUrl}/settings`,
       });
 
       return {url: session.url};
@@ -434,7 +203,6 @@ export const createCustomerPortal = onCall(
 
 /**
  * Stripe Webhook handler for subscription events
- * This should be called by Stripe when subscription events occur
  */
 export const stripeWebhook = onRequest(
   {
@@ -523,16 +291,13 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session): Promise
     return;
   }
 
-  const tier = session.metadata?.tier as SubscriptionTier;
+  console.log(`Checkout complete for user ${userId}, tier: premium`);
 
-  console.log(`Checkout complete for user ${userId}, tier: ${tier}`);
-
-  // The subscription update will be handled by the subscription.updated event
-  // But we can log the successful checkout here
+  // Log the successful checkout
   await db.collection("users").doc(userId).collection("payments").add({
     type: "subscription_checkout",
     sessionId: session.id,
-    tier,
+    tier: "premium",
     amount: session.amount_total,
     currency: session.currency,
     status: "completed",
@@ -567,11 +332,8 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription): Prom
 
 /**
  * Update user's subscription data in Firestore
- * Handles both regular updates and scheduled downgrades
  */
 async function updateUserSubscription(userId: string, subscription: Stripe.Subscription): Promise<void> {
-  const tier = subscription.metadata?.tier as SubscriptionTier || "plus";
-  const pendingFrom = subscription.metadata?.pendingFrom as SubscriptionTier | undefined;
   const status = subscription.status;
 
   // Map Stripe status to our status
@@ -583,6 +345,7 @@ async function updateUserSubscription(userId: string, subscription: Stripe.Subsc
   else mappedStatus = "canceled"; // For incomplete, incomplete_expired, unpaid
 
   const isActive = ["active", "trialing"].includes(status);
+  const tier: SubscriptionTier = isActive ? "premium" : "free";
 
   // Get subscription items to extract period info
   const subscriptionItem = subscription.items?.data?.[0];
@@ -593,56 +356,21 @@ async function updateUserSubscription(userId: string, subscription: Stripe.Subsc
     new Date(subscriptionItem.current_period_end * 1000) :
     null;
 
-  // Determine billing interval from the price
-  // interval_count of 3 months = quarterly, 1 month = monthly
-  const priceInterval = subscriptionItem?.price?.recurring?.interval;
-  const priceIntervalCount = subscriptionItem?.price?.recurring?.interval_count;
-  let billingInterval: "monthly" | "quarterly" = "monthly";
-  if (priceInterval === "month" && priceIntervalCount === 3) {
-    billingInterval = "quarterly";
-  }
-
-  // Check if there's a pending downgrade that just took effect
-  // This happens when the billing period renews at the lower tier
-  const privateDoc = await db.collection("users").doc(userId).collection("private").doc("data").get();
-  const privateData = privateDoc.data();
-  const pendingDowngradeTier = privateData?.subscription?.pendingDowngradeTier;
-  const pendingDowngradeDate = privateData?.subscription?.pendingDowngradeDate?.toDate?.();
-
-  // Determine the effective tier
-  let effectiveTier = tier;
-
-  // If there was a pending downgrade and we've passed the downgrade date,
-  // the new tier from Stripe metadata should now be in effect
-  if (pendingDowngradeTier && pendingDowngradeDate) {
-    const now = new Date();
-    if (now >= pendingDowngradeDate) {
-      // The downgrade has taken effect
-      effectiveTier = tier; // Use the tier from Stripe (which is the new lower tier)
-      console.log(`Downgrade took effect for user ${userId}: now on tier ${effectiveTier}`);
-    } else {
-      // Still in the grace period - keep the higher tier
-      effectiveTier = pendingFrom || privateData?.subscription?.tier || tier;
-    }
-  }
-
-  // Update user document
-  await db.collection("users").doc(userId).update({
-    isElite: isActive && effectiveTier === "elite",
-  });
-
   // Check if subscription is scheduled to cancel
-  // Stripe can use either cancel_at_period_end OR cancel_at (timestamp)
   const isScheduledToCancel = subscription.cancel_at_period_end || subscription.cancel_at !== null;
   const cancelAt = subscription.cancel_at ?
     new Date(subscription.cancel_at * 1000) :
     null;
 
+  // Update user document
+  await db.collection("users").doc(userId).update({
+    isPremium: isActive,
+  });
+
   // Build subscription data update
   const subscriptionData: Record<string, unknown> = {
-    tier: isActive ? effectiveTier : "free",
+    tier,
     status: mappedStatus,
-    billingInterval,
     stripeSubscriptionId: subscription.id,
     currentPeriodStart,
     currentPeriodEnd,
@@ -650,27 +378,12 @@ async function updateUserSubscription(userId: string, subscription: Stripe.Subsc
     cancelAt: cancelAt,
   };
 
-  // Clear pending downgrade if it has taken effect OR if subscription is set to cancel
-  if (pendingDowngradeTier && pendingDowngradeDate) {
-    const now = new Date();
-    if (now >= pendingDowngradeDate || isScheduledToCancel) {
-      subscriptionData.pendingDowngradeTier = null;
-      subscriptionData.pendingDowngradeDate = null;
-    }
-  }
-
-  // Also clear pending downgrade if subscription is explicitly set to cancel
-  if (isScheduledToCancel) {
-    subscriptionData.pendingDowngradeTier = null;
-    subscriptionData.pendingDowngradeDate = null;
-  }
-
   // Update private subscription data
   await db.collection("users").doc(userId).collection("private").doc("data").set({
     subscription: subscriptionData,
   }, {merge: true});
 
-  console.log(`Updated subscription for user ${userId}: tier=${effectiveTier}, status=${mappedStatus}`);
+  console.log(`Updated subscription for user ${userId}: tier=${tier}, status=${mappedStatus}`);
 }
 
 /**
@@ -694,7 +407,7 @@ async function handleSubscriptionCanceled(subscription: Stripe.Subscription): Pr
 
   // Update user document
   await db.collection("users").doc(userId).update({
-    isElite: false,
+    isPremium: false,
   });
 
   // Update private subscription data

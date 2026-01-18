@@ -63,10 +63,10 @@ export class HowItWorksComponent implements OnInit {
       description: 'When you find someone intriguing, reach out. Our messaging features help you connect genuinely and safely.',
       icon: 'chat_bubble',
       details: [
-        'Unlimited messaging with Connect & Elite',
-        'AI-powered message suggestions (Elite)',
+        'Unlimited messaging with Premium',
+        'AI-powered message suggestions',
         'Request access to private photos',
-        'Virtual phone numbers for safety (Elite)'
+        'Virtual phone numbers for safety'
       ]
     },
     {
@@ -85,44 +85,36 @@ export class HowItWorksComponent implements OnInit {
 
   readonly tiers = [
     {
-      name: 'Explorer',
+      name: 'Free',
       price: 'Free',
       description: 'Browse and discover',
       features: [
-        'Browse unlimited profiles',
         'Create your profile',
+        'Browse unlimited profiles',
         'Save favorites',
-        'See who viewed you',
-        'Verify your identity'
+        '3 photo uploads',
+        'Verify your identity',
+        'Reputation-based messaging limits'
       ],
       highlighted: false
     },
     {
-      name: 'Connect',
-      price: '$29.99/mo',
-      description: 'Start conversations',
-      features: [
-        'Everything in Explorer',
-        'Unlimited messaging',
-        'Request private photos',
-        'View private photos',
-        '8 photo uploads'
-      ],
-      highlighted: true
-    },
-    {
-      name: 'Elite',
-      price: '$79.99/mo',
+      name: 'Premium',
+      price: '$49.99/mo',
       description: 'The full experience',
       features: [
-        'Everything in Connect',
+        'Unlimited messaging',
+        'Message anyone regardless of tier',
+        'Request & view private photos',
+        'Advanced discovery filters',
+        'See who viewed & favorited you',
+        'Priority in search results',
         'AI message assistant',
         'AI profile polish',
         'Virtual phone number',
-        'Priority visibility',
         '10 photo uploads'
       ],
-      highlighted: false
+      highlighted: true
     }
   ];
 
@@ -145,7 +137,7 @@ export class HowItWorksComponent implements OnInit {
     },
     {
       question: 'How does the virtual phone number work?',
-      answer: 'Elite members get a dedicated virtual phone number. You can share it with matches instead of your real number. Calls and texts are forwarded to you, keeping your actual number private.'
+      answer: 'Premium members get a dedicated virtual phone number. You can share it with matches instead of your real number. Calls and texts are forwarded to you, keeping your actual number private.'
     },
     {
       question: 'Can I cancel my subscription anytime?',

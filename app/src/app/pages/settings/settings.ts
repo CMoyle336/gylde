@@ -141,8 +141,28 @@ export class SettingsComponent implements OnInit {
     });
   }
 
-  protected goToSubscription(): void {
-    this.router.navigate(['/subscription']);
+  protected async handleSubscriptionAction(): Promise<void> {
+    if (this.subscriptionService.isPremium()) {
+      // Open Stripe customer portal for managing subscription
+      this.saving.set(true);
+      try {
+        const createPortal = httpsCallable<void, { url: string }>(
+          this.functions, 
+          'createCustomerPortal'
+        );
+        const result = await createPortal();
+        if (result.data.url) {
+          window.location.href = result.data.url;
+        }
+      } catch (err) {
+        console.error('Error creating customer portal:', err);
+      } finally {
+        this.saving.set(false);
+      }
+    } else {
+      // Show upgrade dialog for free users
+      await this.subscriptionService.showUpgradePrompt();
+    }
   }
 
   private loadSettings(): void {

@@ -45,7 +45,7 @@ export class ConversationListComponent {
   @Input() virtualPhoneLoading = false;
   @Input() virtualPhoneProvisioning = false;
   @Input() virtualPhoneError: string | null = null;
-  @Input() isElite = false;
+  @Input() isPremium = false;
   @Input() hasVerifiedPhone = false;
 
   @Output() conversationSelected = new EventEmitter<ConversationDisplay>();

@@ -1,6 +1,5 @@
 import { Injectable, inject, signal, computed, DestroyRef } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
-import { Router } from '@angular/router';
 import { AuthService } from './auth.service';
 import { FirestoreService } from './firestore.service';
 import {
@@ -8,7 +7,7 @@ import {
   UserSubscription,
   SubscriptionCapabilities,
   getSubscriptionCapabilities,
-  SUBSCRIPTION_PLANS,
+  SUBSCRIPTION_PRICE,
   TrustData,
   ReputationData,
 } from '../interfaces';
@@ -31,7 +30,6 @@ export class SubscriptionService {
   private readonly authService = inject(AuthService);
   private readonly firestoreService = inject(FirestoreService);
   private readonly dialog = inject(MatDialog);
-  private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
   // Current subscription state - loaded from private subcollection
@@ -50,7 +48,11 @@ export class SubscriptionService {
   readonly loading = this._loading.asReadonly();
 
   readonly currentTier = computed<SubscriptionTier>(() => {
-    return this._subscription()?.tier ?? 'free';
+    const sub = this._subscription();
+    // Map legacy tiers to new model (Firestore may still have old tier names)
+    const tier = sub?.tier as string | undefined;
+    if (tier === 'plus' || tier === 'elite' || tier === 'premium') return 'premium';
+    return 'free';
   });
 
   readonly capabilities = computed<SubscriptionCapabilities>(() => {
@@ -63,78 +65,7 @@ export class SubscriptionService {
   });
 
   readonly isPremium = computed(() => {
-    const tier = this.currentTier();
-    return tier === 'plus' || tier === 'elite';
-  });
-
-  readonly isElite = computed(() => {
-    return this.currentTier() === 'elite';
-  });
-
-  readonly currentBillingInterval = computed(() => {
-    const sub = this._subscription();
-    
-    // Use stored billing interval if available
-    if (sub?.billingInterval) {
-      return sub.billingInterval;
-    }
-    
-    // Infer from period dates if billingInterval not stored (for existing subscriptions)
-    if (sub?.currentPeriodStart && sub?.currentPeriodEnd) {
-      let startDate: Date | null = null;
-      let endDate: Date | null = null;
-      
-      // Convert Firestore timestamps
-      if (typeof (sub.currentPeriodStart as { toDate?: () => Date }).toDate === 'function') {
-        startDate = (sub.currentPeriodStart as { toDate: () => Date }).toDate();
-      } else if (sub.currentPeriodStart instanceof Date) {
-        startDate = sub.currentPeriodStart;
-      }
-      
-      if (typeof (sub.currentPeriodEnd as { toDate?: () => Date }).toDate === 'function') {
-        endDate = (sub.currentPeriodEnd as { toDate: () => Date }).toDate();
-      } else if (sub.currentPeriodEnd instanceof Date) {
-        endDate = sub.currentPeriodEnd;
-      }
-      
-      if (startDate && endDate) {
-        // Calculate days between dates
-        const daysDiff = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-        // Quarterly is ~90 days, monthly is ~30 days
-        return daysDiff > 60 ? 'quarterly' : 'monthly';
-      }
-    }
-    
-    return null;
-  });
-
-  readonly pendingDowngrade = computed(() => {
-    const sub = this._subscription();
-    
-    // Don't show pending downgrade if subscription is set to cancel entirely
-    if (!sub?.pendingDowngradeTier || !sub?.pendingDowngradeDate || sub?.cancelAtPeriodEnd) {
-      return null;
-    }
-    
-    // Convert Firestore timestamp if needed
-    let date: Date | null = null;
-    if (sub.pendingDowngradeDate) {
-      if (typeof (sub.pendingDowngradeDate as { toDate?: () => Date }).toDate === 'function') {
-        date = (sub.pendingDowngradeDate as { toDate: () => Date }).toDate();
-      } else if (sub.pendingDowngradeDate instanceof Date) {
-        date = sub.pendingDowngradeDate;
-      }
-    }
-
-    return {
-      tier: sub.pendingDowngradeTier,
-      date,
-      formattedDate: date?.toLocaleDateString('en-US', { 
-        month: 'long', 
-        day: 'numeric', 
-        year: 'numeric' 
-      }) || 'your next billing date',
-    };
+    return this.currentTier() === 'premium';
   });
 
   readonly pendingCancellation = computed(() => {
@@ -161,7 +92,6 @@ export class SubscriptionService {
     }
 
     return {
-      currentTier: sub.tier,
       date,
       formattedDate: date?.toLocaleDateString('en-US', { 
         month: 'long', 
@@ -171,7 +101,7 @@ export class SubscriptionService {
     };
   });
 
-  readonly plans = SUBSCRIPTION_PLANS;
+  readonly price = SUBSCRIPTION_PRICE;
 
   constructor() {
     this.destroyRef.onDestroy(() => {
@@ -251,39 +181,36 @@ export class SubscriptionService {
   /**
    * Show upgrade prompt for a specific feature
    */
-  async showUpgradePrompt(feature?: keyof SubscriptionCapabilities): Promise<void> {
+  async showUpgradePrompt(feature?: keyof SubscriptionCapabilities): Promise<boolean> {
     // Dynamically import to avoid circular dependency
     const { UpgradeDialogComponent } = await import('../../components/upgrade-dialog/upgrade-dialog');
     
-    this.dialog.open(UpgradeDialogComponent, {
+    const dialogRef = this.dialog.open(UpgradeDialogComponent, {
       panelClass: 'upgrade-dialog-panel',
       data: { feature },
       width: '480px',
       maxWidth: '95vw',
     });
-  }
 
-  /**
-   * Navigate to subscription page
-   */
-  goToSubscriptionPage(): void {
-    this.router.navigate(['/subscription']);
+    return new Promise((resolve) => {
+      dialogRef.afterClosed().subscribe((result) => {
+        resolve(result === true);
+      });
+    });
   }
 
   /**
    * Get display name for a tier
    */
   getTierDisplayName(tier: SubscriptionTier): string {
-    const plan = SUBSCRIPTION_PLANS.find(p => p.id === tier);
-    return plan?.name ?? 'Free';
+    return tier === 'premium' ? 'Premium' : 'Free';
   }
 
   /**
    * Get badge icon for a tier
    */
   getTierBadge(tier: SubscriptionTier): string {
-    const plan = SUBSCRIPTION_PLANS.find(p => p.id === tier);
-    return plan?.badge ?? 'explore';
+    return tier === 'premium' ? 'star' : 'explore';
   }
 
   /**
@@ -292,14 +219,5 @@ export class SubscriptionService {
   formatPrice(cents: number): string {
     if (cents === 0) return 'Free';
     return `$${(cents / 100).toFixed(2)}`;
-  }
-
-  /**
-   * Format monthly price from quarterly total
-   */
-  formatMonthlyFromQuarterly(quarterlyCents: number): string {
-    if (quarterlyCents === 0) return 'Free';
-    const monthly = quarterlyCents / 3 / 100;
-    return `$${monthly.toFixed(2)}`;
   }
 }

@@ -397,14 +397,12 @@
   color: var(--color-text-muted);
 }
 
-.plan-badge.plus,
-.plan-badge.elite {
+.plan-badge.premium {
   background: linear-gradient(135deg, rgba(201, 169, 98, 0.15), rgba(201, 169, 98, 0.05));
   border-color: var(--color-accent);
 }
 
-.plan-badge.plus mat-icon,
-.plan-badge.elite mat-icon {
+.plan-badge.premium mat-icon {
   color: var(--color-accent);
 }
 

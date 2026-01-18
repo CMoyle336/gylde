@@ -63,7 +63,8 @@ export interface UserProfile {
   identityVerificationPaid?: boolean; // true if user has paid for verification
   identityVerificationPaidAt?: unknown; // When verification was paid for
   geohash?: string | null; // encoded location for distance-based queries
-  isElite?: boolean; // true if user has Elite subscription (for badge display)
+  isPremium?: boolean; // true if user has Premium subscription (for badge display)
+  isElite?: boolean; // @deprecated - use isPremium instead (kept for migration)
   reputationTier?: ReputationTier; // Denormalized from reputation data for efficient display
   
   // NOTE: profileProgress (trust score) and subscription are stored in users/{uid}/private/data

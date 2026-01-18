@@ -183,8 +183,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
     }
   }
 
-  // AI Polish state (Elite feature)
-  protected readonly isElite = computed(() => this.subscriptionService.isElite());
+  // AI Polish state (Premium feature)
+  protected readonly isPremium = computed(() => this.subscriptionService.isPremium());
   protected readonly polishingField = signal<string | null>(null);
   protected readonly polishSuggestions = signal<{ field: string; polished: string; alternatives: string[] } | null>(null);
 

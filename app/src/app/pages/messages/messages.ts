@@ -121,9 +121,15 @@ export class MessagesComponent implements OnInit, OnDestroy, AfterViewInit {
   protected readonly isAiPanelOpen = this.aiChatService.isOpen;
   protected readonly hasAiAccess = this.aiChatService.hasAccess;
 
-  // Messaging access (requires paid subscription)
+  // Messaging access - all users can message (Premium has unlimited, Free has reputation-based limits)
   protected readonly hasMessagingAccess = computed(() => {
-    return this.subscriptionService.capabilities().canMessage;
+    // All users can message - limits are enforced by reputation system for free users
+    return true;
+  });
+  
+  // Premium users have unlimited messaging without tier restrictions
+  protected readonly hasUnlimitedMessaging = computed(() => {
+    return this.subscriptionService.capabilities().unlimitedMessaging;
   });
 
   // Message permission from reputation system
@@ -250,8 +256,8 @@ export class MessagesComponent implements OnInit, OnDestroy, AfterViewInit {
     });
 
     effect(() => {
-      const isElite = this.subscriptionService.isElite();
-      if (isElite && !this.virtualPhone() && !this.virtualPhoneLoading() && !this.virtualPhoneLoadAttempted) {
+      const isPremium = this.subscriptionService.isPremium();
+      if (isPremium && !this.virtualPhone() && !this.virtualPhoneLoading() && !this.virtualPhoneLoadAttempted) {
         this.virtualPhoneLoadAttempted = true;
         this.loadVirtualPhone();
       }
@@ -907,7 +913,7 @@ export class MessagesComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   protected onUpgradeClicked(): void {
-    this.router.navigate(['/subscription']);
+    this.subscriptionService.showUpgradePrompt();
   }
 
   protected onVirtualPhoneSettingsClosed(): void {

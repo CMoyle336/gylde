@@ -13,28 +13,44 @@
     <p>{{ featureInfo.description }}</p>
   </div>
 
-  <!-- Quick Plan Options -->
-  <div class="quick-plans">
-    @for (plan of plans; track plan.id) {
-      <div class="quick-plan" [class.highlighted]="plan.highlighted">
-        <div class="plan-info">
-          <mat-icon>{{ plan.badge }}</mat-icon>
-          <div>
-            <span class="plan-name">{{ plan.name }}</span>
-            <span class="plan-price">{{ formatPrice(plan.quarterlyPrice / 3) }}/mo</span>
-          </div>
-        </div>
-        <span class="plan-tagline">{{ plan.tagline }}</span>
+  <!-- Price -->
+  <div class="price-section">
+    <span class="price-amount">{{ priceFormatted }}</span>
+    <span class="price-period">/month</span>
+  </div>
+
+  <!-- Features List -->
+  <div class="features-list">
+    @for (feature of features; track feature.id) {
+      <div class="feature-item">
+        <mat-icon>{{ feature.icon }}</mat-icon>
+        <span>{{ feature.label }}</span>
       </div>
     }
   </div>
 
+  <!-- Error Message -->
+  @if (error()) {
+    <div class="error-message">
+      <mat-icon>error</mat-icon>
+      <span>{{ error() }}</span>
+    </div>
+  }
+
   <!-- Actions -->
   <div class="dialog-actions">
     <button class="secondary-btn" (click)="close()">Maybe Later</button>
-    <button class="primary-btn" (click)="goToSubscription()">
-      View Plans
-      <mat-icon>arrow_forward</mat-icon>
+    <button 
+      class="primary-btn" 
+      (click)="subscribe()"
+      [disabled]="loading()">
+      @if (loading()) {
+        <mat-spinner diameter="20"></mat-spinner>
+        <span>Loading...</span>
+      } @else {
+        <span>Subscribe Now</span>
+        <mat-icon>arrow_forward</mat-icon>
+      }
     </button>
   </div>
 

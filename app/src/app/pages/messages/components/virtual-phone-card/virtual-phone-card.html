@@ -1,5 +1,5 @@
 <div class="virtual-phone-card">
-  @if (isElite && virtualPhone) {
+  @if (isPremium && virtualPhone) {
     <!-- Elite user with virtual number -->
     <div class="vp-number-display">
       <div class="vp-info">
@@ -26,13 +26,13 @@
         </button>
       </div>
     </div>
-  } @else if (isElite && loading) {
+  } @else if (isPremium && loading) {
     <!-- Elite user, loading -->
     <div class="vp-loading">
       <div class="loading-spinner small"></div>
       <span>Loading...</span>
     </div>
-  } @else if (isElite && !hasVerifiedPhone) {
+  } @else if (isPremium && !hasVerifiedPhone) {
     <!-- Elite user, need to verify phone first -->
     <div class="vp-promo vp-needs-phone">
       <div class="vp-promo-text">
@@ -44,7 +44,7 @@
         <span>Verify Phone in Settings</span>
       </a>
     </div>
-  } @else if (isElite) {
+  } @else if (isPremium) {
     <!-- Elite user, can get virtual number -->
     <div class="vp-promo">
       <div class="vp-promo-text">

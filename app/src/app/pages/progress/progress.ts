@@ -50,8 +50,8 @@ export class ProgressComponent {
   private readonly router = inject(Router);
   protected readonly subscriptionService = inject(SubscriptionService);
 
-  // Elite members get a badge
-  protected readonly isElite = this.subscriptionService.isElite;
+  // Premium members get a badge
+  protected readonly isPremium = this.subscriptionService.isPremium;
 
   // Trust/progress data from private subcollection (via subscription service)
   protected readonly trustData = this.subscriptionService.trustData;
@@ -151,6 +151,6 @@ export class ProgressComponent {
   }
 
   protected goToSubscription(): void {
-    this.router.navigate(['/subscription']);
+    this.subscriptionService.showUpgradePrompt();
   }
 }
