@@ -43,13 +43,13 @@ type SubscriptionTier = "free" | "plus" | "elite";
  */
 function getMaxPhotosForTier(tier: SubscriptionTier): number {
   switch (tier) {
-    case "elite":
-      return 20;
-    case "plus":
-      return 6;
-    case "free":
-    default:
-      return 3;
+  case "elite":
+    return 20;
+  case "plus":
+    return 6;
+  case "free":
+  default:
+    return 3;
   }
 }
 
