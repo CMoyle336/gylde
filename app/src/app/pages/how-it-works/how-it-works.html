@@ -1,0 +1,181 @@
+<div class="how-it-works-page">
+  <!-- Header -->
+  <header class="page-header">
+    <div class="header-container">
+      <a routerLink="/" class="header-logo">Gylde</a>
+      <nav class="header-nav">
+        <a routerLink="/about" class="nav-link">About Us</a>
+        <a routerLink="/" class="nav-link">Home</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="hero-backdrop"></div>
+    <div class="hero-content">
+      <span class="hero-badge">How It Works</span>
+      <h1 class="hero-title">Your Journey to <span class="text-accent">Connection</span></h1>
+      <p class="hero-description">
+        From creating your profile to building meaningful relationships—here's how Gylde 
+        makes intentional dating simple.
+      </p>
+    </div>
+  </section>
+
+  <!-- Steps Section -->
+  <section class="steps-section">
+    <div class="section-container">
+      <div class="steps-list">
+        @for (step of steps; track step.number; let i = $index) {
+          <div class="step-card" [class.reverse]="i % 2 === 1">
+            <div class="step-content">
+              <div class="step-number">{{ step.number }}</div>
+              <h2 class="step-title">{{ step.title }}</h2>
+              <p class="step-description">{{ step.description }}</p>
+              <ul class="step-details">
+                @for (detail of step.details; track detail) {
+                  <li>
+                    <span class="material-icons-outlined">check_circle</span>
+                    {{ detail }}
+                  </li>
+                }
+              </ul>
+            </div>
+            <div class="step-visual">
+              <div class="step-icon-wrapper">
+                <span class="material-icons-outlined">{{ step.icon }}</span>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- Membership Section -->
+  <section class="membership-section">
+    <div class="section-container">
+      <div class="section-header">
+        <span class="section-label">Membership Tiers</span>
+        <h2 class="section-title">Choose Your Experience</h2>
+        <p class="section-description">
+          Start free and upgrade when you're ready to connect.
+        </p>
+      </div>
+
+      <div class="tiers-grid">
+        @for (tier of tiers; track tier.name) {
+          <div class="tier-card" [class.highlighted]="tier.highlighted">
+            @if (tier.highlighted) {
+              <div class="tier-badge">Most Popular</div>
+            }
+            <h3 class="tier-name">{{ tier.name }}</h3>
+            <div class="tier-price">{{ tier.price }}</div>
+            <p class="tier-description">{{ tier.description }}</p>
+            <ul class="tier-features">
+              @for (feature of tier.features; track feature) {
+                <li>
+                  <span class="material-icons-outlined">check</span>
+                  {{ feature }}
+                </li>
+              }
+            </ul>
+            <a routerLink="/" class="tier-btn" [class.primary]="tier.highlighted">
+              {{ tier.highlighted ? 'Get Started' : 'Learn More' }}
+            </a>
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- Trust Score Section -->
+  <section class="trust-section">
+    <div class="section-container">
+      <div class="trust-content">
+        <div class="trust-info">
+          <span class="section-label">Building Trust</span>
+          <h2 class="section-title">The Trust Score System</h2>
+          <p class="trust-description">
+            Your Trust Score is a measure of your profile's authenticity and completeness. 
+            It helps other members feel confident about who they're connecting with.
+          </p>
+          
+          <div class="trust-factors">
+            <div class="trust-factor">
+              <span class="material-icons-outlined">photo_camera</span>
+              <div>
+                <h4>Complete Profile</h4>
+                <p>Add photos, write a bio, and fill out your preferences</p>
+              </div>
+            </div>
+            <div class="trust-factor">
+              <span class="material-icons-outlined">verified</span>
+              <div>
+                <h4>Identity Verification</h4>
+                <p>Verify your ID to prove you're really you</p>
+              </div>
+            </div>
+            <div class="trust-factor">
+              <span class="material-icons-outlined">update</span>
+              <div>
+                <h4>Active Engagement</h4>
+                <p>Regular activity shows you're serious about connecting</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="trust-visual">
+          <div class="trust-meter">
+            <div class="meter-fill"></div>
+            <span class="meter-label">95%</span>
+          </div>
+          <span class="trust-caption">Example Trust Score</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ Section -->
+  <section class="faq-section">
+    <div class="section-container">
+      <div class="section-header">
+        <span class="section-label">FAQ</span>
+        <h2 class="section-title">Common Questions</h2>
+      </div>
+
+      <div class="faq-list">
+        @for (faq of faqs; track faq.question; let i = $index) {
+          <div class="faq-item" [class.expanded]="expandedFaq === i">
+            <button class="faq-question" (click)="toggleFaq(i)">
+              <span>{{ faq.question }}</span>
+              <span class="material-icons-outlined">
+                {{ expandedFaq === i ? 'expand_less' : 'expand_more' }}
+              </span>
+            </button>
+            <div class="faq-answer">
+              <p>{{ faq.answer }}</p>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="cta-section">
+    <div class="section-container">
+      <div class="cta-content">
+        <h2 class="cta-title">Ready to Find Your <span class="text-accent">Connection</span>?</h2>
+        <p class="cta-description">
+          Join Gylde today and experience dating with intention.
+        </p>
+        <a routerLink="/" class="btn-primary btn-large">Create Your Profile</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <app-public-footer />
+</div>

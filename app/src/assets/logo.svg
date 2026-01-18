@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <defs>
+    <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e8d5a3"/>
+      <stop offset="50%" stop-color="#c9a962"/>
+      <stop offset="100%" stop-color="#a88b3d"/>
+    </linearGradient>
+    <linearGradient id="goldGradient2" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#e8d5a3"/>
+      <stop offset="50%" stop-color="#c9a962"/>
+      <stop offset="100%" stop-color="#a88b3d"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Two flowing shapes representing connection -->
+  <!-- Left flowing curve -->
+  <path 
+    d="M45 100 
+       C45 60, 75 40, 100 40 
+       C115 40, 125 50, 125 65
+       C125 85, 105 95, 100 100
+       C95 105, 75 115, 75 135
+       C75 150, 85 160, 100 160"
+    stroke="url(#goldGradient)" 
+    stroke-width="12" 
+    stroke-linecap="round"
+    fill="none"
+  />
+  
+  <!-- Right flowing curve (mirrored, offset) -->
+  <path 
+    d="M155 100 
+       C155 140, 125 160, 100 160 
+       C85 160, 75 150, 75 135
+       C75 115, 95 105, 100 100
+       C105 95, 125 85, 125 65
+       C125 50, 115 40, 100 40"
+    stroke="url(#goldGradient2)" 
+    stroke-width="12" 
+    stroke-linecap="round"
+    fill="none"
+  />
+  
+  <!-- Center connection point - subtle glow -->
+  <circle cx="100" cy="100" r="8" fill="#c9a962"/>
+  <circle cx="100" cy="100" r="4" fill="#e8d5a3"/>
+</svg>

@@ -1,0 +1,336 @@
+<div class="legal-page">
+  <!-- Header -->
+  <header class="legal-header">
+    <div class="header-container">
+      <a routerLink="/" class="header-logo">Gylde</a>
+      <a routerLink="/" class="back-link">
+        <span class="material-icons-outlined">arrow_back</span>
+        Back to Home
+      </a>
+    </div>
+  </header>
+
+  <!-- Content -->
+  <main class="legal-content">
+    <div class="legal-container">
+      <div class="legal-meta">
+        <span class="legal-badge">Legal</span>
+        <span class="legal-updated">Last Updated: {{ lastUpdated }}</span>
+      </div>
+
+      <h1 class="legal-title">Terms of Service</h1>
+      
+      <p class="legal-intro">
+        Welcome to Gylde. By accessing or using our platform, you agree to be bound by these 
+        Terms of Service. Please read them carefully before creating an account.
+      </p>
+
+      <nav class="legal-toc">
+        <h2>Table of Contents</h2>
+        <ol>
+          <li><a href="#acceptance">Acceptance of Terms</a></li>
+          <li><a href="#eligibility">Eligibility</a></li>
+          <li><a href="#account">Your Account</a></li>
+          <li><a href="#subscriptions">Subscriptions and Payments</a></li>
+          <li><a href="#conduct">User Conduct</a></li>
+          <li><a href="#content">User Content</a></li>
+          <li><a href="#safety">Safety and Reporting</a></li>
+          <li><a href="#intellectual-property">Intellectual Property</a></li>
+          <li><a href="#disclaimers">Disclaimers</a></li>
+          <li><a href="#limitation">Limitation of Liability</a></li>
+          <li><a href="#indemnification">Indemnification</a></li>
+          <li><a href="#termination">Termination</a></li>
+          <li><a href="#disputes">Dispute Resolution</a></li>
+          <li><a href="#changes">Changes to Terms</a></li>
+          <li><a href="#contact">Contact Us</a></li>
+        </ol>
+      </nav>
+
+      <section id="acceptance" class="legal-section">
+        <h2>1. Acceptance of Terms</h2>
+        <p>
+          By creating an account, accessing, or using Gylde ("Platform," "Service," "we," "us," or "our"), 
+          you ("User," "you," or "your") agree to be bound by these Terms of Service ("Terms"), our 
+          <a routerLink="/privacy">Privacy Policy</a>, and our Community Guidelines.
+        </p>
+        <p>
+          If you do not agree to these Terms, you may not access or use our Platform.
+        </p>
+      </section>
+
+      <section id="eligibility" class="legal-section">
+        <h2>2. Eligibility</h2>
+        <p>To use Gylde, you must:</p>
+        <ul>
+          <li>Be at least 18 years of age</li>
+          <li>Be legally able to enter into a binding contract</li>
+          <li>Not be prohibited from using the Service under applicable law</li>
+          <li>Not have been previously banned from Gylde</li>
+          <li>Not be a registered sex offender</li>
+        </ul>
+        <p>
+          By using Gylde, you represent and warrant that you meet all eligibility requirements. 
+          We may request verification of your age or identity at any time.
+        </p>
+      </section>
+
+      <section id="account" class="legal-section">
+        <h2>3. Your Account</h2>
+        
+        <h3>Account Creation</h3>
+        <p>
+          You must provide accurate, current, and complete information when creating your account. 
+          You are responsible for maintaining the confidentiality of your login credentials and 
+          for all activities that occur under your account.
+        </p>
+
+        <h3>Account Security</h3>
+        <p>
+          You agree to notify us immediately of any unauthorized use of your account. We are not 
+          liable for any loss or damage arising from your failure to protect your account credentials.
+        </p>
+
+        <h3>One Account Per Person</h3>
+        <p>
+          You may only create and maintain one Gylde account. Creating multiple accounts may 
+          result in termination of all accounts.
+        </p>
+
+        <h3>Account Deletion</h3>
+        <p>
+          You may delete your account at any time through your account settings. Upon deletion, 
+          your profile will be removed and your data will be handled according to our 
+          <a routerLink="/privacy">Privacy Policy</a>.
+        </p>
+      </section>
+
+      <section id="subscriptions" class="legal-section">
+        <h2>4. Subscriptions and Payments</h2>
+        
+        <h3>Free and Paid Features</h3>
+        <p>
+          Gylde offers both free features (Explorer tier) and paid subscription plans (Connect and Elite). 
+          Certain features are only available to paying subscribers.
+        </p>
+
+        <h3>Billing</h3>
+        <p>
+          Paid subscriptions are billed in advance on a monthly or quarterly basis. By subscribing, 
+          you authorize us to charge your payment method for the applicable fees.
+        </p>
+
+        <h3>Automatic Renewal</h3>
+        <p>
+          Subscriptions automatically renew unless you cancel before the renewal date. You can 
+          cancel at any time through your account settings or by contacting support.
+        </p>
+
+        <h3>Refund Policy</h3>
+        <p>
+          Subscription fees are generally non-refundable, except where required by law. If you 
+          believe you are entitled to a refund, please contact us at 
+          <a href="mailto:{{ contactEmail }}">{{ contactEmail }}</a>.
+        </p>
+
+        <h3>Price Changes</h3>
+        <p>
+          We may change subscription prices with notice. Price changes will apply to your next 
+          billing cycle after the change.
+        </p>
+      </section>
+
+      <section id="conduct" class="legal-section">
+        <h2>5. User Conduct</h2>
+        <p>You agree NOT to:</p>
+        <ul>
+          <li>Use Gylde for any illegal purpose or in violation of any laws</li>
+          <li>Harass, bully, stalk, intimidate, or threaten other users</li>
+          <li>Post content that is hateful, discriminatory, or promotes violence</li>
+          <li>Impersonate another person or misrepresent your identity</li>
+          <li>Use the Platform for commercial purposes, solicitation, or advertising</li>
+          <li>Send spam, chain letters, or unsolicited messages</li>
+          <li>Share sexually explicit content in public profile areas</li>
+          <li>Attempt to access another user's account without permission</li>
+          <li>Use automated systems, bots, or scrapers to access the Platform</li>
+          <li>Interfere with or disrupt the Platform or servers</li>
+          <li>Circumvent any security measures or access restrictions</li>
+          <li>Solicit money or financial support from other users</li>
+          <li>Engage in any form of prostitution or escort services</li>
+          <li>Share other users' information without their consent</li>
+        </ul>
+        <p>
+          Violation of these rules may result in warning, suspension, or permanent ban from Gylde.
+        </p>
+      </section>
+
+      <section id="content" class="legal-section">
+        <h2>6. User Content</h2>
+        
+        <h3>Your Content</h3>
+        <p>
+          You are solely responsible for the content you post on Gylde, including photos, bio text, 
+          and messages. You represent that you own or have the necessary rights to share this content.
+        </p>
+
+        <h3>License to Us</h3>
+        <p>
+          By posting content on Gylde, you grant us a non-exclusive, worldwide, royalty-free license 
+          to use, reproduce, modify, and display that content in connection with operating and 
+          improving the Platform.
+        </p>
+
+        <h3>Content Moderation</h3>
+        <p>
+          We reserve the right to remove any content that violates these Terms or our Community 
+          Guidelines, without notice. We are not obligated to monitor all content but may do so 
+          at our discretion.
+        </p>
+
+        <h3>Prohibited Content</h3>
+        <p>You may not post content that:</p>
+        <ul>
+          <li>Contains nudity or sexually explicit material in public areas</li>
+          <li>Depicts minors in any capacity</li>
+          <li>Promotes illegal activities</li>
+          <li>Infringes on intellectual property rights</li>
+          <li>Contains malware, viruses, or harmful code</li>
+          <li>Is false, misleading, or deceptive</li>
+        </ul>
+      </section>
+
+      <section id="safety" class="legal-section">
+        <h2>7. Safety and Reporting</h2>
+        
+        <h3>Your Safety</h3>
+        <p>
+          While we implement safety measures, we cannot guarantee the behavior of other users. 
+          You are responsible for your own safety when interacting with others both on and off 
+          the Platform.
+        </p>
+
+        <h3>Reporting</h3>
+        <p>
+          If you encounter inappropriate behavior or content, please report it immediately using 
+          our in-app reporting tools or by contacting support. We investigate all reports and 
+          take appropriate action.
+        </p>
+
+        <h3>Background Checks</h3>
+        <p>
+          Gylde does not conduct criminal background checks on users. Identity verification 
+          confirms that a user is who they claim to be, but does not verify their character 
+          or criminal history.
+        </p>
+      </section>
+
+      <section id="intellectual-property" class="legal-section">
+        <h2>8. Intellectual Property</h2>
+        <p>
+          The Gylde name, logo, and all related content, features, and functionality are owned 
+          by Gylde and are protected by copyright, trademark, and other intellectual property laws.
+        </p>
+        <p>
+          You may not copy, modify, distribute, sell, or lease any part of our Platform without 
+          our written permission.
+        </p>
+      </section>
+
+      <section id="disclaimers" class="legal-section">
+        <h2>9. Disclaimers</h2>
+        <p>
+          <strong>THE PLATFORM IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES OF ANY 
+          KIND, EXPRESS OR IMPLIED.</strong>
+        </p>
+        <p>We do not warrant that:</p>
+        <ul>
+          <li>The Platform will be uninterrupted, secure, or error-free</li>
+          <li>Any matches or connections will lead to relationships</li>
+          <li>Other users' profiles are accurate or truthful</li>
+          <li>The Platform will meet your specific expectations</li>
+        </ul>
+        <p>
+          Gylde is a dating platform that facilitates introductions. We are not responsible for 
+          the conduct of any user, whether online or offline.
+        </p>
+      </section>
+
+      <section id="limitation" class="legal-section">
+        <h2>10. Limitation of Liability</h2>
+        <p>
+          <strong>TO THE MAXIMUM EXTENT PERMITTED BY LAW, GYLDE SHALL NOT BE LIABLE FOR ANY 
+          INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING BUT NOT 
+          LIMITED TO LOSS OF PROFITS, DATA, OR GOODWILL.</strong>
+        </p>
+        <p>
+          Our total liability for any claims arising from your use of the Platform shall not 
+          exceed the amount you paid us in the 12 months preceding the claim.
+        </p>
+      </section>
+
+      <section id="indemnification" class="legal-section">
+        <h2>11. Indemnification</h2>
+        <p>
+          You agree to indemnify, defend, and hold harmless Gylde and its officers, directors, 
+          employees, and agents from any claims, damages, losses, or expenses (including legal fees) 
+          arising from your use of the Platform, your content, or your violation of these Terms.
+        </p>
+      </section>
+
+      <section id="termination" class="legal-section">
+        <h2>12. Termination</h2>
+        <p>
+          We may terminate or suspend your account at any time, with or without cause, with or 
+          without notice. Upon termination, your right to use the Platform immediately ceases.
+        </p>
+        <p>
+          You may terminate your account at any time by deleting it through your account settings. 
+          Sections of these Terms that by their nature should survive termination shall survive.
+        </p>
+      </section>
+
+      <section id="disputes" class="legal-section">
+        <h2>13. Dispute Resolution</h2>
+        
+        <h3>Informal Resolution</h3>
+        <p>
+          Before filing a formal dispute, you agree to contact us at 
+          <a href="mailto:{{ contactEmail }}">{{ contactEmail }}</a> to attempt informal resolution.
+        </p>
+
+        <h3>Arbitration</h3>
+        <p>
+          Any disputes that cannot be resolved informally shall be resolved through binding 
+          arbitration in accordance with the rules of the American Arbitration Association. 
+          You agree to waive your right to a jury trial and to participate in class action lawsuits.
+        </p>
+
+        <h3>Governing Law</h3>
+        <p>
+          These Terms shall be governed by the laws of the State of Delaware, without regard 
+          to its conflict of law provisions.
+        </p>
+      </section>
+
+      <section id="changes" class="legal-section">
+        <h2>14. Changes to Terms</h2>
+        <p>
+          We may modify these Terms at any time. We will notify you of material changes by 
+          posting the updated Terms on this page and updating the "Last Updated" date. Your 
+          continued use of Gylde after changes constitutes acceptance of the new Terms.
+        </p>
+      </section>
+
+      <section id="contact" class="legal-section">
+        <h2>15. Contact Us</h2>
+        <p>If you have questions about these Terms of Service, contact us at:</p>
+        <div class="contact-info">
+          <p><strong>Gylde Legal Team</strong></p>
+          <p>Email: <a href="mailto:{{ contactEmail }}">{{ contactEmail }}</a></p>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <app-public-footer />
+</div>

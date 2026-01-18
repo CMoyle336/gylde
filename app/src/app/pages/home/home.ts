@@ -4,13 +4,14 @@ import { TranslateModule } from '@ngx-translate/core';
 import { AuthModalComponent } from '../../components/auth-modal/auth-modal';
 import { AuthService } from '../../core/services/auth.service';
 import { AuthResult } from '../../core/interfaces';
+import { PublicFooterComponent } from '../../components/public-footer/public-footer';
 
 @Component({
   selector: 'app-home',
   templateUrl: './home.html',
   styleUrl: './home.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [TranslateModule, AuthModalComponent],
+  imports: [TranslateModule, AuthModalComponent, PublicFooterComponent],
 })
 export class HomeComponent {
   private readonly router = inject(Router);
@@ -66,7 +67,6 @@ export class HomeComponent {
       this.openAuthModal('signup');
     }
   }
-  protected readonly currentYear = signal(new Date().getFullYear());
 
   protected readonly stats = signal([
     { value: '50K+', label: 'Active Members' },

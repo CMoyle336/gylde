@@ -54,7 +54,7 @@ export class DiscoveryService {
   private readonly _sort = signal<DiscoverySort>({ ...DEFAULT_SORT });
   private readonly _savedViews = signal<SavedView[]>([]);
   private readonly _activeView = signal<SavedView | null>(null);
-  private readonly _nextCursor = signal<string | undefined>(undefined);
+  private readonly _currentOffset = signal<number>(0); // Offset-based pagination
   private readonly _totalEstimate = signal<number | undefined>(undefined);
   private readonly _hasMore = signal(true);
 
@@ -130,6 +130,7 @@ export class DiscoveryService {
     // Only show loading state if we don't have cached results (or force refresh)
     // This prevents the flash when returning to the discover page
     const hasExistingProfiles = this._profiles().length > 0;
+    const PAGE_SIZE = 20;
     
     if (!loadMore) {
       if (!hasExistingProfiles || forceRefresh) {
@@ -138,7 +139,7 @@ export class DiscoveryService {
           this._profiles.set([]); // Clear existing results on force refresh
         }
       }
-      this._nextCursor.set(undefined);
+      this._currentOffset.set(0); // Reset offset for new search
     }
 
     try {
@@ -160,6 +161,9 @@ export class DiscoveryService {
         return interest;
       });
 
+      // Calculate offset for pagination
+      const currentOffset = loadMore ? this._currentOffset() : 0;
+
       // Build search request with profile-based filters merged in
       const userFilters = this._filters();
       const request: SearchRequest = {
@@ -171,8 +175,8 @@ export class DiscoveryService {
         },
         sort: this._sort(),
         pagination: {
-          limit: 20,
-          cursor: loadMore ? this._nextCursor() : undefined,
+          limit: PAGE_SIZE,
+          offset: currentOffset,
         },
         location,
       };
@@ -198,8 +202,11 @@ export class DiscoveryService {
         this._profiles.set(newProfiles);
       }
 
-      this._nextCursor.set(response.nextCursor);
+      // Update offset for next page
+      this._currentOffset.set(currentOffset + newProfiles.length);
       this._totalEstimate.set(response.totalEstimate);
+      
+      // Check if there are more results (nextCursor now contains the next offset as string)
       this._hasMore.set(!!response.nextCursor);
     } catch (error) {
       console.error('Failed to search profiles:', error);

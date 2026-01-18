@@ -13,8 +13,11 @@
     <!-- Sidebar Header -->
     <div class="sidebar-header">
       <a routerLink="/" class="logo">
-        <span class="logo-icon">G</span>
-        <span class="logo-text">ylde</span>
+        @if (sidenavExpanded() || isMobile()) {
+          <img src="assets/logo-wordmark.svg" alt="Gylde" class="logo-wordmark">
+        } @else {
+          <img src="assets/logo-icon.svg" alt="Gylde" class="logo-icon-img">
+        }
       </a>
     </div>
 

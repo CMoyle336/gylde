@@ -1,0 +1,283 @@
+<div class="safety-page">
+  <!-- Header -->
+  <header class="page-header">
+    <div class="header-container">
+      <a routerLink="/" class="header-logo">Gylde</a>
+      <a routerLink="/" class="back-link">
+        <span class="material-icons-outlined">arrow_back</span>
+        Back to Home
+      </a>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="hero-backdrop"></div>
+    <div class="hero-content">
+      <span class="hero-badge">Your Safety Matters</span>
+      <h1 class="hero-title">Safety Tips</h1>
+      <p class="hero-description">
+        Meeting new people should be exciting, not stressful. Follow these tips to 
+        protect yourself while making meaningful connections.
+      </p>
+    </div>
+  </section>
+
+  <!-- Main Tips Section -->
+  <section class="tips-section">
+    <div class="section-container">
+      <div class="section-header">
+        <span class="section-label">Best Practices</span>
+        <h2 class="section-title">Stay Safe Online & Offline</h2>
+      </div>
+
+      <div class="tips-grid">
+        @for (tip of tips; track tip.title) {
+          <div class="tip-card">
+            <div class="tip-icon">
+              <span class="material-icons-outlined">{{ tip.icon }}</span>
+            </div>
+            <h3 class="tip-title">{{ tip.title }}</h3>
+            <p class="tip-description">{{ tip.description }}</p>
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- Red Flags Section -->
+  <section class="red-flags-section">
+    <div class="section-container">
+      <div class="red-flags-content">
+        <div class="red-flags-header">
+          <span class="material-icons-outlined warning-icon">warning</span>
+          <h2 class="section-title">Red Flags to Watch For</h2>
+          <p class="section-description">
+            Trust your instincts. If something feels off, it probably is. 
+            Here are warning signs to look out for:
+          </p>
+        </div>
+
+        <ul class="red-flags-list">
+          @for (flag of redFlags; track flag) {
+            <li>
+              <span class="material-icons-outlined">report_problem</span>
+              {{ flag }}
+            </li>
+          }
+        </ul>
+
+        <div class="red-flags-action">
+          <p>
+            If you encounter any of these behaviors, stop communication immediately 
+            and report the user through our app.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Meeting In Person Section -->
+  <section class="meeting-section">
+    <div class="section-container">
+      <div class="section-header">
+        <span class="section-label">First Date Safety</span>
+        <h2 class="section-title">Meeting In Person</h2>
+        <p class="section-description">
+          When you're ready to take a connection offline, follow these precautions.
+        </p>
+      </div>
+
+      <div class="meeting-grid">
+        <div class="meeting-card">
+          <div class="meeting-number">1</div>
+          <h3>Choose the Location</h3>
+          <p>
+            Pick a public place you're familiar with—a busy coffee shop, restaurant, or 
+            popular venue. Don't let them choose a remote or private location for a first meeting.
+          </p>
+        </div>
+
+        <div class="meeting-card">
+          <div class="meeting-number">2</div>
+          <h3>Arrange Your Own Transportation</h3>
+          <p>
+            Drive yourself or use a rideshare. Don't rely on your date for a ride, especially 
+            for the first few meetings. This gives you control over when you leave.
+          </p>
+        </div>
+
+        <div class="meeting-card">
+          <div class="meeting-number">3</div>
+          <h3>Tell a Friend</h3>
+          <p>
+            Share your plans with someone you trust: where you're going, who you're meeting, 
+            and when you expect to return. Consider sharing your live location.
+          </p>
+        </div>
+
+        <div class="meeting-card">
+          <div class="meeting-number">4</div>
+          <h3>Stay Sober</h3>
+          <p>
+            Keep your wits about you. Limit alcohol consumption and never leave your drink 
+            unattended. Being alert helps you make good decisions.
+          </p>
+        </div>
+
+        <div class="meeting-card">
+          <div class="meeting-number">5</div>
+          <h3>Trust Your Gut</h3>
+          <p>
+            If something feels wrong, leave. You don't owe anyone an explanation. Your safety 
+            is more important than being polite.
+          </p>
+        </div>
+
+        <div class="meeting-card">
+          <div class="meeting-number">6</div>
+          <h3>Check In</h3>
+          <p>
+            Set up a check-in system with a friend. A text or call at a predetermined time 
+            lets them know you're okay—or signals that you need help.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Financial Safety Section -->
+  <section class="financial-section">
+    <div class="section-container">
+      <div class="financial-content">
+        <div class="financial-icon">
+          <span class="material-icons-outlined">account_balance_wallet</span>
+        </div>
+        <div class="financial-text">
+          <h2 class="section-title">Protect Your Finances</h2>
+          <p>
+            <strong>Never send money to someone you haven't met in person.</strong> 
+            Scammers often build emotional connections before asking for financial help. 
+            No matter how compelling the story, don't send money, gift cards, or financial 
+            information to anyone on Gylde.
+          </p>
+          <p>
+            Common scams include: medical emergencies, travel costs to meet you, business 
+            investments, and cryptocurrency schemes. If someone asks for money, report them immediately.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Gylde Safety Features Section -->
+  <section class="features-section">
+    <div class="section-container">
+      <div class="section-header">
+        <span class="section-label">Built-In Protection</span>
+        <h2 class="section-title">Gylde Safety Features</h2>
+        <p class="section-description">
+          We've built safety into our platform. Here's how we help protect you:
+        </p>
+      </div>
+
+      <div class="features-grid">
+        <div class="feature-item">
+          <span class="material-icons-outlined">verified_user</span>
+          <h3>Identity Verification</h3>
+          <p>Our ID verification confirms members are who they claim to be.</p>
+        </div>
+        <div class="feature-item">
+          <span class="material-icons-outlined">phone_android</span>
+          <h3>Virtual Phone Numbers</h3>
+          <p>Elite members can share a number without revealing their real one.</p>
+        </div>
+        <div class="feature-item">
+          <span class="material-icons-outlined">block</span>
+          <h3>Easy Blocking</h3>
+          <p>Block anyone instantly. They can't contact you or see your profile.</p>
+        </div>
+        <div class="feature-item">
+          <span class="material-icons-outlined">flag</span>
+          <h3>Report Function</h3>
+          <p>Report concerning behavior directly from profiles or conversations.</p>
+        </div>
+        <div class="feature-item">
+          <span class="material-icons-outlined">lock</span>
+          <h3>Private Photos</h3>
+          <p>Control who sees your private photos with approval-based access.</p>
+        </div>
+        <div class="feature-item">
+          <span class="material-icons-outlined">security</span>
+          <h3>Trust Score</h3>
+          <p>See at a glance how complete and verified someone's profile is.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Resources Section -->
+  <section class="resources-section">
+    <div class="section-container">
+      <div class="section-header">
+        <span class="section-label">Get Help</span>
+        <h2 class="section-title">Safety Resources</h2>
+        <p class="section-description">
+          If you're in an unsafe situation or need support, these resources can help.
+        </p>
+      </div>
+
+      <div class="resources-grid">
+        @for (resource of resources; track resource.name) {
+          <div class="resource-card">
+            <h3>{{ resource.name }}</h3>
+            <p class="resource-phone">{{ resource.phone }}</p>
+            <a [href]="resource.url" target="_blank" rel="noopener noreferrer" class="resource-link">
+              Visit Website
+              <span class="material-icons-outlined">open_in_new</span>
+            </a>
+          </div>
+        }
+      </div>
+
+      <div class="emergency-notice">
+        <span class="material-icons-outlined">emergency</span>
+        <p>
+          <strong>In an emergency, call 911 (or your local emergency number) immediately.</strong>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Report Section -->
+  <section class="report-section">
+    <div class="section-container">
+      <div class="report-content">
+        <h2>Report a Concern</h2>
+        <p>
+          If you've experienced harassment, abuse, or any concerning behavior on Gylde, 
+          please report it. Your reports help us keep the community safe.
+        </p>
+        <div class="report-methods">
+          <div class="report-method">
+            <span class="material-icons-outlined">smartphone</span>
+            <div>
+              <h4>In the App</h4>
+              <p>Use the report button on any profile or conversation</p>
+            </div>
+          </div>
+          <div class="report-method">
+            <span class="material-icons-outlined">email</span>
+            <div>
+              <h4>Email</h4>
+              <p><a href="mailto:safety@gylde.com">safety&#64;gylde.com</a></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <app-public-footer />
+</div>

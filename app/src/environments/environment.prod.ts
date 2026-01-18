@@ -15,12 +15,12 @@ export const environment = {
 
   // Veriff Identity Verification
   veriff: {
-    apiKey: '15f10df8-d53e-4240-956b-81b185630119'
+    apiKey: 'ee2da851-db8a-421d-bdfb-8fef9ad871da'
   },
 
   // Stripe Payment Processing
   stripe: {
-    publishableKey: 'pk_test_51SpemHFd7ok3RIzwYr7GAhAcctfRysm9YffzNoX7KHeT8Jl1jUnzYIaFBGFQs8wawRYYn9QLPgLsdsVylPZxXqXn00KgPe9UlK'
+    publishableKey: 'pk_live_51QVaJUC4jvtRlarvJXaS3LEyVvIj9LaVdSTvbKFx38azcQlo1s23Xi8lHr57zJD9wAKey9579K3obkNsCZwVsLWc00TlfAK5wj'
   },
 
   // Pricing

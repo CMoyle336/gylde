@@ -81,26 +81,26 @@
 }
 
 .sidebar-header .logo {
-  font-family: var(--font-display);
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--color-accent);
-  text-decoration: none;
   display: flex;
   align-items: center;
+  justify-content: center;
+  text-decoration: none;
   overflow: hidden;
 }
 
-.logo-icon {
-  flex-shrink: 0;
+.logo-wordmark {
+  height: 40px;
+  width: auto;
+  max-width: 100%;
+}
+
+.logo-icon-img {
+  height: 40px;
+  width: 40px;
 }
 
 .sidebar.collapsed .sidebar-header {
-  padding: 1rem 0.75rem;
-}
-
-.sidebar.collapsed .logo-text {
-  display: none;
+  padding: 1rem 0.5rem;
 }
 
 /* Profile Section */

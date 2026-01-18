@@ -36,6 +36,8 @@ export interface DiscoverableProfile {
   drinker?: string;
   education?: string;
   occupation?: string;
+  height?: string;
+  income?: string;
 }
 
 /**
@@ -100,7 +102,7 @@ export interface SearchRequest {
   sort?: DiscoverySort;
   pagination?: {
     limit?: number;
-    cursor?: string;
+    offset?: number; // Offset-based pagination for in-memory filtering
   };
   location?: GeoLocation;
 }

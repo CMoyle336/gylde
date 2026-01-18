@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <defs>
+    <linearGradient id="goldShine" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e8d5a3"/>
+      <stop offset="40%" stop-color="#c9a962"/>
+      <stop offset="100%" stop-color="#8a6d1b"/>
+    </linearGradient>
+    <linearGradient id="goldShine2" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#8a6d1b"/>
+      <stop offset="60%" stop-color="#c9a962"/>
+      <stop offset="100%" stop-color="#e8d5a3"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Two intertwined flowing ribbons representing connection -->
+  <!-- First ribbon -->
+  <path 
+    d="M20 75
+       Q20 25, 50 25
+       Q65 25, 65 40
+       Q65 55, 50 55
+       Q35 55, 35 70
+       Q35 85, 50 85"
+    stroke="url(#goldShine)" 
+    stroke-width="8" 
+    stroke-linecap="round"
+    fill="none"
+  />
+  
+  <!-- Second ribbon (intertwined) -->
+  <path 
+    d="M80 25
+       Q80 75, 50 75
+       Q35 75, 35 60
+       Q35 45, 50 45
+       Q65 45, 65 30
+       Q65 15, 50 15"
+    stroke="url(#goldShine2)" 
+    stroke-width="8" 
+    stroke-linecap="round"
+    fill="none"
+  />
+</svg>

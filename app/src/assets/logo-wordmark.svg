@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" fill="none">
+  <defs>
+    <linearGradient id="goldText" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#c9a962"/>
+      <stop offset="50%" stop-color="#e8d5a3"/>
+      <stop offset="100%" stop-color="#c9a962"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Icon (simplified) -->
+  <g transform="translate(10, 8)">
+    <path 
+      d="M32 4
+         C16 4, 4 16, 4 32
+         C4 48, 16 60, 32 60
+         C44 60, 54 52, 58 42
+         L58 32
+         L40 32
+         M32 4
+         C44 4, 54 12, 58 22"
+      stroke="url(#goldText)" 
+      stroke-width="5" 
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      fill="none"
+    />
+    <circle cx="48" cy="32" r="3" fill="#c9a962"/>
+  </g>
+  
+  <!-- Wordmark -->
+  <text 
+    x="90" 
+    y="54" 
+    font-family="'Outfit', 'Helvetica Neue', Arial, sans-serif" 
+    font-size="48" 
+    font-weight="600" 
+    letter-spacing="2"
+    fill="url(#goldText)"
+  >GYLDE</text>
+</svg>

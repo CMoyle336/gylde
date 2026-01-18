@@ -14,19 +14,32 @@ interface GeoLocation {
 }
 
 interface SearchFilters {
-  // Basic filters
+  // === QUERY-LEVEL FILTERS (applied in Firestore) ===
+  // These are static/profile-based and don't change often
   minAge?: number;
   maxAge?: number;
   genderIdentity?: string[];
+  lifestyle?: string[];
+
+  // === IN-MEMORY FILTERS (applied after fetch) ===
+  // These are user-changeable and would create too many index combinations
+
+  // Location & Distance
   maxDistance?: number | null;
+
+  // Verification & Trust
   verifiedOnly?: boolean;
+  minTrustScore?: number; // 0-100, minimum trust score required
+
+  // Activity filters
+  onlineNow?: boolean; // Active within last 15 minutes
+  activeRecently?: boolean; // Active within last 24 hours
 
   // Connection preferences
   connectionTypes?: string[];
   supportOrientation?: string[];
 
-  // Lifestyle & Values
-  lifestyle?: string[];
+  // Lifestyle & Values (values is in-memory for flexibility)
   values?: string[];
 
   // Secondary profile fields
@@ -36,13 +49,8 @@ interface SearchFilters {
   smoker?: string[];
   drinker?: string[];
   education?: string[];
-
-  // Activity filters
-  onlineNow?: boolean; // Active within last 15 minutes
-  activeRecently?: boolean; // Active within last 24 hours
-
-  // Trust score filter (read from private subcollection)
-  minTrustScore?: number; // 0-100, minimum trust score required
+  height?: string[];
+  income?: string[];
 }
 
 interface SearchSort {
@@ -55,7 +63,7 @@ interface SearchRequest {
   sort?: SearchSort;
   pagination?: {
     limit?: number;
-    cursor?: string; // Last document ID for pagination
+    offset?: number; // Offset-based pagination for in-memory filtering
   };
   location?: GeoLocation; // Searcher's location for distance calculations
 }
@@ -90,6 +98,8 @@ interface SearchResult {
   drinker?: string;
   education?: string;
   occupation?: string;
+  height?: string;
+  income?: string;
 }
 
 interface SearchResponse {
@@ -110,17 +120,19 @@ interface SavedView {
 
 /**
  * Search profiles with filters, sorting, and pagination
- * ALL filtering happens at Firestore level for proper pagination
  *
  * ARCHITECTURE:
- * - All scalar filters use Firestore 'in' operator
- * - One array filter uses 'array-contains-any' (connectionTypes prioritized)
- * - Geohash-based distance filtering for location queries
- * - Cursor-based pagination with startAfter
+ * To minimize index combinations, we use a hybrid approach:
+ * - QUERY-LEVEL: Only essential filters that rarely change together
+ *   (onboardingCompleted, isSearchable, genderIdentity, lifestyle, age range)
+ * - IN-MEMORY: All user-changeable filters (distance, verification, activity,
+ *   connectionTypes, supportOrientation, ethnicity, relationshipStatus, children,
+ *   smoker, drinker, education, height, income, trustScore)
+ * - IN-MEMORY: All sorting
+ * - IN-MEMORY: Offset-based pagination
  *
- * Limitations:
- * - Only ONE array-contains-any per query (we use connectionTypes)
- * - Distance sorting requires fetching nearby geohashes then sorting
+ * This approach fetches a pool of candidates from Firestore, then applies
+ * filters, sorts, and paginates in memory.
  */
 export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
   {region: "us-central1"},
@@ -132,8 +144,12 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
 
     const currentUserId = request.auth.uid;
     const {filters = {}, sort = {field: "lastActive", direction: "desc"}, pagination = {}} = request.data;
-    const {limit: pageLimit = 20, cursor} = pagination;
+    const {limit: pageLimit = 20, offset = 0} = pagination;
     const searcherLocation = request.data.location;
+
+    // Over-fetch multiplier to ensure we have enough after in-memory filtering
+    // We fetch enough to cover the requested offset + page, with extra buffer
+    const FETCH_LIMIT = 500; // Max profiles to fetch from Firestore
 
     try {
       // Fetch current user's profile to get their support orientation
@@ -152,35 +168,33 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
       ]);
 
       // Determine compatible support orientations based on current user's preference
-      // - "receiving" users should see "providing" or "either" profiles
-      // - "providing" users should see "receiving" or "either" profiles
-      // - "either" or "private" or undefined users see all (no filtering)
-      let compatibleSupportOrientations: string[] | null = null;
+      // This is used as a default if user hasn't set explicit filter
+      let defaultCompatibleOrientations: string[] | null = null;
       if (currentUserSupportOrientation === "receiving") {
-        compatibleSupportOrientations = ["providing", "either"];
+        defaultCompatibleOrientations = ["providing", "either"];
       } else if (currentUserSupportOrientation === "providing") {
-        compatibleSupportOrientations = ["receiving", "either"];
+        defaultCompatibleOrientations = ["receiving", "either"];
       }
 
       // === BUILD FIRESTORE QUERY ===
+      // Only essential filters that create minimal index combinations
       let query: FirebaseFirestore.Query = db.collection("users");
 
       // 1. Base filters (always applied)
-      // Note: We filter out currentUserId in memory to avoid inequality filter complexity
       query = query.where("onboardingCompleted", "==", true);
       query = query.where("isSearchable", "==", true);
 
-      // 2. Gender identity filter
+      // 2. Gender identity filter (profile-based, doesn't change often)
       if (filters.genderIdentity?.length) {
         query = query.where("onboarding.genderIdentity", "in", filters.genderIdentity.slice(0, 30));
       }
 
-      // 3. Lifestyle filter
+      // 3. Lifestyle filter (profile-based, doesn't change often)
       if (filters.lifestyle?.length) {
         query = query.where("onboarding.lifestyle", "in", filters.lifestyle.slice(0, 30));
       }
 
-      // 4. Age range filter (using birthDate)
+      // 4. Age range filter (profile-based)
       if (filters.minAge || filters.maxAge) {
         const today = new Date();
         if (filters.maxAge) {
@@ -195,124 +209,29 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
         }
       }
 
-      // 5. Activity-based filters
-      if (filters.onlineNow) {
-        const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
-        query = query.where("sortableLastActive", ">=", fifteenMinutesAgo);
-      } else if (filters.activeRecently) {
-        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-        query = query.where("sortableLastActive", ">=", twentyFourHoursAgo);
-      }
+      // 5. Order by birthDate for consistent results (required for range queries)
+      // We'll re-sort in memory based on user's sort preference
+      query = query.orderBy("onboarding.birthDate", "desc");
+      query = query.orderBy("uid"); // Secondary sort for consistency
 
-      // 6. Verified only filter
-      if (filters.verifiedOnly) {
-        query = query.where("identityVerified", "==", true);
-      }
-
-      // 7. Secondary profile filters (using denormalized fields)
-      if (filters.ethnicity?.length) {
-        query = query.where("onboarding.ethnicity", "in", filters.ethnicity.slice(0, 30));
-      }
-
-      if (filters.relationshipStatus?.length) {
-        query = query.where("onboarding.relationshipStatus", "in", filters.relationshipStatus.slice(0, 30));
-      }
-
-      if (filters.children?.length) {
-        query = query.where("onboarding.children", "in", filters.children.slice(0, 30));
-      }
-
-      if (filters.smoker?.length) {
-        query = query.where("onboarding.smoker", "in", filters.smoker.slice(0, 30));
-      }
-
-      if (filters.drinker?.length) {
-        query = query.where("onboarding.drinker", "in", filters.drinker.slice(0, 30));
-      }
-
-      if (filters.education?.length) {
-        query = query.where("onboarding.education", "in", filters.education.slice(0, 30));
-      }
-
-      // 8. Array filter: connectionTypes (only one array-contains-any allowed per query)
-      if (filters.connectionTypes?.length) {
-        query = query.where("onboarding.connectionTypes", "array-contains-any", filters.connectionTypes.slice(0, 30));
-      }
-
-      // 9. Support orientation filter
-      // If user explicitly set a filter, use that; otherwise apply automatic matching
-      if (filters.supportOrientation?.length) {
-        query = query.where("onboarding.supportOrientation", "in", filters.supportOrientation.slice(0, 30));
-      } else if (compatibleSupportOrientations) {
-        // Automatically filter based on current user's support orientation
-        query = query.where("onboarding.supportOrientation", "in", compatibleSupportOrientations);
-      }
-
-      // 9. Geohash-based distance filtering
-      // If distance filter is specified, use geohash range queries
-      if (filters.maxDistance && searcherLocation) {
-        const geohashRange = getGeohashRange(
-          searcherLocation.latitude,
-          searcherLocation.longitude,
-          filters.maxDistance
-        );
-        query = query
-          .where("geohash", ">=", geohashRange.lower)
-          .where("geohash", "<=", geohashRange.upper);
-      }
-
-      // 10. Sorting
-      switch (sort.field) {
-      case "lastActive":
-        query = query.orderBy("sortableLastActive", sort.direction === "asc" ? "asc" : "desc");
-        break;
-      case "newest":
-        query = query.orderBy("createdAt", sort.direction === "asc" ? "asc" : "desc");
-        break;
-      case "age":
-        query = query.orderBy("onboarding.birthDate", sort.direction === "asc" ? "desc" : "asc");
-        break;
-      case "distance":
-        // For distance sorting, we sort by geohash proximity then refine
-        if (searcherLocation) {
-          query = query.orderBy("geohash", "asc");
-        } else {
-          query = query.orderBy("sortableLastActive", "desc");
-        }
-        break;
-      default:
-        query = query.orderBy("sortableLastActive", "desc");
-      }
-
-      // Secondary sort for consistent pagination
-      query = query.orderBy("uid");
-
-      // 11. Pagination
-      if (cursor) {
-        const cursorDoc = await db.collection("users").doc(cursor).get();
-        if (cursorDoc.exists) {
-          query = query.startAfter(cursorDoc);
-        }
-      }
-
-      // 12. Limit - fetch one extra to check if there are more results
-      query = query.limit(pageLimit + 1);
+      // 6. Fetch pool of candidates
+      query = query.limit(FETCH_LIMIT);
 
       // === EXECUTE QUERY ===
       const snapshot = await query.get();
 
       // === FETCH TRUST SCORES FROM PRIVATE SUBCOLLECTION ===
-      // Batch fetch trust scores for all matched profiles
-      // Also filter out current user and blocked users
-      const userIds = snapshot.docs
+      // Filter out current user and blocked users first
+      const candidateIds = snapshot.docs
         .map((doc) => doc.id)
         .filter((id) => id !== currentUserId && !blockedUserIds.has(id));
+
       const trustScoreMap = new Map<string, number>();
 
-      // Fetch in batches of 10 (Firestore limit for parallel reads)
+      // Fetch trust scores in batches of 10
       const batchSize = 10;
-      for (let i = 0; i < userIds.length; i += batchSize) {
-        const batch = userIds.slice(i, i + batchSize);
+      for (let i = 0; i < candidateIds.length; i += batchSize) {
+        const batch = candidateIds.slice(i, i + batchSize);
         const trustDocs = await Promise.all(
           batch.map((uid) =>
             db.collection("users").doc(uid).collection("private").doc("data").get()
@@ -324,30 +243,30 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
         });
       }
 
-      // === TRANSFORM RESULTS ===
-      const profiles: SearchResult[] = [];
+      // === TRANSFORM ALL CANDIDATES ===
+      // Build full profile objects for filtering/sorting
+      interface CandidateProfile extends SearchResult {
+        lastActiveTimestamp: number; // For sorting
+        createdAtTimestamp: number; // For sorting
+        birthDateStr: string; // For sorting
+        rawSupportOrientation: string; // For filtering
+        rawConnectionTypes: string[]; // For filtering
+        rawValues: string[]; // For filtering
+      }
+
+      const allCandidates: CandidateProfile[] = [];
 
       for (const doc of snapshot.docs) {
-        // Stop once we have enough (accounting for filtering)
-        if (profiles.length >= pageLimit) break;
-
         // Skip current user and blocked users
         if (doc.id === currentUserId || blockedUserIds.has(doc.id)) continue;
 
-        // Get trust score from map
+        const data = doc.data();
+        const onboarding = data.onboarding || {};
         const trustScore = trustScoreMap.get(doc.id) ?? 0;
 
-        // Apply minTrustScore filter (done in memory since it's from private subcollection)
-        if (filters.minTrustScore && trustScore < filters.minTrustScore) {
-          continue;
-        }
-
-        const data = doc.data();
-        const onboarding = data.onboarding;
-
-        // Calculate distance for display (not filtering - that was done by geohash)
+        // Calculate distance
         let distance: number | undefined;
-        if (searcherLocation && onboarding?.location) {
+        if (searcherLocation && onboarding.location) {
           distance = calculateDistance(
             searcherLocation.latitude,
             searcherLocation.longitude,
@@ -356,14 +275,19 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
           );
         }
 
-        // Build result
+        // Extract timestamps for sorting
         const lastActiveAt = data.lastActiveAt?.toDate?.() || null;
+        const createdAt = data.createdAt?.toDate?.() || null;
+        const lastActiveTimestamp = lastActiveAt ? lastActiveAt.getTime() : 0;
+        const createdAtTimestamp = createdAt ? createdAt.getTime() : 0;
+
+        // Privacy settings
         const privacySettings = data.settings?.privacy || {};
         const showOnlineStatus = privacySettings.showOnlineStatus !== false;
         const showLastActive = privacySettings.showLastActive !== false;
         const showLocation = privacySettings.showLocation !== false;
 
-        // User is online if active within last 15 minutes
+        // Online status
         let isCurrentlyOnline = false;
         if (lastActiveAt && !isNaN(lastActiveAt.getTime())) {
           const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
@@ -371,66 +295,248 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
         }
         const isOnline = showOnlineStatus && isCurrentlyOnline;
 
-        profiles.push({
+        allCandidates.push({
           uid: doc.id,
           displayName: data.displayName,
-          age: calculateAge(onboarding?.birthDate),
-          city: showLocation ? onboarding?.city : null,
-          country: showLocation ? onboarding?.country : null,
+          age: calculateAge(onboarding.birthDate),
+          city: showLocation ? onboarding.city : null,
+          country: showLocation ? onboarding.country : null,
           distance,
           lastActiveAt: showLastActive && !isCurrentlyOnline ? lastActiveAt?.toISOString() : undefined,
           isOnline: isOnline || undefined,
           showOnlineStatus,
           showLastActive,
           showLocation,
-          genderIdentity: onboarding?.genderIdentity,
-          lifestyle: onboarding?.lifestyle,
-          connectionTypes: onboarding?.connectionTypes || [],
-          tagline: onboarding?.tagline || "",
-          photoURL: data.photoURL || (onboarding?.photoDetails?.[0] as { url?: string })?.url || null,
-          photos: (onboarding?.photoDetails || [])
+          genderIdentity: onboarding.genderIdentity,
+          lifestyle: onboarding.lifestyle,
+          connectionTypes: onboarding.connectionTypes || [],
+          tagline: onboarding.tagline || "",
+          photoURL: data.photoURL || (onboarding.photoDetails?.[0] as { url?: string })?.url || null,
+          photos: (onboarding.photoDetails || [])
             .sort((a: { order?: number }, b: { order?: number }) => (a.order ?? 0) - (b.order ?? 0))
             .map((p: { url: string }) => p.url),
           identityVerified: data.identityVerified === true,
-          values: onboarding?.values || [],
-          supportOrientation: onboarding?.supportOrientation || "",
-          trustScore, // From private subcollection
-          ethnicity: onboarding?.ethnicity,
-          relationshipStatus: onboarding?.relationshipStatus,
-          children: onboarding?.children,
-          smoker: onboarding?.smoker,
-          drinker: onboarding?.drinker,
-          education: onboarding?.education,
-          occupation: onboarding?.occupation,
+          values: onboarding.values || [],
+          supportOrientation: onboarding.supportOrientation || "",
+          trustScore,
+          ethnicity: onboarding.ethnicity,
+          relationshipStatus: onboarding.relationshipStatus,
+          children: onboarding.children,
+          smoker: onboarding.smoker,
+          drinker: onboarding.drinker,
+          education: onboarding.education,
+          occupation: onboarding.occupation,
+          height: onboarding.height,
+          income: onboarding.income,
+          // Extra fields for filtering/sorting
+          lastActiveTimestamp,
+          createdAtTimestamp,
+          birthDateStr: onboarding.birthDate || "",
+          rawSupportOrientation: onboarding.supportOrientation || "",
+          rawConnectionTypes: onboarding.connectionTypes || [],
+          rawValues: onboarding.values || [],
         });
       }
 
-      // For distance sorting, we need to re-sort by actual distance (geohash is approximate)
-      if (sort.field === "distance" && searcherLocation) {
-        profiles.sort((a, b) => {
+      // === APPLY IN-MEMORY FILTERS ===
+      let filteredCandidates = allCandidates;
+
+      // Trust score filter
+      if (filters.minTrustScore && filters.minTrustScore > 0) {
+        filteredCandidates = filteredCandidates.filter(
+          (p) => p.trustScore >= (filters.minTrustScore ?? 0)
+        );
+      }
+
+      // Distance filter
+      if (filters.maxDistance && searcherLocation) {
+        filteredCandidates = filteredCandidates.filter(
+          (p) => p.distance !== undefined && p.distance <= (filters.maxDistance ?? Infinity)
+        );
+      }
+
+      // Verification filter
+      if (filters.verifiedOnly) {
+        filteredCandidates = filteredCandidates.filter((p) => p.identityVerified);
+      }
+
+      // Online now filter (active within 15 minutes)
+      if (filters.onlineNow) {
+        const fifteenMinutesAgo = Date.now() - 15 * 60 * 1000;
+        filteredCandidates = filteredCandidates.filter(
+          (p) => p.lastActiveTimestamp >= fifteenMinutesAgo
+        );
+      } else if (filters.activeRecently) {
+        // Active recently filter (active within 24 hours)
+        const twentyFourHoursAgo = Date.now() - 24 * 60 * 60 * 1000;
+        filteredCandidates = filteredCandidates.filter(
+          (p) => p.lastActiveTimestamp >= twentyFourHoursAgo
+        );
+      }
+
+      // Connection types filter (any match)
+      if (filters.connectionTypes?.length) {
+        filteredCandidates = filteredCandidates.filter((p) =>
+          p.rawConnectionTypes.some((ct: string) => filters.connectionTypes?.includes(ct))
+        );
+      }
+
+      // Support orientation filter
+      if (filters.supportOrientation?.length) {
+        filteredCandidates = filteredCandidates.filter((p) =>
+          filters.supportOrientation?.includes(p.rawSupportOrientation)
+        );
+      } else if (defaultCompatibleOrientations) {
+        // Apply automatic matching based on current user's orientation
+        filteredCandidates = filteredCandidates.filter((p) =>
+          defaultCompatibleOrientations?.includes(p.rawSupportOrientation)
+        );
+      }
+
+      // Values filter (any match)
+      if (filters.values?.length) {
+        filteredCandidates = filteredCandidates.filter((p) =>
+          p.rawValues.some((v: string) => filters.values?.includes(v))
+        );
+      }
+
+      // Ethnicity filter
+      if (filters.ethnicity?.length) {
+        filteredCandidates = filteredCandidates.filter(
+          (p) => p.ethnicity && filters.ethnicity?.includes(p.ethnicity)
+        );
+      }
+
+      // Relationship status filter
+      if (filters.relationshipStatus?.length) {
+        filteredCandidates = filteredCandidates.filter(
+          (p) => p.relationshipStatus && filters.relationshipStatus?.includes(p.relationshipStatus)
+        );
+      }
+
+      // Children filter
+      if (filters.children?.length) {
+        filteredCandidates = filteredCandidates.filter(
+          (p) => p.children && filters.children?.includes(p.children)
+        );
+      }
+
+      // Smoker filter
+      if (filters.smoker?.length) {
+        filteredCandidates = filteredCandidates.filter(
+          (p) => p.smoker && filters.smoker?.includes(p.smoker)
+        );
+      }
+
+      // Drinker filter
+      if (filters.drinker?.length) {
+        filteredCandidates = filteredCandidates.filter(
+          (p) => p.drinker && filters.drinker?.includes(p.drinker)
+        );
+      }
+
+      // Education filter
+      if (filters.education?.length) {
+        filteredCandidates = filteredCandidates.filter(
+          (p) => p.education && filters.education?.includes(p.education)
+        );
+      }
+
+      // Height filter
+      if (filters.height?.length) {
+        filteredCandidates = filteredCandidates.filter(
+          (p) => p.height && filters.height?.includes(p.height)
+        );
+      }
+
+      // Income filter
+      if (filters.income?.length) {
+        filteredCandidates = filteredCandidates.filter(
+          (p) => p.income && filters.income?.includes(p.income)
+        );
+      }
+
+      // === APPLY IN-MEMORY SORTING ===
+      filteredCandidates.sort((a, b) => {
+        let comparison = 0;
+
+        switch (sort.field) {
+        case "lastActive":
+          comparison = a.lastActiveTimestamp - b.lastActiveTimestamp;
+          break;
+        case "newest":
+          comparison = a.createdAtTimestamp - b.createdAtTimestamp;
+          break;
+        case "age":
+          // birthDate: newer date = younger, so for age asc (youngest first), sort birthDate desc
+          comparison = a.birthDateStr.localeCompare(b.birthDateStr);
+          // Reverse because newer birthDate = younger age
+          comparison = -comparison;
+          break;
+        case "distance": {
           const distA = a.distance ?? Infinity;
           const distB = b.distance ?? Infinity;
-          return sort.direction === "asc" ? distA - distB : distB - distA;
-        });
-      }
+          comparison = distA - distB;
+          break;
+        }
+        case "trustScore":
+          comparison = a.trustScore - b.trustScore;
+          break;
+        default:
+          comparison = a.lastActiveTimestamp - b.lastActiveTimestamp;
+        }
 
-      // For trustScore sorting, sort in memory (since trust scores come from private subcollection)
-      if (sort.field === "trustScore") {
-        profiles.sort((a, b) => {
-          return sort.direction === "asc" ?
-            a.trustScore - b.trustScore :
-            b.trustScore - a.trustScore;
-        });
-      }
+        // Apply direction
+        return sort.direction === "desc" ? -comparison : comparison;
+      });
 
-      // Determine next cursor
-      const hasMore = snapshot.docs.length > pageLimit;
-      const lastProfile = profiles[profiles.length - 1];
-      const nextCursor = hasMore && lastProfile ? lastProfile.uid : undefined;
+      // === APPLY IN-MEMORY PAGINATION ===
+      const totalFiltered = filteredCandidates.length;
+      const paginatedCandidates = filteredCandidates.slice(offset, offset + pageLimit);
+
+      // === BUILD FINAL RESPONSE ===
+      // Remove internal sorting/filtering fields from response
+      const profiles: SearchResult[] = paginatedCandidates.map((p) => ({
+        uid: p.uid,
+        displayName: p.displayName,
+        age: p.age,
+        city: p.city,
+        country: p.country,
+        distance: p.distance,
+        lastActiveAt: p.lastActiveAt,
+        isOnline: p.isOnline,
+        showOnlineStatus: p.showOnlineStatus,
+        showLastActive: p.showLastActive,
+        showLocation: p.showLocation,
+        genderIdentity: p.genderIdentity,
+        lifestyle: p.lifestyle,
+        connectionTypes: p.connectionTypes,
+        tagline: p.tagline,
+        photoURL: p.photoURL,
+        photos: p.photos,
+        identityVerified: p.identityVerified,
+        values: p.values,
+        supportOrientation: p.supportOrientation,
+        trustScore: p.trustScore,
+        ethnicity: p.ethnicity,
+        relationshipStatus: p.relationshipStatus,
+        children: p.children,
+        smoker: p.smoker,
+        drinker: p.drinker,
+        education: p.education,
+        occupation: p.occupation,
+        height: p.height,
+        income: p.income,
+      }));
+
+      // Determine if there are more results
+      const hasMore = offset + pageLimit < totalFiltered;
+      const nextOffset = hasMore ? offset + pageLimit : undefined;
 
       return {
         profiles,
-        nextCursor,
+        nextCursor: nextOffset?.toString(), // Use string for consistency with previous API
+        totalEstimate: totalFiltered,
       };
     } catch (error) {
       console.error("Error searching profiles:", error);
@@ -625,89 +731,3 @@ function calculateDistance(
 function toRad(deg: number): number {
   return deg * (Math.PI / 180);
 }
-
-/**
- * Generate a geohash for a lat/lng coordinate
- * Uses a simple base32 encoding scheme
- */
-function encodeGeohash(latitude: number, longitude: number, precision = 9): string {
-  const base32 = "0123456789bcdefghjkmnpqrstuvwxyz";
-  const latRange = {min: -90, max: 90};
-  const lngRange = {min: -180, max: 180};
-  let hash = "";
-  let isLng = true;
-  let bit = 0;
-  let ch = 0;
-
-  while (hash.length < precision) {
-    if (isLng) {
-      const mid = (lngRange.min + lngRange.max) / 2;
-      if (longitude >= mid) {
-        ch |= 1 << (4 - bit);
-        lngRange.min = mid;
-      } else {
-        lngRange.max = mid;
-      }
-    } else {
-      const mid = (latRange.min + latRange.max) / 2;
-      if (latitude >= mid) {
-        ch |= 1 << (4 - bit);
-        latRange.min = mid;
-      } else {
-        latRange.max = mid;
-      }
-    }
-
-    isLng = !isLng;
-    bit++;
-
-    if (bit === 5) {
-      hash += base32[ch];
-      bit = 0;
-      ch = 0;
-    }
-  }
-
-  return hash;
-}
-
-/**
- * Get geohash range for a radius around a point
- * Returns lower and upper bounds for querying
- */
-function getGeohashRange(
-  latitude: number,
-  longitude: number,
-  radiusMiles: number
-): { lower: string; upper: string } {
-  // Convert miles to approximate degrees (rough approximation)
-  // 1 degree latitude ≈ 69 miles
-  // 1 degree longitude ≈ 69 miles * cos(latitude)
-  const latDelta = radiusMiles / 69;
-  const lngDelta = radiusMiles / (69 * Math.cos(toRad(latitude)));
-
-  // Calculate bounding box
-  const minLat = latitude - latDelta;
-  const maxLat = latitude + latDelta;
-  const minLng = longitude - lngDelta;
-  const maxLng = longitude + lngDelta;
-
-  // Determine precision based on radius
-  // Smaller radius = higher precision needed
-  let precision: number;
-  if (radiusMiles <= 5) precision = 6;
-  else if (radiusMiles <= 20) precision = 5;
-  else if (radiusMiles <= 100) precision = 4;
-  else precision = 3;
-
-  // Get geohashes for corners
-  const lowerHash = encodeGeohash(minLat, minLng, precision);
-  const upperHash = encodeGeohash(maxLat, maxLng, precision);
-
-  return {
-    lower: lowerHash,
-    upper: upperHash + "~", // ~ is higher than any base32 char
-  };
-}
-// Firestore handles sorting for: lastActive (via sortableLastActive), newest (via createdAt), age (via birthDate)
-// Only distance sorting requires in-memory processing (done inline in searchProfiles)
