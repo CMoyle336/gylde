@@ -1,4 +1,30 @@
 <div class="filters-panel">
+  <!-- Member Status Filter - Core Feature -->
+  <div class="reputation-filter-section">
+    <div class="reputation-filter-header">
+      <label class="filter-label">Member Status</label>
+      <span class="filter-hint">Filter by reputation level</span>
+    </div>
+    <div class="reputation-tier-selector">
+      @for (tier of tierVisualOptions; track tier.value) {
+        <button
+          type="button"
+          class="tier-option"
+          [class.selected]="isReputationTierSelected(tier.value)"
+          [style.--tier-color]="tier.color"
+          [matTooltip]="tier.description"
+          matTooltipPosition="above"
+          (click)="selectReputationTier(tier.value)">
+          <mat-icon class="tier-icon">{{ tier.icon }}</mat-icon>
+          <span class="tier-label">{{ tier.label }}</span>
+          @if (isReputationTierSelected(tier.value)) {
+            <mat-icon class="tier-check">check_circle</mat-icon>
+          }
+        </button>
+      }
+    </div>
+  </div>
+
   <!-- Primary Filters Row -->
   <div class="primary-filters-row">
     <!-- Distance -->
@@ -7,18 +33,6 @@
       <mat-form-field appearance="outline" class="full-width">
         <mat-select [value]="filters().maxDistance" (selectionChange)="updateFilter('maxDistance', $event.value)">
           @for (option of distanceOptions(); track option.value) {
-            <mat-option [value]="option.value">{{ option.label }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-    </div>
-
-    <!-- Reputation -->
-    <div class="filter-group compact">
-      <label class="filter-label">Member Status</label>
-      <mat-form-field appearance="outline" class="full-width">
-        <mat-select [value]="filters().minReputationTier" (selectionChange)="updateFilter('minReputationTier', $event.value)">
-          @for (option of reputationTierOptions(); track option.value) {
             <mat-option [value]="option.value">{{ option.label }}</mat-option>
           }
         </mat-select>

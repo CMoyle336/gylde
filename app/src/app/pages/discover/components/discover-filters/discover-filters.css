@@ -11,6 +11,118 @@
   margin-bottom: 1.5rem;
 }
 
+/* ============================================
+   REPUTATION FILTER SECTION - Core Feature
+   ============================================ */
+.reputation-filter-section {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.reputation-filter-header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.reputation-filter-header .filter-label {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.filter-hint {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
+.reputation-tier-selector {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+}
+
+.tier-option {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 0.75rem;
+  background: var(--color-bg-elevated);
+  border: 2px solid var(--color-border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tier-option:hover {
+  background: var(--color-bg-hover);
+  border-color: var(--tier-color, var(--color-text-muted));
+  transform: translateY(-2px);
+}
+
+.tier-option.selected {
+  background: color-mix(in srgb, var(--tier-color, var(--color-accent)) 12%, transparent);
+  border-color: var(--tier-color, var(--color-accent));
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--tier-color, var(--color-accent)) 25%, transparent);
+}
+
+.tier-option .tier-icon {
+  font-size: 1.75rem;
+  width: 1.75rem;
+  height: 1.75rem;
+  color: var(--color-text-muted);
+  transition: color 0.2s ease;
+}
+
+.tier-option:hover .tier-icon,
+.tier-option.selected .tier-icon {
+  color: var(--tier-color, var(--color-accent));
+}
+
+.tier-option .tier-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  transition: color 0.2s ease;
+}
+
+.tier-option:hover .tier-label,
+.tier-option.selected .tier-label {
+  color: var(--color-text-primary);
+}
+
+.tier-option .tier-check {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  font-size: 1rem;
+  width: 1rem;
+  height: 1rem;
+  color: var(--tier-color, var(--color-accent));
+}
+
+@media (max-width: 640px) {
+  .reputation-tier-selector {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .tier-option {
+    padding: 0.875rem 0.5rem;
+  }
+  
+  .tier-option .tier-icon {
+    font-size: 1.5rem;
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+}
+
 /* Filter Rows */
 .filters-row {
   display: grid;

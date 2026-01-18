@@ -1,9 +1,10 @@
-import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output, signal, computed } from '@angular/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { DiscoveryFilters } from '../../../../core/interfaces';
 import { 
   RELATIONSHIP_GOALS, 
@@ -26,6 +27,25 @@ export interface ReputationTierOption {
   value: string | null;
 }
 
+// Tier display configuration for the visual selector
+const TIER_VISUAL_CONFIG: Record<string, { icon: string; color: string; description: string }> = {
+  active: {
+    icon: 'trending_up',
+    color: '#3b82f6', // blue-500
+    description: 'Engaged members who are actively participating',
+  },
+  established: {
+    icon: 'star_half',
+    color: '#c9a962', // brand gold
+    description: 'Long-standing members with consistent activity',
+  },
+  trusted: {
+    icon: 'star',
+    color: '#f59e0b', // amber-500
+    description: 'Highly trusted members with excellent track records',
+  },
+};
+
 
 @Component({
   selector: 'app-discover-filters',
@@ -38,6 +58,7 @@ export interface ReputationTierOption {
     MatSlideToggleModule,
     MatButtonModule,
     MatIconModule,
+    MatTooltipModule,
   ],
 })
 export class DiscoverFiltersComponent {
@@ -96,5 +117,21 @@ export class DiscoverFiltersComponent {
 
   protected onApply(): void {
     this.apply.emit();
+  }
+
+  // Reputation tier selector helpers
+  protected readonly tierVisualOptions = [
+    { value: null, label: 'All', icon: 'people', color: 'var(--color-text-muted)', description: 'Show all members' },
+    { value: 'active', label: 'Active+', ...TIER_VISUAL_CONFIG['active'] },
+    { value: 'established', label: 'Established+', ...TIER_VISUAL_CONFIG['established'] },
+    { value: 'trusted', label: 'Trusted+', ...TIER_VISUAL_CONFIG['trusted'] },
+  ];
+
+  protected isReputationTierSelected(value: string | null): boolean {
+    return this.filters().minReputationTier === value;
+  }
+
+  protected selectReputationTier(value: string | null): void {
+    this.updateFilter('minReputationTier', value);
   }
 }
