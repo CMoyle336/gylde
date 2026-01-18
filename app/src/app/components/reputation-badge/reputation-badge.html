@@ -1,0 +1,34 @@
+@if (mode() === 'icon') {
+  <!-- Icon only mode - compact with tooltip -->
+  <span
+    class="reputation-badge icon-only"
+    [class]="tierClass() + ' size-' + size()"
+    [style.color]="tierDisplay().color"
+    [matTooltip]="tooltipText()"
+  >
+    <mat-icon>{{ tierDisplay().icon }}</mat-icon>
+  </span>
+} @else if (mode() === 'badge') {
+  <!-- Badge mode - icon with label -->
+  <span
+    class="reputation-badge badge-mode"
+    [class]="tierClass() + ' size-' + size()"
+    [style.--tier-color]="tierDisplay().color"
+  >
+    <mat-icon [style.color]="tierDisplay().color">{{ tierDisplay().icon }}</mat-icon>
+    <span class="tier-label">{{ tierDisplay().label }}</span>
+  </span>
+} @else {
+  <!-- Full mode - icon, label, and description -->
+  <div
+    class="reputation-badge full-mode"
+    [class]="tierClass() + ' size-' + size()"
+    [style.--tier-color]="tierDisplay().color"
+  >
+    <mat-icon [style.color]="tierDisplay().color">{{ tierDisplay().icon }}</mat-icon>
+    <div class="tier-info">
+      <span class="tier-label">{{ tierDisplay().label }}</span>
+      <span class="tier-description">{{ tierDisplay().description }}</span>
+    </div>
+  </div>
+}

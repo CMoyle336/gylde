@@ -10,6 +10,7 @@ import {
   getSubscriptionCapabilities,
   SUBSCRIPTION_PLANS,
   TrustData,
+  ReputationData,
 } from '../interfaces';
 
 /**
@@ -18,6 +19,7 @@ import {
 interface PrivateUserData {
   profileProgress: number;
   trust?: TrustData;
+  reputation?: ReputationData;
   subscription: UserSubscription;
   updatedAt?: unknown;
 }
@@ -36,6 +38,7 @@ export class SubscriptionService {
   private readonly _subscription = signal<UserSubscription | null>(null);
   private readonly _profileProgress = signal<number>(0);
   private readonly _trustData = signal<TrustData | null>(null);
+  private readonly _reputationData = signal<ReputationData | null>(null);
   private readonly _loading = signal(false);
   private unsubscribe: (() => void) | null = null;
 
@@ -43,6 +46,7 @@ export class SubscriptionService {
   readonly subscription = this._subscription.asReadonly();
   readonly profileProgress = this._profileProgress.asReadonly();
   readonly trustData = this._trustData.asReadonly();
+  readonly reputationData = this._reputationData.asReadonly();
   readonly loading = this._loading.asReadonly();
 
   readonly currentTier = computed<SubscriptionTier>(() => {
@@ -203,11 +207,13 @@ export class SubscriptionService {
           this._subscription.set(data.subscription ?? { tier: 'free', status: 'active' });
           this._profileProgress.set(data.profileProgress ?? 0);
           this._trustData.set(data.trust ?? null);
+          this._reputationData.set(data.reputation ?? null);
         } else {
           // Private doc doesn't exist yet - default to free
           this._subscription.set({ tier: 'free', status: 'active' });
           this._profileProgress.set(0);
           this._trustData.set(null);
+          this._reputationData.set(null);
         }
         this._loading.set(false);
       }

@@ -1,12 +1,17 @@
 /**
  * Block User Cloud Functions
  * Handles blocking/unblocking users and related cleanup
+ *
+ * REPUTATION INTEGRATION:
+ * - Increments blocksReceived counter for blocked user
+ * - Triggers real-time reputation recalculation
  */
 
 import {onCall, HttpsError} from "firebase-functions/v2/https";
 import {FieldValue} from "firebase-admin/firestore";
 import {db} from "../config/firebase";
 import * as logger from "firebase-functions/logger";
+import {recalculateReputation} from "./reputation";
 
 interface BlockRecord {
   blockedUserId: string;
@@ -17,6 +22,8 @@ interface BlockRecord {
 /**
  * Block a user
  * - Creates block records for both users (mutual block effect)
+ * - Increments blocksReceived for blocked user (reputation signal)
+ * - Triggers real-time reputation recalculation
  * - Deletes all activity records between the two users
  * - Removes favorites between the two users
  * - Removes matches between the two users
@@ -73,27 +80,45 @@ export const blockUser = onCall(async (request) => {
     await batch.commit();
     logger.info(`Created block records for ${currentUserId} -> ${targetUserId}`);
 
-    // 3. Delete activity records between users (async, don't block response)
+    // 3. REPUTATION: Increment blocksReceived counter for the blocked user
+    await db
+      .collection("users")
+      .doc(targetUserId)
+      .collection("private")
+      .doc("data")
+      .set(
+        {blocksReceived: FieldValue.increment(1)},
+        {merge: true}
+      );
+
+    // 4. REPUTATION: Trigger real-time recalculation for blocked user
+    recalculateReputation(targetUserId).catch((err) => {
+      logger.error("Error recalculating reputation after block:", err);
+    });
+
+    logger.info(`Block counter incremented for ${targetUserId}, reputation recalc triggered`);
+
+    // 5. Delete activity records between users (async, don't block response)
     deleteActivityBetweenUsers(currentUserId, targetUserId).catch((err) => {
       logger.error("Error deleting activity:", err);
     });
 
-    // 4. Delete favorites between users
+    // 6. Delete favorites between users
     deleteFavoritesBetweenUsers(currentUserId, targetUserId).catch((err) => {
       logger.error("Error deleting favorites:", err);
     });
 
-    // 5. Delete matches between users
+    // 7. Delete matches between users
     deleteMatchesBetweenUsers(currentUserId, targetUserId).catch((err) => {
       logger.error("Error deleting matches:", err);
     });
 
-    // 6. Delete profile views between users
+    // 8. Delete profile views between users
     deleteProfileViewsBetweenUsers(currentUserId, targetUserId).catch((err) => {
       logger.error("Error deleting profile views:", err);
     });
 
-    // 7. Delete photo access requests between users
+    // 9. Delete photo access requests between users
     deletePhotoAccessBetweenUsers(currentUserId, targetUserId).catch((err) => {
       logger.error("Error deleting photo access:", err);
     });

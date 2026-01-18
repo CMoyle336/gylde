@@ -1,11 +1,16 @@
 /**
  * Discovery Cloud Functions
  * Handles profile search, filtering, sorting, and pagination with privacy enforcement
+ *
+ * REPUTATION INTEGRATION:
+ * - Includes reputation tier in search results
+ * - Applies tier-based ranking boost to discovery
  */
 
 import {onCall, HttpsError} from "firebase-functions/v2/https";
 import {db} from "../config/firebase";
 import {FieldValue} from "firebase-admin/firestore";
+import {ReputationTier, REPUTATION_TIER_ORDER} from "../types";
 
 // Types
 interface GeoLocation {
@@ -89,6 +94,7 @@ interface SearchResult {
   values: string[];
   supportOrientation: string;
   profileProgress: number; // 0-100 profile completion percentage (from private subcollection)
+  reputationTier: ReputationTier; // User's reputation tier (from private subcollection)
   // Secondary fields
   ethnicity?: string;
   relationshipStatus?: string;
@@ -219,15 +225,16 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
       // === EXECUTE QUERY ===
       const snapshot = await query.get();
 
-      // === FETCH TRUST SCORES FROM PRIVATE SUBCOLLECTION ===
+      // === FETCH TRUST SCORES AND REPUTATION FROM PRIVATE SUBCOLLECTION ===
       // Filter out current user and blocked users first
       const candidateIds = snapshot.docs
         .map((doc) => doc.id)
         .filter((id) => id !== currentUserId && !blockedUserIds.has(id));
 
       const profileProgressMap = new Map<string, number>();
+      const reputationTierMap = new Map<string, ReputationTier>();
 
-      // Fetch profile progress (trust score) in batches of 10
+      // Fetch profile progress (trust score) and reputation tier in batches of 10
       const batchSize = 10;
       for (let i = 0; i < candidateIds.length; i += batchSize) {
         const batch = candidateIds.slice(i, i + batchSize);
@@ -237,8 +244,11 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
           )
         );
         privateDocs.forEach((doc, idx) => {
-          const progress = doc.exists ? (doc.data()?.profileProgress ?? 0) : 0;
+          const data = doc.exists ? doc.data() : {};
+          const progress = data?.profileProgress ?? 0;
+          const tier = (data?.reputation?.tier ?? "new") as ReputationTier;
           profileProgressMap.set(batch[idx], progress);
+          reputationTierMap.set(batch[idx], tier);
         });
       }
 
@@ -251,6 +261,7 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
         rawSupportOrientation: string; // For filtering
         rawConnectionTypes: string[]; // For filtering
         rawValues: string[]; // For filtering
+        tierRank: number; // For reputation-based ranking boost
       }
 
       const allCandidates: CandidateProfile[] = [];
@@ -262,6 +273,8 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
         const data = doc.data();
         const onboarding = data.onboarding || {};
         const profileProgress = profileProgressMap.get(doc.id) ?? 0;
+        const reputationTier = reputationTierMap.get(doc.id) ?? "new";
+        const tierRank = REPUTATION_TIER_ORDER.indexOf(reputationTier);
 
         // Calculate distance
         let distance: number | undefined;
@@ -318,6 +331,7 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
           values: onboarding.values || [],
           supportOrientation: onboarding.supportOrientation || "",
           profileProgress,
+          reputationTier,
           ethnicity: onboarding.ethnicity,
           relationshipStatus: onboarding.relationshipStatus,
           children: onboarding.children,
@@ -334,6 +348,7 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
           rawSupportOrientation: onboarding.supportOrientation || "",
           rawConnectionTypes: onboarding.connectionTypes || [],
           rawValues: onboarding.values || [],
+          tierRank,
         });
       }
 
@@ -449,6 +464,8 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
       }
 
       // === APPLY IN-MEMORY SORTING ===
+      // Reputation tier provides a secondary ranking boost:
+      // Higher tier users appear first when primary sort values are equal
       filteredCandidates.sort((a, b) => {
         let comparison = 0;
 
@@ -476,7 +493,15 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
         }
 
         // Apply direction
-        return sort.direction === "desc" ? -comparison : comparison;
+        let result = sort.direction === "desc" ? -comparison : comparison;
+
+        // REPUTATION BOOST: If primary sort is equal, higher tier users appear first
+        if (result === 0) {
+          // Higher tierRank = better tier, so b - a for descending
+          result = b.tierRank - a.tierRank;
+        }
+
+        return result;
       });
 
       // === APPLY IN-MEMORY PAGINATION ===
@@ -507,6 +532,7 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
         values: p.values,
         supportOrientation: p.supportOrientation,
         profileProgress: p.profileProgress,
+        reputationTier: p.reputationTier,
         ethnicity: p.ethnicity,
         relationshipStatus: p.relationshipStatus,
         children: p.children,

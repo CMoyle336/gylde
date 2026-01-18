@@ -1,10 +1,15 @@
 /**
  * Identity Verification Cloud Functions (Veriff Integration)
+ *
+ * REPUTATION INTEGRATION:
+ * - Triggers real-time reputation recalculation when user is verified
+ * - Identity verification provides significant reputation boost (+200 points)
  */
 import {onRequest} from "firebase-functions/v2/https";
 import {db} from "../config/firebase";
 import * as logger from "firebase-functions/logger";
 import * as crypto from "crypto";
+import {recalculateReputation} from "./reputation";
 
 // Veriff webhook secret for signature verification
 // Set this in Firebase Functions config: firebase functions:secrets:set VERIFF_WEBHOOK_SECRET
@@ -141,6 +146,15 @@ export const veriffWebhook = onRequest(
         status: finalStatus,
         verified: identityVerified,
       });
+
+      // REPUTATION: Trigger real-time recalculation if user was just verified
+      // This provides an immediate tier boost for identity verification
+      if (identityVerified) {
+        recalculateReputation(userId).catch((err) => {
+          logger.error("Error recalculating reputation after verification:", err);
+        });
+        logger.info(`Reputation recalculation triggered for verified user ${userId}`);
+      }
 
       res.status(200).send("OK");
     } catch (error) {

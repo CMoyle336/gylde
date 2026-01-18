@@ -3,6 +3,7 @@
  */
 
 import { GeoLocation } from './geo.interface';
+import { ReputationTier } from './reputation.interface';
 
 /**
  * Profile data exposed in discovery/browse views
@@ -28,6 +29,7 @@ export interface DiscoverableProfile {
   verified: boolean;
   supportOrientation: string;
   profileProgress: number; // 0-100 profile completion percentage (fetched from private data by Cloud Function)
+  reputationTier: ReputationTier; // User's reputation tier (fetched from private data by Cloud Function)
   // Secondary profile fields
   ethnicity?: string;
   relationshipStatus?: string;

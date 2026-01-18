@@ -5,6 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { SubscriptionService } from '../../core/services/subscription.service';
 import { IdentityVerificationComponent } from '../../components/identity-verification';
+import { ReputationBadgeComponent } from '../../components/reputation-badge';
 import { 
   TrustCategory,
   TrustCategoryDefinition,
@@ -12,6 +13,8 @@ import {
   TRUST_TASK_UI,
   TRUST_CATEGORIES,
   getTasksByCategory,
+  ReputationTier,
+  TIER_CONFIG,
 } from '../../core/interfaces';
 
 /**
@@ -44,6 +47,7 @@ interface TrustCategoryDisplay extends TrustCategoryDefinition {
     MatIconModule,
     MatProgressSpinnerModule,
     IdentityVerificationComponent,
+    ReputationBadgeComponent,
   ],
 })
 export class TrustComponent {
@@ -55,7 +59,25 @@ export class TrustComponent {
 
   // Trust/progress data from private subcollection (via subscription service)
   protected readonly trustData = this.subscriptionService.trustData;
+  protected readonly reputationData = this.subscriptionService.reputationData;
   protected readonly loading = this.subscriptionService.loading;
+
+  // Reputation tier for display
+  protected readonly reputationTier = computed<ReputationTier>(() => {
+    return this.reputationData()?.tier ?? 'new';
+  });
+
+  // Messaging limits from reputation
+  protected readonly messagingStatus = computed(() => {
+    const rep = this.reputationData();
+    const tier = rep?.tier ?? 'new';
+    const config = TIER_CONFIG[tier];
+    return {
+      dailyLimit: rep?.dailyMessageLimit ?? config.dailyMessages,
+      sentToday: rep?.messagesSentToday ?? 0,
+      remaining: (rep?.dailyMessageLimit ?? config.dailyMessages) - (rep?.messagesSentToday ?? 0),
+    };
+  });
 
   // Profile progress as percentage (0-100)
   protected readonly profileProgress = computed(() => {

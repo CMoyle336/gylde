@@ -39,14 +39,16 @@ service cloud.firestore {
           'profileProgress', 'subscription', 'isElite',
           'identityVerified', 'identityVerificationStatus', 'identityVerificationCompletedAt',
           'identityVerificationPaid', 'identityVerificationPaidAt',
-          'stripeCustomerId', 'stripeSubscriptionId'
+          'stripeCustomerId', 'stripeSubscriptionId',
+          'reputationTier'
         ]);
       allow update: if isOwner(userId)
         && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
           'profileProgress', 'subscription', 'isElite',
           'identityVerified', 'identityVerificationStatus', 'identityVerificationCompletedAt',
           'identityVerificationPaid', 'identityVerificationPaidAt',
-          'stripeCustomerId', 'stripeSubscriptionId'
+          'stripeCustomerId', 'stripeSubscriptionId',
+          'reputationTier'
         ]);
       allow delete: if false; // Deletion handled via Cloud Functions
       
@@ -166,7 +168,7 @@ service cloud.firestore {
       
       // ------------------------------------------
       // PRIVATE SUBCOLLECTION
-      // Contains sensitive data: profileProgress (trust score), subscription
+      // Contains sensitive data: profileProgress (trust score), subscription, reputation
       // Only the owner can read; only Cloud Functions can write
       // ------------------------------------------
       match /private/{docId} {
@@ -174,6 +176,25 @@ service cloud.firestore {
         allow read: if isOwner(userId);
         // All writes handled by Cloud Functions (admin SDK bypasses rules)
         allow write: if false;
+      }
+      
+      // ------------------------------------------
+      // REPORTS SUBCOLLECTION
+      // Reports filed against this user by other users
+      // Users can create reports on others; only admins can update/delete
+      // ------------------------------------------
+      match /reports/{reportId} {
+        // Owner can read reports against them (for transparency)
+        // Note: Actual moderation happens via Cloud Functions
+        allow read: if isOwner(userId);
+        
+        // Reports are created by Cloud Functions (reportUser callable)
+        // This ensures proper validation and reputation recalculation
+        allow create: if false;
+        
+        // Only admins can update/delete reports (moderation)
+        allow update, delete: if isAuthenticated() 
+          && request.auth.token.admin == true;
       }
     }
 
