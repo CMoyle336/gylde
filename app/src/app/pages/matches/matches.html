@@ -7,7 +7,12 @@
       class="tab-btn"
       [class.active]="activeTab() === 'my-matches'"
       (click)="setTab('my-matches')">
-      <span class="material-icons-outlined">favorite</span>
+      <span class="tab-icon-wrapper">
+        <span class="material-icons-outlined">favorite</span>
+        @if (matchesCount() > 0) {
+          <span class="tab-badge">{{ matchesCount() > 99 ? '99+' : matchesCount() }}</span>
+        }
+      </span>
       <span class="tab-label">My Matches</span>
     </button>
     <button

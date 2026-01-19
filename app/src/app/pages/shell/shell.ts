@@ -88,10 +88,18 @@ export class ShellComponent implements OnInit, OnDestroy {
     return profile?.photoURL ?? this.currentUser()?.photoURL ?? null;
   });
 
-  // Matches badge count (sum of favorited-me and viewed-me counts)
-  protected readonly matchesBadgeCount = computed(() => 
-    this.matchesService.favoritedMeCount() + this.matchesService.viewedMeCount()
-  );
+  // Matches badge count
+  // - All users: new matches count
+  // - Premium users: also includes favorited-me and viewed-me counts
+  protected readonly matchesBadgeCount = computed(() => {
+    const matchesCount = this.matchesService.matchesCount();
+    
+    if (this.subscriptionService.isPremium()) {
+      return matchesCount + this.matchesService.favoritedMeCount() + this.matchesService.viewedMeCount();
+    }
+    
+    return matchesCount;
+  });
 
   protected readonly navItems = [
     { id: 'discover', path: '/discover', icon: 'explore', labelKey: 'DISCOVER' },

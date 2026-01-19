@@ -47,6 +47,7 @@ export class MatchesComponent implements OnInit {
   protected readonly profiles = this.matchesService.profiles;
   protected readonly isEmpty = this.matchesService.isEmpty;
   protected readonly favoritedUserIds = this.favoriteService.favoritedUserIds;
+  protected readonly matchesCount = this.matchesService.matchesCount;
   protected readonly favoritedMeCount = this.matchesService.favoritedMeCount;
   protected readonly viewedMeCount = this.matchesService.viewedMeCount;
 

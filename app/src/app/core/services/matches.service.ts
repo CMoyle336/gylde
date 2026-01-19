@@ -52,6 +52,7 @@ export class MatchesService {
   private readonly _initialized = signal(false); // Tracks if we've ever loaded data
   private readonly _activeTab = signal<MatchTab>('my-matches');
   private readonly _profiles = signal<MatchProfile[]>([]);
+  private readonly _matchesCount = signal(0);
   private readonly _favoritedMeCount = signal(0);
   private readonly _viewedMeCount = signal(0);
   
@@ -62,6 +63,7 @@ export class MatchesService {
   readonly initialized = this._initialized.asReadonly();
   readonly activeTab = this._activeTab.asReadonly();
   readonly profiles = this._profiles.asReadonly();
+  readonly matchesCount = this._matchesCount.asReadonly();
   readonly favoritedMeCount = this._favoritedMeCount.asReadonly();
   readonly viewedMeCount = this._viewedMeCount.asReadonly();
 
@@ -94,7 +96,10 @@ export class MatchesService {
     this._activeTab.set(tab);
     
     // Mark tab as viewed (reset badge)
-    if (tab === 'favorited-me') {
+    if (tab === 'my-matches') {
+      this.markTabAsViewed('my-matches');
+      this._matchesCount.set(0);
+    } else if (tab === 'favorited-me') {
       this.markTabAsViewed('favorited-me');
       this._favoritedMeCount.set(0);
     } else if (tab === 'viewed-me') {
@@ -114,11 +119,13 @@ export class MatchesService {
 
     try {
       // Load counts in parallel
-      const [favoritedCount, viewedCount] = await Promise.all([
+      const [matchesCount, favoritedCount, viewedCount] = await Promise.all([
+        this.countNewMatches(currentUser.uid),
         this.countNewFavoritedMe(currentUser.uid),
         this.countNewViewedMe(currentUser.uid),
       ]);
 
+      this._matchesCount.set(matchesCount);
       this._favoritedMeCount.set(favoritedCount);
       this._viewedMeCount.set(viewedCount);
     } catch (error) {
@@ -183,7 +190,7 @@ export class MatchesService {
   /**
    * Get the last time the user viewed a specific tab
    */
-  private getLastViewedTime(tab: 'favorited-me' | 'viewed-me'): Date {
+  private getLastViewedTime(tab: 'my-matches' | 'favorited-me' | 'viewed-me'): Date {
     if (!isPlatformBrowser(this.platformId)) return new Date(0);
     
     const stored = localStorage.getItem(`${STORAGE_KEY_PREFIX}${tab}`);
@@ -193,9 +200,27 @@ export class MatchesService {
   /**
    * Mark a tab as viewed (store current time)
    */
-  private markTabAsViewed(tab: 'favorited-me' | 'viewed-me'): void {
+  private markTabAsViewed(tab: 'my-matches' | 'favorited-me' | 'viewed-me'): void {
     if (!isPlatformBrowser(this.platformId)) return;
     localStorage.setItem(`${STORAGE_KEY_PREFIX}${tab}`, new Date().toISOString());
+  }
+
+  /**
+   * Count new matches since last viewed
+   */
+  private async countNewMatches(currentUserId: string): Promise<number> {
+    const lastViewed = this.getLastViewedTime('my-matches');
+    
+    const matchesRef = collection(this.firestore, 'matches');
+    const q = query(
+      matchesRef,
+      where('users', 'array-contains', currentUserId),
+      where('createdAt', '>', lastViewed),
+      limit(100)
+    );
+
+    const snapshot = await getDocs(q);
+    return snapshot.size;
   }
 
   /**
