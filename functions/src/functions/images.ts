@@ -738,7 +738,7 @@ function extractFilePathFromUrl(imageUrl: string, bucketName: string): string | 
 export const deleteProfileImage = onCall<{ imageUrl: string }, Promise<{ success: boolean }>>(
   {
     region: "us-central1",
-    memory: "128MiB",
+    memory: "256MiB", // Increased to avoid memory limit errors
     timeoutSeconds: 30,
   },
   async (request) => {
