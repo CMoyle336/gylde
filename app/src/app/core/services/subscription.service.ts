@@ -2,6 +2,7 @@ import { Injectable, inject, signal, computed, DestroyRef } from '@angular/core'
 import { MatDialog } from '@angular/material/dialog';
 import { AuthService } from './auth.service';
 import { FirestoreService } from './firestore.service';
+import { RemoteConfigService } from './remote-config.service';
 import {
   SubscriptionTier,
   UserSubscription,
@@ -11,7 +12,6 @@ import {
   TrustData,
   ReputationData,
   TIER_CONFIG,
-  PREMIUM_MAX_PHOTOS,
 } from '../interfaces';
 
 /**
@@ -33,6 +33,7 @@ interface PrivateUserData {
 export class SubscriptionService {
   private readonly authService = inject(AuthService);
   private readonly firestoreService = inject(FirestoreService);
+  private readonly remoteConfigService = inject(RemoteConfigService);
   private readonly dialog = inject(MatDialog);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -64,11 +65,12 @@ export class SubscriptionService {
     const baseCaps = getSubscriptionCapabilities(this.currentTier());
     
     // Override maxPhotos based on reputation tier (not subscription tier)
-    // Premium subscribers get 20 photos regardless of reputation
+    // Premium subscribers get max photos from remote config regardless of reputation
     const isPremium = this.currentTier() === 'premium';
     const reputationTier = this._reputationData()?.tier ?? 'new';
+    const premiumMaxPhotos = this.remoteConfigService.premiumMaxPhotos();
     const maxPhotos = isPremium 
-      ? PREMIUM_MAX_PHOTOS 
+      ? premiumMaxPhotos 
       : TIER_CONFIG[reputationTier]?.maxPhotos ?? 3;
     
     return {
@@ -119,7 +121,12 @@ export class SubscriptionService {
     };
   });
 
-  readonly price = SUBSCRIPTION_PRICE;
+  // Price info - uses Remote Config for dynamic pricing
+  readonly priceMonthly = this.remoteConfigService.subscriptionMonthlyPriceCents;
+  readonly price = computed(() => ({
+    ...SUBSCRIPTION_PRICE,
+    monthly: this.priceMonthly(),
+  }));
 
   constructor() {
     this.destroyRef.onDestroy(() => {

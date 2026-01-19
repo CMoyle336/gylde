@@ -644,18 +644,66 @@
   opacity: 0.5;
 }
 
-/* Collapse Button */
-.sidebar-collapse {
-  padding: 0.75rem 1rem;
+/* Sidebar Footer */
+.sidebar-footer {
+  padding: 0.5rem 1rem 0.75rem;
   border-top: 1px solid var(--color-border);
   flex-shrink: 0;
   margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
-.sidebar.collapsed .sidebar-collapse {
-  padding: 0.75rem;
+.sidebar.collapsed .sidebar-footer {
+  padding: 0.5rem 0.75rem 0.75rem;
 }
 
+/* Founder Feedback Button - subtle styling */
+.founder-feedback-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  height: 36px;
+  padding: 0 0.75rem;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.8125rem;
+  opacity: 0.7;
+}
+
+.founder-feedback-btn:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-accent);
+  opacity: 1;
+}
+
+.founder-feedback-btn .material-icons-outlined {
+  font-size: 1.125rem;
+  flex-shrink: 0;
+}
+
+.feedback-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar.collapsed .founder-feedback-btn {
+  justify-content: center;
+  padding: 0;
+}
+
+.sidebar.collapsed .feedback-label {
+  display: none;
+}
+
+/* Collapse Button */
 .collapse-btn {
   display: flex;
   align-items: center;

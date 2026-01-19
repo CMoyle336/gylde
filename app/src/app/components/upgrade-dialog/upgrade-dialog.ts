@@ -1,14 +1,11 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal, computed } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Functions, httpsCallable } from '@angular/fire/functions';
-import { 
-  SubscriptionCapabilities, 
-  SUBSCRIPTION_PRICE, 
-  PREMIUM_FEATURES 
-} from '../../core/interfaces';
+import { SubscriptionCapabilities, PREMIUM_FEATURES } from '../../core/interfaces';
+import { SubscriptionService } from '../../core/services/subscription.service';
 
 interface UpgradeDialogData {
   feature?: keyof SubscriptionCapabilities;
@@ -86,13 +83,14 @@ const FEATURE_MESSAGES: Partial<Record<keyof SubscriptionCapabilities, { title: 
 export class UpgradeDialogComponent {
   private readonly dialogRef = inject(MatDialogRef<UpgradeDialogComponent>);
   private readonly functions = inject(Functions);
+  private readonly subscriptionService = inject(SubscriptionService);
   private readonly data = inject<UpgradeDialogData>(MAT_DIALOG_DATA, { optional: true });
 
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
 
-  protected readonly price = SUBSCRIPTION_PRICE;
-  protected readonly priceFormatted = `$${(SUBSCRIPTION_PRICE.monthly / 100).toFixed(2)}`;
+  protected readonly price = this.subscriptionService.price;
+  protected readonly priceFormatted = computed(() => `$${(this.price().monthly / 100).toFixed(2)}`);
   protected readonly features = PREMIUM_FEATURES;
   
   protected readonly featureInfo: { title: string; description: string; icon: string } = 

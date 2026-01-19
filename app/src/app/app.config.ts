@@ -8,6 +8,7 @@ import { provideAuth, getAuth, connectAuthEmulator } from '@angular/fire/auth';
 import { provideFirestore, getFirestore, initializeFirestore, setLogLevel, LogLevel } from '@angular/fire/firestore';
 import { provideStorage, getStorage, connectStorageEmulator } from '@angular/fire/storage';
 import { provideFunctions, getFunctions, connectFunctionsEmulator } from '@angular/fire/functions';
+import { provideRemoteConfig, getRemoteConfig } from '@angular/fire/remote-config';
 import { routes } from './app.routes';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { environment } from '../environments/environment';
@@ -69,6 +70,14 @@ export const appConfig: ApplicationConfig = {
         connectFunctionsEmulator(functions, 'localhost', 5001);
       }
       return functions;
+    }),
+    provideRemoteConfig(() => {
+      const remoteConfig = getRemoteConfig();
+      // Fetch new config every 12 hours in production, 1 minute in dev
+      remoteConfig.settings.minimumFetchIntervalMillis = environment.production 
+        ? 12 * 60 * 60 * 1000 
+        : 60 * 1000;
+      return remoteConfig;
     }),
   ],
 };

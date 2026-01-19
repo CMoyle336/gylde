@@ -1,0 +1,94 @@
+<h2 mat-dialog-title>
+  <mat-icon>feedback</mat-icon>
+  Founder Feedback
+</h2>
+
+<div mat-dialog-content>
+  @if (submitted()) {
+    <!-- Success State -->
+    <div class="success-state">
+      <mat-icon class="success-icon">check_circle</mat-icon>
+      <h3>Thank You!</h3>
+      <p>
+        Your feedback has been submitted. As a founder, your input is invaluable 
+        in shaping Gylde's future.
+      </p>
+      <p class="note">
+        We'll review your submission and may reach out if we need more details.
+      </p>
+    </div>
+  } @else {
+    <!-- Issue Form -->
+    <p class="intro-text">
+      Help us improve Gylde by reporting issues or sharing feedback. 
+      As a founder, your insights are prioritized.
+    </p>
+
+    <div class="category-section">
+      <label class="section-label">What type of feedback is this?</label>
+      <mat-radio-group [(ngModel)]="selectedCategory" class="category-list">
+        @for (category of categories; track category.value) {
+          <mat-radio-button [value]="category.value">
+            <span class="category-option">
+              <mat-icon>{{ category.icon }}</mat-icon>
+              {{ category.label }}
+            </span>
+          </mat-radio-button>
+        }
+      </mat-radio-group>
+    </div>
+
+    <div class="title-section">
+      <label class="section-label" for="title">Brief summary</label>
+      <input
+        id="title"
+        type="text"
+        [(ngModel)]="title"
+        placeholder="e.g., Profile page doesn't load on mobile"
+        maxlength="200">
+      <span class="char-count">{{ title.length }} / 200</span>
+    </div>
+
+    <div class="description-section">
+      <label class="section-label" for="description">Details (optional)</label>
+      <textarea
+        id="description"
+        [(ngModel)]="description"
+        placeholder="Steps to reproduce, expected behavior, or any additional context..."
+        rows="4"
+        maxlength="2000">
+      </textarea>
+      <span class="char-count">{{ description.length }} / 2000</span>
+    </div>
+
+    @if (error()) {
+      <div class="error-message">
+        <mat-icon>error</mat-icon>
+        {{ error() }}
+      </div>
+    }
+  }
+</div>
+
+<div mat-dialog-actions align="end">
+  @if (submitted()) {
+    <button mat-flat-button color="primary" (click)="close()">
+      Done
+    </button>
+  } @else {
+    <button mat-button (click)="close()" [disabled]="loading()">
+      Cancel
+    </button>
+    <button 
+      mat-flat-button 
+      color="primary" 
+      (click)="submitIssue()"
+      [disabled]="loading() || !selectedCategory || !title.trim()">
+      @if (loading()) {
+        <mat-spinner diameter="20"></mat-spinner>
+      } @else {
+        Submit Feedback
+      }
+    </button>
+  }
+</div>

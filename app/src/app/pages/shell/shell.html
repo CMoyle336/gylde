@@ -156,8 +156,23 @@
       </div>
     </div>
 
-    <!-- Collapse/Expand Button -->
-    <div class="sidebar-collapse">
+    <!-- Sidebar Footer -->
+    <div class="sidebar-footer">
+      <!-- Founder Feedback Link (requires founder status + feature flag enabled) -->
+      @if (showFounderReportIssue()) {
+        <button 
+          type="button" 
+          class="founder-feedback-btn" 
+          (click)="openFounderIssueDialog()"
+          [matTooltip]="'Report an issue'"
+          [matTooltipDisabled]="sidenavExpanded()"
+          matTooltipPosition="right">
+          <span class="material-icons-outlined">bug_report</span>
+          <span class="feedback-label">Report Issue</span>
+        </button>
+      }
+
+      <!-- Collapse/Expand Button -->
       <button 
         type="button" 
         class="collapse-btn" 

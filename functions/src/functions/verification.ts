@@ -142,24 +142,35 @@ export const veriffWebhook = onRequest(
       }
 
       // Update user profile
-      await db.collection("users").doc(userId).update({
-        identityVerified,
-        identityVerificationStatus: finalStatus,
-        identityVerificationCompletedAt: new Date(),
-      });
-
-      logger.info(`Updated verification status for user ${userId}:`, {
-        status: finalStatus,
-        verified: identityVerified,
-      });
-
-      // REPUTATION: Trigger real-time recalculation if user was just verified
-      // This provides an immediate tier boost for identity verification
-      if (identityVerified) {
-        recalculateReputation(userId).catch((err) => {
-          logger.error("Error recalculating reputation after verification:", err);
+      // For intermediate events (pending), only update status - don't change identityVerified
+      // This prevents unverifying a user who starts a new verification session
+      if (finalStatus === "pending") {
+        await db.collection("users").doc(userId).update({
+          identityVerificationStatus: finalStatus,
+          identityVerificationSessionId: sessionId,
         });
-        logger.info(`Reputation recalculation triggered for verified user ${userId}`);
+        logger.info(`Updated verification status to pending for user ${userId}`);
+      } else {
+        // Final decision (approved/declined) - update everything
+        await db.collection("users").doc(userId).update({
+          identityVerified,
+          identityVerificationStatus: finalStatus,
+          identityVerificationCompletedAt: new Date(),
+        });
+
+        logger.info(`Updated verification status for user ${userId}:`, {
+          status: finalStatus,
+          verified: identityVerified,
+        });
+
+        // REPUTATION: Trigger real-time recalculation if user was just verified
+        // This provides an immediate tier boost for identity verification
+        if (identityVerified) {
+          recalculateReputation(userId).catch((err) => {
+            logger.error("Error recalculating reputation after verification:", err);
+          });
+          logger.info(`Reputation recalculation triggered for verified user ${userId}`);
+        }
       }
 
       res.status(200).send("OK");

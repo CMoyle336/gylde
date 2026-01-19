@@ -15,6 +15,7 @@
 import {onCall, HttpsError} from "firebase-functions/v2/https";
 import {defineSecret} from "firebase-functions/params";
 import {bucket, db} from "../config/firebase";
+import {getConfig} from "../config/remote-config";
 import * as logger from "firebase-functions/logger";
 import sharp from "sharp";
 import * as crypto from "crypto";
@@ -25,7 +26,6 @@ import {ReputationTier, getTierConfig} from "../types";
 const openaiApiKey = defineSecret("OPENAI_API_KEY");
 
 // Constants for validation
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/jpg"];
 const MAX_DIMENSION = 4096; // Max width or height
 const MIN_DIMENSION = 100; // Min width or height
@@ -36,19 +36,17 @@ const OPTIMIZED_MAX_HEIGHT = 1600; // Max height for web-ready images
 const JPEG_QUALITY = 85; // Quality for JPEG compression (0-100)
 const PNG_COMPRESSION = 8; // PNG compression level (0-9)
 
-// Premium subscribers always get max photos regardless of reputation
-const PREMIUM_MAX_PHOTOS = 20;
-
 /**
  * Get max photos allowed based on reputation tier
- * Premium subscribers get 20 photos regardless of reputation
+ * Premium subscribers get max photos from Remote Config regardless of reputation
  */
-function getMaxPhotosForReputationTier(
+async function getMaxPhotosForReputationTier(
   reputationTier: ReputationTier,
   isPremium: boolean
-): number {
+): Promise<number> {
   if (isPremium) {
-    return PREMIUM_MAX_PHOTOS;
+    const config = await getConfig();
+    return config.premium_max_photos;
   }
   return getTierConfig(reputationTier).maxPhotos;
 }
@@ -139,10 +137,12 @@ interface UploadImagesResponse {
 
 /**
  * Validate that the data is a valid base64 image
+ * @param maxFileSizeBytes - Max file size in bytes (from Remote Config)
  */
 function validateBase64Image(
   base64Data: string,
-  mimeType: string
+  mimeType: string,
+  maxFileSizeBytes: number
 ): { valid: boolean; error?: string; buffer?: Buffer } {
   // Remove data URL prefix if present
   const base64Clean = base64Data.replace(/^data:image\/\w+;base64,/, "");
@@ -156,10 +156,10 @@ function validateBase64Image(
   }
 
   // Check file size
-  if (buffer.length > MAX_FILE_SIZE) {
+  if (buffer.length > maxFileSizeBytes) {
     return {
       valid: false,
-      error: `File size exceeds maximum of ${MAX_FILE_SIZE / 1024 / 1024}MB`,
+      error: `File size exceeds maximum of ${maxFileSizeBytes / 1024 / 1024}MB`,
     };
   }
 
@@ -332,8 +332,12 @@ export const uploadProfileImage = onCall<UploadImageRequest, Promise<UploadImage
       throw new HttpsError("invalid-argument", "Missing required fields: imageData, mimeType");
     }
 
+    // Get config for max file size
+    const config = await getConfig();
+    const maxFileSizeBytes = config.image_max_size_mb * 1024 * 1024;
+
     // Validate the image data
-    const validation = validateBase64Image(imageData, mimeType);
+    const validation = validateBase64Image(imageData, mimeType, maxFileSizeBytes);
     if (!validation.valid || !validation.buffer) {
       throw new HttpsError("invalid-argument", validation.error || "Invalid image");
     }
@@ -376,7 +380,7 @@ export const uploadProfileImage = onCall<UploadImageRequest, Promise<UploadImage
     const currentPhotoDetails = userData?.onboarding?.photoDetails || [];
     const reputationTier = (privateData?.reputation?.tier || "new") as ReputationTier;
     const isPremium = privateData?.subscription?.tier === "premium";
-    const maxPhotos = getMaxPhotosForReputationTier(reputationTier, isPremium);
+    const maxPhotos = await getMaxPhotosForReputationTier(reputationTier, isPremium);
 
     if (folder === "photos" && currentPhotoDetails.length >= maxPhotos) {
       throw new HttpsError(
@@ -506,13 +510,14 @@ async function processSingleImage(
   folder: string,
   currentPhotoCount: number,
   maxPhotos: number,
-  apiKey: string | undefined
+  apiKey: string | undefined,
+  maxFileSizeBytes: number
 ): Promise<ImageResult> {
   const {imageData, mimeType, fileName} = image;
 
   try {
     // Validate the image data
-    const validation = validateBase64Image(imageData, mimeType);
+    const validation = validateBase64Image(imageData, mimeType, maxFileSizeBytes);
     if (!validation.valid || !validation.buffer) {
       return {success: false, error: validation.error || "Invalid image", fileName};
     }
@@ -665,17 +670,19 @@ export const uploadProfileImages = onCall<UploadImagesRequest, Promise<UploadIma
       throw new HttpsError("invalid-argument", "Maximum 10 images per upload batch");
     }
 
-    // Check user's current photo count and reputation tier
-    const [userDoc, privateDoc] = await Promise.all([
+    // Get config and user's current photo count and reputation tier
+    const [config, userDoc, privateDoc] = await Promise.all([
+      getConfig(),
       db.collection("users").doc(userId).get(),
       db.collection("users").doc(userId).collection("private").doc("data").get(),
     ]);
+    const maxFileSizeBytes = config.image_max_size_mb * 1024 * 1024;
     const userData = userDoc.data();
     const privateData = privateDoc.data();
     const currentPhotoDetails = userData?.onboarding?.photoDetails || [];
     const reputationTier = (privateData?.reputation?.tier || "new") as ReputationTier;
     const isPremium = privateData?.subscription?.tier === "premium";
-    const maxPhotos = getMaxPhotosForReputationTier(reputationTier, isPremium);
+    const maxPhotos = await getMaxPhotosForReputationTier(reputationTier, isPremium);
     const availableSlots = maxPhotos - currentPhotoDetails.length;
 
     if (folder === "photos" && images.length > availableSlots) {
@@ -705,7 +712,8 @@ export const uploadProfileImages = onCall<UploadImagesRequest, Promise<UploadIma
             folder,
             currentPhotoDetails.length + results.filter((r) => r.success).length + idx,
             maxPhotos,
-            apiKey
+            apiKey,
+            maxFileSizeBytes
           )
         )
       );

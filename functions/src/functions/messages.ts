@@ -11,6 +11,7 @@ import {onDocumentCreated, onDocumentUpdated} from "firebase-functions/v2/firest
 import {onCall, HttpsError} from "firebase-functions/v2/https";
 import {FieldValue, Timestamp} from "firebase-admin/firestore";
 import {db} from "../config/firebase";
+import {getCachedConfig} from "../config/remote-config";
 import {ActivityService, sendMessageEmailNotification, initializeEmailService} from "../services";
 import * as logger from "firebase-functions/logger";
 import {
@@ -147,20 +148,25 @@ export const onMessageCreated = onDocumentCreated(
       const messageLength = messageType === "text" ? messageContent.length : 0;
 
       // Update recent timestamps for burst detection
+      // Use Remote Config for burst limit, with fallback to default config
+      const config = getCachedConfig();
+      const burstMaxMessages = config.reputation_burst_max_messages;
+      const burstWindowMs = REPUTATION_CONFIG.burst.windowMs; // Window stays constant
+
       let recentTimestamps = senderMetrics.recentSendTimestamps || [];
-      const windowStart = now - REPUTATION_CONFIG.burst.windowMs;
+      const windowStart = now - burstWindowMs;
 
       // Filter to only keep timestamps within the burst window
       recentTimestamps = recentTimestamps.filter((ts: number) => ts > windowStart);
       recentTimestamps.push(now);
 
       // Keep only the last N timestamps
-      if (recentTimestamps.length > REPUTATION_CONFIG.burst.maxMessages + 5) {
-        recentTimestamps = recentTimestamps.slice(-REPUTATION_CONFIG.burst.maxMessages - 5);
+      if (recentTimestamps.length > burstMaxMessages + 5) {
+        recentTimestamps = recentTimestamps.slice(-burstMaxMessages - 5);
       }
 
       // Check for burst messaging
-      const isBurst = recentTimestamps.length > REPUTATION_CONFIG.burst.maxMessages;
+      const isBurst = recentTimestamps.length > burstMaxMessages;
 
       // Check if this is a new day (reset sentToday counter)
       const lastSentDate = senderMetrics.lastSentDate || "";

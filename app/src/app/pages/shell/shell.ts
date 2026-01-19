@@ -14,8 +14,10 @@ import { MessageService } from '../../core/services/message.service';
 import { MatchesService } from '../../core/services/matches.service';
 import { BlockService } from '../../core/services/block.service';
 import { SubscriptionService } from '../../core/services/subscription.service';
+import { RemoteConfigService } from '../../core/services/remote-config.service';
 import { ActivityDisplay, TRUST_TASK_UI } from '../../core/interfaces';
 import { PhotoAccessDialogComponent } from '../../components/photo-access-dialog';
+import { FounderIssueDialogComponent } from '../../components/founder-issue-dialog';
 
 @Component({
   selector: 'app-shell',
@@ -42,6 +44,7 @@ export class ShellComponent implements OnInit, OnDestroy {
   private readonly matchesService = inject(MatchesService);
   private readonly blockService = inject(BlockService);
   private readonly subscriptionService = inject(SubscriptionService);
+  private readonly remoteConfigService = inject(RemoteConfigService);
   private readonly translateService = inject(TranslateService);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly dialog = inject(MatDialog);
@@ -87,6 +90,14 @@ export class ShellComponent implements OnInit, OnDestroy {
     // Prefer the profile photo from Firestore, fallback to auth user photo (e.g., Google)
     return profile?.photoURL ?? this.currentUser()?.photoURL ?? null;
   });
+
+  // Founder status
+  protected readonly isFounder = this.subscriptionService.isFounder;
+  
+  // Show founder report issue button (requires both founder status AND feature flag)
+  protected readonly showFounderReportIssue = computed(() => 
+    this.isFounder() && this.remoteConfigService.featureReportIssue()
+  );
 
   // Matches badge count
   // - All users: new matches count
@@ -222,6 +233,19 @@ export class ShellComponent implements OnInit, OnDestroy {
     this.dialog.open(PhotoAccessDialogComponent, {
       panelClass: 'photo-access-dialog-panel',
       width: '420px',
+      maxWidth: '95vw',
+    });
+  }
+
+  protected openFounderIssueDialog(): void {
+    // Close sidenav on mobile first
+    if (this.isMobile()) {
+      this.sidenavOpen.set(false);
+    }
+
+    this.dialog.open(FounderIssueDialogComponent, {
+      panelClass: 'founder-issue-dialog-panel',
+      width: '480px',
       maxWidth: '95vw',
     });
   }

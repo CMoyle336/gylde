@@ -13,12 +13,11 @@
  */
 
 import {FieldValue, Timestamp} from "firebase-admin/firestore";
+import {onCall, HttpsError} from "firebase-functions/v2/https";
 import {db} from "../config/firebase";
+import {getConfig} from "../config/remote-config";
 import * as logger from "firebase-functions/logger";
-import {
-  FounderRegion,
-  FOUNDER_CONFIG,
-} from "../types";
+import {FounderRegion} from "../types";
 
 /**
  * Normalize a city name for consistent tracking
@@ -44,19 +43,26 @@ export async function checkFounderAvailability(city: string): Promise<{
   maxFounders: number;
 }> {
   const normalizedCity = normalizeCityName(city);
-  const founderDoc = await db.collection("founders").doc(normalizedCity).get();
+  const [founderDoc, config] = await Promise.all([
+    db.collection("founders").doc(normalizedCity).get(),
+    getConfig(),
+  ]);
+
+  const maxFoundersFromConfig = config.founder_max_per_city;
 
   if (!founderDoc.exists) {
     return {
       available: true,
       currentCount: 0,
-      maxFounders: FOUNDER_CONFIG.maxFoundersPerCity,
+      maxFounders: maxFoundersFromConfig,
     };
   }
 
   const data = founderDoc.data() as FounderRegion;
+  // Use the config value, but respect existing document's maxFounders if lower
+  const effectiveMaxFounders = Math.min(data.maxFounders, maxFoundersFromConfig);
   return {
-    available: data.count < data.maxFounders,
+    available: data.count < effectiveMaxFounders,
     currentCount: data.count,
     maxFounders: data.maxFounders,
   };
@@ -88,6 +94,10 @@ export async function tryGrantFounderStatus(
 
   logger.info(`Checking founder eligibility for user ${userId} in ${city}`);
 
+  // Get config before transaction (can't await inside transaction callback)
+  const config = await getConfig();
+  const maxFoundersFromConfig = config.founder_max_per_city;
+
   try {
     const result = await db.runTransaction(async (transaction) => {
       // First, check if user already has founder status
@@ -104,7 +114,7 @@ export async function tryGrantFounderStatus(
       const founderDoc = await transaction.get(founderRef);
 
       let currentCount = 0;
-      let maxFounders: number = FOUNDER_CONFIG.maxFoundersPerCity;
+      let maxFounders: number = maxFoundersFromConfig;
 
       if (founderDoc.exists) {
         const data = founderDoc.data() as FounderRegion;
@@ -132,7 +142,7 @@ export async function tryGrantFounderStatus(
           city: normalizedCity,
           displayCity: city, // Preserve original formatting
           count: 1,
-          maxFounders: FOUNDER_CONFIG.maxFoundersPerCity,
+          maxFounders: maxFoundersFromConfig,
           createdAt: now,
           updatedAt: now,
         };
@@ -196,3 +206,113 @@ export async function isUserFounder(userId: string): Promise<boolean> {
   const userDoc = await db.collection("users").doc(userId).get();
   return userDoc.data()?.isFounder === true;
 }
+
+/**
+ * Founder issue/feedback structure
+ */
+interface FounderIssue {
+  userId: string;
+  userEmail: string | null;
+  displayName: string | null;
+  founderCity: string | null;
+  category: string;
+  title: string;
+  description: string;
+  url: string;
+  userAgent: string;
+  status: "new" | "reviewed" | "in_progress" | "resolved" | "closed";
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+/**
+ * Submit a founder issue/feedback report
+ *
+ * Only founders can submit through this endpoint.
+ * Issues are stored in a dedicated collection for prioritized review.
+ */
+export const submitFounderIssue = onCall(
+  {
+    enforceAppCheck: false,
+  },
+  async (request) => {
+    const userId = request.auth?.uid;
+
+    if (!userId) {
+      throw new HttpsError("unauthenticated", "Must be logged in to submit feedback");
+    }
+
+    const {category, title, description, url, userAgent} = request.data;
+
+    // Validate required fields
+    if (!category || !title) {
+      throw new HttpsError("invalid-argument", "Category and title are required");
+    }
+
+    // Validate category
+    const validCategories = ["bug", "ui", "feature", "performance", "other"];
+    if (!validCategories.includes(category)) {
+      throw new HttpsError("invalid-argument", "Invalid category");
+    }
+
+    // Validate title length
+    if (title.length > 200) {
+      throw new HttpsError("invalid-argument", "Title must be 200 characters or less");
+    }
+
+    // Validate description length if provided
+    if (description && description.length > 2000) {
+      throw new HttpsError("invalid-argument", "Description must be 2000 characters or less");
+    }
+
+    try {
+      // Verify user is a founder
+      const userDoc = await db.collection("users").doc(userId).get();
+      const userData = userDoc.data();
+
+      if (!userData?.isFounder) {
+        throw new HttpsError(
+          "permission-denied",
+          "Only founders can submit feedback through this channel"
+        );
+      }
+
+      const now = Timestamp.now();
+
+      const issue: FounderIssue = {
+        userId,
+        userEmail: userData.email || null,
+        displayName: userData.displayName || null,
+        founderCity: userData.founderCity || null,
+        category,
+        title: title.trim(),
+        description: description?.trim() || "",
+        url: url || "",
+        userAgent: userAgent || "",
+        status: "new",
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      const docRef = await db.collection("founderIssues").add(issue);
+
+      logger.info(`Founder issue submitted by ${userId}:`, {
+        issueId: docRef.id,
+        category,
+        title,
+      });
+
+      return {
+        success: true,
+        issueId: docRef.id,
+      };
+    } catch (error) {
+      if (error instanceof HttpsError) {
+        throw error;
+      }
+
+      logger.error("Error submitting founder issue:", error);
+      throw new HttpsError("internal", "Failed to submit feedback");
+    }
+  }
+);

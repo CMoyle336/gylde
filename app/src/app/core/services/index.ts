@@ -13,3 +13,4 @@ export * from './subscription.service';
 export * from './ai-chat.service';
 export * from './stripe.service';
 export * from './seo.service';
+export * from './remote-config.service';
