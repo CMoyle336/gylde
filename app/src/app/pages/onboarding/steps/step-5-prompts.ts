@@ -15,7 +15,6 @@ export class Step5PromptsComponent {
   protected readonly maxTaglineChars = 100;
   protected readonly maxIdealChars = 500;
   protected readonly maxSupportChars = 300;
-  protected readonly minIdealChars = 20;
 
   protected readonly taglineCharCount = computed(() => this.onboarding.data().tagline.length);
   protected readonly idealCharCount = computed(() => this.onboarding.data().idealRelationship.length);

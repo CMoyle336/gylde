@@ -11,140 +11,192 @@
     <div class="hero-glow"></div>
     
     <div class="hero-content">
-      <span class="hero-tagline" aria-hidden="true">Dating for Intentional, Supported Relationships</span>
       <h1 id="hero-heading" class="hero-title">
-        Find Your <span class="text-accent">Gylde</span>
+        A more trustworthy way to <span class="text-accent">connect</span>
       </h1>
       <p class="hero-description">
-        Not casual dating. Not guesswork. A structured space where 
-        clarity meets connection and relationships are built with intention.
+        Gylde rewards respect, consistency, and real intent—so the right people rise to the top.
       </p>
       
       <div class="hero-cta">
         <button class="btn-primary" type="button" (click)="beginJourney()">
-          Begin Your Journey
+          Request Early Access
         </button>
-        <a class="btn-secondary" href="#features">
-          Learn More
+        <a class="btn-secondary" href="#how-reputation-works">
+          How Reputation Works
         </a>
-      </div>
-
-      <div class="hero-stats" role="list" aria-label="Platform statistics">
-        @for (stat of stats(); track stat.label) {
-          <div class="stat-item" role="listitem">
-            <span class="stat-value">{{ stat.value }}</span>
-            <span class="stat-label">{{ stat.label }}</span>
-          </div>
-        }
       </div>
     </div>
 
     <div class="hero-visual" aria-hidden="true">
       <div class="floating-card card-1">
-        <div class="card-avatar"></div>
-        <div class="card-info">
-          <span class="card-name">Verified Member</span>
-          <span class="card-detail">New York, NY</span>
-        </div>
+        <span class="material-icons-outlined">verified</span>
+        <span>Reputation verified</span>
       </div>
       <div class="floating-card card-2">
-        <div class="card-avatar"></div>
-        <div class="card-info">
-          <span class="card-name">Premium Member</span>
-          <span class="card-detail">Los Angeles, CA</span>
-        </div>
+        <span class="material-icons-outlined">trending_up</span>
+        <span>Trust earned</span>
       </div>
       <div class="floating-card card-3">
-        <span class="material-icons-outlined">favorite</span>
-        <span>It's a match!</span>
+        <span class="material-icons-outlined">shield</span>
+        <span>Quality protected</span>
       </div>
     </div>
   </section>
 
-  <!-- Features Section -->
-  <section id="features" class="features" aria-labelledby="features-heading">
-    <div class="features-container">
-      <div class="features-header">
-        <span class="section-label">Why Gylde</span>
-        <h2 id="features-heading" class="section-title">
-          Clarity, Not Guesswork
+  <!-- Problem Section -->
+  <section class="problem" aria-labelledby="problem-heading">
+    <div class="problem-container">
+      <div class="problem-header">
+        <span class="section-label">The Problem</span>
+        <h2 id="problem-heading" class="section-title">
+          Why existing platforms feel broken
         </h2>
-        <p class="section-description">
-          Our members join because they want structure around what matters most—lifestyle, 
-          ambition, generosity, and intention.
-        </p>
       </div>
 
-      <ul class="features-grid" role="list">
-        @for (feature of features(); track feature.title) {
-          <li class="feature-card" role="listitem">
-            <div class="feature-icon-wrapper">
-              <span class="material-icons-outlined feature-icon">{{ feature.icon }}</span>
-            </div>
-            <h3 class="feature-title">{{ feature.title }}</h3>
-            <p class="feature-description">{{ feature.description }}</p>
+      <ul class="problem-statements" role="list">
+        @for (statement of problemStatements(); track statement) {
+          <li class="problem-statement" role="listitem">
+            <span class="problem-quote">"</span>
+            <span>{{ statement }}</span>
           </li>
         }
       </ul>
     </div>
   </section>
 
-  <!-- How It Works Section -->
-  <section class="how-it-works" aria-labelledby="how-heading">
-    <div class="how-container">
-      <div class="how-header">
-        <span class="section-label">The Journey</span>
-        <h2 id="how-heading" class="section-title">
-          Three Steps to Connection
+  <!-- Promise Section (Three Pillars) -->
+  <section id="promise" class="promise" aria-labelledby="promise-heading">
+    <div class="promise-container">
+      <div class="promise-header">
+        <span class="section-label">The Gylde Difference</span>
+        <h2 id="promise-heading" class="section-title">
+          What we do instead
         </h2>
+        <p class="section-description">
+          A different social contract. Not an alternative—a choice.
+        </p>
       </div>
 
-      <ol class="steps-list" role="list">
-        @for (step of steps(); track step.number; let i = $index) {
-          <li class="step-item" role="listitem">
-            <div class="step-number" aria-hidden="true">{{ step.number }}</div>
-            <div class="step-content">
-              <h3 class="step-title">{{ step.title }}</h3>
-              <p class="step-description">{{ step.description }}</p>
+      <ul class="pillars-grid" role="list">
+        @for (pillar of pillars(); track pillar.title) {
+          <li class="pillar-card" role="listitem">
+            <div class="pillar-icon-wrapper">
+              <span class="material-icons-outlined pillar-icon">{{ pillar.icon }}</span>
             </div>
-            @if (i < steps().length - 1) {
-              <div class="step-connector" aria-hidden="true"></div>
-            }
+            <h3 class="pillar-title">{{ pillar.title }}</h3>
+            <ul class="pillar-points">
+              @for (point of pillar.points; track point) {
+                <li>{{ point }}</li>
+              }
+            </ul>
           </li>
         }
-      </ol>
+      </ul>
     </div>
   </section>
 
-  <!-- Values Section -->
-  <section class="values" aria-labelledby="values-heading">
-    <div class="values-container">
-      <div class="values-content">
-        <span class="section-label">Our Promise</span>
-        <h2 id="values-heading" class="section-title">
-          Structure That Works
+  <!-- How Reputation Feels Section -->
+  <section id="how-reputation-works" class="reputation" aria-labelledby="reputation-heading">
+    <div class="reputation-container">
+      <div class="reputation-content">
+        <span class="section-label">The Experience</span>
+        <h2 id="reputation-heading" class="section-title">
+          What changes when you join
         </h2>
-        <p class="values-description">
-          We built Gylde because dating should not require decoding mixed signals. 
-          Our platform gives you the structure to be clear about what you want—and 
-          find others who want the same.
+        <p class="reputation-description">
+          We focus on outcomes, not mechanics. Here's what reputation-driven 
+          connection actually feels like.
         </p>
 
-        <ul class="values-list" role="list">
-          @for (value of values(); track value) {
-            <li class="value-item" role="listitem">
-              <span class="material-icons-outlined value-check">check_circle</span>
-              <span>{{ value }}</span>
+        <ul class="experience-list" role="list">
+          @for (experience of experiences(); track experience) {
+            <li class="experience-item" role="listitem">
+              <span class="material-icons-outlined experience-check">check_circle</span>
+              <span>{{ experience }}</span>
             </li>
           }
         </ul>
       </div>
       
-      <div class="values-visual" aria-hidden="true">
-        <div class="values-card">
-          <div class="values-card-inner">
-            <span class="material-icons-outlined">handshake</span>
-            <span>Intentional Connections</span>
+      <div class="reputation-visual" aria-hidden="true">
+        <div class="reputation-card">
+          <div class="reputation-card-inner">
+            <span class="material-icons-outlined">trending_up</span>
+            <span>Reputation Compounds</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Who It's For Section -->
+  <section class="audience" aria-labelledby="audience-heading">
+    <div class="audience-container">
+      <div class="audience-header">
+        <span class="section-label">A Cultural Filter</span>
+        <h2 id="audience-heading" class="section-title">
+          Gylde is for some people—not everyone
+        </h2>
+      </div>
+
+      <div class="audience-grid">
+        <div class="audience-card audience-for">
+          <h3 class="audience-card-title">Gylde is for people who</h3>
+          <ul class="audience-list" role="list">
+            @for (item of audienceFor(); track item) {
+              <li class="audience-item audience-item-positive" role="listitem">
+                <span class="material-icons-outlined">check</span>
+                <span>{{ item }}</span>
+              </li>
+            }
+          </ul>
+        </div>
+
+        <div class="audience-card audience-not">
+          <h3 class="audience-card-title">Gylde is not for</h3>
+          <ul class="audience-list" role="list">
+            @for (item of audienceNot(); track item) {
+              <li class="audience-item audience-item-negative" role="listitem">
+                <span class="material-icons-outlined">close</span>
+                <span>{{ item }}</span>
+              </li>
+            }
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Early Access Section -->
+  <section class="early-access" aria-labelledby="early-access-heading">
+    <div class="early-access-container">
+      <div class="early-access-content">
+        <span class="section-label">Early Access</span>
+        <h2 id="early-access-heading" class="section-title">
+          Built with intention, not haste
+        </h2>
+        <p class="early-access-description">
+          We're opening Gylde thoughtfully. Early members help shape the platform 
+          and establish the culture that makes it work.
+        </p>
+
+        <ul class="early-access-list" role="list">
+          @for (point of earlyAccessPoints(); track point) {
+            <li class="early-access-item" role="listitem">
+              <span class="material-icons-outlined">arrow_forward</span>
+              <span>{{ point }}</span>
+            </li>
+          }
+        </ul>
+      </div>
+      
+      <div class="early-access-visual" aria-hidden="true">
+        <div class="early-access-card">
+          <div class="early-access-badge">Founding Member</div>
+          <div class="early-access-card-inner">
+            <span class="material-icons-outlined">groups</span>
+            <span>Shape the community</span>
           </div>
         </div>
       </div>
@@ -156,14 +208,14 @@
     <div class="cta-container">
       <div class="cta-glow" aria-hidden="true"></div>
       <h2 id="cta-heading" class="cta-title">
-        We Provide the <span class="text-accent">Structure</span>
+        Join the <span class="text-accent">right way</span>
       </h2>
       <p class="cta-description">
-        You define the connection. Join a community built on clarity, 
-        intention, and mutual respect.
+        Gylde isn't about signing up fast. It's about joining a community 
+        where trust is earned and quality is protected.
       </p>
       <button class="btn-primary btn-large" type="button" (click)="beginJourney()">
-        Create Your Profile
+        Request Early Access
       </button>
     </div>
   </section>

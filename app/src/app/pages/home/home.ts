@@ -48,77 +48,76 @@ export class HomeComponent {
     }
   }
 
-  protected readonly stats = signal([
-    { value: '50K+', label: 'Active Members' },
-    { value: '12K+', label: 'Connections Made' },
-    { value: '98%', label: 'Satisfaction Rate' },
+  // Problem statements - emotional truths about existing platforms
+  protected readonly problemStatements = signal([
+    'Visibility shouldn\'t be something you buy.',
+    'Trust shouldn\'t reset every time you log in.',
+    'Good behavior should compound—not get buried.',
+    'Endless messaging with little signal is exhausting.',
+    'Money shouldn\'t override how someone treats you.',
   ]);
 
-  protected readonly features = signal([
-    {
-      icon: 'home_work',
-      title: 'Lifestyle Expectations',
-      description:
-        'Be upfront about how you live and what you expect. No ambiguity—just aligned lifestyles from the start.',
-    },
+  // Three pillars of the Gylde promise
+  protected readonly pillars = signal([
     {
       icon: 'trending_up',
-      title: 'Ambition & Growth',
-      description:
-        'Connect with members who value personal development, career goals, and building toward something greater.',
-    },
-    {
-      icon: 'volunteer_activism',
-      title: 'Generosity & Support',
-      description:
-        'A space for those open to giving and receiving support. Clear about intentions, respectful in approach.',
-    },
-    {
-      icon: 'adjust',
-      title: 'Built with Intention',
-      description:
-        'Every relationship here starts with purpose. No games, no uncertainty—just genuine, intentional connections.',
-    },
-    {
-      icon: 'verified_user',
-      title: 'Verified Members',
-      description:
-        'Every profile is verified. Know that the person you are connecting with is real, serious, and authentic.',
+      title: 'Reputation Over Reach',
+      points: [
+        'Behavior determines visibility',
+        'Consistency beats volume',
+        'Respect compounds over time',
+      ],
     },
     {
       icon: 'shield',
-      title: 'Privacy & Discretion',
-      description:
-        'Your privacy matters. Share on your terms with robust controls designed for your peace of mind.',
+      title: 'Protection for Quality',
+      points: [
+        'Thoughtful limits on interactions',
+        'Calmer, more focused inboxes',
+        'Fewer, better conversations',
+      ],
+    },
+    {
+      icon: 'verified',
+      title: 'Trust That Can\'t Be Bought',
+      points: [
+        'Payment enhances experience, not credibility',
+        'No shortcuts around reputation',
+        'Everyone earns their standing',
+      ],
     },
   ]);
 
-  protected readonly steps = signal([
-    {
-      number: '01',
-      title: 'Define What You Want',
-      description:
-        'Our structured profile guides you through lifestyle, ambitions, and relationship expectations. No guessing—just clarity.',
-    },
-    {
-      number: '02',
-      title: 'Find Aligned Matches',
-      description:
-        'Browse verified members who share your intentions. Filter by what matters: lifestyle, goals, and openness to support.',
-    },
-    {
-      number: '03',
-      title: 'Connect with Purpose',
-      description:
-        'Start conversations knowing you are both on the same page. Build relationships grounded in mutual respect and clear intentions.',
-    },
+  // Experiential benefits - how reputation feels
+  protected readonly experiences = signal([
+    'People respond more.',
+    'You\'re seen by more serious members.',
+    'Conversations feel intentional.',
+    'Bad actors disappear quickly.',
+    'Your effort is recognized and rewarded.',
   ]);
 
-  protected readonly values = signal([
-    'Clear expectations from the first message',
-    'Verified identity for every member',
-    'Zero tolerance for dishonesty or games',
-    'Structured profiles that surface what matters',
-    'A community built on mutual respect',
+  // Who Gylde is for
+  protected readonly audienceFor = signal([
+    'Value discretion and respect',
+    'Prefer quality over volume',
+    'Want trust to matter',
+    'Are tired of transactional dynamics',
+  ]);
+
+  // Who Gylde is not for
+  protected readonly audienceNot = signal([
+    'Mass messaging',
+    'Short-term exploitation',
+    'Buying attention',
+    'Low-effort behavior',
+  ]);
+
+  // Early access points - social proof without users
+  protected readonly earlyAccessPoints = signal([
+    'Currently opening in limited regions',
+    'Founding members help shape the platform',
+    'Early access prioritizes verified profiles',
+    'Quality over speed—always',
   ]);
 }

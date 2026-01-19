@@ -630,10 +630,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     this.uploadingPhotos.update(photos => photos.filter(p => p.id !== id));
   }
 
-  async removePhoto(index: number): Promise<void> {
-    const photos = this.editablePhotos();
-    const photoUrl = photos[index];
-    
+  async removePhoto(photoUrl: string): Promise<void> {
     // Prevent deleting the profile photo
     if (photoUrl === this.profilePhotoUrl()) {
       this.uploadError.set('Profile photo cannot be deleted. Set another photo as profile first.');
@@ -641,7 +638,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
       return;
     }
     
-    const newPhotos = photos.filter((_, i) => i !== index);
+    const photos = this.editablePhotos();
+    const newPhotos = photos.filter(url => url !== photoUrl);
     this.editablePhotos.set(newPhotos);
 
     // If not editing, save immediately

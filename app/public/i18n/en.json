@@ -228,10 +228,10 @@
       "TAGLINE_QUESTION": "What's your tagline?",
       "TAGLINE_PLACEHOLDER": "A short phrase that captures who you are...",
       "TAGLINE_HINT": "This will be prominently displayed on your profile card.",
-      "IDEAL_QUESTION": "What does an ideal relationship look like to you?",
+      "IDEAL_QUESTION": "What does an ideal relationship look like to you? (Optional)",
       "IDEAL_PLACEHOLDER": "Describe the relationship you're hoping to build...",
-      "IDEAL_HINT": "Be specific about what matters to you. This will appear on your profile.",
-      "SUPPORT_QUESTION": "What does feeling supported in a relationship mean to you?",
+      "IDEAL_HINT": "Optional, but being specific helps attract better matches.",
+      "SUPPORT_QUESTION": "What does feeling supported in a relationship mean to you? (Optional)",
       "SUPPORT_PLACEHOLDER": "Share what support means to you...",
       "SUPPORT_HINT": "Optional, but helps matches understand your perspective.",
       "CHAR_COUNT": "{{count}} / {{max}} characters"

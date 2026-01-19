@@ -51,7 +51,8 @@ export class OnboardingService {
       case 4:
         return true; // Optional step
       case 5:
-        return data.idealRelationship.trim().length >= 20;
+        // Only tagline is required, text areas are optional
+        return data.tagline.trim().length >= 3;
       case 6:
         return data.photos.length >= 1;
       default:
