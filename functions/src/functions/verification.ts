@@ -40,18 +40,24 @@ export const veriffWebhook = onRequest(
     }
 
     try {
-      const signature = req.headers["x-auth-client"] as string;
-      const payload = JSON.stringify(req.body);
+      // Veriff sends the HMAC signature in x-hmac-signature header
+      const signature = req.headers["x-hmac-signature"] as string;
 
       // Verify webhook signature if secret is configured
       if (VERIFF_WEBHOOK_SECRET) {
+        // Use rawBody for accurate HMAC verification (preserves exact bytes)
+        const rawBody = req.rawBody?.toString() || JSON.stringify(req.body);
+
         const expectedSignature = crypto
           .createHmac("sha256", VERIFF_WEBHOOK_SECRET)
-          .update(payload)
+          .update(rawBody)
           .digest("hex");
 
         if (signature !== expectedSignature) {
-          logger.warn("Invalid Veriff webhook signature");
+          logger.warn("Invalid Veriff webhook signature", {
+            received: signature,
+            expected: expectedSignature,
+          });
           res.status(401).send("Unauthorized");
           return;
         }
