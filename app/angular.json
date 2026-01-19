@@ -64,7 +64,8 @@
               "allowedCommonJsDependencies": [
                 "@veriff/js-sdk",
                 "@grpc/grpc-js",
-                "@grpc/proto-loader"
+                "@grpc/proto-loader",
+                "intl-tel-input"
               ],
               "fileReplacements": [
                 {

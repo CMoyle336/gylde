@@ -8,8 +8,8 @@ export const routes: Routes = [
     data: {
       seo: {
         title: null, // Uses default title
-        description: 'Find your perfect match on Gylde. A premium dating platform where clarity meets connection. Verified profiles, clear intentions, and relationships built with purpose.',
-        keywords: 'dating app, intentional dating, meaningful relationships, verified dating, premium dating, relationship goals, find love',
+        description: 'A dating platform where reputation matters. Your behavior determines your visibility—not your wallet. Fewer messages, better conversations, trust that compounds over time.',
+        keywords: 'dating app, reputation dating, trustworthy dating, verified profiles, quality connections, intentional dating, behavior-based matching',
       },
     },
   },

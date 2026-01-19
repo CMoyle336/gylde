@@ -24,11 +24,11 @@ export class SeoService {
   private readonly document = inject(DOCUMENT);
 
   private readonly defaultConfig: SeoConfig = {
-    title: 'Gylde - Intentional Dating for Meaningful Connections',
+    title: 'Gylde - A More Trustworthy Way to Connect',
     description:
-      'Find your perfect match on Gylde. A premium dating platform where clarity meets connection. Verified profiles, clear intentions, and relationships built with purpose.',
+      'A dating platform where reputation matters. Your behavior determines your visibility—not your wallet. Fewer messages, better conversations, trust that compounds over time.',
     keywords:
-      'dating app, intentional dating, meaningful relationships, verified dating, premium dating',
+      'dating app, reputation dating, trustworthy dating, verified profiles, quality connections, intentional dating',
     image: 'https://gylde.com/assets/og-image.png',
     type: 'website',
   };
