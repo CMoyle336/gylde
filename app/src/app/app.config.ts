@@ -9,7 +9,6 @@ import { provideFirestore, getFirestore, initializeFirestore, setLogLevel, LogLe
 import { provideStorage, getStorage, connectStorageEmulator } from '@angular/fire/storage';
 import { provideFunctions, getFunctions, connectFunctionsEmulator } from '@angular/fire/functions';
 import { provideRemoteConfig, getRemoteConfig } from '@angular/fire/remote-config';
-import { provideAnalytics, getAnalytics, ScreenTrackingService, UserTrackingService } from '@angular/fire/analytics';
 import { routes } from './app.routes';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { environment } from '../environments/environment';
@@ -80,9 +79,6 @@ export const appConfig: ApplicationConfig = {
         : 60 * 1000;
       return remoteConfig;
     }),
-    // Google Analytics - only in browser (not SSR)
-    provideAnalytics(() => getAnalytics()),
-    ScreenTrackingService,
-    UserTrackingService,
+    // Note: Analytics is added in main.ts (browser-only) to avoid SSR issues
   ],
 };
