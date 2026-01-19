@@ -31,20 +31,16 @@
       <span class="material-icons-outlined">more_vert</span>
     </button>
     <mat-menu #chatOptionsMenu="matMenu">
-      <!-- Only show these options when not blocked -->
-      @if (!isBlocked && !conversation.isBlocked) {
-        <button mat-menu-item (click)="onViewProfile()">
-          <span class="material-icons-outlined">person</span>
-          <span>View profile</span>
+      <button mat-menu-item (click)="onViewProfile()">
+        <span class="material-icons-outlined">person</span>
+        <span>View profile</span>
+      </button>
+      @if (hasVirtualPhone) {
+        <button mat-menu-item (click)="onShareNumber()">
+          <span class="material-icons-outlined">phone_forwarded</span>
+          <span>Share my number</span>
         </button>
-        @if (hasVirtualPhone) {
-          <button mat-menu-item (click)="onShareNumber()">
-            <span class="material-icons-outlined">phone_forwarded</span>
-            <span>Share my number</span>
-          </button>
-        }
       }
-      <!-- Archive/unarchive always available -->
       @if (conversation.isArchived) {
         <button mat-menu-item (click)="onUnarchiveChat()">
           <span class="material-icons-outlined">unarchive</span>
@@ -57,14 +53,10 @@
         </button>
       }
       <mat-divider></mat-divider>
-      <!-- Block option only when not already blocked -->
-      @if (!isBlocked && !conversation.isBlocked) {
-        <button mat-menu-item (click)="onBlockUser()">
-          <span class="material-icons-outlined">block</span>
-          <span>Block user</span>
-        </button>
-      }
-      <!-- Report always available -->
+      <button mat-menu-item (click)="onBlockUser()">
+        <span class="material-icons-outlined">block</span>
+        <span>Block user</span>
+      </button>
       <button mat-menu-item (click)="onReportUser()" class="report-btn">
         <span class="material-icons-outlined">flag</span>
         <span>Report user</span>

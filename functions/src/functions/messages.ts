@@ -24,6 +24,29 @@ import {
 import {recalculateReputation} from "./reputation";
 
 /**
+ * Check if two users are blocked (either direction)
+ */
+async function areUsersBlocked(userId1: string, userId2: string): Promise<boolean> {
+  const blocked1Doc = await db
+    .collection("users")
+    .doc(userId1)
+    .collection("blocks")
+    .doc(userId2)
+    .get();
+  
+  if (blocked1Doc.exists) return true;
+
+  const blocked2Doc = await db
+    .collection("users")
+    .doc(userId2)
+    .collection("blocks")
+    .doc(userId1)
+    .get();
+
+  return blocked2Doc.exists;
+}
+
+/**
  * Triggered when a new message is created.
  * - Creates an activity record for the recipient
  * - Updates message metrics for reputation calculation
@@ -69,6 +92,13 @@ export const onMessageCreated = onDocumentCreated(
 
       if (!recipientId) {
         logger.warn(`Could not find recipient in conversation ${conversationId}`);
+        return;
+      }
+
+      // Check if users are blocked - skip activity if blocked
+      const blocked = await areUsersBlocked(senderId, recipientId);
+      if (blocked) {
+        logger.info(`Skipping message activity - users ${senderId} and ${recipientId} are blocked`);
         return;
       }
 

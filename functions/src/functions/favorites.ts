@@ -24,31 +24,28 @@ async function isPremiumUser(userId: string): Promise<boolean> {
 }
 
 /**
- * Check if either user has blocked the other
- * Returns true if there is a block in either direction
+ * Check if two users are blocked (either direction)
  */
 async function areUsersBlocked(userId1: string, userId2: string): Promise<boolean> {
-  // Check if user1 has blocked user2
-  const user1BlockedUser2 = await db
+  // Check if userId1 blocked userId2
+  const blocked1Doc = await db
     .collection("users")
     .doc(userId1)
     .collection("blocks")
     .doc(userId2)
     .get();
   
-  if (user1BlockedUser2.exists) {
-    return true;
-  }
+  if (blocked1Doc.exists) return true;
 
-  // Check if user2 has blocked user1
-  const user2BlockedUser1 = await db
+  // Check if userId2 blocked userId1
+  const blocked2Doc = await db
     .collection("users")
     .doc(userId2)
     .collection("blocks")
     .doc(userId1)
     .get();
 
-  return user2BlockedUser1.exists;
+  return blocked2Doc.exists;
 }
 
 /**
@@ -72,10 +69,10 @@ export const onFavoriteCreated = onDocumentCreated(
     logger.info(`User ${fromUserId} favorited user ${toUserId} (private: ${isPrivate})`);
 
     try {
-      // Check if users have blocked each other - if so, don't process the favorite
+      // Check if users are blocked - if so, skip all activity creation
       const blocked = await areUsersBlocked(fromUserId, toUserId);
       if (blocked) {
-        logger.info(`Skipping favorite processing - users ${fromUserId} and ${toUserId} have blocked each other`);
+        logger.info(`Skipping favorite processing - users ${fromUserId} and ${toUserId} are blocked`);
         return;
       }
 
@@ -195,10 +192,10 @@ async function handleMatch(
 ): Promise<void> {
   logger.info(`Match detected between ${fromUserId} and ${toUserId}`);
 
-  // Check if users have blocked each other - if so, don't create match
+  // Double-check users aren't blocked (race condition safety)
   const blocked = await areUsersBlocked(fromUserId, toUserId);
   if (blocked) {
-    logger.info(`Skipping match creation - users ${fromUserId} and ${toUserId} have blocked each other`);
+    logger.info(`Skipping match creation - users are blocked`);
     return;
   }
 

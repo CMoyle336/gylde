@@ -20,7 +20,6 @@ import {
 import { FirestoreService } from './firestore.service';
 import { AuthService } from './auth.service';
 import { UserProfileService } from './user-profile.service';
-import { BlockService } from './block.service';
 import { Activity, ActivityDisplay } from '../interfaces';
 
 @Injectable({
@@ -31,7 +30,6 @@ export class ActivityService implements OnDestroy {
   private readonly firestoreService = inject(FirestoreService);
   private readonly authService = inject(AuthService);
   private readonly userProfileService = inject(UserProfileService);
-  private readonly blockService = inject(BlockService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly router = inject(Router);
@@ -40,6 +38,8 @@ export class ActivityService implements OnDestroy {
   private initialLoadDone = false;
   // Track activity ID -> last seen timestamp to detect both new and updated activities
   private knownActivityTimestamps = new Map<string, number>();
+  // Track when subscription started - only show toasts for activities after this time
+  private subscriptionStartTime = 0;
   
   // Toast debouncing - collect activities and show only the most recent after a delay
   private pendingToastActivities: Activity[] = [];
@@ -71,6 +71,7 @@ export class ActivityService implements OnDestroy {
     // Reset state for new subscription
     this.initialLoadDone = false;
     this.knownActivityTimestamps.clear();
+    this.subscriptionStartTime = Date.now();
 
     // Subscribe to real-time updates for activities where current user is the recipient
     this.unsubscribe = this.firestoreService.subscribeToCollection<Activity>(
@@ -88,11 +89,15 @@ export class ActivityService implements OnDestroy {
             const activityTime = this.getActivityTimestamp(activity);
             const lastSeenTime = this.knownActivityTimestamps.get(activity.id) || 0;
             
-            // Queue toast if this is a new activity OR if the timestamp has changed (updated)
-            if (activityTime > lastSeenTime) {
+            // Only show toast if:
+            // 1. Activity was created after the subscription started (not an old one surfacing due to deletions)
+            // 2. This is a new activity OR the timestamp has changed (updated)
+            const isNewSinceSubscription = activityTime > this.subscriptionStartTime;
+            if (isNewSinceSubscription && activityTime > lastSeenTime) {
               this.queueToast(activity);
-              this.knownActivityTimestamps.set(activity.id, activityTime);
             }
+            // Always update the known timestamp to avoid duplicate toasts
+            this.knownActivityTimestamps.set(activity.id, activityTime);
           });
         } else {
           // On initial load, queue toast only for very recent activities (within 10 seconds)
@@ -398,11 +403,6 @@ export class ActivityService implements OnDestroy {
   }
 
   private showActivityToast(activity: Activity): void {
-    // Don't show toast if the activity is from a blocked user
-    if (activity.fromUserId && this.blockService.isUserBlocked(activity.fromUserId)) {
-      return;
-    }
-
     // For messages: don't show toast if user is already in that conversation
     if (activity.type === 'message' && activity.link && this.router.url.startsWith(activity.link)) {
       return;

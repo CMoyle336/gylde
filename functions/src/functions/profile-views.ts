@@ -24,6 +24,31 @@ async function isPremiumUser(userId: string): Promise<boolean> {
 }
 
 /**
+ * Check if two users are blocked (either direction)
+ */
+async function areUsersBlocked(userId1: string, userId2: string): Promise<boolean> {
+  // Check if userId1 blocked userId2
+  const blocked1Doc = await db
+    .collection("users")
+    .doc(userId1)
+    .collection("blocks")
+    .doc(userId2)
+    .get();
+  
+  if (blocked1Doc.exists) return true;
+
+  // Check if userId2 blocked userId1
+  const blocked2Doc = await db
+    .collection("users")
+    .doc(userId2)
+    .collection("blocks")
+    .doc(userId1)
+    .get();
+
+  return blocked2Doc.exists;
+}
+
+/**
  * Trigger: When a profile view record is created
  * Creates or updates the corresponding activity record for the viewed user
  */
@@ -46,6 +71,13 @@ export const onProfileViewCreated = onDocumentCreated(
     logger.info(`Profile view: ${viewerName} (${viewerId}) viewed ${viewedUserId}`);
 
     try {
+      // Check if users are blocked - if so, skip activity creation
+      const blocked = await areUsersBlocked(viewerId, viewedUserId);
+      if (blocked) {
+        logger.info(`Skipping view activity - users ${viewerId} and ${viewedUserId} are blocked`);
+        return;
+      }
+
       // Only create view activities for premium users
       // (only premium users can see who viewed their profile)
       const viewedUserIsPremium = await isPremiumUser(viewedUserId);
