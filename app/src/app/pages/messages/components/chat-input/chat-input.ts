@@ -115,6 +115,19 @@ export class ChatInputComponent {
     this.draftChanged.emit(this.messageInput());
   }
 
+  /**
+   * Handle input focus - scroll into view on mobile to ensure visibility above keyboard
+   */
+  protected onFocus(): void {
+    // Small delay to let the keyboard animate in
+    setTimeout(() => {
+      this.messageInputEl?.nativeElement?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+    }, 300);
+  }
+
   protected openImagePicker(): void {
     this.fileInput?.nativeElement?.click();
   }

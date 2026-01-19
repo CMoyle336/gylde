@@ -1,5 +1,6 @@
 :host {
   display: block;
+  flex-shrink: 0;
 }
 
 .chat-input-area {
@@ -7,6 +8,7 @@
   flex-direction: column;
   background: var(--color-bg-secondary);
   border-top: 1px solid var(--color-border);
+  flex-shrink: 0;
 }
 
 .image-preview-row {
@@ -280,5 +282,11 @@
 @media (max-width: 768px) {
   .chat-input {
     padding: 0.75rem 1rem;
+    /* Add safe area padding for iOS devices with home indicator */
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+
+  .blocked-notice {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
   }
 }

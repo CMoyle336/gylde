@@ -73,9 +73,11 @@
         #messageInputEl
         type="text"
         placeholder="Type a message..."
+        enterkeyhint="send"
         [value]="messageInput()"
         (input)="messageInput.set($any($event.target).value); onInput()"
-        (keydown)="onKeyDown($event)">
+        (keydown)="onKeyDown($event)"
+        (focus)="onFocus()">
       <button 
         type="button"
         class="send-btn"
