@@ -275,6 +275,10 @@
   font-size: 0.5625rem;
 }
 
+.sidebar.collapsed .nav-badge.coming-soon {
+  display: none;
+}
+
 .nav-item.active {
   background: rgba(201, 169, 98, 0.1);
   color: var(--color-accent);
