@@ -1,6 +1,7 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { environment } from '../../../environments/environment';
 import { GeoLocation } from '../interfaces';
+import { RemoteConfigService } from './remote-config.service';
 
 export interface PlaceResult {
   placeId: string;
@@ -23,6 +24,7 @@ export interface PlaceSuggestion {
   providedIn: 'root',
 })
 export class PlacesService {
+  private readonly remoteConfig = inject(RemoteConfigService);
   private isLoaded = signal(false);
   private isLoading = signal(false);
 
@@ -102,12 +104,13 @@ export class PlacesService {
     }
 
     try {
-      // Use the new AutocompleteSuggestion API
+      // Use the new AutocompleteSuggestion API with region filtering from Remote Config
+      const allowedRegions = this.remoteConfig.allowedRegionCodes();
       const { suggestions } =
         await google.maps.places.AutocompleteSuggestion.fetchAutocompleteSuggestions({
           input,
           includedPrimaryTypes: ['locality', 'administrative_area_level_3', 'postal_town'],
-          includedRegionCodes: [], // Empty = worldwide
+          includedRegionCodes: allowedRegions,
         });
 
       return suggestions
@@ -129,6 +132,7 @@ export class PlacesService {
 
   /**
    * Get full place details using the new Place class
+   * Returns null if the place is not in an allowed region
    */
   async getPlaceDetails(placeId: string): Promise<PlaceResult | null> {
     const loaded = await this.loadGoogleMaps();
@@ -143,11 +147,27 @@ export class PlacesService {
         fields: ['location', 'addressComponents', 'formattedAddress', 'displayName'],
       });
 
-      return this.parsePlaceResult(placeId, place);
+      const result = this.parsePlaceResult(placeId, place);
+      
+      // Validate that the place is in an allowed region
+      if (result && !this.isAllowedRegion(result.countryCode)) {
+        console.warn(`Place rejected: ${result.countryCode} is not in allowed regions`);
+        return null;
+      }
+      
+      return result;
     } catch (error) {
       console.error('Failed to fetch place details:', error);
       return null;
     }
+  }
+  
+  /**
+   * Check if a country code is in the allowed regions
+   */
+  isAllowedRegion(countryCode: string): boolean {
+    const allowedCodes = this.remoteConfig.allowedRegionCodes().map(c => c.toUpperCase());
+    return allowedCodes.includes(countryCode.toUpperCase());
   }
 
   private parsePlaceResult(

@@ -18,6 +18,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { PhotoAccessService } from '../../core/services/photo-access.service';
 import { PlacesService, PlaceSuggestion } from '../../core/services/places.service';
 import { SubscriptionService } from '../../core/services/subscription.service';
+import { RemoteConfigService } from '../../core/services/remote-config.service';
 import { AiChatService } from '../../core/services/ai-chat.service';
 import { OnboardingProfile, GeoLocation, ReputationTier, TIER_CONFIG } from '../../core/interfaces';
 import { Photo } from '../../core/interfaces/photo.interface';
@@ -91,6 +92,13 @@ export class ProfileComponent implements OnInit, OnDestroy {
   private readonly photoAccessService = inject(PhotoAccessService);
   private readonly placesService = inject(PlacesService);
   protected readonly subscriptionService = inject(SubscriptionService);
+  private readonly remoteConfig = inject(RemoteConfigService);
+  
+  // Show US-only notice when the only allowed region is 'us'
+  protected readonly showUsOnlyNotice = computed(() => {
+    const regions = this.remoteConfig.allowedRegionCodes();
+    return regions.length === 1 && regions[0].toLowerCase() === 'us';
+  });
   private readonly aiChatService = inject(AiChatService);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly dialog = inject(MatDialog);
@@ -917,6 +925,11 @@ export class ProfileComponent implements OnInit, OnDestroy {
         
         this.locationStatus.set('success');
         this.locationMessage.set(null);
+      } else {
+        // getPlaceDetails returns null for non-allowed regions
+        this.locationStatus.set('error');
+        this.locationMessage.set('This location is not in an available region. Please select a U.S. city.');
+        this.cityInputValue.set('');
       }
     } catch (error) {
       console.error('Failed to get place details:', error);
@@ -1008,6 +1021,13 @@ export class ProfileComponent implements OnInit, OnDestroy {
         );
 
         if (result) {
+          // Check if location is in an allowed region
+          if (!this.placesService.isAllowedRegion(result.countryCode)) {
+            this.locationStatus.set('error');
+            this.locationMessage.set('Gylde is not yet available in your region. Please enter a U.S. city.');
+            return;
+          }
+          
           // Update form and pending location data
           this.editForm.city = result.city;
           this.pendingCountry = result.countryCode;

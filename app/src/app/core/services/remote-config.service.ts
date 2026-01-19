@@ -18,6 +18,9 @@ export interface RemoteConfigValues {
   premium_max_photos: number;
   image_max_size_mb: number;
   discover_page_size: number;
+  
+  // Geographic restrictions
+  allowed_region_codes: string[];
 }
 
 /**
@@ -30,6 +33,7 @@ const DEFAULTS: RemoteConfigValues = {
   premium_max_photos: 20,
   image_max_size_mb: 10,
   discover_page_size: 20,
+  allowed_region_codes: ['us'],
 };
 
 /**
@@ -59,6 +63,7 @@ export class RemoteConfigService {
   private readonly _premiumMaxPhotos = signal(DEFAULTS.premium_max_photos);
   private readonly _imageMaxSizeMb = signal(DEFAULTS.image_max_size_mb);
   private readonly _discoverPageSize = signal(DEFAULTS.discover_page_size);
+  private readonly _allowedRegionCodes = signal(DEFAULTS.allowed_region_codes);
 
   // Public readonly signals
   readonly initialized = this._initialized.asReadonly();
@@ -68,6 +73,7 @@ export class RemoteConfigService {
   readonly premiumMaxPhotos = this._premiumMaxPhotos.asReadonly();
   readonly imageMaxSizeMb = this._imageMaxSizeMb.asReadonly();
   readonly discoverPageSize = this._discoverPageSize.asReadonly();
+  readonly allowedRegionCodes = this._allowedRegionCodes.asReadonly();
 
   constructor() {
     this.initialize();
@@ -91,6 +97,7 @@ export class RemoteConfigService {
         premium_max_photos: '20',
         image_max_size_mb: '10',
         discover_page_size: '',
+        allowed_region_codes: 'us',
       };
 
       // Fetch and activate
@@ -118,6 +125,9 @@ export class RemoteConfigService {
     this._premiumMaxPhotos.set(this.getNumberValue('premium_max_photos', DEFAULTS.premium_max_photos));
     this._imageMaxSizeMb.set(this.getNumberValue('image_max_size_mb', DEFAULTS.image_max_size_mb));
     this._discoverPageSize.set(this.getNumberValue('discover_page_size', DEFAULTS.discover_page_size));
+    
+    // String array values
+    this._allowedRegionCodes.set(this.getStringArrayValue('allowed_region_codes', DEFAULTS.allowed_region_codes));
   }
 
   /**
@@ -141,6 +151,17 @@ export class RemoteConfigService {
     }
     const num = parseFloat(stringValue);
     return isNaN(num) ? defaultValue : num;
+  }
+
+  /**
+   * Get string array value (comma-separated) with fallback for empty strings
+   */
+  private getStringArrayValue(key: string, defaultValue: string[]): string[] {
+    const stringValue = getString(this.remoteConfig, key);
+    if (stringValue === '' || stringValue === undefined) {
+      return defaultValue;
+    }
+    return stringValue.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
   }
 
   /**

@@ -42,6 +42,14 @@
   <div class="question-group">
     <span class="question-label">{{ 'ONBOARDING.STEP_1.LOCATION_QUESTION' | translate }}</span>
     
+    <!-- Region Restriction Notice (only shown when US is the only allowed region) -->
+    @if (showUsOnlyNotice()) {
+      <div class="region-notice">
+        <span class="material-icons-outlined">public</span>
+        <span>Gylde is currently available in the United States only.</span>
+      </div>
+    }
+    
     <!-- Location Status Banner -->
     @if (locationStatus() !== 'idle') {
       <div class="location-status" [class]="locationStatus()">

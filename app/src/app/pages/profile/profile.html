@@ -261,6 +261,14 @@
             <label class="field-label">Location</label>
             @if (isEditing()) {
               <div class="location-autocomplete-wrapper">
+                <!-- Region Restriction Notice (only shown when US is the only allowed region) -->
+                @if (showUsOnlyNotice()) {
+                  <div class="region-notice">
+                    <mat-icon>public</mat-icon>
+                    <span>Gylde is currently available in the United States only.</span>
+                  </div>
+                }
+                
                 <!-- Location Status Message -->
                 @if (locationMessage()) {
                   <div class="location-status" [class]="locationStatus()">

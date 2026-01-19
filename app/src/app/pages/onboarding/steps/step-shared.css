@@ -696,6 +696,27 @@
   font-size: 1.125rem;
 }
 
+/* Region Notice Banner */
+.region-notice {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding: 0.625rem 1rem;
+  background: rgba(201, 169, 98, 0.08);
+  border: 1px solid rgba(201, 169, 98, 0.2);
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+}
+
+.region-notice .material-icons-outlined {
+  font-size: 1.125rem;
+  color: var(--color-accent);
+  flex-shrink: 0;
+}
+
 /* Location Status */
 .location-status {
   display: flex;

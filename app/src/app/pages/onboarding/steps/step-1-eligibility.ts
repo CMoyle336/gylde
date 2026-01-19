@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   inject,
   signal,
   OnInit,
@@ -18,6 +19,7 @@ import { MatInputModule } from '@angular/material/input';
 import { provideNativeDateAdapter } from '@angular/material/core';
 import { OnboardingService } from '../onboarding.service';
 import { PlacesService, PlaceSuggestion } from '../../../core/services/places.service';
+import { RemoteConfigService } from '../../../core/services/remote-config.service';
 import { GeoLocation } from '../../../core/interfaces';
 
 type LocationStatus = 'idle' | 'detecting' | 'success' | 'error' | 'manual';
@@ -40,6 +42,13 @@ export class Step1EligibilityComponent implements OnInit, OnDestroy {
   protected readonly onboarding = inject(OnboardingService);
   private readonly placesService = inject(PlacesService);
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly remoteConfig = inject(RemoteConfigService);
+  
+  // Show US-only notice when the only allowed region is 'us'
+  protected readonly showUsOnlyNotice = computed(() => {
+    const regions = this.remoteConfig.allowedRegionCodes();
+    return regions.length === 1 && regions[0].toLowerCase() === 'us';
+  });
 
   // Signals for UI state
   protected readonly locationStatus = signal<LocationStatus>('idle');
@@ -164,6 +173,13 @@ export class Step1EligibilityComponent implements OnInit, OnDestroy {
         );
 
         if (result) {
+          // Check if location is in an allowed region
+          if (!this.placesService.isAllowedRegion(result.countryCode)) {
+            this.locationStatus.set('error');
+            this.locationMessage.set('Gylde is not yet available in your region. Please enter a U.S. city below.');
+            return;
+          }
+          
           // Update onboarding data
           this.onboarding.updateData({
             city: result.description,
@@ -272,6 +288,11 @@ export class Step1EligibilityComponent implements OnInit, OnDestroy {
           this.locationStatus.set('idle');
           this.locationMessage.set(null);
         }
+      } else {
+        // getPlaceDetails returns null for non-allowed regions
+        this.locationStatus.set('error');
+        this.locationMessage.set('This location is not in an available region. Please select a U.S. city.');
+        this.cityInputValue.set('');
       }
     } catch (error) {
       console.error('Failed to get place details:', error);
