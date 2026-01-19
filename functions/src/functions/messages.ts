@@ -33,7 +33,7 @@ async function areUsersBlocked(userId1: string, userId2: string): Promise<boolea
     .collection("blocks")
     .doc(userId2)
     .get();
-  
+
   if (blocked1Doc.exists) return true;
 
   const blocked2Doc = await db
@@ -161,9 +161,9 @@ export const onMessageCreated = onDocumentCreated(
 
       // Check if this is a new day (reset sentToday counter)
       const lastSentDate = senderMetrics.lastSentDate || "";
-      const sentToday = lastSentDate === today
-        ? (senderMetrics.sentToday || 0) + 1
-        : 1;
+      const sentToday = lastSentDate === today ?
+        (senderMetrics.sentToday || 0) + 1 :
+        1;
 
       // Update sender's metrics
       const senderMetricsUpdate: Partial<MessageMetrics> = {
@@ -488,9 +488,9 @@ export const checkMessagePermission = onCall<{
       // Get today's date for checking daily counter
       const today = new Date().toISOString().split("T")[0];
       const lastMessageDate = senderReputation?.lastMessageDate ?? "";
-      const sentToday = lastMessageDate === today
-        ? (senderReputation?.messagesSentToday ?? 0)
-        : 0;
+      const sentToday = lastMessageDate === today ?
+        (senderReputation?.messagesSentToday ?? 0) :
+        0;
 
       const remaining = Math.max(0, dailyLimit - sentToday);
 
@@ -614,18 +614,18 @@ export const getMessagingStatus = onCall<void>(
 
       const today = new Date().toISOString().split("T")[0];
       const lastMessageDate = reputation?.lastMessageDate ?? "";
-      const sentToday = lastMessageDate === today
-        ? (reputation?.messagesSentToday ?? 0)
-        : 0;
+      const sentToday = lastMessageDate === today ?
+        (reputation?.messagesSentToday ?? 0) :
+        0;
 
       return {
         tier,
         dailyLimit: tierConfig.dailyMessages,
         sentToday,
         remaining: Math.max(0, tierConfig.dailyMessages - sentToday),
-        canMessageTiers: tierConfig.canMessage === "all"
-          ? ["new", "active", "established", "trusted", "distinguished"]
-          : tierConfig.canMessage,
+        canMessageTiers: tierConfig.canMessage === "all" ?
+          ["new", "active", "established", "trusted", "distinguished"] :
+          tierConfig.canMessage,
         isPremium: false,
       };
     } catch (error) {

@@ -222,9 +222,9 @@ export async function recalculateReputation(
     dailyMessageLimit: tierConfig.dailyMessages,
     canMessageMinTier: tierConfig.canMessage === "all" ? "new" : tierConfig.canMessage[0],
     signals,
-    messagesSentToday: existingReputation?.lastMessageDate === today
-      ? (existingReputation?.messagesSentToday ?? 0)
-      : 0,
+    messagesSentToday: existingReputation?.lastMessageDate === today ?
+      (existingReputation?.messagesSentToday ?? 0) :
+      0,
     lastMessageDate: existingReputation?.lastMessageDate ?? today,
   };
 
@@ -332,7 +332,7 @@ export const calculateAllReputations = onSchedule(
 
       const duration = (Date.now() - startTime) / 1000;
       logger.info(
-        `Daily reputation calculation complete. ` +
+        "Daily reputation calculation complete. " +
         `Processed: ${processed}, Errors: ${errors}, Duration: ${duration}s`
       );
     } catch (error) {

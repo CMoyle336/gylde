@@ -1,7 +1,7 @@
 /**
  * Stripe Subscription Cloud Functions
  * Handles subscription checkout, management, and webhook events
- * 
+ *
  * Simplified to free/premium model at $49.99/month
  */
 import {onCall, onRequest, HttpsError} from "firebase-functions/v2/https";

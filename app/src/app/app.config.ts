@@ -3,9 +3,9 @@ import { provideRouter, withInMemoryScrolling } from '@angular/router';
 import { provideHttpClient, withFetch } from '@angular/common/http';
 import { provideTranslateService } from '@ngx-translate/core';
 import { provideTranslateHttpLoader } from '@ngx-translate/http-loader';
-import { provideFirebaseApp, initializeApp } from '@angular/fire/app';
+import { provideFirebaseApp, initializeApp, getApp } from '@angular/fire/app';
 import { provideAuth, getAuth, connectAuthEmulator } from '@angular/fire/auth';
-import { provideFirestore, getFirestore, connectFirestoreEmulator, setLogLevel, LogLevel } from '@angular/fire/firestore';
+import { provideFirestore, getFirestore, initializeFirestore, setLogLevel, LogLevel } from '@angular/fire/firestore';
 import { provideStorage, getStorage, connectStorageEmulator } from '@angular/fire/storage';
 import { provideFunctions, getFunctions, connectFunctionsEmulator } from '@angular/fire/functions';
 import { routes } from './app.routes';
@@ -40,15 +40,21 @@ export const appConfig: ApplicationConfig = {
       return auth;
     }),
     provideFirestore(() => {
-      const firestore = getFirestore();
       // Set log level inside injection context to avoid hydration warnings
       if (environment.firestoreLogLevel) {
         setLogLevel(environment.firestoreLogLevel as LogLevel);
       }
+      
+      // Use initializeFirestore for emulators to avoid "host already set" warnings
       if (environment.useEmulators) {
-        connectFirestoreEmulator(firestore, 'localhost', 8080);
+        const app = getApp();
+        return initializeFirestore(app, {
+          host: 'localhost:8080',
+          ssl: false,
+        });
       }
-      return firestore;
+      
+      return getFirestore();
     }),
     provideStorage(() => {
       const storage = getStorage();

@@ -18,7 +18,7 @@ async function isPremiumUser(userId: string): Promise<boolean> {
     .collection("private")
     .doc("data")
     .get();
-  
+
   const tier = privateDoc.data()?.subscription?.tier;
   return tier === "premium";
 }
@@ -34,7 +34,7 @@ async function areUsersBlocked(userId1: string, userId2: string): Promise<boolea
     .collection("blocks")
     .doc(userId2)
     .get();
-  
+
   if (blocked1Doc.exists) return true;
 
   // Check if userId2 blocked userId1
