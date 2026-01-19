@@ -20,6 +20,7 @@ import { Functions, httpsCallable } from '@angular/fire/functions';
 import { Auth } from '@angular/fire/auth';
 import { MatDialog } from '@angular/material/dialog';
 import { ReportDialogComponent, ReportDialogData } from '../../components/report-dialog';
+import { BlockConfirmDialogComponent, BlockConfirmDialogData } from '../../components/block-confirm-dialog';
 import { MessageService, ConversationFilter, ReputationFilter } from '../../core/services/message.service';
 import { BlockService } from '../../core/services/block.service';
 import { SubscriptionService } from '../../core/services/subscription.service';
@@ -751,6 +752,31 @@ export class MessagesComponent implements OnInit, OnDestroy, AfterViewInit {
 
     const numberMessage = `Here's my private number: ${phone.number}`;
     this.chatInput?.setMessageInput(numberMessage);
+  }
+
+  protected onBlockUser(): void {
+    const activeConvo = this.activeConversation();
+    if (!activeConvo?.otherUser) return;
+
+    const dialogRef = this.dialog.open<BlockConfirmDialogComponent, BlockConfirmDialogData, boolean>(
+      BlockConfirmDialogComponent,
+      {
+        data: {
+          userId: activeConvo.otherUser.uid,
+          displayName: activeConvo.otherUser.displayName || 'This user',
+        },
+        width: '450px',
+        maxWidth: '95vw',
+      }
+    );
+
+    dialogRef.afterClosed().subscribe((blocked) => {
+      if (blocked) {
+        // User was blocked - close conversation and go back to messages list
+        this.messageService.closeConversation();
+        this.router.navigate(['/messages'], { replaceUrl: true });
+      }
+    });
   }
 
   protected onReportUser(): void {

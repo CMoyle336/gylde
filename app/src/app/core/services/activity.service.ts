@@ -20,6 +20,7 @@ import {
 import { FirestoreService } from './firestore.service';
 import { AuthService } from './auth.service';
 import { UserProfileService } from './user-profile.service';
+import { BlockService } from './block.service';
 import { Activity, ActivityDisplay } from '../interfaces';
 
 @Injectable({
@@ -30,6 +31,7 @@ export class ActivityService implements OnDestroy {
   private readonly firestoreService = inject(FirestoreService);
   private readonly authService = inject(AuthService);
   private readonly userProfileService = inject(UserProfileService);
+  private readonly blockService = inject(BlockService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly router = inject(Router);
@@ -396,6 +398,11 @@ export class ActivityService implements OnDestroy {
   }
 
   private showActivityToast(activity: Activity): void {
+    // Don't show toast if the activity is from a blocked user
+    if (activity.fromUserId && this.blockService.isUserBlocked(activity.fromUserId)) {
+      return;
+    }
+
     // For messages: don't show toast if user is already in that conversation
     if (activity.type === 'message' && activity.link && this.router.url.startsWith(activity.link)) {
       return;

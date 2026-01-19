@@ -1,0 +1,126 @@
+:host {
+  display: block;
+}
+
+/* Override Material Dialog container background for theme support */
+::ng-deep .mat-mdc-dialog-container .mdc-dialog__surface {
+  background: var(--color-bg-primary) !important;
+}
+
+h2[mat-dialog-title] {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 1.25rem 1.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg-primary);
+}
+
+h2[mat-dialog-title] mat-icon {
+  color: var(--color-error);
+}
+
+[mat-dialog-content] {
+  padding: 1.5rem;
+  min-width: 350px;
+  max-width: 450px;
+  background: var(--color-bg-primary);
+}
+
+.intro-text {
+  margin: 0 0 1rem;
+  color: var(--color-text-secondary);
+  font-size: 0.9375rem;
+}
+
+.block-effects {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.block-effects li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  color: var(--color-text-primary);
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.block-effects li mat-icon {
+  font-size: 1.125rem;
+  width: 1.125rem;
+  height: 1.125rem;
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.block-effects li span {
+  flex: 1;
+}
+
+/* Error Message */
+.error-message {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: rgba(239, 83, 80, 0.1);
+  border: 1px solid rgba(239, 83, 80, 0.3);
+  border-radius: 8px;
+  color: var(--color-error);
+  font-size: 0.875rem;
+  margin-top: 1rem;
+}
+
+.error-message mat-icon {
+  font-size: 1.25rem;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+/* Dialog Actions */
+[mat-dialog-actions] {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--color-border);
+  gap: 0.5rem;
+  background: var(--color-bg-primary);
+}
+
+[mat-dialog-actions] button[mat-button] {
+  color: var(--color-text-secondary);
+}
+
+[mat-dialog-actions] button[mat-flat-button][color="warn"] {
+  background: var(--color-error);
+  color: white;
+}
+
+[mat-dialog-actions] mat-spinner {
+  display: inline-block;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  [mat-dialog-content] {
+    min-width: unset;
+    padding: 1rem;
+  }
+
+  h2[mat-dialog-title] {
+    padding: 1rem;
+  }
+
+  [mat-dialog-actions] {
+    padding: 0.75rem 1rem;
+  }
+}

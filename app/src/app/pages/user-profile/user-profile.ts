@@ -11,6 +11,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialog } from '@angular/material/dialog';
 import { Firestore, doc, getDoc } from '@angular/fire/firestore';
 import { ReportDialogComponent, ReportDialogData } from '../../components/report-dialog';
+import { BlockConfirmDialogComponent, BlockConfirmDialogData } from '../../components/block-confirm-dialog';
 import { UserProfile, ReputationTier, shouldShowPublicBadge, getTierDisplay } from '../../core/interfaces';
 import { Photo, PhotoAccessSummary } from '../../core/interfaces/photo.interface';
 import { FavoriteService } from '../../core/services/favorite.service';
@@ -67,7 +68,6 @@ export class UserProfileComponent implements OnInit, OnDestroy {
 
   // Block state
   protected readonly blockStatus = signal<BlockStatus>({ isBlocked: false, blockedByMe: false, blockedMe: false });
-  protected readonly showBlockDialog = signal(false);
   protected readonly blockingUser = signal(false);
 
   // Real-time subscription cleanup
@@ -504,30 +504,27 @@ export class UserProfileComponent implements OnInit, OnDestroy {
 
   // Block user functionality
   protected openBlockDialog(): void {
-    this.showBlockDialog.set(true);
-  }
-
-  protected closeBlockDialog(): void {
-    this.showBlockDialog.set(false);
-  }
-
-  protected async confirmBlockUser(): Promise<void> {
     const p = this.profile();
     if (!p) return;
 
-    this.blockingUser.set(true);
-    try {
-      const success = await this.blockService.blockUser(p.uid);
-      if (success) {
-        this.showBlockDialog.set(false);
+    const dialogRef = this.dialog.open<BlockConfirmDialogComponent, BlockConfirmDialogData, boolean>(
+      BlockConfirmDialogComponent,
+      {
+        data: {
+          userId: p.uid,
+          displayName: p.displayName || 'This user',
+        },
+        width: '450px',
+        maxWidth: '95vw',
+      }
+    );
+
+    dialogRef.afterClosed().subscribe((blocked) => {
+      if (blocked) {
         // Navigate away since they can no longer see this profile
         this.router.navigate(['/discover']);
       }
-    } catch (error) {
-      console.error('Error blocking user:', error);
-    } finally {
-      this.blockingUser.set(false);
-    }
+    });
   }
 
   protected async unblockUser(): Promise<void> {

@@ -1,0 +1,51 @@
+<h2 mat-dialog-title>
+  <mat-icon>block</mat-icon>
+  Block {{ data.displayName }}?
+</h2>
+
+<div mat-dialog-content>
+  <p class="intro-text">Blocking this user means:</p>
+  
+  <ul class="block-effects">
+    <li>
+      <mat-icon>visibility_off</mat-icon>
+      <span>You won't see each other in Discover or Matches</span>
+    </li>
+    <li>
+      <mat-icon>chat_bubble_outline</mat-icon>
+      <span>You can't send messages (existing chat preserved)</span>
+    </li>
+    <li>
+      <mat-icon>delete_outline</mat-icon>
+      <span>All activity history between you will be deleted</span>
+    </li>
+    <li>
+      <mat-icon>undo</mat-icon>
+      <span>This action can be undone later in Settings</span>
+    </li>
+  </ul>
+
+  @if (error()) {
+    <div class="error-message">
+      <mat-icon>error</mat-icon>
+      {{ error() }}
+    </div>
+  }
+</div>
+
+<div mat-dialog-actions align="end">
+  <button mat-button (click)="close()" [disabled]="loading()">
+    Cancel
+  </button>
+  <button 
+    mat-flat-button 
+    color="warn" 
+    (click)="confirmBlock()"
+    [disabled]="loading()">
+    @if (loading()) {
+      <mat-spinner diameter="20"></mat-spinner>
+    } @else {
+      Block User
+    }
+  </button>
+</div>

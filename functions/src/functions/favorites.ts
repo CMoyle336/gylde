@@ -24,6 +24,34 @@ async function isPremiumUser(userId: string): Promise<boolean> {
 }
 
 /**
+ * Check if either user has blocked the other
+ * Returns true if there is a block in either direction
+ */
+async function areUsersBlocked(userId1: string, userId2: string): Promise<boolean> {
+  // Check if user1 has blocked user2
+  const user1BlockedUser2 = await db
+    .collection("users")
+    .doc(userId1)
+    .collection("blocks")
+    .doc(userId2)
+    .get();
+  
+  if (user1BlockedUser2.exists) {
+    return true;
+  }
+
+  // Check if user2 has blocked user1
+  const user2BlockedUser1 = await db
+    .collection("users")
+    .doc(userId2)
+    .collection("blocks")
+    .doc(userId1)
+    .get();
+
+  return user2BlockedUser1.exists;
+}
+
+/**
  * Triggered when a user favorites another user.
  * Creates an activity record for the recipient (unless the favorite is private).
  */
@@ -44,6 +72,13 @@ export const onFavoriteCreated = onDocumentCreated(
     logger.info(`User ${fromUserId} favorited user ${toUserId} (private: ${isPrivate})`);
 
     try {
+      // Check if users have blocked each other - if so, don't process the favorite
+      const blocked = await areUsersBlocked(fromUserId, toUserId);
+      if (blocked) {
+        logger.info(`Skipping favorite processing - users ${fromUserId} and ${toUserId} have blocked each other`);
+        return;
+      }
+
       // Increment the user's favorites count (for trust score calculation)
       await db.collection("users").doc(fromUserId).update({
         favoritesCount: FieldValue.increment(1),
@@ -159,6 +194,13 @@ async function handleMatch(
   fromUser: UserDisplayInfo
 ): Promise<void> {
   logger.info(`Match detected between ${fromUserId} and ${toUserId}`);
+
+  // Check if users have blocked each other - if so, don't create match
+  const blocked = await areUsersBlocked(fromUserId, toUserId);
+  if (blocked) {
+    logger.info(`Skipping match creation - users ${fromUserId} and ${toUserId} have blocked each other`);
+    return;
+  }
 
   // Create match record (sorted IDs to prevent duplicates)
   const matchId = [fromUserId, toUserId].sort().join("_");

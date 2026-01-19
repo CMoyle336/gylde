@@ -34,6 +34,7 @@ export class ChatHeaderComponent {
   @Output() archiveChat = new EventEmitter<void>();
   @Output() unarchiveChat = new EventEmitter<void>();
   @Output() shareNumber = new EventEmitter<void>();
+  @Output() blockUser = new EventEmitter<void>();
   @Output() reportUser = new EventEmitter<void>();
 
   protected getStatusText(): string {
@@ -84,6 +85,10 @@ export class ChatHeaderComponent {
 
   protected onShareNumber(): void {
     this.shareNumber.emit();
+  }
+
+  protected onBlockUser(): void {
+    this.blockUser.emit();
   }
 
   protected onReportUser(): void {
