@@ -23,6 +23,7 @@ import { BlockService, BlockStatus } from '../../core/services/block.service';
 import { SubscriptionService } from '../../core/services/subscription.service';
 import { ProfileSkeletonComponent } from './components';
 import { ReputationBadgeComponent } from '../../components/reputation-badge';
+import { FounderBadgeComponent } from '../../components/founder-badge';
 import { formatConnectionTypes as formatConnectionTypesUtil, getSupportOrientationLabel } from '../../core/constants/connection-types';
 
 @Component({
@@ -39,6 +40,7 @@ import { formatConnectionTypes as formatConnectionTypesUtil, getSupportOrientati
     MatProgressSpinnerModule,
     ProfileSkeletonComponent,
     ReputationBadgeComponent,
+    FounderBadgeComponent,
   ],
 })
 export class UserProfileComponent implements OnInit, OnDestroy {

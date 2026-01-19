@@ -103,6 +103,7 @@ export interface TierConfig {
   minTier: ReputationTier;
   dailyMessages: number;
   canMessageTiers: ReputationTier[] | 'all';
+  maxPhotos: number;
 }
 
 /**
@@ -113,28 +114,38 @@ export const TIER_CONFIG: Record<ReputationTier, TierConfig> = {
     minTier: 'new',
     dailyMessages: 5,
     canMessageTiers: ['active', 'established'],
+    maxPhotos: 3,
   },
   active: {
     minTier: 'active',
     dailyMessages: 15,
     canMessageTiers: ['new', 'active', 'established'],
+    maxPhotos: 5,
   },
   established: {
     minTier: 'established',
     dailyMessages: 30,
     canMessageTiers: 'all',
+    maxPhotos: 8,
   },
   trusted: {
     minTier: 'trusted',
     dailyMessages: 50,
     canMessageTiers: 'all',
+    maxPhotos: 12,
   },
   distinguished: {
     minTier: 'distinguished',
     dailyMessages: 100,
     canMessageTiers: 'all',
+    maxPhotos: 15,
   },
 };
+
+/**
+ * Premium subscribers get more photos regardless of reputation
+ */
+export const PREMIUM_MAX_PHOTOS = 20;
 
 /**
  * Report reasons for the report user dialog

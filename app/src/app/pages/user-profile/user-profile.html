@@ -190,8 +190,11 @@
                   <span class="age">, {{ age() }}</span>
                 }
               </h1>
-              <!-- Badges: Identity Verified + Reputation -->
+              <!-- Badges: Founder + Identity Verified + Reputation -->
               <div class="profile-badges">
+                @if (profile.isFounder) {
+                  <app-founder-badge [city]="profile.founderCity" size="medium" />
+                }
                 @if (profile.identityVerified) {
                   <span class="verified-badge" matTooltip="Identity verified">
                     <mat-icon>verified</mat-icon>

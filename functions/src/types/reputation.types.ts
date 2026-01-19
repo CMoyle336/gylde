@@ -83,7 +83,51 @@ export interface ReputationData {
   // Counters for daily reset
   messagesSentToday: number;
   lastMessageDate: string; // YYYY-MM-DD for reset detection
+
+  // Founder status - grants special privileges
+  isFounder?: boolean;
 }
+
+/**
+ * Founder region tracking document
+ * Stored in founders/{normalizedCity}
+ */
+export interface FounderRegion {
+  // Normalized city name (lowercase, trimmed)
+  city: string;
+
+  // Display name of the city
+  displayCity: string;
+
+  // Current count of founders in this region
+  count: number;
+
+  // Maximum allowed founders (typically 50)
+  maxFounders: number;
+
+  // When the region reached capacity (if applicable)
+  closedAt?: Timestamp;
+
+  // When this region was first created
+  createdAt: Timestamp;
+
+  // Last updated timestamp
+  updatedAt: Timestamp;
+}
+
+/**
+ * Founder configuration constants
+ */
+export const FOUNDER_CONFIG = {
+  // Maximum number of founders per region/city
+  maxFoundersPerCity: 50,
+
+  // Founders start at this tier
+  startingTier: "trusted" as ReputationTier,
+
+  // Founders cannot fall below this tier
+  minimumTier: "active" as ReputationTier,
+} as const;
 
 /**
  * Message metrics for calculating reputation signals
@@ -159,6 +203,7 @@ export interface TierConfig {
   minScore: number;
   dailyMessages: number;
   canMessage: ReputationTier[] | "all";
+  maxPhotos: number;
 }
 
 /**
@@ -171,26 +216,31 @@ export const REPUTATION_CONFIG = {
       minScore: 0,
       dailyMessages: 5,
       canMessage: ["active", "established"] as ReputationTier[],
+      maxPhotos: 3,
     },
     active: {
       minScore: 200,
       dailyMessages: 15,
       canMessage: ["new", "active", "established"] as ReputationTier[],
+      maxPhotos: 5,
     },
     established: {
       minScore: 400,
       dailyMessages: 30,
       canMessage: "all" as const,
+      maxPhotos: 8,
     },
     trusted: {
       minScore: 600,
       dailyMessages: 50,
       canMessage: "all" as const,
+      maxPhotos: 12,
     },
     distinguished: {
       minScore: 800,
       dailyMessages: 100,
       canMessage: "all" as const,
+      maxPhotos: 15,
     },
   } as Record<ReputationTier, TierConfig>,
 

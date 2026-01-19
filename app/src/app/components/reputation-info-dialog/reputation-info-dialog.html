@@ -8,35 +8,55 @@
     <h3>What is Reputation?</h3>
     <p>
       Your reputation score reflects how you interact with others on Gylde. 
-      It determines your daily messaging limits and who you can connect with.
+      It determines your daily messaging limits, photo uploads, and who you can connect with.
       As your reputation grows, you'll unlock more features and reach.
     </p>
   </section>
 
   <section class="info-section">
     <h3>Reputation Tiers</h3>
-    <div class="tiers-list">
-      <div class="tier-item">
+    <div class="tiers-table">
+      <div class="tiers-header">
+        <span class="col-tier">Tier</span>
+        <span class="col-messages">Messages/Day</span>
+        <span class="col-photos">Photos</span>
+        <span class="col-reach">Reach</span>
+      </div>
+      <div class="tier-row">
         <span class="tier-badge new">New</span>
-        <span class="tier-desc">Just getting started. Limited daily messages.</span>
+        <span class="col-messages">5</span>
+        <span class="col-photos">3</span>
+        <span class="col-reach">Limited</span>
       </div>
-      <div class="tier-item">
+      <div class="tier-row">
         <span class="tier-badge active">Active</span>
-        <span class="tier-desc">Engaged member. Increased messaging capacity.</span>
+        <span class="col-messages">15</span>
+        <span class="col-photos">5</span>
+        <span class="col-reach">Limited</span>
       </div>
-      <div class="tier-item">
+      <div class="tier-row">
         <span class="tier-badge established">Established</span>
-        <span class="tier-desc">Trusted presence. Can message anyone.</span>
+        <span class="col-messages">30</span>
+        <span class="col-photos">8</span>
+        <span class="col-reach">Anyone</span>
       </div>
-      <div class="tier-item">
+      <div class="tier-row">
         <span class="tier-badge trusted">Trusted</span>
-        <span class="tier-desc">Highly trusted. Generous messaging limits.</span>
+        <span class="col-messages">50</span>
+        <span class="col-photos">12</span>
+        <span class="col-reach">Anyone</span>
       </div>
-      <div class="tier-item">
+      <div class="tier-row">
         <span class="tier-badge distinguished">Distinguished</span>
-        <span class="tier-desc">Exemplary member. Maximum privileges.</span>
+        <span class="col-messages">100</span>
+        <span class="col-photos">15</span>
+        <span class="col-reach">Anyone</span>
       </div>
     </div>
+    <p class="premium-note">
+      <mat-icon>star</mat-icon>
+      Premium subscribers get 20 photos regardless of reputation tier.
+    </p>
   </section>
 
   <section class="info-section">

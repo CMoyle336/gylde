@@ -1,0 +1,66 @@
+:host {
+  display: inline-flex;
+}
+
+.founder-badge,
+.founder-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+  color: white;
+  cursor: default;
+}
+
+.founder-icon {
+  padding: 0.25rem;
+  border-radius: 50%;
+}
+
+.founder-badge mat-icon,
+.founder-icon mat-icon {
+  font-size: 1rem;
+  width: 1rem;
+  height: 1rem;
+}
+
+.label {
+  white-space: nowrap;
+}
+
+/* Size variants */
+.size-small {
+  padding: 0.125rem 0.375rem;
+  font-size: 0.625rem;
+}
+
+.size-small mat-icon {
+  font-size: 0.75rem;
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+.size-small.founder-icon {
+  padding: 0.125rem;
+}
+
+.size-large {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+.size-large mat-icon {
+  font-size: 1.25rem;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.size-large.founder-icon {
+  padding: 0.375rem;
+}

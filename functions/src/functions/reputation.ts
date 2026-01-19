@@ -24,6 +24,8 @@ import {
   MessageMetrics,
   ReportReason,
   REPUTATION_CONFIG,
+  FOUNDER_CONFIG,
+  REPUTATION_TIER_ORDER,
   scoreToTier,
   getTierConfig,
   getDefaultSignals,
@@ -182,6 +184,9 @@ async function gatherSignals(userId: string): Promise<ReputationSignals> {
  * Recalculate reputation for a single user
  * Called by both real-time triggers and daily batch job
  *
+ * Founders have special protection:
+ * - They cannot fall below 'active' tier regardless of their score
+ *
  * @param userId - The user to recalculate
  * @param forceSignals - Optional signals to use instead of gathering (for testing)
  * @returns The updated reputation data
@@ -202,8 +207,7 @@ export async function recalculateReputation(
 
   // Calculate score
   const score = calculateScore(signals);
-  const tier = scoreToTier(score);
-  const tierConfig = getTierConfig(tier);
+  let tier = scoreToTier(score);
 
   // Get existing reputation data to preserve some fields
   const privateDoc = await db
@@ -213,7 +217,24 @@ export async function recalculateReputation(
     .doc("data")
     .get();
 
-  const existingReputation = privateDoc.data()?.reputation as ReputationData | undefined;
+  const privateData = privateDoc.data();
+  const existingReputation = privateData?.reputation as ReputationData | undefined;
+  const isFounder = privateData?.isFounder === true;
+
+  // Founders cannot fall below the minimum tier (active)
+  if (isFounder) {
+    const calculatedTierIndex = REPUTATION_TIER_ORDER.indexOf(tier);
+    const minimumTierIndex = REPUTATION_TIER_ORDER.indexOf(FOUNDER_CONFIG.minimumTier);
+
+    if (calculatedTierIndex < minimumTierIndex) {
+      logger.info(
+        `Founder ${userId} protected from tier drop: ${tier} -> ${FOUNDER_CONFIG.minimumTier}`
+      );
+      tier = FOUNDER_CONFIG.minimumTier;
+    }
+  }
+
+  const tierConfig = getTierConfig(tier);
   const now = Timestamp.now();
   const today = new Date().toISOString().split("T")[0];
 
@@ -234,6 +255,7 @@ export async function recalculateReputation(
       (existingReputation?.messagesSentToday ?? 0) :
       0,
     lastMessageDate: existingReputation?.lastMessageDate ?? today,
+    isFounder: isFounder || undefined,
   };
 
   // Write to Firestore
@@ -585,6 +607,10 @@ export const getReputationStatus = onCall<void>(
 /**
  * Initialize reputation for a new user
  * Called after onboarding completion
+ *
+ * Founders receive special treatment:
+ * - They start at 'trusted' tier instead of 'new'
+ * - They get a score that matches the trusted tier threshold
  */
 export async function initializeReputation(userId: string): Promise<void> {
   logger.info(`Initializing reputation for new user ${userId}`);
@@ -592,18 +618,41 @@ export async function initializeReputation(userId: string): Promise<void> {
   const now = Timestamp.now();
   const today = new Date().toISOString().split("T")[0];
 
-  // Initialize with default values
+  // Check if user is a founder (set by tryGrantFounderStatus before this is called)
+  const privateDoc = await db
+    .collection("users")
+    .doc(userId)
+    .collection("private")
+    .doc("data")
+    .get();
+
+  const isFounder = privateDoc.data()?.isFounder === true;
+
+  // Determine starting tier and score based on founder status
+  const startingTier: ReputationTier = isFounder
+    ? FOUNDER_CONFIG.startingTier
+    : "new";
+
+  // Founders get a score at the trusted tier threshold
+  const startingScore = isFounder
+    ? REPUTATION_CONFIG.tiers[FOUNDER_CONFIG.startingTier].minScore
+    : 0;
+
+  const tierConfig = getTierConfig(startingTier);
+
+  // Initialize with values based on founder status
   const initialReputation: ReputationData = {
-    tier: "new",
-    score: 0,
+    tier: startingTier,
+    score: startingScore,
     lastCalculatedAt: now,
     tierChangedAt: now,
     createdAt: now,
-    dailyMessageLimit: REPUTATION_CONFIG.tiers.new.dailyMessages,
-    canMessageMinTier: "active",
+    dailyMessageLimit: tierConfig.dailyMessages,
+    canMessageMinTier: tierConfig.canMessage === "all" ? "new" : tierConfig.canMessage[0],
     signals: getDefaultSignals(),
     messagesSentToday: 0,
     lastMessageDate: today,
+    isFounder: isFounder || undefined,
   };
 
   const initialMessageMetrics = getDefaultMessageMetrics();
@@ -625,10 +674,14 @@ export async function initializeReputation(userId: string): Promise<void> {
 
   // Denormalize tier to main document
   await db.collection("users").doc(userId).update({
-    reputationTier: "new",
+    reputationTier: startingTier,
   });
 
-  logger.info(`Reputation initialized for user ${userId}`);
+  if (isFounder) {
+    logger.info(`Founder reputation initialized for user ${userId} at tier: ${startingTier}`);
+  } else {
+    logger.info(`Reputation initialized for user ${userId} at tier: ${startingTier}`);
+  }
 }
 
 // ============================================================================

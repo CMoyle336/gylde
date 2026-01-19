@@ -24,6 +24,8 @@ import {
   TrustCategory,
   getPointsPerCategory,
 } from "../types/trust.types";
+import {tryGrantFounderStatus} from "./founders";
+import {initializeReputation} from "./reputation";
 
 /**
  * Extract file path from a storage URL (handles both emulator and production formats)
@@ -405,6 +407,36 @@ export const onUserUpdated = onDocumentUpdated(
         trust: trustData,
         updatedAt: Timestamp.now(),
       }, {merge: true});
+    }
+
+    // Check if onboarding was just completed (transition from false to true)
+    const wasOnboardingCompleted = beforeData.onboardingCompleted === true;
+    const isOnboardingCompleted = afterData.onboardingCompleted === true;
+
+    if (!wasOnboardingCompleted && isOnboardingCompleted) {
+      logger.info(`User ${userId} just completed onboarding, checking founder eligibility`);
+
+      // Get the city from onboarding data
+      const city = afterData.onboarding?.city;
+
+      if (city) {
+        // Try to grant founder status - this is the ONLY time it can be granted
+        // to prevent gaming by changing location later
+        const founderResult = await tryGrantFounderStatus(userId, city);
+
+        if (founderResult.granted) {
+          logger.info(`User ${userId} granted founder status for ${city}`);
+        } else {
+          logger.info(`User ${userId} not granted founder status: ${founderResult.reason}`);
+        }
+
+        // Initialize reputation (founder status will be taken into account)
+        await initializeReputation(userId);
+      } else {
+        logger.warn(`User ${userId} completed onboarding but no city found`);
+        // Still initialize reputation even without city
+        await initializeReputation(userId);
+      }
     }
   }
 );

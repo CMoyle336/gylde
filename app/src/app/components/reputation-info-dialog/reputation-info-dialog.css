@@ -53,7 +53,68 @@ h2[mat-dialog-title] mat-icon {
   margin: 0;
 }
 
-/* Tiers list */
+/* Tiers table */
+.tiers-table {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  background: var(--color-bg-elevated);
+  border-radius: 8px;
+  padding: 0.5rem;
+  overflow-x: auto;
+}
+
+.tiers-header {
+  display: grid;
+  grid-template-columns: 100px 1fr 1fr 1fr;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-text-tertiary);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.tier-row {
+  display: grid;
+  grid-template-columns: 100px 1fr 1fr 1fr;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  align-items: center;
+}
+
+.tier-row:nth-child(odd) {
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 4px;
+}
+
+.col-messages,
+.col-photos,
+.col-reach {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+.premium-note {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  font-size: 0.8125rem;
+  color: var(--color-text-tertiary);
+}
+
+.premium-note mat-icon {
+  color: var(--color-accent);
+  font-size: 1rem;
+  width: 1rem;
+  height: 1rem;
+}
+
+/* Legacy tiers list (keep for backwards compatibility) */
 .tiers-list {
   display: flex;
   flex-direction: column;

@@ -30,6 +30,7 @@ export interface DiscoverableProfile {
   supportOrientation: string;
   profileProgress: number; // 0-100 profile completion percentage (fetched from private data by Cloud Function)
   reputationTier: ReputationTier; // User's reputation tier (fetched from private data by Cloud Function)
+  isFounder?: boolean; // true if user is a founder for their city
   // Secondary profile fields
   ethnicity?: string;
   relationshipStatus?: string;

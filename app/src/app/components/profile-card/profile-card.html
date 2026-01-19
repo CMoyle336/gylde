@@ -36,6 +36,9 @@
         @if (profile().age) {
           <span class="card-age">, {{ profile().age }}</span>
         }
+        @if (profile().isFounder) {
+          <app-founder-badge size="small" [iconOnly]="true" />
+        }
         @if (isVerified) {
           <mat-icon class="verified-icon" title="Identity verified">verified</mat-icon>
         }

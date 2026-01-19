@@ -3,6 +3,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ReputationTier, shouldShowPublicBadge } from '../../core/interfaces';
 import { ReputationBadgeComponent } from '../reputation-badge';
+import { FounderBadgeComponent } from '../founder-badge';
 
 /**
  * Common profile data interface for the profile card component.
@@ -25,6 +26,7 @@ export interface ProfileCardData {
   tagline?: string; // Short phrase displayed on card
   interactionDate?: Date; // For matches page - when the interaction happened
   reputationTier?: ReputationTier; // User's reputation tier for public badge
+  isFounder?: boolean; // Whether the user is a founder of their city
 }
 
 @Component({
@@ -32,7 +34,7 @@ export interface ProfileCardData {
   templateUrl: './profile-card.html',
   styleUrl: './profile-card.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatIconModule, MatTooltipModule, ReputationBadgeComponent],
+  imports: [MatIconModule, MatTooltipModule, ReputationBadgeComponent, FounderBadgeComponent],
 })
 export class ProfileCardComponent {
   // Inputs

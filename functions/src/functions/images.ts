@@ -19,6 +19,7 @@ import * as logger from "firebase-functions/logger";
 import sharp from "sharp";
 import * as crypto from "crypto";
 import {moderateImage, detectPerson} from "../services/openai.service";
+import {ReputationTier, getTierConfig} from "../types";
 
 // Define the OpenAI API key as a secret
 const openaiApiKey = defineSecret("OPENAI_API_KEY");
@@ -35,14 +36,21 @@ const OPTIMIZED_MAX_HEIGHT = 1600; // Max height for web-ready images
 const JPEG_QUALITY = 85; // Quality for JPEG compression (0-100)
 const PNG_COMPRESSION = 8; // PNG compression level (0-9)
 
-// Subscription tier type
-type SubscriptionTier = "free" | "premium";
+// Premium subscribers always get max photos regardless of reputation
+const PREMIUM_MAX_PHOTOS = 20;
 
 /**
- * Get max photos allowed based on subscription tier
+ * Get max photos allowed based on reputation tier
+ * Premium subscribers get 20 photos regardless of reputation
  */
-function getMaxPhotosForTier(tier: SubscriptionTier): number {
-  return tier === "premium" ? 20 : 3;
+function getMaxPhotosForReputationTier(
+  reputationTier: ReputationTier,
+  isPremium: boolean
+): number {
+  if (isPremium) {
+    return PREMIUM_MAX_PHOTOS;
+  }
+  return getTierConfig(reputationTier).maxPhotos;
 }
 
 /**
@@ -358,17 +366,23 @@ export const uploadProfileImage = onCall<UploadImageRequest, Promise<UploadImage
       );
     }
 
-    // Check user's photo count based on subscription tier
-    const userDoc = await db.collection("users").doc(userId).get();
+    // Check user's photo count based on reputation tier
+    const [userDoc, privateDoc] = await Promise.all([
+      db.collection("users").doc(userId).get(),
+      db.collection("users").doc(userId).collection("private").doc("data").get(),
+    ]);
     const userData = userDoc.data();
+    const privateData = privateDoc.data();
     const currentPhotoDetails = userData?.onboarding?.photoDetails || [];
-    const subscriptionTier = (userData?.subscription?.tier || "free") as SubscriptionTier;
-    const maxPhotos = getMaxPhotosForTier(subscriptionTier);
+    const reputationTier = (privateData?.reputation?.tier || "new") as ReputationTier;
+    const isPremium = privateData?.subscription?.tier === "premium";
+    const maxPhotos = getMaxPhotosForReputationTier(reputationTier, isPremium);
 
     if (folder === "photos" && currentPhotoDetails.length >= maxPhotos) {
       throw new HttpsError(
         "resource-exhausted",
-        `Maximum of ${maxPhotos} photos allowed for your subscription tier. Please delete a photo or upgrade your subscription.`
+        `Maximum of ${maxPhotos} photos allowed for your reputation tier. ` +
+        `Improve your reputation or upgrade to Premium for more photos.`
       );
     }
 
@@ -651,18 +665,23 @@ export const uploadProfileImages = onCall<UploadImagesRequest, Promise<UploadIma
       throw new HttpsError("invalid-argument", "Maximum 10 images per upload batch");
     }
 
-    // Check user's current photo count and subscription tier
-    const userDoc = await db.collection("users").doc(userId).get();
+    // Check user's current photo count and reputation tier
+    const [userDoc, privateDoc] = await Promise.all([
+      db.collection("users").doc(userId).get(),
+      db.collection("users").doc(userId).collection("private").doc("data").get(),
+    ]);
     const userData = userDoc.data();
+    const privateData = privateDoc.data();
     const currentPhotoDetails = userData?.onboarding?.photoDetails || [];
-    const subscriptionTier = (userData?.subscription?.tier || "free") as SubscriptionTier;
-    const maxPhotos = getMaxPhotosForTier(subscriptionTier);
+    const reputationTier = (privateData?.reputation?.tier || "new") as ReputationTier;
+    const isPremium = privateData?.subscription?.tier === "premium";
+    const maxPhotos = getMaxPhotosForReputationTier(reputationTier, isPremium);
     const availableSlots = maxPhotos - currentPhotoDetails.length;
 
     if (folder === "photos" && images.length > availableSlots) {
       throw new HttpsError(
         "resource-exhausted",
-        `You can only upload ${availableSlots} more photo(s). Maximum is ${maxPhotos} for your subscription tier.`
+        `You can only upload ${availableSlots} more photo(s). Maximum is ${maxPhotos} for your reputation tier.`
       );
     }
 

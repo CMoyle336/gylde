@@ -66,6 +66,11 @@ export interface UserProfile {
   isPremium?: boolean; // true if user has Premium subscription (for badge display)
   reputationTier?: ReputationTier; // Denormalized from reputation data for efficient display
   
+  // Founder status - first 50 members of a city/region
+  isFounder?: boolean; // true if user is a founder for their city
+  founderCity?: string; // The city they're a founder for (display name)
+  founderGrantedAt?: unknown; // When founder status was granted
+  
   // NOTE: profileProgress (trust score) and subscription are stored in users/{uid}/private/data
   // for security - only the user can read them, only Cloud Functions can write
   

@@ -10,6 +10,8 @@ import {
   SUBSCRIPTION_PRICE,
   TrustData,
   ReputationData,
+  TIER_CONFIG,
+  PREMIUM_MAX_PHOTOS,
 } from '../interfaces';
 
 /**
@@ -53,7 +55,20 @@ export class SubscriptionService {
   });
 
   readonly capabilities = computed<SubscriptionCapabilities>(() => {
-    return getSubscriptionCapabilities(this.currentTier());
+    const baseCaps = getSubscriptionCapabilities(this.currentTier());
+    
+    // Override maxPhotos based on reputation tier (not subscription tier)
+    // Premium subscribers get 20 photos regardless of reputation
+    const isPremium = this.currentTier() === 'premium';
+    const reputationTier = this._reputationData()?.tier ?? 'new';
+    const maxPhotos = isPremium 
+      ? PREMIUM_MAX_PHOTOS 
+      : TIER_CONFIG[reputationTier]?.maxPhotos ?? 3;
+    
+    return {
+      ...baseCaps,
+      maxPhotos,
+    };
   });
 
   readonly isActive = computed(() => {

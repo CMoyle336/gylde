@@ -1,0 +1,18 @@
+@if (iconOnly()) {
+  <span 
+    class="founder-icon" 
+    [class.size-small]="size() === 'small'"
+    [class.size-large]="size() === 'large'"
+    [matTooltip]="city() ? 'Founding member of ' + city() : 'Founding member'">
+    <mat-icon>rocket_launch</mat-icon>
+  </span>
+} @else {
+  <span 
+    class="founder-badge" 
+    [class.size-small]="size() === 'small'"
+    [class.size-large]="size() === 'large'"
+    [matTooltip]="city() ? 'One of the first 50 members in ' + city() : 'One of the first 50 members in their city'">
+    <mat-icon>rocket_launch</mat-icon>
+    <span class="label">Founder</span>
+  </span>
+}
