@@ -44,36 +44,17 @@
         <span>Verify Phone in Settings</span>
       </a>
     </div>
-  } @else if (isPremium) {
-    <!-- Premium user, can get virtual number -->
-    <div class="vp-promo">
-      <div class="vp-promo-text">
-        <span class="material-icons-outlined">shield</span>
-        <span>Share a number with connections without revealing your real one</span>
-      </div>
-      <button type="button" class="vp-get-number-btn" (click)="onProvision()" [disabled]="provisioning">
-        @if (provisioning) {
-          <div class="loading-spinner small"></div>
-          <span>Setting up...</span>
-        } @else {
-          <span class="material-icons-outlined">add_call</span>
-          <span>Get Private Number</span>
-        }
-      </button>
-    </div>
-    @if (error) {
-      <p class="vp-error">{{ error }}</p>
-    }
   } @else {
-    <!-- Non-Premium user, show upgrade prompt -->
+    <!-- Private number feature coming soon -->
     <div class="vp-promo">
       <div class="vp-promo-text">
         <span class="material-icons-outlined">shield</span>
         <span>Share a number with connections without revealing your real one</span>
       </div>
-      <button type="button" class="vp-get-number-btn vp-upgrade-btn" (click)="onShowUpgrade()">
+      <button type="button" class="vp-get-number-btn vp-coming-soon" disabled>
         <span class="material-icons-outlined">add_call</span>
         <span>Get Private Number</span>
+        <span class="coming-soon-badge">Coming Soon</span>
       </button>
     </div>
   }
