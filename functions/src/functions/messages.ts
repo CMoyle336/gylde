@@ -53,7 +53,10 @@ async function areUsersBlocked(userId1: string, userId2: string): Promise<boolea
  * - Detects burst messaging (triggers real-time reputation recalc)
  */
 export const onMessageCreated = onDocumentCreated(
-  "conversations/{conversationId}/messages/{messageId}",
+  {
+    document: "conversations/{conversationId}/messages/{messageId}",
+    secrets: ["SENDGRID_API_KEY", "SENDGRID_FROM_EMAIL"],
+  },
   async (event) => {
     const snapshot = event.data;
     if (!snapshot) {

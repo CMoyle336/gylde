@@ -53,7 +53,10 @@ async function areUsersBlocked(userId1: string, userId2: string): Promise<boolea
  * Creates an activity record for the recipient (unless the favorite is private).
  */
 export const onFavoriteCreated = onDocumentCreated(
-  "users/{userId}/favorites/{favoritedUserId}",
+  {
+    document: "users/{userId}/favorites/{favoritedUserId}",
+    secrets: ["SENDGRID_API_KEY", "SENDGRID_FROM_EMAIL"],
+  },
   async (event) => {
     const snapshot = event.data;
     if (!snapshot) {
