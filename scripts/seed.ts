@@ -236,7 +236,7 @@ async function seedFirestoreUsers(db: FirebaseFirestore.Firestore, users: SeedUs
       
       batch.set(userRef, {
         uid: user.uid,
-        email: user.email,
+        // Note: email is NOT stored here - use Firebase Auth for email
         displayName: user.displayName,
         photoURL: user.photoURL,
         createdAt: FieldValue.serverTimestamp(),

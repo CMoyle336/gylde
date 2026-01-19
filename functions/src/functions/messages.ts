@@ -11,7 +11,7 @@ import {onDocumentCreated, onDocumentUpdated} from "firebase-functions/v2/firest
 import {onCall, HttpsError} from "firebase-functions/v2/https";
 import {FieldValue, Timestamp} from "firebase-admin/firestore";
 import {db} from "../config/firebase";
-import {ActivityService} from "../services";
+import {ActivityService, sendMessageEmailNotification, initializeEmailService} from "../services";
 import * as logger from "firebase-functions/logger";
 import {
   REPUTATION_CONFIG,
@@ -118,6 +118,12 @@ export const onMessageCreated = onDocumentCreated(
         senderPhoto,
         `/messages/${conversationId}`
       );
+
+      // === EMAIL NOTIFICATION ===
+      // Send email notification (with rate limiting, async)
+      initializeEmailService();
+      sendMessageEmailNotification(recipientId, senderId, senderName, conversationId)
+        .catch((err) => logger.error("Error sending message email:", err));
 
       // === MESSAGE METRICS TRACKING ===
       const now = Date.now();

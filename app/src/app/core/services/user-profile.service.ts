@@ -21,13 +21,11 @@ export class UserProfileService {
 
   async createUserProfile(
     uid: string, 
-    email: string | null, 
     displayName: string | null,
     additionalData?: Partial<UserProfile>
   ): Promise<void> {
     const profile: UserProfile = {
       uid,
-      email,
       displayName,
       photoURL: null,
       createdAt: new Date(),
@@ -71,7 +69,6 @@ export class UserProfileService {
     // Use setDocument with merge to handle case where profile doesn't exist yet
     const profileData = {
       uid: user.uid,
-      email: user.email,
       displayName: user.displayName,
       photoURL: profilePhotoURL,
       onboarding: onboardingData,
@@ -90,7 +87,6 @@ export class UserProfileService {
     // Update local profile
     this._profile.set({
       uid: user.uid,
-      email: user.email,
       displayName: user.displayName,
       photoURL: profilePhotoURL,
       createdAt: existingProfile?.createdAt ?? new Date(),

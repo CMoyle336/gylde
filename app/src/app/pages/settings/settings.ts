@@ -187,7 +187,6 @@ export class SettingsComponent implements OnInit {
           emailMatches: true,
           emailMessages: true,
           emailFavorites: true,
-          pushEnabled: false,
         },
         preferences: {
           language: this.translateService.currentLang || 'en',

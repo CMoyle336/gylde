@@ -60,7 +60,7 @@ export const createSubscriptionCheckout = onCall(
       // Get user data
       const userDoc = await db.collection("users").doc(userId).get();
       const userData = userDoc.data();
-      const email = userData?.email || request.auth.token.email;
+      const email = request.auth.token.email;
 
       // Check if user already has a Stripe customer ID
       let customerId = userData?.stripeCustomerId;

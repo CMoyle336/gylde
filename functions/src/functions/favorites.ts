@@ -4,7 +4,7 @@
 import {onDocumentCreated, onDocumentDeleted} from "firebase-functions/v2/firestore";
 import {FieldValue} from "firebase-admin/firestore";
 import {db} from "../config/firebase";
-import {ActivityService, UserService} from "../services";
+import {ActivityService, UserService, sendEmailNotification, initializeEmailService} from "../services";
 import {UserDisplayInfo} from "../types";
 import * as logger from "firebase-functions/logger";
 
@@ -98,6 +98,11 @@ export const onFavoriteCreated = onDocumentCreated(
             fromUser.photoURL || null,
             `/user/${fromUserId}` // Link to the user's profile who favorited them
           );
+
+          // Send email notification for favorite (async, don't block)
+          initializeEmailService();
+          sendEmailNotification(toUserId, "favorite", fromUser.displayName || "Someone", fromUserId)
+            .catch((err) => logger.error("Error sending favorite email:", err));
         } else {
           logger.info(`Skipping favorite activity for ${toUserId} - not a premium user`);
         }
@@ -239,4 +244,12 @@ async function handleMatch(
   ]);
 
   logger.info("Match activities created for both users");
+
+  // Send email notifications for match (async, don't block)
+  // Each user gets a link to the other user's profile
+  initializeEmailService();
+  sendEmailNotification(fromUserId, "match", toUser.displayName || "Someone", toUserId)
+    .catch((err) => logger.error("Error sending match email to fromUser:", err));
+  sendEmailNotification(toUserId, "match", fromUser.displayName || "Someone", fromUserId)
+    .catch((err) => logger.error("Error sending match email to toUser:", err));
 }

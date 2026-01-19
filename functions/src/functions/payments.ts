@@ -51,10 +51,8 @@ export const createPaymentIntent = onCall(
     try {
       const stripe = getStripe();
 
-      // Get user's email for the payment receipt
-      const userDoc = await db.collection("users").doc(userId).get();
-      const userData = userDoc.data();
-      const email = userData?.email || request.auth.token.email;
+      // Get user's email for the payment receipt (from Auth token)
+      const email = request.auth.token.email;
 
       // Create the payment intent
       const paymentIntent = await stripe.paymentIntents.create({

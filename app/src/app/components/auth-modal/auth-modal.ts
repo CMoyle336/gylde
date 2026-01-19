@@ -133,7 +133,7 @@ export class AuthModalComponent {
           const user = this.authService.user();
           if (user) {
             try {
-            await this.userProfileService.createUserProfile(user.uid, user.email, user.displayName);
+            await this.userProfileService.createUserProfile(user.uid, user.displayName);
             } catch (firestoreError) {
               console.error('Failed to create user profile:', firestoreError);
               // Still allow user to proceed - profile can be created later
@@ -209,7 +209,6 @@ export class AuthModalComponent {
           // New phone user - create profile
           await this.userProfileService.createUserProfile(
             user.uid, 
-            null, // no email for phone users
             null, // no display name yet
             {
               phoneNumber: this.phoneNumber(),
@@ -255,7 +254,7 @@ export class AuthModalComponent {
         const profile = await this.userProfileService.loadUserProfile(user.uid);
         if (!profile) {
           // New Google user - create profile
-          await this.userProfileService.createUserProfile(user.uid, user.email, user.displayName);
+          await this.userProfileService.createUserProfile(user.uid, user.displayName);
           this.authenticated.emit({ isNewUser: true });
         } else {
           // Check if account is disabled

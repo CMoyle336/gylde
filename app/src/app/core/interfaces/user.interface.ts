@@ -40,10 +40,10 @@ export interface VirtualPhoneSettings {
 
 /**
  * Main user profile document structure
+ * Note: Email is NOT stored here - use Firebase Auth for email
  */
 export interface UserProfile {
   uid: string;
-  email: string | null;
   displayName: string | null;
   photoURL: string | null;
   emailVerified?: boolean; // Whether email has been verified (synced from Firebase Auth)
@@ -102,7 +102,6 @@ export interface UserSettings {
     emailMatches?: boolean; // Email when you get a match
     emailMessages?: boolean; // Email when you get a message
     emailFavorites?: boolean; // Email when someone favorites you
-    pushEnabled?: boolean; // Enable push notifications
   };
 
   // Preferences

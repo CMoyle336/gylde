@@ -172,16 +172,6 @@
           </mat-slide-toggle>
         </div>
 
-        <div class="setting-item">
-          <div class="setting-info">
-            <span class="setting-label">{{ 'SETTINGS.NOTIFICATIONS.PUSH' | translate }}</span>
-            <span class="setting-description">{{ 'SETTINGS.NOTIFICATIONS.PUSH_DESC' | translate }}</span>
-          </div>
-          <mat-slide-toggle
-            [checked]="settings().notifications?.pushEnabled ?? false"
-            (change)="updateSetting('notifications', 'pushEnabled', $event.checked)">
-          </mat-slide-toggle>
-        </div>
       </div>
     </section>
 

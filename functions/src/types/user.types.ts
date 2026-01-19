@@ -10,8 +10,8 @@ export interface UserDisplayInfo {
 
 export interface UserProfile {
   uid: string;
-  email: string | null;
   displayName: string | null;
   photoURL: string | null;
   onboardingCompleted: boolean;
 }
+// Note: Email is NOT stored in user profile - use Firebase Auth for email
