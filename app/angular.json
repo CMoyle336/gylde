@@ -29,6 +29,11 @@
                 "input": "src/assets",
                 "output": "assets"
               },
+              {
+                "glob": "*.webp",
+                "input": "node_modules/intl-tel-input/build/img",
+                "output": "assets/intl-tel-input"
+              },
               "src/robots.txt",
               "src/sitemap.xml"
             ],

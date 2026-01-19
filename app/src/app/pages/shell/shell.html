@@ -65,6 +65,8 @@
               <span class="nav-badge">{{ messageUnreadCount() }}</span>
             } @else if (item.id === 'matches' && matchesBadgeCount() > 0) {
               <span class="nav-badge">{{ matchesBadgeCount() }}</span>
+            } @else if (item.badge === 'soon') {
+              <span class="nav-badge coming-soon">Soon</span>
             }
           </a>
         }

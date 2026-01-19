@@ -277,6 +277,7 @@
       "DISCOVER": "Discover",
       "MATCHES": "Matches",
       "MESSAGES": "Messages",
+      "FEED": "Feed",
       "PROFILE": "Profile",
       "SETTINGS": "Settings"
     },

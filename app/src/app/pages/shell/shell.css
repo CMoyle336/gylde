@@ -300,6 +300,15 @@
   text-align: center;
 }
 
+.nav-badge.coming-soon {
+  background: transparent;
+  border: 1px solid var(--color-accent);
+  color: var(--color-accent);
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
 /* Activity Spacer - grows when activity is collapsed to push it down */
 .activity-spacer {
   flex-grow: 0;

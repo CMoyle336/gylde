@@ -1,5 +1,69 @@
 /* You can add global styles to this file, and also import other style files */
 
+/* International Telephone Input */
+@import 'intl-tel-input/build/css/intlTelInput.css';
+
+/* intl-tel-input flag paths and dark theme overrides */
+.iti {
+  --iti-path-flags-1x: url('/assets/intl-tel-input/flags.webp');
+  --iti-path-flags-2x: url('/assets/intl-tel-input/flags@2x.webp');
+  --iti-path-globe-1x: url('/assets/intl-tel-input/globe.webp');
+  --iti-path-globe-2x: url('/assets/intl-tel-input/globe@2x.webp');
+  
+  /* Full width by default */
+  width: 100%;
+}
+
+/* Global intl-tel-input dark theme styles (for dropdowns rendered at body level) */
+.iti__country-list {
+  background: var(--color-bg-elevated, #252030) !important;
+  border: 1px solid var(--color-border, rgba(255, 255, 255, 0.08)) !important;
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.iti__country {
+  color: var(--color-text-primary, #f5f3f0) !important;
+  padding: 0.625rem 0.875rem;
+}
+
+.iti__country-name {
+  color: var(--color-text-primary, #f5f3f0) !important;
+}
+
+.iti__country:hover,
+.iti__country--highlight {
+  background: var(--color-bg-hover, #2d2838) !important;
+}
+
+.iti__dial-code {
+  color: var(--color-text-secondary, #a8a4b0) !important;
+}
+
+.iti__search-input {
+  background: var(--color-bg-primary, #0d0b0e) !important;
+  border: 1px solid var(--color-border, rgba(255, 255, 255, 0.08)) !important;
+  color: var(--color-text-primary, #f5f3f0) !important;
+  border-radius: 6px;
+}
+
+.iti__search-input::placeholder {
+  color: var(--color-text-muted, #6b6777) !important;
+}
+
+.iti__search-input:focus {
+  border-color: var(--color-accent, #c9a962) !important;
+  outline: none;
+}
+
+.iti__divider {
+  border-bottom-color: var(--color-border, rgba(255, 255, 255, 0.08)) !important;
+}
+
+.iti__no-results {
+  color: var(--color-text-muted, #6b6777) !important;
+}
+
 /* ============================================
    THEME VARIABLES
    Global CSS custom properties for theming

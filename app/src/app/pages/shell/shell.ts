@@ -105,6 +105,7 @@ export class ShellComponent implements OnInit, OnDestroy {
     { id: 'discover', path: '/discover', icon: 'explore', labelKey: 'DISCOVER' },
     { id: 'matches', path: '/matches', icon: 'favorite', labelKey: 'MATCHES' },
     { id: 'messages', path: '/messages', icon: 'chat_bubble', labelKey: 'MESSAGES' },
+    { id: 'feed', path: '/feed', icon: 'dynamic_feed', labelKey: 'FEED', badge: 'soon' },
     { id: 'profile', path: '/profile', icon: 'person', labelKey: 'PROFILE' },
     { id: 'settings', path: '/settings', icon: 'settings', labelKey: 'SETTINGS' },
   ];

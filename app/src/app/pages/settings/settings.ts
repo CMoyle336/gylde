@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, OnDestroy, computed, inject, signal, effect, ElementRef, viewChild, viewChildren } from '@angular/core';
+import intlTelInput, { Iti } from 'intl-tel-input';
 import { FormsModule } from '@angular/forms';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -37,7 +38,7 @@ import { BlockedUsersDialogComponent } from '../../components/blocked-users-dial
     MatTooltipModule,
   ],
 })
-export class SettingsComponent implements OnInit {
+export class SettingsComponent implements OnInit, OnDestroy {
   private readonly authService = inject(AuthService);
   private readonly userProfileService = inject(UserProfileService);
   private readonly translateService = inject(TranslateService);
@@ -94,11 +95,80 @@ export class SettingsComponent implements OnInit {
   protected phoneNumber = '';
   protected verificationCode = '';
 
+  // Phone input with intl-tel-input
+  private readonly phoneInputRef = viewChild<ElementRef<HTMLInputElement>>('phoneInput');
+  private intlTelInputInstance: Iti | null = null;
+
+  // 6-digit verification code inputs
+  private readonly codeInputRefs = viewChildren<ElementRef<HTMLInputElement>>('codeInput');
+  protected readonly codeDigits = signal<string[]>(['', '', '', '', '', '']);
+
+  constructor() {
+    // Initialize intl-tel-input when phone dialog is shown and input is available
+    effect(() => {
+      const isOpen = this.showPhoneDialog();
+      const inputRef = this.phoneInputRef();
+      
+      if (isOpen && inputRef?.nativeElement && !this.intlTelInputInstance) {
+        // Small delay to ensure DOM is ready
+        setTimeout(() => this.initPhoneInput(), 50);
+      }
+    });
+
+    // Auto-focus first digit input when verification step starts
+    effect(() => {
+      const step = this.phoneVerificationStep();
+      if (step === 'verify') {
+        // Small delay to ensure DOM is ready
+        setTimeout(() => this.focusDigitInput(0), 100);
+      }
+    });
+  }
+
   ngOnInit(): void {
     this.loadSettings();
     // Sync email verification status after a short delay to avoid race conditions
     // and only if the user has an email but it's not yet verified in Firestore
     setTimeout(() => this.syncEmailVerificationStatus(), 500);
+  }
+
+  ngOnDestroy(): void {
+    this.destroyPhoneInput();
+  }
+
+  private initPhoneInput(): void {
+    const inputRef = this.phoneInputRef();
+    if (!inputRef?.nativeElement || this.intlTelInputInstance) return;
+
+    this.intlTelInputInstance = intlTelInput(inputRef.nativeElement, {
+      initialCountry: 'us',
+      separateDialCode: true,
+      formatAsYouType: true,
+      nationalMode: false,
+      autoPlaceholder: 'aggressive',
+      strictMode: true, // Only allow numeric characters, cap at max valid length
+      loadUtils: () => import('intl-tel-input/utils'),
+    });
+
+    // Auto-focus the input after initialization
+    setTimeout(() => {
+      inputRef.nativeElement.focus();
+    }, 100);
+  }
+
+  // Handle Enter key on phone input to submit
+  protected onPhoneInputKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Enter' && !this.dialogLoading()) {
+      event.preventDefault();
+      this.sendVerificationCode();
+    }
+  }
+
+  private destroyPhoneInput(): void {
+    if (this.intlTelInputInstance) {
+      this.intlTelInputInstance.destroy();
+      this.intlTelInputInstance = null;
+    }
   }
 
   /**
@@ -319,8 +389,10 @@ export class SettingsComponent implements OnInit {
     this.deleteConfirmation = '';
     this.phoneNumber = '';
     this.verificationCode = '';
+    this.codeDigits.set(['', '', '', '', '', '']);
     this.phoneVerificationStep.set('input');
     this.authService.cleanupRecaptcha();
+    this.destroyPhoneInput();
   }
 
   openDisableAccount(): void {
@@ -516,17 +588,31 @@ export class SettingsComponent implements OnInit {
   }
 
   async sendVerificationCode(): Promise<void> {
-    if (!this.phoneNumber) {
-      this.dialogError.set('Please enter your phone number');
-      return;
+    // Get the formatted E.164 number from intl-tel-input
+    let formattedPhone: string;
+    
+    if (this.intlTelInputInstance) {
+      // Validate using intl-tel-input
+      if (!this.intlTelInputInstance.isValidNumber()) {
+        this.dialogError.set('Please enter a valid phone number');
+        return;
+      }
+      formattedPhone = this.intlTelInputInstance.getNumber();
+    } else {
+      // Fallback to manual validation
+      if (!this.phoneNumber) {
+        this.dialogError.set('Please enter your phone number');
+        return;
+      }
+      formattedPhone = this.phoneNumber.trim();
+      if (!formattedPhone.startsWith('+')) {
+        this.dialogError.set('Please include your country code (e.g., +1 for US)');
+        return;
+      }
     }
 
-    // Ensure phone number starts with + for E.164 format
-    let formattedPhone = this.phoneNumber.trim();
-    if (!formattedPhone.startsWith('+')) {
-      this.dialogError.set('Please include your country code (e.g., +1 for US)');
-      return;
-    }
+    // Store the formatted number for display
+    this.phoneNumber = formattedPhone;
 
     this.dialogLoading.set(true);
     this.dialogError.set(null);
@@ -599,6 +685,7 @@ export class SettingsComponent implements OnInit {
 
   async resendCode(): Promise<void> {
     this.verificationCode = '';
+    this.resetCodeDigits();
     this.dialogError.set(null);
     
     // Re-initialize reCAPTCHA and send code again
@@ -608,5 +695,130 @@ export class SettingsComponent implements OnInit {
     setTimeout(() => {
       this.authService.initRecaptcha('send-code-btn');
     }, 100);
+  }
+
+  // ============================================
+  // 6-DIGIT VERIFICATION CODE INPUT HANDLING
+  // ============================================
+
+  private resetCodeDigits(): void {
+    this.codeDigits.set(['', '', '', '', '', '']);
+  }
+
+  protected onDigitInput(event: Event, index: number): void {
+    const input = event.target as HTMLInputElement;
+    const value = input.value;
+    
+    // Only allow single digit
+    const digit = value.replace(/\D/g, '').slice(-1);
+    
+    // Update the digit at this index
+    const digits = [...this.codeDigits()];
+    digits[index] = digit;
+    this.codeDigits.set(digits);
+    
+    // Update input value (in case non-numeric was entered)
+    input.value = digit;
+    
+    // Move to next input if digit was entered
+    if (digit && index < 5) {
+      this.focusDigitInput(index + 1);
+    }
+    
+    // Check if all digits are entered and auto-submit
+    if (digits.every(d => d !== '') && digits.length === 6) {
+      this.verificationCode = digits.join('');
+      this.confirmVerificationCode();
+    }
+  }
+
+  protected onDigitKeydown(event: KeyboardEvent, index: number): void {
+    const input = event.target as HTMLInputElement;
+    
+    if (event.key === 'Backspace') {
+      const digits = [...this.codeDigits()];
+      
+      if (digits[index] === '' && index > 0) {
+        // Current input is empty, move to previous and clear it
+        event.preventDefault();
+        digits[index - 1] = '';
+        this.codeDigits.set(digits);
+        this.focusDigitInput(index - 1);
+      } else {
+        // Clear current input
+        digits[index] = '';
+        this.codeDigits.set(digits);
+        input.value = '';
+      }
+    } else if (event.key === 'ArrowLeft' && index > 0) {
+      event.preventDefault();
+      this.focusDigitInput(index - 1);
+    } else if (event.key === 'ArrowRight' && index < 5) {
+      event.preventDefault();
+      this.focusDigitInput(index + 1);
+    } else if (event.key >= '0' && event.key <= '9') {
+      // If there's already a value, replace it and move to next
+      if (this.codeDigits()[index] !== '') {
+        event.preventDefault();
+        const digits = [...this.codeDigits()];
+        digits[index] = event.key;
+        this.codeDigits.set(digits);
+        input.value = event.key;
+        
+        if (index < 5) {
+          this.focusDigitInput(index + 1);
+        }
+        
+        // Check if all digits are entered and auto-submit
+        if (digits.every(d => d !== '') && digits.length === 6) {
+          this.verificationCode = digits.join('');
+          this.confirmVerificationCode();
+        }
+      }
+    }
+  }
+
+  protected onCodePaste(event: ClipboardEvent): void {
+    event.preventDefault();
+    const pastedData = event.clipboardData?.getData('text') || '';
+    const digits = pastedData.replace(/\D/g, '').slice(0, 6).split('');
+    
+    // Pad with empty strings if less than 6 digits
+    while (digits.length < 6) {
+      digits.push('');
+    }
+    
+    this.codeDigits.set(digits);
+    
+    // Update all input values
+    const inputs = this.codeInputRefs();
+    inputs.forEach((inputRef, i) => {
+      inputRef.nativeElement.value = digits[i];
+    });
+    
+    // Focus the appropriate input
+    const nextEmptyIndex = digits.findIndex(d => d === '');
+    if (nextEmptyIndex !== -1) {
+      this.focusDigitInput(nextEmptyIndex);
+    } else {
+      // All filled, auto-submit
+      this.verificationCode = digits.join('');
+      this.confirmVerificationCode();
+    }
+  }
+
+  protected onDigitFocus(index: number): void {
+    // Select the content when focused
+    const inputs = this.codeInputRefs();
+    if (inputs[index]) {
+      inputs[index].nativeElement.select();
+    }
+  }
+
+  private focusDigitInput(index: number): void {
+    const inputs = this.codeInputRefs();
+    if (inputs[index]) {
+      inputs[index].nativeElement.focus();
+    }
   }
 }

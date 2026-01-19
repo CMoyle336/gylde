@@ -186,6 +186,16 @@ export const routes: Routes = [
           },
         },
       },
+      {
+        path: 'feed',
+        loadComponent: () => import('./pages/feed/feed').then((m) => m.FeedComponent),
+        data: {
+          seo: {
+            title: 'Social Feed',
+            noIndex: true,
+          },
+        },
+      },
     ],
   },
   // Redirect old dashboard route to discover

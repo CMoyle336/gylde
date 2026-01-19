@@ -564,16 +564,17 @@
           <p>{{ 'SETTINGS.DIALOGS.PHONE_BENEFIT' | translate }}</p>
         </div>
         
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>{{ 'SETTINGS.DIALOGS.PHONE_LABEL' | translate }}</mat-label>
+        <div class="phone-input-wrapper">
+          <label class="phone-input-label">{{ 'SETTINGS.DIALOGS.PHONE_LABEL' | translate }}</label>
           <input 
-            matInput 
+            #phoneInput
             type="tel" 
-            [(ngModel)]="phoneNumber" 
-            placeholder="+1 555 123 4567"
-            [disabled]="dialogLoading()">
-          <mat-hint>{{ 'SETTINGS.DIALOGS.PHONE_HINT' | translate }}</mat-hint>
-        </mat-form-field>
+            class="phone-input"
+            [(ngModel)]="phoneNumber"
+            [disabled]="dialogLoading()"
+            (keydown)="onPhoneInputKeydown($event)">
+          <span class="phone-input-hint">{{ 'SETTINGS.DIALOGS.PHONE_HINT' | translate }}</span>
+        </div>
 
         <!-- Invisible reCAPTCHA container -->
         <div id="recaptcha-container"></div>
@@ -584,16 +585,28 @@
           {{ 'SETTINGS.DIALOGS.CODE_SENT' | translate }} <strong>{{ phoneNumber }}</strong>
         </p>
 
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>{{ 'SETTINGS.DIALOGS.VERIFICATION_CODE' | translate }}</mat-label>
-          <input 
-            matInput 
-            type="text" 
-            [(ngModel)]="verificationCode" 
-            placeholder="123456"
-            maxlength="6"
-            [disabled]="dialogLoading()">
-        </mat-form-field>
+        <div class="verification-code-input">
+          <label class="code-label">{{ 'SETTINGS.DIALOGS.VERIFICATION_CODE' | translate }}</label>
+          <div class="code-digits">
+            @for (digit of codeDigits(); track $index; let i = $index) {
+              <input
+                #codeInput
+                type="text"
+                inputmode="numeric"
+                pattern="[0-9]"
+                maxlength="1"
+                class="digit-input"
+                [class.has-value]="digit !== ''"
+                [value]="digit"
+                [disabled]="dialogLoading()"
+                (input)="onDigitInput($event, i)"
+                (keydown)="onDigitKeydown($event, i)"
+                (paste)="onCodePaste($event)"
+                (focus)="onDigitFocus(i)"
+                autocomplete="one-time-code">
+            }
+          </div>
+        </div>
 
         <button mat-button class="resend-btn" (click)="resendCode()" [disabled]="dialogLoading()">
           {{ 'SETTINGS.DIALOGS.RESEND_CODE' | translate }}
@@ -631,18 +644,11 @@
           </button>
         }
 
-        @if (phoneVerificationStep() === 'verify') {
-          <button 
-            mat-flat-button 
-            color="primary" 
-            (click)="confirmVerificationCode()" 
-            [disabled]="dialogLoading()">
-            @if (dialogLoading()) {
-              <mat-spinner diameter="20"></mat-spinner>
-            } @else {
-              {{ 'SETTINGS.DIALOGS.VERIFY' | translate }}
-            }
-          </button>
+        @if (phoneVerificationStep() === 'verify' && dialogLoading()) {
+          <div class="verifying-indicator">
+            <mat-spinner diameter="20"></mat-spinner>
+            <span>Verifying...</span>
+          </div>
         }
       </div>
     </div>

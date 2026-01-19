@@ -17,6 +17,8 @@ import {
   RecaptchaVerifier,
   PhoneAuthProvider,
   linkWithCredential,
+  updatePhoneNumber,
+  unlink,
   ConfirmationResult,
 } from '@angular/fire/auth';
 import { AuthUser } from '../interfaces';
@@ -322,12 +324,25 @@ export class AuthService {
         verificationId = await provider.verifyPhoneNumber(phoneNumber, this.recaptchaVerifier);
       }
       
+      // Check if user already has a phone number linked
+      const hasExistingPhone = currentUser.providerData.some(
+        provider => provider.providerId === 'phone'
+      );
+
       // Store for later use in confirmPhoneVerification
       this.confirmationResult = {
         verificationId,
         confirm: async (code: string) => {
           const credential = PhoneAuthProvider.credential(verificationId, code);
-          return await linkWithCredential(currentUser, credential);
+          
+          if (hasExistingPhone) {
+            // User already has a phone linked - update it instead of linking
+            await updatePhoneNumber(currentUser, credential);
+            return { user: currentUser } as any;
+          } else {
+            // No phone linked yet - link the new phone
+            return await linkWithCredential(currentUser, credential);
+          }
         },
       } as ConfirmationResult;
       

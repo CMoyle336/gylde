@@ -1,0 +1,107 @@
+<div class="feed-page">
+  <!-- Hero Section -->
+  <div class="hero-section">
+    <div class="coming-soon-badge">
+      <span class="material-icons-outlined">schedule</span>
+      Coming Soon
+    </div>
+    <h1 class="hero-title">Social <span class="text-accent">Feed</span></h1>
+    <p class="hero-description">
+      A new way to connect with your matches. Share moments, engage with content, 
+      and build deeper relationships beyond just messaging.
+    </p>
+  </div>
+
+  <!-- Preview Section -->
+  <div class="preview-section">
+    <div class="preview-mockup">
+      <div class="mockup-header">
+        <div class="mockup-avatar"></div>
+        <div class="mockup-meta">
+          <div class="mockup-name"></div>
+          <div class="mockup-time"></div>
+        </div>
+      </div>
+      <div class="mockup-content">
+        <div class="mockup-image"></div>
+      </div>
+      <div class="mockup-actions">
+        <div class="mockup-action">
+          <span class="material-icons-outlined">favorite_border</span>
+        </div>
+        <div class="mockup-action">
+          <span class="material-icons-outlined">chat_bubble_outline</span>
+        </div>
+        <div class="mockup-action">
+          <span class="material-icons-outlined">bookmark_border</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Features Section -->
+  <div class="features-section">
+    <h2 class="section-title">What to Expect</h2>
+    <p class="section-description">
+      The social feed brings a new dimension to your Gylde experience.
+    </p>
+
+    <div class="features-grid">
+      @for (feature of features; track feature.title) {
+        <div class="feature-card">
+          <div class="feature-icon">
+            <span class="material-icons-outlined">{{ feature.icon }}</span>
+          </div>
+          <h3 class="feature-title">{{ feature.title }}</h3>
+          <p class="feature-description">{{ feature.description }}</p>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- How It Works Section -->
+  <div class="how-section">
+    <h2 class="section-title">How It Works</h2>
+    <div class="steps-container">
+      <div class="step">
+        <div class="step-number">1</div>
+        <h3>Match First</h3>
+        <p>Connect with someone through the normal matching process.</p>
+      </div>
+      <div class="step-connector"></div>
+      <div class="step">
+        <div class="step-number">2</div>
+        <h3>See Their Feed</h3>
+        <p>Once matched, you can see their posts and updates.</p>
+      </div>
+      <div class="step-connector"></div>
+      <div class="step">
+        <div class="step-number">3</div>
+        <h3>Engage & Connect</h3>
+        <p>Like, comment, and stay connected between conversations.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Section -->
+  <div class="notify-section">
+    <div class="notify-card">
+      <span class="material-icons-outlined notify-icon">notifications_active</span>
+      <div class="notify-content">
+        <h3>Be the First to Know</h3>
+        <p>
+          We're working hard to bring the social feed to life. 
+          Keep an eye on your notifications—we'll let you know as soon as it's ready.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Back Link -->
+  <div class="back-section">
+    <a routerLink="/discover" class="back-link">
+      <span class="material-icons-outlined">arrow_back</span>
+      Back to Discover
+    </a>
+  </div>
+</div>
