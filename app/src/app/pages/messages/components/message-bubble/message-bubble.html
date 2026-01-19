@@ -99,7 +99,7 @@
           }
           <div class="message-meta">
             <time>{{ formatMessageTime(message.createdAt) }}</time>
-            @if (message.isOwn) {
+            @if (message.isOwn && showReadReceipts) {
               @if (message.pending) {
                 <span class="read-status pending">
                   <span class="material-icons-outlined">schedule</span>
@@ -137,7 +137,7 @@
           <p>{{ message.content }}</p>
           <div class="message-meta">
             <time>{{ formatMessageTime(message.createdAt) }}</time>
-            @if (message.isOwn) {
+            @if (message.isOwn && showReadReceipts) {
               @if (message.pending) {
                 <span class="read-status pending">
                   <span class="material-icons-outlined">schedule</span>

@@ -102,7 +102,7 @@ export const createSubscriptionCheckout = onCall(
       // Determine success and cancel URLs
       const baseUrl = process.env.FUNCTIONS_EMULATOR ?
         "http://localhost:4200" :
-        "https://gylde-dba55.web.app"; // TODO: Update with actual domain
+        "https://www.gylde.com";
 
       // Create Checkout Session
       const session = await stripe.checkout.sessions.create({
@@ -175,7 +175,7 @@ export const createCustomerPortal = onCall(
 
       const baseUrl = process.env.FUNCTIONS_EMULATOR ?
         "http://localhost:4200" :
-        "https://gylde-dba55.web.app";
+        "https://www.gylde.com";
 
       // Create Customer Portal session
       const session = await stripe.billingPortal.sessions.create({

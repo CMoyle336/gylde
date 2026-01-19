@@ -28,6 +28,7 @@ export class MessageBubbleComponent {
   @Input() senderCountdown: number | null = null;
   @Input() recipientCountdown: number | null = null;
   @Input() isLast = false;
+  @Input() showReadReceipts = true; // Premium feature - hide for free users
 
   @Output() openGallery = new EventEmitter<GalleryOpenEvent>();
   @Output() deleteForMe = new EventEmitter<MessageDisplay>();

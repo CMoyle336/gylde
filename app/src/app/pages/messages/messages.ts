@@ -136,6 +136,11 @@ export class MessagesComponent implements OnInit, OnDestroy, AfterViewInit {
     return this.subscriptionService.capabilities().unlimitedMessaging;
   });
 
+  // Read receipts are a premium feature
+  protected readonly showReadReceipts = computed(() => {
+    return this.subscriptionService.capabilities().readReceipts;
+  });
+
   // Message permission from reputation system
   protected readonly messagePermission = this.messageService.messagePermission;
   protected readonly messageBlocked = this.messageService.messageBlocked;
