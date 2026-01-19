@@ -3,12 +3,14 @@ import {
   Component,
   ElementRef,
   EventEmitter,
+  inject,
   Input,
   Output,
+  PLATFORM_ID,
   signal,
   ViewChild,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 export interface ImagePreview {
@@ -35,6 +37,8 @@ export interface SendMessageEvent {
   imports: [CommonModule, FormsModule],
 })
 export class ChatInputComponent {
+  private readonly platformId = inject(PLATFORM_ID);
+
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
   @ViewChild('messageInputEl') messageInputEl!: ElementRef<HTMLInputElement>;
 
@@ -76,6 +80,14 @@ export class ChatInputComponent {
     }, 0);
   }
 
+  /**
+   * Check if we're on a mobile device (based on screen width)
+   */
+  private isMobile(): boolean {
+    if (!isPlatformBrowser(this.platformId)) return false;
+    return window.innerWidth < 768;
+  }
+
   protected send(): void {
     const content = this.messageInput().trim();
     const images = this.selectedImages();
@@ -95,8 +107,11 @@ export class ChatInputComponent {
     // Emit the send event
     this.messageSent.emit({ content, files, timer });
     
-    // Refocus the input for continued typing
-    this.focusInput();
+    // Refocus the input for continued typing (desktop only)
+    // On mobile, avoid refocusing to prevent keyboard hide/show flicker
+    if (!this.isMobile()) {
+      this.focusInput();
+    }
   }
 
   protected canSend(): boolean {

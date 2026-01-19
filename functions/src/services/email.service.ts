@@ -272,11 +272,16 @@ export async function sendEmailNotification(
 }
 
 /**
- * Rate limiting for message emails
- * Prevents spamming users with too many emails
+ * Rate limiting for message emails using Firestore
+ * Prevents spamming users with too many emails during active conversations
+ *
+ * Logic:
+ * 1. Only send email if recipient hasn't been active in the last 5 minutes
+ * 2. Only send email if we haven't emailed this recipient in the last 30 minutes
+ * 3. Per-conversation cooldown to avoid spam during back-and-forth
  */
-const messageEmailCooldowns = new Map<string, number>();
-const MESSAGE_EMAIL_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
+const MESSAGE_EMAIL_COOLDOWN_MS = 30 * 60 * 1000; // 30 minutes between emails per conversation
+const RECIPIENT_ACTIVE_THRESHOLD_MS = 5 * 60 * 1000; // Consider "active" if seen in last 5 min
 
 export async function sendMessageEmailNotification(
   recipientUserId: string,
@@ -284,19 +289,75 @@ export async function sendMessageEmailNotification(
   fromUserName: string,
   conversationId: string
 ): Promise<boolean> {
-  // Check cooldown - don't spam emails for every message
-  const cooldownKey = `${recipientUserId}_${senderUserId}`;
-  const lastSent = messageEmailCooldowns.get(cooldownKey) || 0;
-  const now = Date.now();
+  try {
+    const now = Date.now();
 
-  if (now - lastSent < MESSAGE_EMAIL_COOLDOWN_MS) {
-    logger.info(`Message email cooldown active for ${cooldownKey}, skipping`);
+    // Check if recipient is currently active (online recently)
+    const recipientDoc = await db.collection("users").doc(recipientUserId).get();
+    const recipientData = recipientDoc.data();
+
+    if (recipientData?.lastActiveAt) {
+      const lastActive = recipientData.lastActiveAt.toDate?.() || new Date(0);
+      const timeSinceActive = now - lastActive.getTime();
+
+      if (timeSinceActive < RECIPIENT_ACTIVE_THRESHOLD_MS) {
+        logger.info(
+          `Recipient ${recipientUserId} is active (${Math.round(timeSinceActive / 1000)}s ago), skipping email`
+        );
+        return false;
+      }
+    }
+
+    // Check Firestore-based cooldown per conversation
+    // This persists across cold starts unlike in-memory Maps
+    const emailLogRef = db
+      .collection("users")
+      .doc(recipientUserId)
+      .collection("private")
+      .doc("emailLog");
+
+    const emailLogDoc = await emailLogRef.get();
+    const emailLog = emailLogDoc.data() || {};
+    const lastMessageEmail = emailLog.lastMessageEmails?.[conversationId];
+
+    if (lastMessageEmail) {
+      const lastSentTime = lastMessageEmail.toDate?.()?.getTime() || 0;
+      const timeSinceLast = now - lastSentTime;
+
+      if (timeSinceLast < MESSAGE_EMAIL_COOLDOWN_MS) {
+        logger.info(
+          `Message email cooldown active for conversation ${conversationId} ` +
+          `(${Math.round(timeSinceLast / 60000)} min ago), skipping`
+        );
+        return false;
+      }
+    }
+
+    // Send the email
+    const sent = await sendEmailNotification(
+      recipientUserId,
+      "message",
+      fromUserName,
+      senderUserId,
+      conversationId
+    );
+
+    // Update email log if sent successfully
+    if (sent) {
+      await emailLogRef.set({
+        lastMessageEmails: {
+          ...emailLog.lastMessageEmails,
+          [conversationId]: new Date(),
+        },
+        lastMessageEmailAt: new Date(),
+      }, {merge: true});
+
+      logger.info(`Message email sent and logged for conversation ${conversationId}`);
+    }
+
+    return sent;
+  } catch (error) {
+    logger.error("Error in sendMessageEmailNotification:", error);
     return false;
   }
-
-  const sent = await sendEmailNotification(recipientUserId, "message", fromUserName, senderUserId, conversationId);
-  if (sent) {
-    messageEmailCooldowns.set(cooldownKey, now);
-  }
-  return sent;
 }

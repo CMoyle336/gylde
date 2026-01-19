@@ -242,8 +242,8 @@ export class ActivityService implements OnDestroy {
    * Debounces to prevent duplicate requests within the same page load.
    */
   async recordProfileView(viewedUserId: string): Promise<void> {
-    const currentUser = this.authService.user();
-    if (!currentUser || currentUser.uid === viewedUserId) return;
+    const authUser = this.authService.user();
+    if (!authUser || authUser.uid === viewedUserId) return;
 
     // Debounce: skip if we already recorded this view in the last 5 seconds
     const now = Date.now();
@@ -256,6 +256,14 @@ export class ActivityService implements OnDestroy {
     if (this.pendingProfileViewPromise) {
       return this.pendingProfileViewPromise;
     }
+
+    // Use profile photoURL from Firestore (user's chosen photo), fallback to auth photo
+    const profile = this.userProfileService.profile();
+    const currentUser = {
+      uid: authUser.uid,
+      displayName: authUser.displayName,
+      photoURL: profile?.photoURL ?? authUser.photoURL,
+    };
 
     this.pendingProfileViewPromise = this.doRecordProfileView(viewedUserId, currentUser)
       .finally(() => {

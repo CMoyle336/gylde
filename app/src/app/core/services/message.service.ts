@@ -30,6 +30,7 @@ import { Functions, httpsCallable } from '@angular/fire/functions';
 import { AuthService } from './auth.service';
 import { StorageService } from './storage.service';
 import { BlockService } from './block.service';
+import { UserProfileService } from './user-profile.service';
 import {
   Message,
   Conversation,
@@ -66,6 +67,7 @@ export class MessageService {
   private readonly storageService = inject(StorageService);
   private readonly authService = inject(AuthService);
   private readonly blockService = inject(BlockService);
+  private readonly userProfileService = inject(UserProfileService);
 
   private readonly _conversations = signal<ConversationDisplay[]>([]);
   private readonly _activeConversation = signal<ConversationDisplay | null>(null);
@@ -703,9 +705,10 @@ export class MessageService {
           let senderPhoto: string | null = null;
           
           if (data.senderId === currentUser.uid) {
-            // It's the current user
+            // It's the current user - use profile photo from Firestore, fallback to auth photo
+            const profile = this.userProfileService.profile();
             senderName = currentUser.displayName;
-            senderPhoto = currentUser.photoURL;
+            senderPhoto = profile?.photoURL ?? currentUser.photoURL;
           } else if (activeConvo) {
             senderName = activeConvo.otherUser?.displayName || 'Unknown';
             senderPhoto = activeConvo.otherUser?.photoURL || null;
@@ -938,8 +941,10 @@ export class MessageService {
         let senderPhoto: string | null = null;
         
         if (data.senderId === currentUser.uid) {
+          // Use profile photo from Firestore, fallback to auth photo
+          const profile = this.userProfileService.profile();
           senderName = currentUser.displayName;
-          senderPhoto = currentUser.photoURL;
+          senderPhoto = profile?.photoURL ?? currentUser.photoURL;
         } else if (activeConvo) {
           senderName = activeConvo.otherUser?.displayName || 'Unknown';
           senderPhoto = activeConvo.otherUser?.photoURL || null;
@@ -1099,12 +1104,20 @@ export class MessageService {
    * @param imageTimer Optional duration in seconds for timed images
    */
   async sendMessage(content: string, files: File[] = [], imageTimer?: number): Promise<void> {
-    const currentUser = this.authService.user();
+    const authUser = this.authService.user();
     const activeConversation = this._activeConversation();
     const hasText = content.trim().length > 0;
     const hasImages = files.length > 0;
 
-    if (!currentUser || !activeConversation || (!hasText && !hasImages)) return;
+    if (!authUser || !activeConversation || (!hasText && !hasImages)) return;
+
+    // Use profile photoURL from Firestore (user's chosen photo), fallback to auth photo
+    const profile = this.userProfileService.profile();
+    const currentUser = {
+      uid: authUser.uid,
+      displayName: authUser.displayName,
+      photoURL: profile?.photoURL ?? authUser.photoURL,
+    };
 
     // Check local remaining message count (already set when conversation opened)
     // -1 means unlimited (premium), so always allow

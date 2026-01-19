@@ -81,7 +81,12 @@ export class ShellComponent implements OnInit, OnDestroy {
   
   // Current user info
   protected readonly currentUser = this.authService.user;
-  protected readonly userPhotoURL = computed(() => this.currentUser()?.photoURL ?? null);
+  // Use profile photoURL from Firestore (user's chosen photo), fallback to auth photoURL (e.g., Google photo)
+  protected readonly userPhotoURL = computed(() => {
+    const profile = this.userProfileService.profile();
+    // Prefer the profile photo from Firestore, fallback to auth user photo (e.g., Google)
+    return profile?.photoURL ?? this.currentUser()?.photoURL ?? null;
+  });
 
   // Matches badge count (sum of favorited-me and viewed-me counts)
   protected readonly matchesBadgeCount = computed(() => 
