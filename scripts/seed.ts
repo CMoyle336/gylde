@@ -303,9 +303,9 @@ async function seedFirestoreUsers(db: FirebaseFirestore.Firestore, users: SeedUs
         profileProgress,
         reputation: {
           tier: user.reputation.tier,
-          dailyMessageLimit: user.reputation.dailyMessageLimit,
-          messagesSentToday: user.reputation.messagesSentToday,
-          canMessageMinTier: user.reputation.canMessageMinTier,
+          dailyHigherTierConversationLimit: user.reputation.dailyHigherTierConversationLimit,
+          higherTierConversationsToday: user.reputation.higherTierConversationsToday,
+          lastConversationDate: new Date().toISOString().split('T')[0],
           lastCalculatedAt: FieldValue.serverTimestamp(),
           tierChangedAt: FieldValue.serverTimestamp(),
         },

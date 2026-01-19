@@ -1,9 +1,10 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit, PLATFORM_ID } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, PLATFORM_ID, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { TranslateModule } from '@ngx-translate/core';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatchesService, MatchTab } from '../../core/services/matches.service';
 import { FavoriteService } from '../../core/services/favorite.service';
 import { MessageService } from '../../core/services/message.service';
@@ -38,8 +39,10 @@ export class MatchesComponent implements OnInit {
   private readonly favoriteService = inject(FavoriteService);
   private readonly messageService = inject(MessageService);
   private readonly subscriptionService = inject(SubscriptionService);
+  private readonly snackBar = inject(MatSnackBar);
 
   protected readonly isPremium = this.subscriptionService.isPremium;
+  protected readonly messagingUserId = signal<string | null>(null); // Track which user is being messaged
 
   protected readonly loading = this.matchesService.loading;
   protected readonly initialized = this.matchesService.initialized;
@@ -110,25 +113,58 @@ export class MatchesComponent implements OnInit {
   }
 
   protected async onMessage(profile: ProfileCardData): Promise<void> {
-    const photoURL = profile.photos?.[0] || profile.photoURL || null;
-    const conversationId = await this.messageService.startConversation(profile.uid);
+    this.messagingUserId.set(profile.uid);
+    
+    try {
+      // Check if we can start a conversation before creating the conversation document
+      const permission = await this.messageService.canStartConversation(profile.uid);
+      
+      if (!permission.allowed) {
+        if (permission.reason === 'higher_tier_limit_reached') {
+          const tierDisplay = permission.recipientTier 
+            ? permission.recipientTier.charAt(0).toUpperCase() + permission.recipientTier.slice(1)
+            : 'higher tier';
+          this.snackBar.open(
+            `You've reached your daily limit for starting conversations with ${tierDisplay} members. Try again tomorrow or upgrade your reputation.`,
+            'OK',
+            { duration: 6000, panelClass: 'error-snackbar' }
+          );
+        } else if (permission.reason === 'blocked') {
+          this.snackBar.open(
+            'You cannot message this user.',
+            'OK',
+            { duration: 4000, panelClass: 'error-snackbar' }
+          );
+        }
+        return;
+      }
 
-    if (conversationId) {
-      this.messageService.openConversation({
-        id: conversationId,
-        otherUser: {
-          uid: profile.uid,
-          displayName: profile.displayName || 'Unknown',
-          photoURL,
-          reputationTier: profile.reputationTier,
-        },
-        lastMessage: null,
-        lastMessageTime: null,
-        unreadCount: 0,
-        isArchived: false,
-      });
-      this.router.navigate(['/messages', conversationId]);
+      const photoURL = profile.photos?.[0] || profile.photoURL || null;
+      const conversationId = await this.messageService.startConversation(profile.uid);
+
+      if (conversationId) {
+        this.messageService.openConversation({
+          id: conversationId,
+          otherUser: {
+            uid: profile.uid,
+            displayName: profile.displayName || 'Unknown',
+            photoURL,
+            reputationTier: profile.reputationTier,
+          },
+          lastMessage: null,
+          lastMessageTime: null,
+          unreadCount: 0,
+          isArchived: false,
+        });
+        this.router.navigate(['/messages', conversationId]);
+      }
+    } finally {
+      this.messagingUserId.set(null);
     }
+  }
+
+  protected isMessagingUser(uid: string): boolean {
+    return this.messagingUserId() === uid;
   }
 
   protected async onFavorite(profile: ProfileCardData): Promise<void> {

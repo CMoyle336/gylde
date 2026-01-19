@@ -150,13 +150,13 @@ export class ProfileComponent implements OnInit, OnDestroy {
     return this.reputationData()?.tier ?? 'new';
   });
 
-  // Messaging limits from reputation (premium users and distinguished tier have unlimited)
-  protected readonly messagingStatus = computed(() => {
-    // Premium users have unlimited messaging
+  // Higher-tier conversation limits (premium users have unlimited)
+  protected readonly higherTierConversationStatus = computed(() => {
+    // Premium users have unlimited conversations
     if (this.isPremium()) {
       return {
         dailyLimit: -1, // -1 means unlimited
-        sentToday: 0,
+        usedToday: 0,
         remaining: -1, // -1 means unlimited
         isUnlimited: true,
       };
@@ -165,16 +165,16 @@ export class ProfileComponent implements OnInit, OnDestroy {
     const rep = this.reputationData();
     const tier = rep?.tier ?? 'new';
     const config = TIER_CONFIG[tier];
-    const dailyLimit = rep?.dailyMessageLimit ?? config.dailyMessages;
-    const sentToday = rep?.messagesSentToday ?? 0;
+    const dailyLimit = rep?.dailyHigherTierConversationLimit ?? config.dailyHigherTierConversations;
+    const usedToday = rep?.higherTierConversationsToday ?? 0;
     
-    // Check if tier has unlimited messaging (dailyLimit === -1)
+    // Check if tier has unlimited (-1)
     const isUnlimited = dailyLimit === -1;
     
     return {
       dailyLimit,
-      sentToday,
-      remaining: isUnlimited ? -1 : Math.max(0, dailyLimit - sentToday),
+      usedToday,
+      remaining: isUnlimited ? -1 : Math.max(0, dailyLimit - usedToday),
       isUnlimited,
     };
   });
@@ -206,40 +206,12 @@ export class ProfileComponent implements OnInit, OnDestroy {
   protected readonly polishingField = signal<string | null>(null);
   protected readonly polishSuggestions = signal<{ field: string; polished: string; alternatives: string[] } | null>(null);
 
-  // Who can this user message (based on tier)
+  // Messaging info - everyone can message everyone now
+  // The only limit is on starting NEW conversations with higher-tier users
   protected readonly canMessageInfo = computed(() => {
-    if (this.isPremium()) {
-      return {
-        canMessageAll: true,
-        tiers: [] as string[],
-        description: 'You can message anyone',
-      };
-    }
-
-    const tier = this.reputationTier();
-    const config = TIER_CONFIG[tier];
-    
-    if (config.canMessageTiers === 'all') {
-      return {
-        canMessageAll: true,
-        tiers: [] as string[],
-        description: 'You can message anyone',
-      };
-    }
-
-    const tierLabels: Record<string, string> = {
-      new: 'New',
-      active: 'Active',
-      established: 'Established',
-      trusted: 'Trusted',
-      distinguished: 'Distinguished',
-    };
-
-    const tierNames = config.canMessageTiers.map(t => tierLabels[t] || t);
     return {
-      canMessageAll: false,
-      tiers: config.canMessageTiers,
-      description: `You can message ${tierNames.join(', ')} members`,
+      canMessageAll: true,
+      description: 'You can message anyone. New conversations with higher-tier members are limited per day.',
     };
   });
 

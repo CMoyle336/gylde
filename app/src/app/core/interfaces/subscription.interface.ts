@@ -113,7 +113,6 @@ export const SUBSCRIPTION_PRICE = {
  * Premium features list for display
  */
 export const PREMIUM_FEATURES = [
-  { id: 'unlimited-messaging', label: 'Unlimited messaging', icon: 'chat_bubble' },
   { id: 'private-photos', label: 'Request & view private photos', icon: 'lock_open' },
   { id: 'advanced-filters', label: 'Advanced discovery filters', icon: 'tune' },
   { id: 'who-viewed', label: 'See who viewed your profile', icon: 'visibility' },

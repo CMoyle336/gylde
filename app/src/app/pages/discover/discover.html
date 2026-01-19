@@ -137,6 +137,7 @@
         <app-profile-card
           [profile]="profile"
           [isFavorited]="isFavorited(profile.uid)"
+          [messagingLoading]="isMessagingUser(profile.uid)"
           (messageClick)="onMessageProfile($event)"
           (viewClick)="onViewProfile($event)"
           (favoriteClick)="onFavoriteProfile($event)" />

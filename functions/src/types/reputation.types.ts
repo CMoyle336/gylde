@@ -74,15 +74,16 @@ export interface ReputationData {
   createdAt: Timestamp;
 
   // Derived limits based on tier
-  dailyMessageLimit: number;
-  canMessageMinTier: ReputationTier;
+  /** Max new conversations per day with higher-tier users. -1 = unlimited */
+  dailyHigherTierConversationLimit: number;
 
   // Signal snapshots (for debugging/auditing)
   signals: ReputationSignals;
 
   // Counters for daily reset
-  messagesSentToday: number;
-  lastMessageDate: string; // YYYY-MM-DD for reset detection
+  /** Number of new conversations started with higher-tier users today */
+  higherTierConversationsToday: number;
+  lastConversationDate: string; // YYYY-MM-DD for reset detection
 
   // Founder status - grants special privileges
   isFounder?: boolean;
@@ -198,10 +199,17 @@ export type ReportStatus =
 
 /**
  * Tier configuration
+ *
+ * Messaging rules:
+ * - Users can message anyone at same tier or below with no limits
+ * - Users can START conversations with higher-tier users, limited per day
+ * - Once a conversation exists, there are no limits on messages
  */
 export interface TierConfig {
   minScore: number;
-  dailyMessages: number;
+  /** Max new conversations per day with HIGHER-tier users. -1 = unlimited */
+  dailyHigherTierConversations: number;
+  /** Which tiers this tier can message (deprecated, now all tiers can message each other) */
   canMessage: ReputationTier[] | "all";
   maxPhotos: number;
 }
@@ -214,31 +222,31 @@ export const REPUTATION_CONFIG = {
   tiers: {
     new: {
       minScore: 0,
-      dailyMessages: 5,
-      canMessage: ["active", "established"] as ReputationTier[],
+      dailyHigherTierConversations: 1,
+      canMessage: "all" as const, // Everyone can message everyone
       maxPhotos: 3,
     },
     active: {
       minScore: 200,
-      dailyMessages: 15,
-      canMessage: ["new", "active", "established"] as ReputationTier[],
+      dailyHigherTierConversations: 3,
+      canMessage: "all" as const,
       maxPhotos: 5,
     },
     established: {
       minScore: 400,
-      dailyMessages: 30,
+      dailyHigherTierConversations: 5,
       canMessage: "all" as const,
       maxPhotos: 8,
     },
     trusted: {
       minScore: 600,
-      dailyMessages: 100,
+      dailyHigherTierConversations: 10,
       canMessage: "all" as const,
       maxPhotos: 12,
     },
     distinguished: {
       minScore: 800,
-      dailyMessages: -1, // Unlimited
+      dailyHigherTierConversations: -1, // Unlimited
       canMessage: "all" as const,
       maxPhotos: 15,
     },

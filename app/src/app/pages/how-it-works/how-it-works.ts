@@ -63,7 +63,6 @@ export class HowItWorksComponent implements OnInit {
       description: 'When you find someone intriguing, reach out. Our messaging features help you connect genuinely and safely.',
       icon: 'chat_bubble',
       details: [
-        'Unlimited messaging with Premium',
         'AI-powered message suggestions',
         'Request access to private photos',
         'Virtual phone numbers for safety'
@@ -94,7 +93,7 @@ export class HowItWorksComponent implements OnInit {
         'Save favorites',
         '3 photo uploads',
         'Verify your identity',
-        'Reputation-based messaging limits'
+        'Reputation-based conversation limits'
       ],
       highlighted: false
     },
@@ -103,8 +102,6 @@ export class HowItWorksComponent implements OnInit {
       price: '$49.99/mo',
       description: 'The full experience',
       features: [
-        'Unlimited messaging',
-        'Message anyone regardless of tier',
         'Request & view private photos',
         'Advanced discovery filters',
         'See who viewed & favorited you',

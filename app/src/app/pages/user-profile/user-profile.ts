@@ -9,6 +9,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialog } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { Firestore, doc, getDoc } from '@angular/fire/firestore';
 import { ReportDialogComponent, ReportDialogData } from '../../components/report-dialog';
 import { BlockConfirmDialogComponent, BlockConfirmDialogData } from '../../components/block-confirm-dialog';
@@ -56,6 +57,7 @@ export class UserProfileComponent implements OnInit, OnDestroy {
   private readonly subscriptionService = inject(SubscriptionService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly dialog = inject(MatDialog);
+  private readonly snackBar = inject(MatSnackBar);
 
   protected readonly profile = signal<UserProfile | null>(null);
   protected readonly loading = signal(true);
@@ -71,6 +73,9 @@ export class UserProfileComponent implements OnInit, OnDestroy {
   // Block state
   protected readonly blockStatus = signal<BlockStatus>({ isBlocked: false, blockedByMe: false, blockedMe: false });
   protected readonly blockingUser = signal(false);
+  
+  // Messaging state
+  protected readonly messagingLoading = signal(false);
 
   // Real-time subscription cleanup
   private accessStatusUnsubscribe?: () => void;
@@ -302,23 +307,52 @@ export class UserProfileComponent implements OnInit, OnDestroy {
     const p = this.profile();
     if (!p) return;
 
-    const conversationId = await this.messageService.startConversation(p.uid);
+    this.messagingLoading.set(true);
+    
+    try {
+      // Check if we can start a conversation before creating the conversation document
+      const permission = await this.messageService.canStartConversation(p.uid);
+      
+      if (!permission.allowed) {
+        if (permission.reason === 'higher_tier_limit_reached') {
+          const tierDisplay = permission.recipientTier 
+            ? permission.recipientTier.charAt(0).toUpperCase() + permission.recipientTier.slice(1)
+            : 'higher tier';
+          this.snackBar.open(
+            `You've reached your daily limit for starting conversations with ${tierDisplay} members. Try again tomorrow or upgrade your reputation.`,
+            'OK',
+            { duration: 6000, panelClass: 'error-snackbar' }
+          );
+        } else if (permission.reason === 'blocked') {
+          this.snackBar.open(
+            'You cannot message this user.',
+            'OK',
+            { duration: 4000, panelClass: 'error-snackbar' }
+          );
+        }
+        return;
+      }
 
-    if (conversationId) {
-      this.messageService.openConversation({
-        id: conversationId,
-        otherUser: {
-          uid: p.uid,
-          displayName: p.displayName || 'Unknown',
-          photoURL: p.photoURL,
-          reputationTier: p.reputationTier,
-        },
-        lastMessage: null,
-        lastMessageTime: null,
-        unreadCount: 0,
-        isArchived: false,
-      });
-      this.router.navigate(['/messages', conversationId]);
+      const conversationId = await this.messageService.startConversation(p.uid);
+
+      if (conversationId) {
+        this.messageService.openConversation({
+          id: conversationId,
+          otherUser: {
+            uid: p.uid,
+            displayName: p.displayName || 'Unknown',
+            photoURL: p.photoURL,
+            reputationTier: p.reputationTier,
+          },
+          lastMessage: null,
+          lastMessageTime: null,
+          unreadCount: 0,
+          isArchived: false,
+        });
+        this.router.navigate(['/messages', conversationId]);
+      }
+    } finally {
+      this.messagingLoading.set(false);
     }
   }
 

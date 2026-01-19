@@ -226,8 +226,13 @@
               mat-flat-button
               color="primary" 
               class="message-btn"
+              [disabled]="messagingLoading()"
               (click)="onMessage()">
-              <mat-icon>chat_bubble</mat-icon>
+              @if (messagingLoading()) {
+                <mat-spinner diameter="20"></mat-spinner>
+              } @else {
+                <mat-icon>chat_bubble</mat-icon>
+              }
               Message
             </button>
             <button 

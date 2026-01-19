@@ -15,10 +15,10 @@ import {ActivityService, sendMessageEmailNotification, initializeEmailService} f
 import * as logger from "firebase-functions/logger";
 import {
   REPUTATION_CONFIG,
+  REPUTATION_TIER_ORDER,
   MessageMetrics,
   ReputationTier,
   ReputationData,
-  canTierMessage,
   getTierConfig,
 } from "../types";
 import {recalculateReputation} from "./reputation";
@@ -187,15 +187,47 @@ export const onMessageCreated = onDocumentCreated(
         .limit(2) // Only need to know if there's more than 1
         .get();
 
-      if (messagesInConvo.size === 1) {
+      const isFirstMessageInConvo = messagesInConvo.size === 1;
+
+      if (isFirstMessageInConvo) {
         // This is the first message from this user in this conversation
         senderMetricsUpdate.conversationsStarted =
           (senderMetrics.conversationsStarted || 0) + 1;
       }
 
+      // Check if this is a new conversation with a higher-tier user
+      // (for tracking daily higher-tier conversation limit)
+      let isHigherTierNewConvo = false;
+      if (isFirstMessageInConvo) {
+        // Get both users' reputation tiers
+        const [senderPrivate, recipientPrivate] = await Promise.all([
+          db.collection("users").doc(senderId).collection("private").doc("data").get(),
+          db.collection("users").doc(recipientId).collection("private").doc("data").get(),
+        ]);
+
+        const senderTier = senderPrivate.data()?.reputation?.tier ?? "new";
+        const recipientTier = recipientPrivate.data()?.reputation?.tier ?? "new";
+
+        const senderTierIndex = REPUTATION_TIER_ORDER.indexOf(senderTier);
+        const recipientTierIndex = REPUTATION_TIER_ORDER.indexOf(recipientTier);
+        isHigherTierNewConvo = recipientTierIndex > senderTierIndex;
+      }
+
+      // Build reputation update
+      const reputationUpdate: Record<string, unknown> = {};
+      if (isHigherTierNewConvo) {
+        // Increment higher-tier conversation counter
+        const senderReputation = senderPrivateData.reputation as ReputationData | undefined;
+        const lastConvoDate = senderReputation?.lastConversationDate ?? "";
+        const currentCount = lastConvoDate === today ?
+          (senderReputation?.higherTierConversationsToday ?? 0) : 0;
+
+        reputationUpdate.higherTierConversationsToday = currentCount + 1;
+        reputationUpdate.lastConversationDate = today;
+      }
+
       // Write sender metrics update
       // Note: Use nested object structure for reputation fields
-      // (dot notation in keys doesn't work with set+merge, creates literal field names)
       await db
         .collection("users")
         .doc(senderId)
@@ -204,11 +236,7 @@ export const onMessageCreated = onDocumentCreated(
         .set(
           {
             messageMetrics: senderMetricsUpdate,
-            // Update reputation's daily counter using nested object (not dot notation)
-            reputation: {
-              messagesSentToday: sentToday,
-              lastMessageDate: today,
-            },
+            ...(Object.keys(reputationUpdate).length > 0 ? {reputation: reputationUpdate} : {}),
           },
           {merge: true}
         );
@@ -399,16 +427,23 @@ export async function trackReply(
 
 /**
  * Check if a user can send a message to another user
- * Enforces:
- * - Daily message limit based on sender's tier (bypassed for premium users)
- * - Tier-based messaging permissions (bypassed for premium users)
+ *
+ * New messaging rules:
+ * - If a conversation already exists between users → unlimited messages
+ * - If starting a NEW conversation:
+ *   - Same tier or lower tier recipient → always allowed
+ *   - Higher tier recipient → limited per day (based on sender's tier)
+ * - Premium users bypass all restrictions
+ * - Blocked users cannot message each other
  *
  * Returns:
  * - allowed: boolean - whether messaging is allowed
  * - reason: string - if not allowed, explains why
- * - dailyLimit: number - sender's daily message limit (-1 for unlimited)
- * - sentToday: number - messages sent today
- * - remaining: number - messages remaining today (-1 for unlimited)
+ * - isNewConversation: boolean - whether this would be a new conversation
+ * - isHigherTier: boolean - whether recipient is higher tier
+ * - higherTierLimit: number - daily limit for higher-tier conversations (-1 = unlimited)
+ * - higherTierConversationsToday: number - higher-tier conversations started today
+ * - higherTierRemaining: number - higher-tier conversations remaining (-1 = unlimited)
  */
 export const checkMessagePermission = onCall<{
   recipientId: string;
@@ -430,18 +465,38 @@ export const checkMessagePermission = onCall<{
       return {
         allowed: false,
         reason: "cannot_message_self",
-        dailyLimit: 0,
-        sentToday: 0,
-        remaining: 0,
       };
     }
 
     try {
-      // Fetch sender and recipient reputation data in parallel
-      const [senderPrivateDoc, recipientPrivateDoc] = await Promise.all([
-        db.collection("users").doc(senderId).collection("private").doc("data").get(),
-        db.collection("users").doc(recipientId).collection("private").doc("data").get(),
-      ]);
+      // Fetch sender and recipient data
+      const [senderPrivateDoc, recipientPrivateDoc, blockedDoc, blockedByDoc] =
+        await Promise.all([
+          db.collection("users").doc(senderId).collection("private").doc("data").get(),
+          db.collection("users").doc(recipientId).collection("private").doc("data").get(),
+          db.collection("users").doc(senderId).collection("blocks").doc(recipientId).get(),
+          db.collection("users").doc(senderId).collection("blockedBy").doc(recipientId).get(),
+        ]);
+
+      // Check blocked status first
+      if (blockedDoc.exists || blockedByDoc.exists) {
+        return {
+          allowed: false,
+          reason: "blocked",
+        };
+      }
+
+      // Check if conversation already exists by querying participants
+      const existingConvSnapshot = await db.collection("conversations")
+        .where("participants", "array-contains", senderId)
+        .get();
+
+      const existingConversation = existingConvSnapshot.docs.find((doc) => {
+        const data = doc.data();
+        return data.participants?.includes(recipientId);
+      });
+
+      const isNewConversation = !existingConversation;
 
       const senderPrivateData = senderPrivateDoc.data();
       const senderReputation = senderPrivateData?.reputation as ReputationData | undefined;
@@ -449,94 +504,72 @@ export const checkMessagePermission = onCall<{
 
       const senderTier: ReputationTier = senderReputation?.tier ?? "new";
       const recipientTier: ReputationTier = recipientReputation?.tier ?? "new";
-
-      // Check if sender is a premium subscriber - they bypass all restrictions
       const isPremium = senderPrivateData?.subscription?.tier === "premium";
 
-      if (isPremium) {
-        // Premium users have unlimited messaging to anyone
-        // Still need to check blocked status though
-        const [blockedDoc, blockedByDoc] = await Promise.all([
-          db.collection("users").doc(senderId).collection("blocks").doc(recipientId).get(),
-          db.collection("users").doc(senderId).collection("blockedBy").doc(recipientId).get(),
-        ]);
+      // Check if recipient is higher tier
+      const senderTierIndex = REPUTATION_TIER_ORDER.indexOf(senderTier);
+      const recipientTierIndex = REPUTATION_TIER_ORDER.indexOf(recipientTier);
+      const isHigherTier = recipientTierIndex > senderTierIndex;
 
-        if (blockedDoc.exists || blockedByDoc.exists) {
-          return {
-            allowed: false,
-            reason: "blocked",
-            dailyLimit: -1, // Unlimited
-            sentToday: 0,
-            remaining: -1, // Unlimited
-            isPremium: true,
-          };
-        }
-
+      // Premium users or existing conversations: always allowed
+      if (isPremium || !isNewConversation) {
         return {
           allowed: true,
           reason: null,
-          dailyLimit: -1, // Unlimited
-          sentToday: 0,
-          remaining: -1, // Unlimited
           senderTier,
           recipientTier,
-          isPremium: true,
+          isPremium,
+          isNewConversation,
+          isHigherTier,
+          higherTierLimit: -1,
+          higherTierConversationsToday: 0,
+          higherTierRemaining: -1,
         };
       }
 
-      // Non-premium users: apply reputation-based restrictions
+      // New conversation with same/lower tier: always allowed
+      if (!isHigherTier) {
+        return {
+          allowed: true,
+          reason: null,
+          senderTier,
+          recipientTier,
+          isPremium: false,
+          isNewConversation: true,
+          isHigherTier: false,
+          higherTierLimit: -1, // Not applicable
+          higherTierConversationsToday: 0,
+          higherTierRemaining: -1,
+        };
+      }
+
+      // New conversation with higher tier: check daily limit
       const tierConfig = getTierConfig(senderTier);
-      const dailyLimit = tierConfig.dailyMessages;
-      const isUnlimited = dailyLimit === -1;
+      const higherTierLimit = tierConfig.dailyHigherTierConversations;
+      const isUnlimited = higherTierLimit === -1;
 
       // Get today's date for checking daily counter
       const today = new Date().toISOString().split("T")[0];
-      const lastMessageDate = senderReputation?.lastMessageDate ?? "";
-      const sentToday = lastMessageDate === today ?
-        (senderReputation?.messagesSentToday ?? 0) :
+      const lastConversationDate = senderReputation?.lastConversationDate ?? "";
+      const higherTierConversationsToday = lastConversationDate === today ?
+        (senderReputation?.higherTierConversationsToday ?? 0) :
         0;
 
-      const remaining = isUnlimited ? -1 : Math.max(0, dailyLimit - sentToday);
+      const higherTierRemaining = isUnlimited ? -1 : Math.max(0, higherTierLimit - higherTierConversationsToday);
 
-      // Check 1: Daily message limit (skip if unlimited)
-      if (!isUnlimited && sentToday >= dailyLimit) {
+      // Check if limit reached
+      if (!isUnlimited && higherTierConversationsToday >= higherTierLimit) {
         return {
           allowed: false,
-          reason: "daily_limit_reached",
-          dailyLimit,
-          sentToday,
-          remaining: 0,
-          senderTier,
-        };
-      }
-
-      // Check 2: Tier-based permissions
-      if (!canTierMessage(senderTier, recipientTier)) {
-        return {
-          allowed: false,
-          reason: "tier_restriction",
+          reason: "higher_tier_limit_reached",
           senderTier,
           recipientTier,
-          dailyLimit,
-          sentToday,
-          remaining,
-          requiredTier: getMinimumTierToMessage(recipientTier),
-        };
-      }
-
-      // Check 3: Blocked status
-      const [blockedDoc, blockedByDoc] = await Promise.all([
-        db.collection("users").doc(senderId).collection("blocks").doc(recipientId).get(),
-        db.collection("users").doc(senderId).collection("blockedBy").doc(recipientId).get(),
-      ]);
-
-      if (blockedDoc.exists || blockedByDoc.exists) {
-        return {
-          allowed: false,
-          reason: "blocked",
-          dailyLimit,
-          sentToday,
-          remaining,
+          isPremium: false,
+          isNewConversation: true,
+          isHigherTier: true,
+          higherTierLimit,
+          higherTierConversationsToday,
+          higherTierRemaining: 0,
         };
       }
 
@@ -544,11 +577,14 @@ export const checkMessagePermission = onCall<{
       return {
         allowed: true,
         reason: null,
-        dailyLimit,
-        sentToday,
-        remaining,
         senderTier,
         recipientTier,
+        isPremium: false,
+        isNewConversation: true,
+        isHigherTier: true,
+        higherTierLimit,
+        higherTierConversationsToday,
+        higherTierRemaining,
       };
     } catch (error) {
       logger.error("Error checking message permission:", error);
@@ -558,24 +594,8 @@ export const checkMessagePermission = onCall<{
 );
 
 /**
- * Get the minimum tier required to message a given tier
- */
-function getMinimumTierToMessage(recipientTier: ReputationTier): ReputationTier {
-  // Check each tier from lowest to highest
-  const tiers: ReputationTier[] = ["new", "active", "established", "trusted", "distinguished"];
-
-  for (const tier of tiers) {
-    if (canTierMessage(tier, recipientTier)) {
-      return tier;
-    }
-  }
-
-  return "distinguished"; // Fallback (shouldn't happen)
-}
-
-/**
  * Get current user's messaging status
- * Returns daily limit, messages sent, and remaining
+ * Returns daily higher-tier conversation limit and remaining
  * Premium users have unlimited messaging
  */
 export const getMessagingStatus = onCall<void>(
@@ -605,32 +625,30 @@ export const getMessagingStatus = onCall<void>(
       if (isPremium) {
         return {
           tier,
-          dailyLimit: -1, // Unlimited
-          sentToday: 0,
-          remaining: -1, // Unlimited
-          canMessageTiers: ["new", "active", "established", "trusted", "distinguished"],
+          dailyHigherTierConversationLimit: -1, // Unlimited
+          higherTierConversationsToday: 0,
+          higherTierRemaining: -1, // Unlimited
           isPremium: true,
+          isUnlimited: true,
         };
       }
 
       // Non-premium users: apply reputation-based limits
       const tierConfig = getTierConfig(tier);
-      const isUnlimited = tierConfig.dailyMessages === -1;
+      const isUnlimited = tierConfig.dailyHigherTierConversations === -1;
 
       const today = new Date().toISOString().split("T")[0];
-      const lastMessageDate = reputation?.lastMessageDate ?? "";
-      const sentToday = lastMessageDate === today ?
-        (reputation?.messagesSentToday ?? 0) :
+      const lastConvoDate = reputation?.lastConversationDate ?? "";
+      const usedToday = lastConvoDate === today ?
+        (reputation?.higherTierConversationsToday ?? 0) :
         0;
 
       return {
         tier,
-        dailyLimit: tierConfig.dailyMessages,
-        sentToday,
-        remaining: isUnlimited ? -1 : Math.max(0, tierConfig.dailyMessages - sentToday),
-        canMessageTiers: tierConfig.canMessage === "all" ?
-          ["new", "active", "established", "trusted", "distinguished"] :
-          tierConfig.canMessage,
+        dailyHigherTierConversationLimit: tierConfig.dailyHigherTierConversations,
+        higherTierConversationsToday: usedToday,
+        higherTierRemaining: isUnlimited ? -1 :
+          Math.max(0, tierConfig.dailyHigherTierConversations - usedToday),
         isPremium: false,
         isUnlimited,
       };

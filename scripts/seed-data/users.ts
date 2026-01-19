@@ -118,9 +118,8 @@ export interface SeedUser {
   reputationTier: ReputationTier;
   reputation: {
     tier: ReputationTier;
-    dailyMessageLimit: number;
-    messagesSentToday: number;
-    canMessageMinTier: ReputationTier;
+    dailyHigherTierConversationLimit: number;
+    higherTierConversationsToday: number;
   };
   
   settings: {
@@ -374,22 +373,13 @@ export function generateUsers(count: number, seed?: number): SeedUser[] {
       reputationTier = 'distinguished';
     }
 
-    // Daily message limits by tier (matching backend config)
-    const dailyMessageLimits: Record<ReputationTier, number> = {
-      new: 5,
-      active: 15,
-      established: 30,
-      trusted: 50,
-      distinguished: 100,
-    };
-
-    // canMessageMinTier by tier (matching backend config)
-    const canMessageMinTiers: Record<ReputationTier, ReputationTier> = {
-      new: 'active',
-      active: 'new',
-      established: 'new',
-      trusted: 'new',
-      distinguished: 'new',
+    // Daily higher-tier conversation limits by tier (matching backend config)
+    const dailyHigherTierConversationLimits: Record<ReputationTier, number> = {
+      new: 1,
+      active: 3,
+      established: 5,
+      trusted: 10,
+      distinguished: -1, // Unlimited
     };
 
     const user: SeedUser = {
@@ -412,9 +402,8 @@ export function generateUsers(count: number, seed?: number): SeedUser[] {
       reputationTier,
       reputation: {
         tier: reputationTier,
-        dailyMessageLimit: dailyMessageLimits[reputationTier],
-        messagesSentToday: 0,
-        canMessageMinTier: canMessageMinTiers[reputationTier],
+        dailyHigherTierConversationLimit: dailyHigherTierConversationLimits[reputationTier],
+        higherTierConversationsToday: 0,
       },
       
       settings: {

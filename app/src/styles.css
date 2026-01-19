@@ -488,3 +488,18 @@ mat-progress-spinner svg,
 .firebase-emulator-warning {
   display: none !important;
 }
+
+/* Error snackbar styling */
+.error-snackbar {
+  --mdc-snackbar-container-color: #dc3545;
+  --mdc-snackbar-supporting-text-color: #ffffff;
+  --mat-snack-bar-button-color: #ffffff;
+}
+
+.error-snackbar .mdc-snackbar__surface {
+  background-color: #dc3545 !important;
+}
+
+.error-snackbar .mat-mdc-snack-bar-label {
+  color: #ffffff !important;
+}

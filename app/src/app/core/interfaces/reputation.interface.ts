@@ -35,9 +35,10 @@ export const REPUTATION_TIER_ORDER: ReputationTier[] = [
  */
 export interface ReputationData {
   tier: ReputationTier;
-  dailyMessageLimit: number;
-  messagesSentToday: number;
-  canMessageMinTier: ReputationTier;
+  /** Max new conversations per day with higher-tier users. -1 = unlimited */
+  dailyHigherTierConversationLimit: number;
+  /** Number of new conversations started with higher-tier users today */
+  higherTierConversationsToday: number;
   lastCalculatedAt: unknown; // Firestore Timestamp
   tierChangedAt: unknown; // Firestore Timestamp
 }
@@ -98,11 +99,16 @@ export const TIER_DISPLAY: Record<ReputationTier, TierDisplay> = {
 
 /**
  * Tier configuration for UI
+ *
+ * Messaging rules:
+ * - Users can message anyone at same tier or below with no limits
+ * - Users can START conversations with higher-tier users, limited per day
+ * - Once a conversation exists, there are no limits on messages
  */
 export interface TierConfig {
   minTier: ReputationTier;
-  dailyMessages: number;
-  canMessageTiers: ReputationTier[] | 'all';
+  /** Max new conversations per day with HIGHER-tier users. -1 = unlimited */
+  dailyHigherTierConversations: number;
   maxPhotos: number;
 }
 
@@ -112,32 +118,27 @@ export interface TierConfig {
 export const TIER_CONFIG: Record<ReputationTier, TierConfig> = {
   new: {
     minTier: 'new',
-    dailyMessages: 5,
-    canMessageTiers: ['active', 'established'],
+    dailyHigherTierConversations: 1,
     maxPhotos: 3,
   },
   active: {
     minTier: 'active',
-    dailyMessages: 15,
-    canMessageTiers: ['new', 'active', 'established'],
+    dailyHigherTierConversations: 3,
     maxPhotos: 5,
   },
   established: {
     minTier: 'established',
-    dailyMessages: 30,
-    canMessageTiers: 'all',
+    dailyHigherTierConversations: 5,
     maxPhotos: 8,
   },
   trusted: {
     minTier: 'trusted',
-    dailyMessages: 100,
-    canMessageTiers: 'all',
+    dailyHigherTierConversations: 10,
     maxPhotos: 12,
   },
   distinguished: {
     minTier: 'distinguished',
-    dailyMessages: -1, // Unlimited
-    canMessageTiers: 'all',
+    dailyHigherTierConversations: -1, // Unlimited
     maxPhotos: 15,
   },
 };
@@ -203,18 +204,6 @@ export function getTierConfig(tier: ReputationTier): TierConfig {
 }
 
 /**
- * Check if a tier can message another tier
- */
-export function canTierMessage(
-  senderTier: ReputationTier,
-  recipientTier: ReputationTier
-): boolean {
-  const config = TIER_CONFIG[senderTier];
-  if (config.canMessageTiers === 'all') return true;
-  return config.canMessageTiers.includes(recipientTier);
-}
-
-/**
  * Compare tiers (returns positive if tier1 > tier2)
  */
 export function compareTiers(
@@ -225,15 +214,27 @@ export function compareTiers(
 }
 
 /**
- * Get daily messages remaining
+ * Check if recipient tier is higher than sender tier
  */
-export function getDailyMessagesRemaining(reputation: ReputationData): number {
-  return Math.max(0, reputation.dailyMessageLimit - reputation.messagesSentToday);
+export function isHigherTier(
+  senderTier: ReputationTier,
+  recipientTier: ReputationTier
+): boolean {
+  return compareTiers(recipientTier, senderTier) > 0;
 }
 
 /**
- * Check if user has reached daily message limit
+ * Get remaining higher-tier conversations for today
  */
-export function hasReachedMessageLimit(reputation: ReputationData): boolean {
-  return reputation.messagesSentToday >= reputation.dailyMessageLimit;
+export function getHigherTierConversationsRemaining(reputation: ReputationData): number {
+  if (reputation.dailyHigherTierConversationLimit === -1) return -1; // Unlimited
+  return Math.max(0, reputation.dailyHigherTierConversationLimit - reputation.higherTierConversationsToday);
+}
+
+/**
+ * Check if user has reached daily higher-tier conversation limit
+ */
+export function hasReachedHigherTierLimit(reputation: ReputationData): boolean {
+  if (reputation.dailyHigherTierConversationLimit === -1) return false; // Unlimited
+  return reputation.higherTierConversationsToday >= reputation.dailyHigherTierConversationLimit;
 }

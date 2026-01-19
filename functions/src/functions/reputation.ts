@@ -248,14 +248,13 @@ export async function recalculateReputation(
     lastCalculatedAt: now,
     tierChangedAt: tierChanged ? now : (existingReputation?.tierChangedAt ?? now),
     createdAt: existingReputation?.createdAt ?? now,
-    dailyMessageLimit: tierConfig.dailyMessages,
-    canMessageMinTier: tierConfig.canMessage === "all" ? "new" : tierConfig.canMessage[0],
+    dailyHigherTierConversationLimit: tierConfig.dailyHigherTierConversations,
     signals,
-    messagesSentToday: existingReputation?.lastMessageDate === today ?
-      (existingReputation?.messagesSentToday ?? 0) :
+    higherTierConversationsToday: existingReputation?.lastConversationDate === today ?
+      (existingReputation?.higherTierConversationsToday ?? 0) :
       0,
-    lastMessageDate: existingReputation?.lastMessageDate ?? today,
-    isFounder: isFounder || undefined,
+    lastConversationDate: existingReputation?.lastConversationDate ?? today,
+    ...(isFounder ? {isFounder: true} : {}),
   };
 
   // Write to Firestore
@@ -581,24 +580,24 @@ export const getReputationStatus = onCall<void>(
       if (!reputation) {
         // User hasn't been calculated yet - do it now
         const newReputation = await recalculateReputation(userId);
-        const isUnlimited = newReputation.dailyMessageLimit === -1;
+        const isUnlimited = newReputation.dailyHigherTierConversationLimit === -1;
         return {
           tier: newReputation.tier,
-          dailyMessageLimit: newReputation.dailyMessageLimit,
-          messagesSentToday: newReputation.messagesSentToday,
-          messagesRemaining: isUnlimited ? -1 : newReputation.dailyMessageLimit - newReputation.messagesSentToday,
-          canMessageMinTier: newReputation.canMessageMinTier,
+          dailyHigherTierConversationLimit: newReputation.dailyHigherTierConversationLimit,
+          higherTierConversationsToday: newReputation.higherTierConversationsToday,
+          higherTierRemaining: isUnlimited ? -1 :
+            newReputation.dailyHigherTierConversationLimit - newReputation.higherTierConversationsToday,
           isUnlimited,
         };
       }
 
-      const isUnlimited = reputation.dailyMessageLimit === -1;
+      const isUnlimited = reputation.dailyHigherTierConversationLimit === -1;
       return {
         tier: reputation.tier,
-        dailyMessageLimit: reputation.dailyMessageLimit,
-        messagesSentToday: reputation.messagesSentToday,
-        messagesRemaining: isUnlimited ? -1 : reputation.dailyMessageLimit - reputation.messagesSentToday,
-        canMessageMinTier: reputation.canMessageMinTier,
+        dailyHigherTierConversationLimit: reputation.dailyHigherTierConversationLimit,
+        higherTierConversationsToday: reputation.higherTierConversationsToday,
+        higherTierRemaining: isUnlimited ? -1 :
+          reputation.dailyHigherTierConversationLimit - reputation.higherTierConversationsToday,
         isUnlimited,
       };
     } catch (error) {
@@ -633,14 +632,14 @@ export async function initializeReputation(userId: string): Promise<void> {
   const isFounder = privateDoc.data()?.isFounder === true;
 
   // Determine starting tier and score based on founder status
-  const startingTier: ReputationTier = isFounder
-    ? FOUNDER_CONFIG.startingTier
-    : "new";
+  const startingTier: ReputationTier = isFounder ?
+    FOUNDER_CONFIG.startingTier :
+    "new";
 
   // Founders get a score at the trusted tier threshold
-  const startingScore = isFounder
-    ? REPUTATION_CONFIG.tiers[FOUNDER_CONFIG.startingTier].minScore
-    : 0;
+  const startingScore = isFounder ?
+    REPUTATION_CONFIG.tiers[FOUNDER_CONFIG.startingTier].minScore :
+    0;
 
   const tierConfig = getTierConfig(startingTier);
 
@@ -651,12 +650,11 @@ export async function initializeReputation(userId: string): Promise<void> {
     lastCalculatedAt: now,
     tierChangedAt: now,
     createdAt: now,
-    dailyMessageLimit: tierConfig.dailyMessages,
-    canMessageMinTier: tierConfig.canMessage === "all" ? "new" : tierConfig.canMessage[0],
+    dailyHigherTierConversationLimit: tierConfig.dailyHigherTierConversations,
     signals: getDefaultSignals(),
-    messagesSentToday: 0,
-    lastMessageDate: today,
-    isFounder: isFounder || undefined,
+    higherTierConversationsToday: 0,
+    lastConversationDate: today,
+    ...(isFounder ? {isFounder: true} : {}),
   };
 
   const initialMessageMetrics = getDefaultMessageMetrics();
@@ -713,8 +711,8 @@ export const refreshMyReputation = onCall<void>(
       return {
         success: true,
         tier: newReputation.tier,
-        dailyMessageLimit: newReputation.dailyMessageLimit,
-        messagesSentToday: newReputation.messagesSentToday,
+        dailyHigherTierConversationLimit: newReputation.dailyHigherTierConversationLimit,
+        higherTierConversationsToday: newReputation.higherTierConversationsToday,
       };
     } catch (error) {
       logger.error(`Error refreshing reputation for ${userId}:`, error);

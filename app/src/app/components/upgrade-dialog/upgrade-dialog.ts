@@ -16,14 +16,14 @@ interface UpgradeDialogData {
 
 const FEATURE_MESSAGES: Partial<Record<keyof SubscriptionCapabilities, { title: string; description: string; icon: string }>> = {
   unlimitedMessaging: {
-    title: 'Unlimited Messaging',
-    description: 'Send unlimited messages without daily limits based on your reputation tier.',
-    icon: 'chat_bubble',
+    title: 'Unlimited Conversations',
+    description: 'Start unlimited conversations with members of any tier without daily limits.',
+    icon: 'forum',
   },
   canMessageAnyTier: {
-    title: 'Message Anyone',
-    description: 'Message any member regardless of their reputation tier.',
-    icon: 'send',
+    title: 'No Tier Restrictions',
+    description: 'Start conversations with any member regardless of their reputation tier.',
+    icon: 'forum',
   },
   hasAIAssistant: {
     title: 'AI Assistant',

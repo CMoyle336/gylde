@@ -658,6 +658,15 @@
   height: 1.125rem;
 }
 
+.message-btn mat-spinner {
+  margin-right: 0.375rem;
+  --mdc-circular-progress-active-indicator-color: #0d0b0e;
+}
+
+.message-btn:disabled {
+  opacity: 0.7;
+}
+
 .icon-btn {
   width: 40px;
   height: 40px;

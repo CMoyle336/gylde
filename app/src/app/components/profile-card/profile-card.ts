@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, input, output, computed } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ReputationTier, shouldShowPublicBadge } from '../../core/interfaces';
 import { ReputationBadgeComponent } from '../reputation-badge';
 import { FounderBadgeComponent } from '../founder-badge';
@@ -34,13 +35,14 @@ export interface ProfileCardData {
   templateUrl: './profile-card.html',
   styleUrl: './profile-card.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatIconModule, MatTooltipModule, ReputationBadgeComponent, FounderBadgeComponent],
+  imports: [MatIconModule, MatTooltipModule, MatProgressSpinnerModule, ReputationBadgeComponent, FounderBadgeComponent],
 })
 export class ProfileCardComponent {
   // Inputs
   readonly profile = input.required<ProfileCardData>();
   readonly isFavorited = input<boolean>(false);
   readonly showInteractionTime = input<boolean>(false); // Show when the interaction happened
+  readonly messagingLoading = input<boolean>(false); // Show loading spinner on message button
 
   // Outputs
   readonly messageClick = output<ProfileCardData>();

@@ -41,30 +41,21 @@
             </div>
             <p class="reputation-description">
               Your reputation reflects your behavior on the platform. 
-              Higher tiers unlock more messaging capacity, photos, and reach.
+              Higher tiers unlock more reach to higher-tier members and photo uploads.
             </p>
             <div class="messaging-status">
               <span class="status-item">
-                <mat-icon class="status-icon">message</mat-icon>
-                @if (messagingStatus().isUnlimited) {
-                  <strong>Unlimited</strong> messages
+                <mat-icon class="status-icon">forum</mat-icon>
+                @if (higherTierConversationStatus().isUnlimited) {
+                  <strong>Unlimited</strong> higher tier conversations
                 } @else {
-                  <strong>{{ messagingStatus().remaining }}/{{ messagingStatus().dailyLimit }}</strong> daily messages
+                  <strong>{{ higherTierConversationStatus().remaining }}/{{ higherTierConversationStatus().dailyLimit }}</strong> higher tier conversations
                 }
               </span>
               <span class="status-separator">•</span>
               <span class="status-item">
                 <mat-icon class="status-icon">photo_library</mat-icon>
                 <strong>{{ maxPhotos() }}</strong> photos max
-              </span>
-              <span class="status-separator">•</span>
-              <span class="status-item">
-                <mat-icon class="status-icon">{{ canMessageInfo().canMessageAll ? 'public' : 'group' }}</mat-icon>
-                @if (canMessageInfo().canMessageAll) {
-                  Message <strong>anyone</strong>
-                } @else {
-                  Message <strong>{{ canMessageInfo().tiers.join(', ') }}</strong> members
-                }
               </span>
             </div>
             <!-- Dev-only refresh button -->

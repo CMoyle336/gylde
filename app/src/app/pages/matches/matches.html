@@ -106,6 +106,7 @@
             [profile]="profile"
             [isFavorited]="isFavorited(profile.uid)"
             [showInteractionTime]="true"
+            [messagingLoading]="isMessagingUser(profile.uid)"
             (messageClick)="onMessage($event)"
             (viewClick)="onViewProfile($event)"
             (favoriteClick)="onFavorite($event)"

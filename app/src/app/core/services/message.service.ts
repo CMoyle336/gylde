@@ -41,16 +41,17 @@ import {
 import { UserProfile } from '../interfaces/user.interface';
 
 /** Result from the checkMessagePermission Cloud Function */
-interface MessagePermissionResult {
+export interface MessagePermissionResult {
   allowed: boolean;
   reason: string | null;
-  dailyLimit: number; // -1 for unlimited (premium)
-  sentToday: number;
-  remaining: number; // -1 for unlimited (premium)
   senderTier?: ReputationTier;
   recipientTier?: ReputationTier;
-  requiredTier?: ReputationTier;
   isPremium?: boolean;
+  isNewConversation?: boolean;
+  isHigherTier?: boolean;
+  higherTierLimit?: number; // -1 for unlimited
+  higherTierConversationsToday?: number;
+  higherTierRemaining?: number; // -1 for unlimited
 }
 
 export type ConversationFilter = 'all' | 'unread' | 'archived';
@@ -1041,10 +1042,10 @@ export class MessageService {
   /**
    * Check if the current user can send a message to a recipient
    * Uses the checkMessagePermission Cloud Function to enforce:
-   * - Daily message limits based on reputation tier
-   * - Tier-based messaging permissions
+   * - Higher-tier conversation limits (only for new conversations)
    * - Block status
    * 
+   * Note: Once a conversation exists, messages within it are unlimited.
    * Called once when opening a conversation, not on every message.
    */
   async checkMessagePermission(recipientId: string): Promise<MessagePermissionResult> {
@@ -1056,14 +1057,14 @@ export class MessageService {
       const result = await checkFn({ recipientId });
       this._messagePermission.set(result.data);
       
-      // Initialize local remaining count from server
-      this._remainingMessages.set(result.data.remaining);
+      // Messages within an existing conversation are unlimited
+      // Only new conversations with higher-tier users have limits
+      this._remainingMessages.set(-1); // Unlimited within conversation
       
       // If not allowed, set the blocked state
       if (!result.data.allowed) {
         this._messageBlocked.set({
           reason: result.data.reason ?? 'unknown',
-          requiredTier: result.data.requiredTier,
         });
       }
       
@@ -1071,13 +1072,10 @@ export class MessageService {
     } catch (error) {
       console.error('Error checking message permission:', error);
       // Default to allowed if check fails to avoid blocking users
-      this._remainingMessages.set(100); // Generous fallback
+      this._remainingMessages.set(-1); // Unlimited fallback
       return {
         allowed: true,
         reason: null,
-        dailyLimit: 0,
-        sentToday: 0,
-        remaining: 100,
       };
     }
   }
@@ -1119,18 +1117,8 @@ export class MessageService {
       photoURL: profile?.photoURL ?? authUser.photoURL,
     };
 
-    // Check local remaining message count (already set when conversation opened)
-    // -1 means unlimited (premium), so always allow
-    const remaining = this._remainingMessages();
-    if (remaining !== null && remaining !== -1 && remaining <= 0) {
-      // Daily limit reached - show error
-      this._messageBlocked.set({
-        reason: 'daily_limit_reached',
-      });
-      return;
-    }
-    
-    // Check if already blocked for other reasons (tier restriction, blocked user)
+    // Check if blocked for other reasons (blocked user, etc.)
+    // Note: Messages within an existing conversation are always unlimited
     if (this._messageBlocked()) {
       return;
     }
@@ -1544,8 +1532,28 @@ export class MessageService {
   }
 
   /**
-   * Mark all messages in a conversation as read
+   * Check if the current user can start a conversation with another user.
+   * This proactively checks higher-tier conversation limits before creating
+   * the conversation document.
    */
+  async canStartConversation(otherUserId: string): Promise<MessagePermissionResult> {
+    try {
+      const checkPermission = httpsCallable<{ recipientId: string }, MessagePermissionResult>(
+        this.functions,
+        'checkMessagePermission'
+      );
+      const result = await checkPermission({ recipientId: otherUserId });
+      return result.data;
+    } catch (error) {
+      console.error('Error checking message permission:', error);
+      // On error, allow the action to proceed (fail open) - the backend will still enforce limits
+      return {
+        allowed: true,
+        reason: null,
+      };
+    }
+  }
+
   /**
    * Mark a conversation as read by updating the user's lastViewedAt timestamp.
    * Messages are considered "read" if created before this timestamp.

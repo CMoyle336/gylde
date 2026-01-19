@@ -125,13 +125,13 @@ export class MessagesComponent implements OnInit, OnDestroy, AfterViewInit {
   protected readonly isAiPanelOpen = this.aiChatService.isOpen;
   protected readonly hasAiAccess = this.aiChatService.hasAccess;
 
-  // Messaging access - all users can message (Premium has unlimited, Free has reputation-based limits)
+  // Messaging access - all users can message (Premium has no tier restrictions, Free has reputation-based limits)
   protected readonly hasMessagingAccess = computed(() => {
-    // All users can message - limits are enforced by reputation system for free users
+    // All users can message - limits on starting new higher-tier conversations enforced by reputation system
     return true;
   });
   
-  // Premium users have unlimited messaging without tier restrictions
+  // Premium users can start unlimited conversations with any tier
   protected readonly hasUnlimitedMessaging = computed(() => {
     return this.subscriptionService.capabilities().unlimitedMessaging;
   });

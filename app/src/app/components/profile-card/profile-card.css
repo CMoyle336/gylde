@@ -247,6 +247,15 @@
   height: 1.25rem;
 }
 
+.action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.action-btn mat-spinner {
+  --mdc-circular-progress-active-indicator-color: currentColor;
+}
+
 /* ============================================
    RESPONSIVE - MOBILE
    ============================================ */

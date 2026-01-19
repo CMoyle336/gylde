@@ -382,7 +382,7 @@ export const uploadProfileImage = onCall<UploadImageRequest, Promise<UploadImage
       throw new HttpsError(
         "resource-exhausted",
         `Maximum of ${maxPhotos} photos allowed for your reputation tier. ` +
-        `Improve your reputation or upgrade to Premium for more photos.`
+        "Improve your reputation or upgrade to Premium for more photos."
       );
     }
 

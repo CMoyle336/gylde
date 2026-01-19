@@ -7,6 +7,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { DiscoveryService } from '../../core/services/discovery.service';
 import { FavoriteService } from '../../core/services/favorite.service';
 import { MessageService } from '../../core/services/message.service';
@@ -43,11 +44,13 @@ export class DiscoverComponent implements OnInit {
   private readonly discoveryService = inject(DiscoveryService);
   private readonly favoriteService = inject(FavoriteService);
   private readonly messageService = inject(MessageService);
+  private readonly snackBar = inject(MatSnackBar);
 
   // UI state
   protected readonly showFilters = signal(false);
   protected readonly showSaveViewDialog = signal(false);
   protected readonly showManageViewsDialog = signal(false);
+  protected readonly messagingUserId = signal<string | null>(null); // Track which user is being messaged
 
   // Discovery state from service
   protected readonly profiles = this.discoveryService.profiles;
@@ -186,25 +189,58 @@ export class DiscoverComponent implements OnInit {
   }
 
   protected async onMessageProfile(profile: ProfileCardData): Promise<void> {
-    const photoURL = profile.photos?.[0] || profile.photoURL || null;
-    const conversationId = await this.messageService.startConversation(profile.uid);
+    this.messagingUserId.set(profile.uid);
     
-    if (conversationId) {
-      this.messageService.openConversation({
-        id: conversationId,
-        otherUser: {
-          uid: profile.uid,
-          displayName: profile.displayName || 'Unknown',
-          photoURL,
-          reputationTier: profile.reputationTier,
-        },
-        lastMessage: null,
-        lastMessageTime: null,
-        unreadCount: 0,
-        isArchived: false,
-      });
+    try {
+      // Check if we can start a conversation before creating the conversation document
+      const permission = await this.messageService.canStartConversation(profile.uid);
       
-      this.router.navigate(['/messages', conversationId]);
+      if (!permission.allowed) {
+        if (permission.reason === 'higher_tier_limit_reached') {
+          const tierDisplay = permission.recipientTier 
+            ? permission.recipientTier.charAt(0).toUpperCase() + permission.recipientTier.slice(1)
+            : 'higher tier';
+          this.snackBar.open(
+            `You've reached your daily limit for starting conversations with ${tierDisplay} members. Try again tomorrow or upgrade your reputation.`,
+            'OK',
+            { duration: 6000, panelClass: 'error-snackbar' }
+          );
+        } else if (permission.reason === 'blocked') {
+          this.snackBar.open(
+            'You cannot message this user.',
+            'OK',
+            { duration: 4000, panelClass: 'error-snackbar' }
+          );
+        }
+        return;
+      }
+
+      const photoURL = profile.photos?.[0] || profile.photoURL || null;
+      const conversationId = await this.messageService.startConversation(profile.uid);
+      
+      if (conversationId) {
+        this.messageService.openConversation({
+          id: conversationId,
+          otherUser: {
+            uid: profile.uid,
+            displayName: profile.displayName || 'Unknown',
+            photoURL,
+            reputationTier: profile.reputationTier,
+          },
+          lastMessage: null,
+          lastMessageTime: null,
+          unreadCount: 0,
+          isArchived: false,
+        });
+        
+        this.router.navigate(['/messages', conversationId]);
+      }
+    } finally {
+      this.messagingUserId.set(null);
     }
+  }
+
+  protected isMessagingUser(uid: string): boolean {
+    return this.messagingUserId() === uid;
   }
 }

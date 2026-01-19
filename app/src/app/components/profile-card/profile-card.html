@@ -72,9 +72,14 @@
       <button 
         type="button" 
         class="action-btn message"
+        [disabled]="messagingLoading()"
         (click)="onMessage(); $event.stopPropagation()"
         [matTooltip]="'Message ' + (profile().displayName || 'user')">
-        <mat-icon>chat_bubble_outline</mat-icon>
+        @if (messagingLoading()) {
+          <mat-spinner diameter="18"></mat-spinner>
+        } @else {
+          <mat-icon>chat_bubble_outline</mat-icon>
+        }
       </button>
       <button 
         type="button" 
