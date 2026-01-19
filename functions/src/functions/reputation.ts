@@ -221,16 +221,37 @@ export async function recalculateReputation(
   const existingReputation = privateData?.reputation as ReputationData | undefined;
   const isFounder = privateData?.isFounder === true;
 
-  // Founders cannot fall below the minimum tier (active)
+  // Founders have special tier protection
   if (isFounder) {
     const calculatedTierIndex = REPUTATION_TIER_ORDER.indexOf(tier);
+    const startingTierIndex = REPUTATION_TIER_ORDER.indexOf(FOUNDER_CONFIG.startingTier);
     const minimumTierIndex = REPUTATION_TIER_ORDER.indexOf(FOUNDER_CONFIG.minimumTier);
 
-    if (calculatedTierIndex < minimumTierIndex) {
+    // Check if founder has negative signals that would justify a tier drop
+    const hasNegativeSignals =
+      signals.blockRatio > 0 ||
+      signals.reportRatio > 0 ||
+      signals.ghostRate > 0.5; // High ghost rate (abandoned more than half of conversations)
+
+    if (!hasNegativeSignals && calculatedTierIndex < startingTierIndex) {
+      // No negative signals - protect founder at their starting tier (trusted)
       logger.info(
-        `Founder ${userId} protected from tier drop: ${tier} -> ${FOUNDER_CONFIG.minimumTier}`
+        `Founder ${userId} protected at starting tier (no negative signals): ` +
+        `${tier} -> ${FOUNDER_CONFIG.startingTier}`
+      );
+      tier = FOUNDER_CONFIG.startingTier;
+    } else if (hasNegativeSignals && calculatedTierIndex < minimumTierIndex) {
+      // Has negative signals but still protect from falling below minimum (active)
+      logger.info(
+        `Founder ${userId} with negative signals protected at minimum tier: ` +
+        `${tier} -> ${FOUNDER_CONFIG.minimumTier}`
       );
       tier = FOUNDER_CONFIG.minimumTier;
+    } else if (hasNegativeSignals) {
+      logger.info(
+        `Founder ${userId} tier adjusted due to negative signals: ${tier} ` +
+        `(blocks: ${signals.blockRatio}, reports: ${signals.reportRatio}, ghost: ${signals.ghostRate})`
+      );
     }
   }
 

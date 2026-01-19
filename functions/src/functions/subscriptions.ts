@@ -444,3 +444,60 @@ async function handlePaymentFailed(invoice: Stripe.Invoice): Promise<void> {
 
   console.log(`Payment failed for user ${userId}, invoice: ${invoice.id}`);
 }
+
+/**
+ * Cancel a user's active Stripe subscription
+ * Used when a user disables or deletes their account
+ *
+ * @param userId - The Firebase user ID
+ * @param immediate - If true, cancel immediately. If false, cancel at period end.
+ * @returns true if a subscription was canceled, false if no active subscription found
+ */
+export async function cancelUserSubscription(
+  userId: string,
+  immediate = true
+): Promise<boolean> {
+  // Get user's private data to find subscription info
+  const privateDoc = await db
+    .collection("users")
+    .doc(userId)
+    .collection("private")
+    .doc("data")
+    .get();
+
+  const privateData = privateDoc.data();
+  const subscription = privateData?.subscription;
+
+  if (!subscription?.stripeSubscriptionId) {
+    console.log(`No Stripe subscription found for user ${userId}`);
+    return false;
+  }
+
+  // Check if subscription is already canceled
+  if (subscription.status === "canceled") {
+    console.log(`Subscription already canceled for user ${userId}`);
+    return false;
+  }
+
+  try {
+    const stripe = getStripe();
+
+    if (immediate) {
+      // Cancel immediately
+      await stripe.subscriptions.cancel(subscription.stripeSubscriptionId);
+      console.log(`Immediately canceled subscription for user ${userId}`);
+    } else {
+      // Cancel at period end (user keeps access until end of billing period)
+      await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
+        cancel_at_period_end: true,
+      });
+      console.log(`Scheduled subscription cancellation at period end for user ${userId}`);
+    }
+
+    return true;
+  } catch (error) {
+    console.error(`Error canceling subscription for user ${userId}:`, error);
+    // Don't throw - we don't want subscription cancellation failure to block account operations
+    return false;
+  }
+}

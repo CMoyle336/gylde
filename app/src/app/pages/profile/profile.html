@@ -27,7 +27,12 @@
       <!-- Reputation Status Section -->
       <section class="reputation-section">
         <div class="reputation-content">
-          <app-reputation-badge [tier]="reputationTier()" mode="full" size="large" />
+          <div class="badges-container">
+            <app-reputation-badge [tier]="reputationTier()" mode="full" size="large" />
+            @if (isFounder()) {
+              <app-founder-badge [city]="founderCity() ?? undefined" size="large" />
+            }
+          </div>
           <div class="reputation-details">
             <div class="reputation-header">
               <h2>Your Reputation Status</h2>

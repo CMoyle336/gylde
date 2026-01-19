@@ -25,6 +25,7 @@ import { ALL_CONNECTION_TYPES, getConnectionTypeLabel, SUPPORT_ORIENTATION_OPTIO
 import { PhotoAccessDialogComponent } from '../../components/photo-access-dialog';
 import { ReputationBadgeComponent } from '../../components/reputation-badge';
 import { ReputationInfoDialogComponent } from '../../components/reputation-info-dialog';
+import { FounderBadgeComponent } from '../../components/founder-badge';
 import { environment } from '../../../environments/environment';
 
 type LocationStatus = 'idle' | 'detecting' | 'success' | 'error';
@@ -80,6 +81,7 @@ interface UploadingPhoto {
     MatProgressSpinnerModule,
     MatTooltipModule,
     ReputationBadgeComponent,
+    FounderBadgeComponent,
   ],
 })
 export class ProfileComponent implements OnInit, OnDestroy {
@@ -144,6 +146,10 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   // Reputation data from subscription service
   protected readonly reputationData = this.subscriptionService.reputationData;
+
+  // Founder status
+  protected readonly isFounder = this.subscriptionService.isFounder;
+  protected readonly founderCity = this.subscriptionService.founderCity;
 
   // Reputation tier for display
   protected readonly reputationTier = computed<ReputationTier>(() => {

@@ -52,9 +52,9 @@ export class HowItWorksComponent implements OnInit {
       icon: 'explore',
       details: [
         'Filter by lifestyle, values, and intentions',
-        'See Trust Scores to gauge authenticity',
+        'See reputation tiers to gauge member quality',
         'Save favorites for later',
-        'View who\'s interested in you'
+        'View who\'s interested in you (Premium)'
       ]
     },
     {
@@ -118,19 +118,19 @@ export class HowItWorksComponent implements OnInit {
   readonly faqs = [
     {
       question: 'How is Gylde different from other dating apps?',
-      answer: 'Gylde is built for intentional connections. We focus on clear communication of relationship goals, robust identity verification, and features that prioritize quality over quantity. No endless swiping—just meaningful matches.'
+      answer: 'Gylde is built for intentional connections. We focus on clear communication of relationship goals, robust identity verification, and a reputation system that rewards quality members. No endless swiping—just meaningful matches.'
     },
     {
       question: 'Is identity verification required?',
-      answer: 'Verification is optional but highly encouraged. Verified profiles earn a badge, higher Trust Scores, and are more likely to receive responses. It\'s a quick process that takes just a few minutes.'
+      answer: 'Verification is optional but highly encouraged. Verified profiles earn a badge and build reputation faster, making them more likely to receive responses. It\'s a quick process that takes just a few minutes.'
     },
     {
-      question: 'What is the Trust Score?',
-      answer: 'Your Trust Score reflects your profile completeness and verification status. It helps other members gauge your authenticity at a glance. Complete your profile and verify your identity to maximize your score.'
+      question: 'How does the reputation system work?',
+      answer: 'Your reputation tier (New, Active, Established, Trusted, Distinguished) reflects your engagement and behavior on the platform. Higher tiers unlock more features like additional photo uploads and the ability to start more conversations with members of any tier. Build your reputation by completing your profile, staying active, and being respectful to others.'
     },
     {
       question: 'What are private photos?',
-      answer: 'Private photos are images only visible to people you approve. When someone requests access, you can accept or decline. This gives you control over who sees your more personal content.'
+      answer: 'Private photos are images only visible to people you approve. When someone requests access, you can accept or decline. This gives you control over who sees your more personal content. Private photos are a Premium feature.'
     },
     {
       question: 'How does the virtual phone number work?',

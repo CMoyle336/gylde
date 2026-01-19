@@ -315,6 +315,16 @@
   color: var(--color-accent);
 }
 
+/* Warning variant (for subscription notices) */
+.warning-box.warning {
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.warning-box.warning mat-icon {
+  color: #fbbf24;
+}
+
 .error-message {
   color: var(--color-danger);
   font-size: 0.875rem;

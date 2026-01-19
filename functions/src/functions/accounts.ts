@@ -8,39 +8,52 @@ import {FieldValue} from "firebase-admin/firestore";
 import {getAuth} from "firebase-admin/auth";
 import {db, bucket} from "../config/firebase";
 import * as logger from "firebase-functions/logger";
+import {cancelUserSubscription} from "./subscriptions";
 
 /**
  * Disable a user's account
  * - Updates Firestore user document with disabled flag
  * - Hides profile from discovery
+ * - Cancels subscription at period end (user can re-enable within billing period)
  * - User will be signed out on the client side
  */
-export const disableAccount = onCall(async (request) => {
-  // Verify user is authenticated
-  if (!request.auth) {
-    throw new HttpsError("unauthenticated", "Must be authenticated to disable account");
+export const disableAccount = onCall(
+  {
+    secrets: ["STRIPE_SECRET_KEY"],
+  },
+  async (request) => {
+    // Verify user is authenticated
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "Must be authenticated to disable account");
+    }
+
+    const userId = request.auth.uid;
+    logger.info(`Disabling account for user ${userId}`);
+
+    try {
+      // Cancel subscription at period end (they can re-enable within billing period)
+      const subscriptionCanceled = await cancelUserSubscription(userId, false);
+      if (subscriptionCanceled) {
+        logger.info(`[${userId}] Subscription scheduled for cancellation at period end`);
+      }
+
+      // Update Firestore user document
+      const userRef = db.collection("users").doc(userId);
+      await userRef.update({
+        "settings.account.disabled": true,
+        "settings.account.disabledAt": FieldValue.serverTimestamp(),
+        "settings.privacy.profileVisible": false, // Hide from discovery
+        "isSearchable": false, // Remove from search results
+      });
+      logger.info(`Disabled account for user ${userId}`);
+
+      return {success: true, subscriptionCanceled};
+    } catch (error) {
+      logger.error("Error disabling account:", error);
+      throw new HttpsError("internal", "Failed to disable account");
+    }
   }
-
-  const userId = request.auth.uid;
-  logger.info(`Disabling account for user ${userId}`);
-
-  try {
-    // Update Firestore user document
-    const userRef = db.collection("users").doc(userId);
-    await userRef.update({
-      "settings.account.disabled": true,
-      "settings.account.disabledAt": FieldValue.serverTimestamp(),
-      "settings.privacy.profileVisible": false, // Hide from discovery
-      "isSearchable": false, // Remove from search results
-    });
-    logger.info(`Disabled account for user ${userId}`);
-
-    return {success: true};
-  } catch (error) {
-    logger.error("Error disabling account:", error);
-    throw new HttpsError("internal", "Failed to disable account");
-  }
-});
+);
 
 /**
  * Enable a user's account
@@ -130,6 +143,7 @@ export const deleteAccount = onCall(
   {
     timeoutSeconds: 300, // 5 minutes - this can take a while
     memory: "512MiB",
+    secrets: ["STRIPE_SECRET_KEY"],
   },
   async (request) => {
     // Verify user is authenticated
@@ -141,6 +155,12 @@ export const deleteAccount = onCall(
     logger.info(`Starting account deletion for user ${userId}`);
 
     try {
+      // 0. Cancel any active subscription immediately
+      const subscriptionCanceled = await cancelUserSubscription(userId, true);
+      if (subscriptionCanceled) {
+        logger.info(`[${userId}] Subscription canceled immediately`);
+      }
+
       const userRef = db.collection("users").doc(userId);
 
       // 1. Delete user's subcollections
@@ -153,12 +173,16 @@ export const deleteAccount = onCall(
         "photoAccessGrants",
         "photoAccessRequests",
         "photoAccessReceived",
+        "payments",
       ];
       await deleteSubcollections(userRef, userSubcollections);
 
       // Delete private subcollection and its nested subcollections
       const privateDocRef = userRef.collection("private").doc("data");
       await privateDocRef.delete().catch(() => {}); // May not exist
+
+      const emailLogDocRef = userRef.collection("private").doc("emailLog");
+      await emailLogDocRef.delete().catch(() => {}); // May not exist
 
       const virtualPhoneDocRef = userRef.collection("private").doc("virtualPhone");
       await deleteSubcollections(virtualPhoneDocRef, ["callLogs", "messageLogs"]);

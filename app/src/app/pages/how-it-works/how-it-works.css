@@ -463,6 +463,61 @@
   font-size: 0.875rem;
 }
 
+/* Reputation Tiers Visual */
+.reputation-tiers {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 180px;
+}
+
+.tier-badge-item {
+  display: flex;
+  justify-content: center;
+}
+
+.tier-label {
+  display: inline-block;
+  padding: 0.5rem 1.25rem;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-align: center;
+  min-width: 140px;
+}
+
+.tier-label.new {
+  background: rgba(156, 163, 175, 0.2);
+  color: #9ca3af;
+  border: 1px solid rgba(156, 163, 175, 0.3);
+}
+
+.tier-label.active {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.tier-label.established {
+  background: rgba(139, 92, 246, 0.15);
+  color: #a78bfa;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+.tier-label.trusted {
+  background: rgba(201, 169, 98, 0.15);
+  color: var(--color-accent);
+  border: 1px solid rgba(201, 169, 98, 0.3);
+}
+
+.tier-label.distinguished {
+  background: linear-gradient(135deg, rgba(201, 169, 98, 0.2), rgba(245, 158, 11, 0.2));
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
 /* FAQ Section */
 .faq-section {
   padding: 6rem 0;
