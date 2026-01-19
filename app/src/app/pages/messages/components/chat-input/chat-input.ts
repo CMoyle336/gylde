@@ -5,6 +5,8 @@ import {
   EventEmitter,
   inject,
   Input,
+  OnDestroy,
+  OnInit,
   Output,
   PLATFORM_ID,
   signal,
@@ -36,8 +38,10 @@ export interface SendMessageEvent {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule],
 })
-export class ChatInputComponent {
+export class ChatInputComponent implements OnInit, OnDestroy {
   private readonly platformId = inject(PLATFORM_ID);
+  private viewportResizeHandler: (() => void) | null = null;
+  private lastViewportHeight = 0;
 
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
   @ViewChild('messageInputEl') messageInputEl!: ElementRef<HTMLInputElement>;
@@ -130,16 +134,72 @@ export class ChatInputComponent {
     this.draftChanged.emit(this.messageInput());
   }
 
+  ngOnInit(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+
+    // Use visualViewport API on mobile to detect keyboard open/close
+    if (this.isMobile() && window.visualViewport) {
+      this.lastViewportHeight = window.visualViewport.height;
+      
+      this.viewportResizeHandler = () => {
+        const viewport = window.visualViewport;
+        if (!viewport) return;
+
+        const currentHeight = viewport.height;
+        const heightDiff = this.lastViewportHeight - currentHeight;
+        
+        // Keyboard opened (viewport got smaller by more than 100px)
+        if (heightDiff > 100) {
+          this.scrollInputIntoView();
+        }
+        
+        this.lastViewportHeight = currentHeight;
+      };
+
+      window.visualViewport.addEventListener('resize', this.viewportResizeHandler);
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (this.viewportResizeHandler && window.visualViewport) {
+      window.visualViewport.removeEventListener('resize', this.viewportResizeHandler);
+    }
+  }
+
+  /**
+   * Scroll the input into view - used when keyboard opens
+   */
+  private scrollInputIntoView(): void {
+    // Small delay to let the keyboard finish animating
+    setTimeout(() => {
+      this.messageInputEl?.nativeElement?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'end',
+      });
+    }, 100);
+  }
+
   /**
    * Handle input focus - scroll into view on mobile to ensure visibility above keyboard
    */
   protected onFocus(): void {
+    if (!this.isMobile()) return;
+    
     // Small delay to let the keyboard animate in
     setTimeout(() => {
-      this.messageInputEl?.nativeElement?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center',
-      });
+      this.scrollInputIntoView();
+    }, 300);
+  }
+
+  /**
+   * Handle click on input - needed for when input already has focus but keyboard was dismissed
+   */
+  protected onClick(): void {
+    if (!this.isMobile()) return;
+    
+    // Scroll into view when clicked (covers case where input has focus but keyboard was dismissed)
+    setTimeout(() => {
+      this.scrollInputIntoView();
     }, 300);
   }
 

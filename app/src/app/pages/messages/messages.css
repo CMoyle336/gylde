@@ -316,6 +316,10 @@
     /* Use dynamic viewport height to handle mobile keyboard */
     height: 100dvh;
     max-height: 100dvh;
+    /* Position relative so children can be absolute */
+    position: relative;
+    /* Prevent iOS overscroll */
+    overscroll-behavior: none;
   }
 
   .chat-area {
@@ -325,16 +329,18 @@
   .chat-area.visible-on-mobile {
     display: flex;
     flex-direction: column;
-    /* Use dvh to properly resize when keyboard opens */
-    height: 100dvh;
-    max-height: 100dvh;
-    position: fixed;
+    /* Use 100% of parent instead of fixed to work with visual viewport */
+    height: 100%;
+    max-height: 100%;
+    position: absolute;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
     z-index: 10;
     background: var(--color-bg-primary);
+    /* Prevent overscroll/bounce which can cause issues with keyboard */
+    overscroll-behavior: none;
   }
 
   .messages-scroll {
@@ -344,6 +350,8 @@
     min-height: 0;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+    /* Keep scroll anchored to bottom when content changes */
+    overflow-anchor: none;
   }
 
   .messages-scroll.empty-state {

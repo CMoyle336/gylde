@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -30,6 +31,7 @@ const VALID_TABS: MatchTab[] = ['my-matches', 'favorited-me', 'viewed-me', 'my-f
   ],
 })
 export class MatchesComponent implements OnInit {
+  private readonly platformId = inject(PLATFORM_ID);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly matchesService = inject(MatchesService);
@@ -90,6 +92,10 @@ export class MatchesComponent implements OnInit {
   }
 
   private updateUrlWithTab(tab: MatchTab): void {
+    // Only update URL on the client to avoid SSR redirect loops
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: { tab },

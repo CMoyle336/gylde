@@ -77,7 +77,8 @@
         [value]="messageInput()"
         (input)="messageInput.set($any($event.target).value); onInput()"
         (keydown)="onKeyDown($event)"
-        (focus)="onFocus()">
+        (focus)="onFocus()"
+        (click)="onClick()">
       <button 
         type="button"
         class="send-btn"
