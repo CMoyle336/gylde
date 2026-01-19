@@ -194,4 +194,15 @@ export const routes: Routes = [
     redirectTo: 'discover',
     pathMatch: 'full',
   },
+  // 404 - catch all unmatched routes
+  {
+    path: '**',
+    loadComponent: () => import('./pages/not-found/not-found').then((m) => m.NotFoundComponent),
+    data: {
+      seo: {
+        title: 'Page Not Found',
+        noIndex: true,
+      },
+    },
+  },
 ];
