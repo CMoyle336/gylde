@@ -581,21 +581,25 @@ export const getReputationStatus = onCall<void>(
       if (!reputation) {
         // User hasn't been calculated yet - do it now
         const newReputation = await recalculateReputation(userId);
+        const isUnlimited = newReputation.dailyMessageLimit === -1;
         return {
           tier: newReputation.tier,
           dailyMessageLimit: newReputation.dailyMessageLimit,
           messagesSentToday: newReputation.messagesSentToday,
-          messagesRemaining: newReputation.dailyMessageLimit - newReputation.messagesSentToday,
+          messagesRemaining: isUnlimited ? -1 : newReputation.dailyMessageLimit - newReputation.messagesSentToday,
           canMessageMinTier: newReputation.canMessageMinTier,
+          isUnlimited,
         };
       }
 
+      const isUnlimited = reputation.dailyMessageLimit === -1;
       return {
         tier: reputation.tier,
         dailyMessageLimit: reputation.dailyMessageLimit,
         messagesSentToday: reputation.messagesSentToday,
-        messagesRemaining: reputation.dailyMessageLimit - reputation.messagesSentToday,
+        messagesRemaining: isUnlimited ? -1 : reputation.dailyMessageLimit - reputation.messagesSentToday,
         canMessageMinTier: reputation.canMessageMinTier,
+        isUnlimited,
       };
     } catch (error) {
       logger.error("Error getting reputation status:", error);

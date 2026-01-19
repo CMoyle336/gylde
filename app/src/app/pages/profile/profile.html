@@ -41,7 +41,7 @@
             </div>
             <p class="reputation-description">
               Your reputation reflects your behavior on the platform. 
-              Higher tiers unlock more messaging capacity and reach.
+              Higher tiers unlock more messaging capacity, photos, and reach.
             </p>
             <div class="messaging-status">
               <span class="status-item">
@@ -51,6 +51,11 @@
                 } @else {
                   <strong>{{ messagingStatus().remaining }}/{{ messagingStatus().dailyLimit }}</strong> daily messages
                 }
+              </span>
+              <span class="status-separator">•</span>
+              <span class="status-item">
+                <mat-icon class="status-icon">photo_library</mat-icon>
+                <strong>{{ maxPhotos() }}</strong> photos max
               </span>
               <span class="status-separator">•</span>
               <span class="status-item">

@@ -66,7 +66,7 @@ h2[mat-dialog-title] mat-icon {
 
 .tiers-header {
   display: grid;
-  grid-template-columns: 100px 1fr 1fr 1fr;
+  grid-template-columns: 120px 1fr 1fr 1fr;
   gap: 0.5rem;
   padding: 0.5rem 0.75rem;
   font-size: 0.75rem;
@@ -79,7 +79,7 @@ h2[mat-dialog-title] mat-icon {
 
 .tier-row {
   display: grid;
-  grid-template-columns: 100px 1fr 1fr 1fr;
+  grid-template-columns: 120px 1fr 1fr 1fr;
   gap: 0.5rem;
   padding: 0.5rem 0.75rem;
   align-items: center;
@@ -133,12 +133,13 @@ h2[mat-dialog-title] mat-icon {
 .tier-badge {
   padding: 0.25rem 0.625rem;
   border-radius: 4px;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
-  min-width: 80px;
+  letter-spacing: 0.02em;
+  min-width: 100px;
   text-align: center;
+  white-space: nowrap;
 }
 
 .tier-badge.new {

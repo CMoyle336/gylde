@@ -130,13 +130,13 @@ export const TIER_CONFIG: Record<ReputationTier, TierConfig> = {
   },
   trusted: {
     minTier: 'trusted',
-    dailyMessages: 50,
+    dailyMessages: 100,
     canMessageTiers: 'all',
     maxPhotos: 12,
   },
   distinguished: {
     minTier: 'distinguished',
-    dailyMessages: 100,
+    dailyMessages: -1, // Unlimited
     canMessageTiers: 'all',
     maxPhotos: 15,
   },

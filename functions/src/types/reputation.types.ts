@@ -232,13 +232,13 @@ export const REPUTATION_CONFIG = {
     },
     trusted: {
       minScore: 600,
-      dailyMessages: 50,
+      dailyMessages: 100,
       canMessage: "all" as const,
       maxPhotos: 12,
     },
     distinguished: {
       minScore: 800,
-      dailyMessages: 100,
+      dailyMessages: -1, // Unlimited
       canMessage: "all" as const,
       maxPhotos: 15,
     },

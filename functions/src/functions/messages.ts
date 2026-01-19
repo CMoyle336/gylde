@@ -487,6 +487,7 @@ export const checkMessagePermission = onCall<{
       // Non-premium users: apply reputation-based restrictions
       const tierConfig = getTierConfig(senderTier);
       const dailyLimit = tierConfig.dailyMessages;
+      const isUnlimited = dailyLimit === -1;
 
       // Get today's date for checking daily counter
       const today = new Date().toISOString().split("T")[0];
@@ -495,10 +496,10 @@ export const checkMessagePermission = onCall<{
         (senderReputation?.messagesSentToday ?? 0) :
         0;
 
-      const remaining = Math.max(0, dailyLimit - sentToday);
+      const remaining = isUnlimited ? -1 : Math.max(0, dailyLimit - sentToday);
 
-      // Check 1: Daily message limit
-      if (sentToday >= dailyLimit) {
+      // Check 1: Daily message limit (skip if unlimited)
+      if (!isUnlimited && sentToday >= dailyLimit) {
         return {
           allowed: false,
           reason: "daily_limit_reached",
@@ -614,6 +615,7 @@ export const getMessagingStatus = onCall<void>(
 
       // Non-premium users: apply reputation-based limits
       const tierConfig = getTierConfig(tier);
+      const isUnlimited = tierConfig.dailyMessages === -1;
 
       const today = new Date().toISOString().split("T")[0];
       const lastMessageDate = reputation?.lastMessageDate ?? "";
@@ -625,11 +627,12 @@ export const getMessagingStatus = onCall<void>(
         tier,
         dailyLimit: tierConfig.dailyMessages,
         sentToday,
-        remaining: Math.max(0, tierConfig.dailyMessages - sentToday),
+        remaining: isUnlimited ? -1 : Math.max(0, tierConfig.dailyMessages - sentToday),
         canMessageTiers: tierConfig.canMessage === "all" ?
           ["new", "active", "established", "trusted", "distinguished"] :
           tierConfig.canMessage,
         isPremium: false,
+        isUnlimited,
       };
     } catch (error) {
       logger.error("Error getting messaging status:", error);

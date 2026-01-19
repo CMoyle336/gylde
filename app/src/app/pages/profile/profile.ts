@@ -150,7 +150,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     return this.reputationData()?.tier ?? 'new';
   });
 
-  // Messaging limits from reputation (premium users have unlimited)
+  // Messaging limits from reputation (premium users and distinguished tier have unlimited)
   protected readonly messagingStatus = computed(() => {
     // Premium users have unlimited messaging
     if (this.isPremium()) {
@@ -167,11 +167,15 @@ export class ProfileComponent implements OnInit, OnDestroy {
     const config = TIER_CONFIG[tier];
     const dailyLimit = rep?.dailyMessageLimit ?? config.dailyMessages;
     const sentToday = rep?.messagesSentToday ?? 0;
+    
+    // Check if tier has unlimited messaging (dailyLimit === -1)
+    const isUnlimited = dailyLimit === -1;
+    
     return {
       dailyLimit,
       sentToday,
-      remaining: Math.max(0, dailyLimit - sentToday),
-      isUnlimited: false,
+      remaining: isUnlimited ? -1 : Math.max(0, dailyLimit - sentToday),
+      isUnlimited,
     };
   });
 
@@ -244,7 +248,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
    */
   protected openReputationInfo(): void {
     this.dialog.open(ReputationInfoDialogComponent, {
-      width: '500px',
+      width: '600px',
       maxWidth: '95vw',
       maxHeight: '90vh',
     });
