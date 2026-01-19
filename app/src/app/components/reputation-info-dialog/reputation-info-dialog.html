@@ -1,0 +1,103 @@
+<h2 mat-dialog-title>
+  <mat-icon>info</mat-icon>
+  How Reputation Works
+</h2>
+
+<div mat-dialog-content>
+  <section class="info-section">
+    <h3>What is Reputation?</h3>
+    <p>
+      Your reputation score reflects how you interact with others on Gylde. 
+      It determines your daily messaging limits and who you can connect with.
+      As your reputation grows, you'll unlock more features and reach.
+    </p>
+  </section>
+
+  <section class="info-section">
+    <h3>Reputation Tiers</h3>
+    <div class="tiers-list">
+      <div class="tier-item">
+        <span class="tier-badge new">New</span>
+        <span class="tier-desc">Just getting started. Limited daily messages.</span>
+      </div>
+      <div class="tier-item">
+        <span class="tier-badge active">Active</span>
+        <span class="tier-desc">Engaged member. Increased messaging capacity.</span>
+      </div>
+      <div class="tier-item">
+        <span class="tier-badge established">Established</span>
+        <span class="tier-desc">Trusted presence. Can message anyone.</span>
+      </div>
+      <div class="tier-item">
+        <span class="tier-badge trusted">Trusted</span>
+        <span class="tier-desc">Highly trusted. Generous messaging limits.</span>
+      </div>
+      <div class="tier-item">
+        <span class="tier-badge distinguished">Distinguished</span>
+        <span class="tier-desc">Exemplary member. Maximum privileges.</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="info-section">
+    <h3>What Helps Your Reputation</h3>
+    <ul class="positive-list">
+      <li>
+        <mat-icon>check_circle</mat-icon>
+        <span>Completing your profile with photos and details</span>
+      </li>
+      <li>
+        <mat-icon>check_circle</mat-icon>
+        <span>Verifying your identity and email</span>
+      </li>
+      <li>
+        <mat-icon>check_circle</mat-icon>
+        <span>Having meaningful conversations</span>
+      </li>
+      <li>
+        <mat-icon>check_circle</mat-icon>
+        <span>Being an active, consistent member</span>
+      </li>
+      <li>
+        <mat-icon>check_circle</mat-icon>
+        <span>Receiving favorites and matches</span>
+      </li>
+    </ul>
+  </section>
+
+  <section class="info-section">
+    <h3>What Hurts Your Reputation</h3>
+    <ul class="negative-list">
+      <li>
+        <mat-icon>cancel</mat-icon>
+        <span>Being blocked by other members</span>
+      </li>
+      <li>
+        <mat-icon>cancel</mat-icon>
+        <span>Receiving reports from other users</span>
+      </li>
+      <li>
+        <mat-icon>cancel</mat-icon>
+        <span>Having an incomplete profile</span>
+      </li>
+      <li>
+        <mat-icon>cancel</mat-icon>
+        <span>Sending many messages without responses</span>
+      </li>
+    </ul>
+  </section>
+
+  <section class="info-section tip-section">
+    <mat-icon class="tip-icon">lightbulb</mat-icon>
+    <p>
+      <strong>Tip:</strong> Focus on quality connections over quantity. 
+      Authentic engagement is the best way to build your reputation naturally.
+    </p>
+  </section>
+</div>
+
+<div mat-dialog-actions align="end">
+  <button mat-flat-button color="primary" (click)="close()">
+    Got It
+  </button>
+</div>

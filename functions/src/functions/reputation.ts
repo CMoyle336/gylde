@@ -41,44 +41,50 @@ import {
 export function calculateScore(signals: ReputationSignals): number {
   const weights = REPUTATION_CONFIG.weights;
 
+  // Helper to safely get a number (defaults to 0 if NaN/undefined)
+  const safe = (val: number, fallback = 0): number =>
+    (isNaN(val) || val === undefined || val === null) ? fallback : val;
+
   let score = 0;
 
   // === POSITIVE SIGNALS ===
 
   // Profile completion (0-100 → 0-1)
-  score += (signals.profileCompletion / 100) * weights.profileCompletion * 1000;
+  score += (safe(signals.profileCompletion) / 100) * weights.profileCompletion * 1000;
 
   // Identity verified (binary)
   score += (signals.identityVerified ? 1 : 0) * weights.identityVerified * 1000;
 
   // Account age (0-365 days → 0-1, capped at 1 year)
   const ageRatio = Math.min(
-    signals.accountAgeDays / REPUTATION_CONFIG.accountAge.maxDaysForBonus,
+    safe(signals.accountAgeDays) / REPUTATION_CONFIG.accountAge.maxDaysForBonus,
     1
   );
   score += ageRatio * weights.accountAge * 1000;
 
-  // Response rate (0-1)
-  score += signals.responseRate * weights.responseRate * 1000;
+  // Response rate (0-1) - default to 0.5 (neutral) if NaN
+  score += safe(signals.responseRate, 0.5) * weights.responseRate * 1000;
 
-  // Conversation quality (0-1)
-  score += signals.conversationQuality * weights.conversationQuality * 1000;
+  // Conversation quality (0-1) - default to 0.5 (neutral) if NaN
+  score += safe(signals.conversationQuality, 0.5) * weights.conversationQuality * 1000;
 
   // === NEGATIVE SIGNALS (inverted: 0 = best, 1 = worst) ===
 
   // Block ratio (lower is better)
-  score += (1 - signals.blockRatio) * weights.blockRatio * 1000;
+  score += (1 - safe(signals.blockRatio)) * weights.blockRatio * 1000;
 
   // Report ratio (lower is better)
-  score += (1 - signals.reportRatio) * weights.reportRatio * 1000;
+  score += (1 - safe(signals.reportRatio)) * weights.reportRatio * 1000;
 
   // Ghost rate (lower is better)
-  score += (1 - signals.ghostRate) * weights.ghostRate * 1000;
+  score += (1 - safe(signals.ghostRate)) * weights.ghostRate * 1000;
 
   // Burst score (lower is better)
-  score += (1 - signals.burstScore) * weights.burstScore * 1000;
+  score += (1 - safe(signals.burstScore)) * weights.burstScore * 1000;
 
-  return Math.round(Math.max(0, Math.min(1000, score)));
+  // Final safety check - ensure we never return NaN
+  const finalScore = Math.round(Math.max(0, Math.min(1000, score)));
+  return isNaN(finalScore) ? 500 : finalScore; // Default to 500 (middle) if somehow still NaN
 }
 
 /**
@@ -124,27 +130,29 @@ async function gatherSignals(userId: string): Promise<ReputationSignals> {
   // === Message metrics ===
   const messageMetrics = privateData?.messageMetrics as MessageMetrics | undefined;
   if (messageMetrics) {
-    // Response rate
-    if (messageMetrics.received > 0) {
-      signals.responseRate = Math.min(
-        messageMetrics.replied / messageMetrics.received,
-        1
-      );
+    // Response rate - with null/NaN protection
+    const received = messageMetrics.received ?? 0;
+    const replied = messageMetrics.replied ?? 0;
+    if (received > 0 && !isNaN(replied)) {
+      signals.responseRate = Math.min(replied / received, 1);
     }
 
     // Conversation quality (based on avg message length)
     // Target: 100+ characters = quality 1.0
-    if (messageMetrics.messageCount > 0) {
-      const avgLength = messageMetrics.totalMessageLength / messageMetrics.messageCount;
+    const messageCount = messageMetrics.messageCount ?? 0;
+    const totalMessageLength = messageMetrics.totalMessageLength ?? 0;
+    if (messageCount > 0 && !isNaN(totalMessageLength)) {
+      const avgLength = totalMessageLength / messageCount;
       signals.conversationQuality = Math.min(avgLength / 100, 1);
     }
 
     // Ghost rate
-    if (messageMetrics.conversationsStarted > 0) {
-      const abandoned = messageMetrics.conversationsStarted -
-        messageMetrics.conversationsWithReplies;
+    const conversationsStarted = messageMetrics.conversationsStarted ?? 0;
+    const conversationsWithReplies = messageMetrics.conversationsWithReplies ?? 0;
+    if (conversationsStarted > 0) {
+      const abandoned = conversationsStarted - conversationsWithReplies;
       signals.ghostRate = Math.min(
-        abandoned / messageMetrics.conversationsStarted,
+        Math.max(0, abandoned) / conversationsStarted,
         1
       );
     }

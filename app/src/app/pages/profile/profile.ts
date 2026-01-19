@@ -24,6 +24,7 @@ import { Photo } from '../../core/interfaces/photo.interface';
 import { ALL_CONNECTION_TYPES, getConnectionTypeLabel, SUPPORT_ORIENTATION_OPTIONS, getSupportOrientationLabel } from '../../core/constants/connection-types';
 import { PhotoAccessDialogComponent } from '../../components/photo-access-dialog';
 import { ReputationBadgeComponent } from '../../components/reputation-badge';
+import { ReputationInfoDialogComponent } from '../../components/reputation-info-dialog';
 import { environment } from '../../../environments/environment';
 
 type LocationStatus = 'idle' | 'detecting' | 'success' | 'error';
@@ -200,6 +201,54 @@ export class ProfileComponent implements OnInit, OnDestroy {
   protected readonly isPremium = computed(() => this.subscriptionService.isPremium());
   protected readonly polishingField = signal<string | null>(null);
   protected readonly polishSuggestions = signal<{ field: string; polished: string; alternatives: string[] } | null>(null);
+
+  // Who can this user message (based on tier)
+  protected readonly canMessageInfo = computed(() => {
+    if (this.isPremium()) {
+      return {
+        canMessageAll: true,
+        tiers: [] as string[],
+        description: 'You can message anyone',
+      };
+    }
+
+    const tier = this.reputationTier();
+    const config = TIER_CONFIG[tier];
+    
+    if (config.canMessageTiers === 'all') {
+      return {
+        canMessageAll: true,
+        tiers: [] as string[],
+        description: 'You can message anyone',
+      };
+    }
+
+    const tierLabels: Record<string, string> = {
+      new: 'New',
+      active: 'Active',
+      established: 'Established',
+      trusted: 'Trusted',
+      distinguished: 'Distinguished',
+    };
+
+    const tierNames = config.canMessageTiers.map(t => tierLabels[t] || t);
+    return {
+      canMessageAll: false,
+      tiers: config.canMessageTiers,
+      description: `You can message ${tierNames.join(', ')} members`,
+    };
+  });
+
+  /**
+   * Open the reputation info dialog
+   */
+  protected openReputationInfo(): void {
+    this.dialog.open(ReputationInfoDialogComponent, {
+      width: '500px',
+      maxWidth: '95vw',
+      maxHeight: '90vh',
+    });
+  }
 
   // Check if user has any private photos
   protected readonly hasPrivatePhotos = computed(() => {

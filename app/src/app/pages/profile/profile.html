@@ -29,22 +29,38 @@
         <div class="reputation-content">
           <app-reputation-badge [tier]="reputationTier()" mode="full" size="large" />
           <div class="reputation-details">
-            <h2>Your Reputation Status</h2>
+            <div class="reputation-header">
+              <h2>Your Reputation Status</h2>
+              <button 
+                mat-icon-button 
+                class="info-btn" 
+                (click)="openReputationInfo()"
+                matTooltip="Learn how reputation works">
+                <mat-icon>info_outline</mat-icon>
+              </button>
+            </div>
             <p class="reputation-description">
               Your reputation reflects your behavior on the platform. 
-              Higher tiers unlock more messaging capacity and visibility.
+              Higher tiers unlock more messaging capacity and reach.
             </p>
             <div class="messaging-status">
-              <div class="status-item">
-                <span class="status-label">Daily Messages</span>
-                <span class="status-value">
-                  @if (messagingStatus().isUnlimited) {
-                    Unlimited
-                  } @else {
-                    {{ messagingStatus().remaining }} / {{ messagingStatus().dailyLimit }} remaining
-                  }
-                </span>
-              </div>
+              <span class="status-item">
+                <mat-icon class="status-icon">message</mat-icon>
+                @if (messagingStatus().isUnlimited) {
+                  <strong>Unlimited</strong> messages
+                } @else {
+                  <strong>{{ messagingStatus().remaining }}/{{ messagingStatus().dailyLimit }}</strong> daily messages
+                }
+              </span>
+              <span class="status-separator">•</span>
+              <span class="status-item">
+                <mat-icon class="status-icon">{{ canMessageInfo().canMessageAll ? 'public' : 'group' }}</mat-icon>
+                @if (canMessageInfo().canMessageAll) {
+                  Message <strong>anyone</strong>
+                } @else {
+                  Message <strong>{{ canMessageInfo().tiers.join(', ') }}</strong> members
+                }
+              </span>
             </div>
             <!-- Dev-only refresh button -->
             @if (isDev) {

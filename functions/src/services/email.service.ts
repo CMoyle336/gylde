@@ -242,7 +242,7 @@ export async function sendEmailNotification(
     // Generate email template with proper links
     const template = generateEmailTemplate(type, fromUserName, recipientName, fromUserId, conversationId);
 
-    // Send email
+    // Build email message
     const msg = {
       to: prefs.email,
       from: {
@@ -253,6 +253,14 @@ export async function sendEmailNotification(
       text: template.text,
       html: template.html,
     };
+
+    // Skip actual email sending in development/emulator mode
+    if (process.env.FUNCTIONS_EMULATOR === "true") {
+      logger.info(
+        `[DEV MODE] Would send ${type} email to ${prefs.email}: "${template.subject}"`
+      );
+      return true;
+    }
 
     await sgMail.send(msg);
     logger.info(`${type} email sent to ${recipientUserId} at email ${prefs.email}`);

@@ -420,3 +420,7 @@ mat-progress-spinner svg,
 .chat-filter-panel .option-badge.muted {
   background: var(--color-text-muted);
 }
+/* making firebase emulator warning less intrusive */
+.firebase-emulator-warning {
+  display: none !important;
+}
