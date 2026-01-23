@@ -27,42 +27,73 @@
 
   <!-- Primary Filters Row -->
   <div class="primary-filters-row">
-    <!-- Distance -->
-    <div class="filter-group compact">
-      <label class="filter-label">Distance</label>
-      <mat-form-field appearance="outline" class="full-width">
-        <mat-select [value]="filters().maxDistance" (selectionChange)="updateFilter('maxDistance', $event.value)">
-          @for (option of distanceOptions(); track option.value) {
-            <mat-option [value]="option.value">{{ option.label }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
+    <!-- Quick Filter Toggles -->
+    <div class="quick-filters-section">
+      <div class="filter-header">
+        <mat-icon class="filter-header-icon">filter_alt</mat-icon>
+        <label class="filter-label">Quick Filters</label>
+      </div>
+      <div class="quick-filters-grid">
+        <button
+          type="button"
+          class="quick-filter-card"
+          [class.active]="filters().verifiedOnly"
+          (click)="updateFilter('verifiedOnly', !filters().verifiedOnly)">
+          <div class="quick-filter-icon-wrapper verified">
+            <mat-icon>verified</mat-icon>
+          </div>
+          <span class="quick-filter-label">Verified Only</span>
+          <div class="quick-filter-indicator">
+            <div class="indicator-dot"></div>
+          </div>
+        </button>
+
+        <button
+          type="button"
+          class="quick-filter-card"
+          [class.active]="filters().onlineNow"
+          (click)="updateFilter('onlineNow', !filters().onlineNow)">
+          <div class="quick-filter-icon-wrapper online">
+            <mat-icon>circle</mat-icon>
+          </div>
+          <span class="quick-filter-label">Online Now</span>
+          <div class="quick-filter-indicator">
+            <div class="indicator-dot"></div>
+          </div>
+        </button>
+
+        <button
+          type="button"
+          class="quick-filter-card"
+          [class.active]="filters().activeRecently"
+          (click)="updateFilter('activeRecently', !filters().activeRecently)">
+          <div class="quick-filter-icon-wrapper recent">
+            <mat-icon>schedule</mat-icon>
+          </div>
+          <span class="quick-filter-label">Active in 24h</span>
+          <div class="quick-filter-indicator">
+            <div class="indicator-dot"></div>
+          </div>
+        </button>
+      </div>
     </div>
 
-    <!-- Toggles -->
-    <div class="toggles-row">
-      <div class="toggle-item compact">
-        <mat-slide-toggle
-          [checked]="filters().verifiedOnly"
-          (change)="updateFilter('verifiedOnly', $event.checked)">
-          Verified only
-        </mat-slide-toggle>
+    <!-- Distance Selector -->
+    <div class="distance-filter-section">
+      <div class="filter-header">
+        <mat-icon class="filter-header-icon">location_on</mat-icon>
+        <label class="filter-label">Distance</label>
       </div>
-
-      <div class="toggle-item compact">
-        <mat-slide-toggle
-          [checked]="filters().onlineNow"
-          (change)="updateFilter('onlineNow', $event.checked)">
-          Online now
-        </mat-slide-toggle>
-      </div>
-
-      <div class="toggle-item compact">
-        <mat-slide-toggle
-          [checked]="filters().activeRecently"
-          (change)="updateFilter('activeRecently', $event.checked)">
-          Active in 24h
-        </mat-slide-toggle>
+      <div class="distance-selector">
+        @for (option of distanceOptions(); track option.value) {
+          <button
+            type="button"
+            class="distance-option"
+            [class.selected]="filters().maxDistance === option.value"
+            (click)="updateFilter('maxDistance', option.value)">
+            <span class="distance-value">{{ option.label }}</span>
+          </button>
+        }
       </div>
     </div>
   </div>
