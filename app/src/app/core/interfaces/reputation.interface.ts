@@ -109,7 +109,6 @@ export interface TierConfig {
   minTier: ReputationTier;
   /** Max new conversations per day with HIGHER-tier users. -1 = unlimited */
   dailyHigherTierConversations: number;
-  maxPhotos: number;
 }
 
 /**
@@ -119,34 +118,24 @@ export const TIER_CONFIG: Record<ReputationTier, TierConfig> = {
   new: {
     minTier: 'new',
     dailyHigherTierConversations: 1,
-    maxPhotos: 3,
   },
   active: {
     minTier: 'active',
     dailyHigherTierConversations: 3,
-    maxPhotos: 5,
   },
   established: {
     minTier: 'established',
     dailyHigherTierConversations: 5,
-    maxPhotos: 8,
   },
   trusted: {
     minTier: 'trusted',
     dailyHigherTierConversations: 10,
-    maxPhotos: 12,
   },
   distinguished: {
     minTier: 'distinguished',
     dailyHigherTierConversations: -1, // Unlimited
-    maxPhotos: 15,
   },
 };
-
-/**
- * Premium subscribers get more photos regardless of reputation
- */
-export const PREMIUM_MAX_PHOTOS = 20;
 
 /**
  * Report reasons for the report user dialog
