@@ -6,8 +6,5 @@ runConfig:
   minInstances: 0
   maxInstances: 100
 
-env:
-  - variable: BUILD_CONFIG
-    value: preview
-    availability:
-      - BUILD
+scripts:
+  buildCommand: npm run build -- --configuration=preview
