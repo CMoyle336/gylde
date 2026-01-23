@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 
 import { UserProfileService } from '../../core/services/user-profile.service';
+import { AnalyticsService } from '../../core/services/analytics.service';
 import { OnboardingProfile, Photo } from '../../core/interfaces';
 import { OnboardingService } from './onboarding.service';
 import { Step1EligibilityComponent } from './steps/step-1-eligibility';
@@ -30,13 +31,29 @@ import { Step6PhotosComponent } from './steps/step-6-photos';
 export class OnboardingComponent {
   private readonly router = inject(Router);
   private readonly userProfileService = inject(UserProfileService);
+  private readonly analytics = inject(AnalyticsService);
   protected readonly onboarding = inject(OnboardingService);
 
   protected readonly saving = signal(false);
   protected readonly saveError = signal<string | null>(null);
 
+  private readonly stepNames = [
+    'eligibility',
+    'identity',
+    'intent',
+    'support',
+    'prompts',
+    'photos',
+  ];
+
   protected onNext(): void {
-    if (this.onboarding.currentStep() === this.onboarding.totalSteps) {
+    const currentStep = this.onboarding.currentStep();
+    const stepName = this.stepNames[currentStep - 1] || `step_${currentStep}`;
+    
+    // Track step completion
+    this.analytics.trackOnboardingStep(currentStep, stepName);
+    
+    if (currentStep === this.onboarding.totalSteps) {
       this.completeOnboarding();
     } else {
       this.onboarding.nextStep();
@@ -45,6 +62,7 @@ export class OnboardingComponent {
 
   protected onBack(): void {
     if (this.onboarding.currentStep() === 1) {
+      this.analytics.trackOnboardingAbandoned(1);
       this.router.navigate(['/']);
     } else {
       this.onboarding.previousStep();
@@ -99,6 +117,9 @@ export class OnboardingComponent {
       console.log('Saving onboarding data:', onboardingProfile);
       await this.userProfileService.saveOnboardingData(onboardingProfile);
       console.log('Onboarding data saved successfully');
+      
+      // Track onboarding completed
+      this.analytics.trackOnboardingCompleted();
       
       // Reset onboarding state and navigate to discover
       this.onboarding.reset();

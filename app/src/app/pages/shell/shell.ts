@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal, OnInit, OnDestroy, computed, PLATFORM_ID, HostListener } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet, NavigationEnd } from '@angular/router';
+import { filter } from 'rxjs/operators';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { SlicePipe } from '@angular/common';
 import { MatSidenavModule } from '@angular/material/sidenav';
@@ -15,6 +16,7 @@ import { MatchesService } from '../../core/services/matches.service';
 import { BlockService } from '../../core/services/block.service';
 import { SubscriptionService } from '../../core/services/subscription.service';
 import { RemoteConfigService } from '../../core/services/remote-config.service';
+import { AnalyticsService } from '../../core/services/analytics.service';
 import { ActivityDisplay, TRUST_TASK_UI } from '../../core/interfaces';
 import { PhotoAccessDialogComponent } from '../../components/photo-access-dialog';
 import { FounderIssueDialogComponent } from '../../components/founder-issue-dialog';
@@ -48,6 +50,7 @@ export class ShellComponent implements OnInit, OnDestroy {
   private readonly translateService = inject(TranslateService);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly dialog = inject(MatDialog);
+  private readonly analytics = inject(AnalyticsService);
 
   // Message state
   protected readonly messageUnreadCount = this.messageService.totalUnreadCount;
@@ -141,6 +144,48 @@ export class ShellComponent implements OnInit, OnDestroy {
     
     // Initialize subscription service (loads trust score + subscription from private subcollection)
     this.subscriptionService.initialize();
+    
+    // Set up analytics user identification
+    this.setupAnalytics();
+    
+    // Track page views on navigation
+    this.trackNavigationEvents();
+  }
+
+  private setupAnalytics(): void {
+    const user = this.currentUser();
+    if (user) {
+      this.analytics.setUser(user.uid);
+      
+      // Set user properties for segmentation
+      const profile = this.userProfileService.profile();
+      this.analytics.setUserProperties({
+        subscription_tier: this.subscriptionService.isPremium() ? 'premium' : 'free',
+        reputation_tier: this.subscriptionService.reputationData()?.tier || 'new',
+        is_founder: this.isFounder(),
+        profile_complete: !!profile?.onboarding?.photoDetails?.length,
+        has_photos: !!(profile?.onboarding?.photoDetails?.length),
+        photo_count: profile?.onboarding?.photoDetails?.length || 0,
+      });
+    }
+  }
+
+  private trackNavigationEvents(): void {
+    // Track route changes
+    this.router.events
+      .pipe(filter(event => event instanceof NavigationEnd))
+      .subscribe((event) => {
+        const navEnd = event as NavigationEnd;
+        const url = navEnd.urlAfterRedirects;
+        
+        // Extract page name from URL
+        let pageName = url.split('?')[0]; // Remove query params
+        pageName = pageName.split('/').filter(Boolean)[0] || 'home'; // Get first segment
+        
+        this.analytics.trackPageView(pageName, {
+          full_url: url,
+        });
+      });
   }
 
   private async loadUserLanguage(): Promise<void> {
@@ -183,7 +228,10 @@ export class ShellComponent implements OnInit, OnDestroy {
     });
   }
 
-  protected onNavItemClick(): void {
+  protected onNavItemClick(navItem: { id: string; path: string }): void {
+    // Track navigation click
+    this.analytics.trackNavigation(navItem.id, 'sidenav');
+    
     // Close sidenav on mobile when clicking nav item
     if (this.isMobile()) {
       this.sidenavOpen.set(false);
@@ -200,6 +248,9 @@ export class ShellComponent implements OnInit, OnDestroy {
   }
 
   protected async onActivityClick(activity: ActivityDisplay): Promise<void> {
+    // Track activity click
+    this.analytics.trackActivityClicked(activity.type);
+    
     // Mark as read
     if (!activity.read) {
       this.activityService.markAsRead(activity.id);

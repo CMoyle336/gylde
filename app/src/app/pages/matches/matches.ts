@@ -9,6 +9,7 @@ import { MatchesService, MatchTab } from '../../core/services/matches.service';
 import { FavoriteService } from '../../core/services/favorite.service';
 import { MessageService } from '../../core/services/message.service';
 import { SubscriptionService } from '../../core/services/subscription.service';
+import { AnalyticsService } from '../../core/services/analytics.service';
 import { ProfileCardComponent, ProfileCardData } from '../../components/profile-card';
 import { ProfileCardSkeletonComponent } from '../../components/profile-card-skeleton';
 
@@ -40,6 +41,7 @@ export class MatchesComponent implements OnInit {
   private readonly messageService = inject(MessageService);
   private readonly subscriptionService = inject(SubscriptionService);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly analytics = inject(AnalyticsService);
 
   protected readonly isPremium = this.subscriptionService.isPremium;
   protected readonly messagingUserId = signal<string | null>(null); // Track which user is being messaged
@@ -87,6 +89,7 @@ export class MatchesComponent implements OnInit {
       return;
     }
     
+    this.analytics.trackMatchesTabChanged(tab);
     this.matchesService.setTab(tab);
     this.updateUrlWithTab(tab);
   }
@@ -109,6 +112,7 @@ export class MatchesComponent implements OnInit {
   }
 
   protected onViewProfile(profile: ProfileCardData): void {
+    this.analytics.trackProfileView(profile.uid, 'matches');
     this.router.navigate(['/user', profile.uid]);
   }
 
@@ -143,6 +147,8 @@ export class MatchesComponent implements OnInit {
       const conversationId = await this.messageService.startConversation(profile.uid);
 
       if (conversationId) {
+        this.analytics.trackConversationStarted('matches');
+        
         this.messageService.openConversation({
           id: conversationId,
           otherUser: {
@@ -170,6 +176,12 @@ export class MatchesComponent implements OnInit {
   protected async onFavorite(profile: ProfileCardData): Promise<void> {
     const wasUnfavorited = this.isFavorited(profile.uid);
     await this.favoriteService.toggleFavorite(profile.uid);
+    
+    if (wasUnfavorited) {
+      this.analytics.trackFavoriteRemoved('matches');
+    } else {
+      this.analytics.trackFavoriteAdded('matches');
+    }
     
     // If we just unfavorited, remove from view on relevant tabs
     if (wasUnfavorited) {

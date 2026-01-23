@@ -6,6 +6,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Functions, httpsCallable } from '@angular/fire/functions';
 import { SubscriptionCapabilities, PREMIUM_FEATURES } from '../../core/interfaces';
 import { SubscriptionService } from '../../core/services/subscription.service';
+import { AnalyticsService } from '../../core/services/analytics.service';
 
 interface UpgradeDialogData {
   feature?: keyof SubscriptionCapabilities;
@@ -84,6 +85,7 @@ export class UpgradeDialogComponent {
   private readonly dialogRef = inject(MatDialogRef<UpgradeDialogComponent>);
   private readonly functions = inject(Functions);
   private readonly subscriptionService = inject(SubscriptionService);
+  private readonly analytics = inject(AnalyticsService);
   private readonly data = inject<UpgradeDialogData>(MAT_DIALOG_DATA, { optional: true });
 
   protected readonly loading = signal(false);
@@ -100,6 +102,11 @@ export class UpgradeDialogComponent {
       icon: 'star',
     };
 
+  constructor() {
+    // Track dialog opened
+    this.analytics.trackUpgradePromptShown(this.data?.feature || 'general');
+  }
+
   protected close(): void {
     this.dialogRef.close(false);
   }
@@ -107,6 +114,9 @@ export class UpgradeDialogComponent {
   protected async subscribe(): Promise<void> {
     this.loading.set(true);
     this.error.set(null);
+
+    // Track upgrade button clicked
+    this.analytics.trackUpgradeStarted(this.data?.feature || 'upgrade_dialog');
 
     try {
       const createCheckout = httpsCallable<
@@ -122,8 +132,13 @@ export class UpgradeDialogComponent {
         return;
       }
 
-      // Redirect to Stripe Checkout
+      // Redirect to Stripe Checkout - track checkout initiation
       if (result.data.url) {
+        this.analytics.trackCheckoutInitiated({
+          tier: 'premium',
+          priceInCents: this.price().monthly,
+          currency: 'USD',
+        });
         window.location.href = result.data.url;
       }
     } catch (err: unknown) {
