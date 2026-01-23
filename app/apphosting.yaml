@@ -1,4 +1,6 @@
-# Firebase App Hosting configuration - Base/Production
+# Firebase App Hosting configuration - Base/Default (Production)
+# This is used when no environment-specific yaml file matches
+
 runConfig:
   concurrency: 80
   cpu: 1
@@ -7,4 +9,4 @@ runConfig:
   maxInstances: 100
 
 scripts:
-  buildCommand: npm run build -- --configuration=production
+  buildCommand: ng build --configuration=production

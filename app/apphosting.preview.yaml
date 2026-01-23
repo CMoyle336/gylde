@@ -1,4 +1,6 @@
 # Firebase App Hosting configuration - Preview Environment
+# This file is used when the backend's Environment name is set to "preview"
+
 runConfig:
   concurrency: 80
   cpu: 1
@@ -7,4 +9,4 @@ runConfig:
   maxInstances: 100
 
 scripts:
-  buildCommand: npm run build -- --configuration=preview
+  buildCommand: ng build --configuration=preview
