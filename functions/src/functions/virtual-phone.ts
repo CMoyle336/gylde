@@ -57,6 +57,32 @@ async function getVerifiedPhoneNumber(uid: string): Promise<string> {
 }
 
 /**
+ * Extract area code from a US phone number in E.164 format
+ * E.g., +15551234567 -> 555
+ */
+function extractAreaCode(phoneNumber: string): string | undefined {
+  // Remove any non-digit characters except the leading +
+  const cleaned = phoneNumber.replace(/[^\d+]/g, "");
+
+  // US E.164 format: +1XXXXXXXXXX (11 digits with +1)
+  if (cleaned.startsWith("+1") && cleaned.length === 12) {
+    return cleaned.substring(2, 5);
+  }
+
+  // US format without +: 1XXXXXXXXXX (11 digits)
+  if (cleaned.startsWith("1") && cleaned.length === 11) {
+    return cleaned.substring(1, 4);
+  }
+
+  // 10-digit US format: XXXXXXXXXX
+  if (cleaned.length === 10 && !cleaned.startsWith("+")) {
+    return cleaned.substring(0, 3);
+  }
+
+  return undefined;
+}
+
+/**
  * Check if user already has a virtual phone number
  */
 async function getExistingVirtualPhone(uid: string) {
@@ -102,17 +128,29 @@ export const provisionVirtualNumber = onCall(
     try {
       const client = getTwilioClient();
 
-      // Get available phone numbers in the US (can be configured)
-      // Using area code preference from environment or default to any
-      const areaCode = process.env.TWILIO_AREA_CODE || undefined;
+      // Extract area code from user's verified phone number
+      const areaCode = extractAreaCode(forwardingNumber);
+      console.log(`[VirtualPhone] User area code: ${areaCode || "unknown"}`);
 
-      const availableNumbers = await client.availablePhoneNumbers("US")
+      // First, try to find a number in the user's area code
+      let availableNumbers = await client.availablePhoneNumbers("US")
         .local.list({
           areaCode: areaCode ? parseInt(areaCode) : undefined,
           voiceEnabled: true,
           smsEnabled: true,
           limit: 1,
         });
+
+      // If no numbers available in the user's area code, try without area code restriction
+      if (availableNumbers.length === 0 && areaCode) {
+        console.log(`[VirtualPhone] No numbers in area code ${areaCode}, searching without restriction`);
+        availableNumbers = await client.availablePhoneNumbers("US")
+          .local.list({
+            voiceEnabled: true,
+            smsEnabled: true,
+            limit: 1,
+          });
+      }
 
       if (availableNumbers.length === 0) {
         throw new HttpsError(
