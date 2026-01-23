@@ -4,7 +4,7 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build",
+    "build": "ng build --configuration=${BUILD_CONFIG:-production}",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "serve:ssr:gylde": "node dist/gylde/server/server.mjs"

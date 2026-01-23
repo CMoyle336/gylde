@@ -1,4 +1,4 @@
-# Firebase App Hosting configuration - Base/Production
+# Firebase App Hosting configuration - Preview Environment
 runConfig:
   concurrency: 80
   cpu: 1
@@ -8,6 +8,6 @@ runConfig:
 
 env:
   - variable: BUILD_CONFIG
-    value: production
+    value: preview
     availability:
       - BUILD
