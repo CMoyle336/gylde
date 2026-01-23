@@ -118,16 +118,12 @@ export interface FounderRegion {
 
 /**
  * Founder configuration constants
+ * Note: Founders no longer get reputation bonuses - they are calculated
+ * the same as regular users. This config is only for founder slot limits.
  */
 export const FOUNDER_CONFIG = {
   // Maximum number of founders per region/city
   maxFoundersPerCity: 50,
-
-  // Founders start at this tier
-  startingTier: "trusted" as ReputationTier,
-
-  // Founders cannot fall below this tier
-  minimumTier: "active" as ReputationTier,
 } as const;
 
 /**
@@ -211,58 +207,58 @@ export interface TierConfig {
   dailyHigherTierConversations: number;
   /** Which tiers this tier can message (deprecated, now all tiers can message each other) */
   canMessage: ReputationTier[] | "all";
-  maxPhotos: number;
 }
 
 /**
  * Reputation system configuration
+ *
+ * Tier progression is designed so that:
+ * - New users start at "New" tier and progress to "Active" after some activity
+ * - Verification is a major boost but doesn't skip multiple tiers
+ * - Distinguished requires sustained good behavior over time
  */
 export const REPUTATION_CONFIG = {
-  // Tier thresholds and limits
+  // Tier thresholds and limits (lowered for more gradual progression)
   tiers: {
     new: {
       minScore: 0,
       dailyHigherTierConversations: 1,
-      canMessage: "all" as const, // Everyone can message everyone
-      maxPhotos: 3,
+      canMessage: "all" as const,
     },
     active: {
-      minScore: 200,
+      minScore: 150, // Lowered from 200
       dailyHigherTierConversations: 3,
       canMessage: "all" as const,
-      maxPhotos: 5,
     },
     established: {
-      minScore: 400,
+      minScore: 350, // Lowered from 400
       dailyHigherTierConversations: 5,
       canMessage: "all" as const,
-      maxPhotos: 8,
     },
     trusted: {
-      minScore: 600,
+      minScore: 550, // Lowered from 600
       dailyHigherTierConversations: 10,
       canMessage: "all" as const,
-      maxPhotos: 12,
     },
     distinguished: {
-      minScore: 800,
+      minScore: 750, // Lowered from 800
       dailyHigherTierConversations: -1, // Unlimited
       canMessage: "all" as const,
-      maxPhotos: 15,
     },
   } as Record<ReputationTier, TierConfig>,
 
   // Signal weights for score calculation (must sum to 1.0)
+  // Rebalanced to reward effort-based signals more, reduce "free" points from clean slate
   weights: {
-    profileCompletion: 0.10, // 10%
-    identityVerified: 0.20, // 20% - biggest factor
-    accountAge: 0.10, // 10%
-    responseRate: 0.15, // 15%
-    blockRatio: 0.15, // 15% (inverted)
-    reportRatio: 0.10, // 10% (inverted)
-    conversationQuality: 0.10, // 10%
-    ghostRate: 0.05, // 5% (inverted)
-    burstScore: 0.05, // 5% (inverted)
+    profileCompletion: 0.15, // 15% (up from 10%) - rewards profile effort
+    identityVerified: 0.20, // 20% - major trust signal, unchanged
+    accountAge: 0.15, // 15% (up from 10%) - rewards longevity
+    responseRate: 0.15, // 15% - unchanged
+    blockRatio: 0.10, // 10% (down from 15%) - still penalizes bad behavior
+    reportRatio: 0.05, // 5% (down from 10%) - less weight on reports
+    conversationQuality: 0.10, // 10% - unchanged
+    ghostRate: 0.05, // 5% - unchanged
+    burstScore: 0.05, // 5% - unchanged
   },
 
   // Decay and recovery rates
@@ -281,7 +277,7 @@ export const REPUTATION_CONFIG = {
 
   // Account age thresholds
   accountAge: {
-    maxDaysForBonus: 365, // Full bonus at 1 year
+    maxDaysForBonus: 730, // Full bonus at 2 years (up from 1 year)
   },
 } as const;
 
@@ -329,14 +325,16 @@ export function compareTiers(
 
 /**
  * Default signals for new users
+ * Note: responseRate and conversationQuality start at 0, not 0.5
+ * Users must earn these through actual engagement
  */
 export function getDefaultSignals(): ReputationSignals {
   return {
     profileCompletion: 0,
     identityVerified: false,
     accountAgeDays: 0,
-    responseRate: 0.5, // Neutral starting point
-    conversationQuality: 0.5, // Neutral starting point
+    responseRate: 0, // Must earn through engagement (was 0.5)
+    conversationQuality: 0, // Must earn through engagement (was 0.5)
     blockRatio: 0,
     reportRatio: 0,
     ghostRate: 0,

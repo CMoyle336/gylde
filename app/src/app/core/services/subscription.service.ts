@@ -11,7 +11,6 @@ import {
   SUBSCRIPTION_PRICE,
   TrustData,
   ReputationData,
-  TIER_CONFIG,
 } from '../interfaces';
 
 /**
@@ -64,19 +63,16 @@ export class SubscriptionService {
   readonly capabilities = computed<SubscriptionCapabilities>(() => {
     const baseCaps = getSubscriptionCapabilities(this.currentTier());
     
-    // Override maxPhotos based on reputation tier (not subscription tier)
-    // Premium subscribers get max photos from remote config regardless of reputation
+    // Premium subscribers get max photos from remote config
     const isPremium = this.currentTier() === 'premium';
-    const reputationTier = this._reputationData()?.tier ?? 'new';
-    const premiumMaxPhotos = this.remoteConfigService.premiumMaxPhotos();
-    const maxPhotos = isPremium 
-      ? premiumMaxPhotos 
-      : TIER_CONFIG[reputationTier]?.maxPhotos ?? 3;
+    if (isPremium) {
+      return {
+        ...baseCaps,
+        maxPhotos: this.remoteConfigService.premiumMaxPhotos(),
+      };
+    }
     
-    return {
-      ...baseCaps,
-      maxPhotos,
-    };
+    return baseCaps;
   });
 
   readonly isActive = computed(() => {

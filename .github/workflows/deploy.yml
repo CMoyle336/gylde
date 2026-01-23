@@ -1,0 +1,80 @@
+name: Deploy to Firebase
+
+on:
+  push:
+    branches:
+      - master
+      - preview
+
+# Prevent concurrent deployments to the same environment
+concurrency:
+  group: deploy-${{ github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: '24'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: |
+            app/package-lock.json
+            functions/package-lock.json
+
+      # Install Firebase CLI globally
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      # Install dependencies for the Angular app
+      - name: Install app dependencies
+        run: npm ci
+        working-directory: ./app
+
+      # Install dependencies for Cloud Functions
+      - name: Install functions dependencies
+        run: npm ci
+        working-directory: ./functions
+
+      # Build Angular app with appropriate configuration
+      - name: Build Angular app (Preview)
+        if: github.ref_name == 'preview'
+        run: npm run build -- --configuration=preview
+        working-directory: ./app
+
+      - name: Build Angular app (Production)
+        if: github.ref_name == 'master'
+        run: npm run build -- --configuration=production
+        working-directory: ./app
+
+      # Build Cloud Functions (lint + build via predeploy hooks won't run in CI, so we do it explicitly)
+      - name: Lint Cloud Functions
+        run: npm run lint
+        working-directory: ./functions
+
+      - name: Build Cloud Functions
+        run: npm run build
+        working-directory: ./functions
+
+      # Deploy to Firebase Preview environment
+      - name: Deploy to Firebase (Preview)
+        if: github.ref_name == 'preview'
+        run: firebase deploy --project preview --non-interactive
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+
+      # Deploy to Firebase Production environment
+      - name: Deploy to Firebase (Production)
+        if: github.ref_name == 'master'
+        run: firebase deploy --project production --non-interactive
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
