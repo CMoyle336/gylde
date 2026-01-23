@@ -7,6 +7,3 @@ runConfig:
   memoryMiB: 512
   minInstances: 0
   maxInstances: 100
-
-scripts:
-  buildCommand: ng build --configuration=production
