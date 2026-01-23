@@ -1,0 +1,21 @@
+{
+  "name": "gylde-e2e",
+  "version": "1.0.0",
+  "description": "End-to-end tests for Gylde",
+  "private": true,
+  "scripts": {
+    "test": "playwright test",
+    "test:chromium": "playwright test --project=chromium",
+    "test:a11y": "playwright test accessibility.spec.ts --project=chromium",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "test:debug": "playwright test --debug",
+    "report": "playwright show-report",
+    "codegen": "playwright codegen"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.11.0",
+    "@playwright/test": "^1.58.0",
+    "@types/node": "^25.0.10"
+  }
+}

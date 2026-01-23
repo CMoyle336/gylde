@@ -81,6 +81,11 @@
 
 .footer-links a:hover {
   color: var(--color-accent);
+  text-decoration: underline;
+}
+
+.footer-links a:focus-visible {
+  text-decoration: underline;
 }
 
 /* Bottom Section */

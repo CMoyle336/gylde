@@ -116,18 +116,18 @@
   --color-bg-secondary: #ffffff;
   --color-bg-elevated: #ebe8e3;
   --color-bg-hover: #e0dcd5;
-  --color-accent: #a88b3d;
-  --color-accent-light: #c9a962;
-  --color-accent-glow: rgba(168, 139, 61, 0.2);
+  --color-accent: #7a6628;  /* Darkened for WCAG AA contrast (5.2:1 on #f5f3f0) */
+  --color-accent-light: #8a7432;
+  --color-accent-glow: rgba(122, 102, 40, 0.2);
   --color-text-primary: #1a1720;
   --color-text-secondary: #4a4654;
-  --color-text-muted: #7a7682;
+  --color-text-muted: #5c5868;  /* Darkened for better contrast (5.5:1 on white) */
   --color-border: rgba(0, 0, 0, 0.08);
   --color-border-strong: rgba(0, 0, 0, 0.15);
-  --color-error: #d32f2f;
-  --color-success: #388e3c;
-  --color-warning: #f57c00;
-  --color-info: #1976d2;
+  --color-error: #c62828;  /* Slightly darker for contrast */
+  --color-success: #2e7d32;  /* Slightly darker for contrast */
+  --color-warning: #bf360c;  /* Darkened for WCAG AA contrast */
+  --color-info: #1565c0;  /* Slightly darker for contrast */
   
   /* Header background for light mode */
   --header-bg: rgba(255, 255, 255, 0.9);

@@ -92,7 +92,7 @@
 
 .modal-subtitle {
   font-size: 0.9375rem;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);  /* Improved contrast for WCAG AA */
   margin: 0;
 }
 
@@ -128,7 +128,8 @@
 }
 
 .form-group input::placeholder {
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);  /* Improved contrast for readability */
+  opacity: 0.8;
 }
 
 .form-group input:hover:not(:focus) {
@@ -260,7 +261,7 @@
   background: transparent;
   border: none;
   border-radius: 10px;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);  /* Improved contrast for WCAG AA */
   font-family: var(--font-body);
   font-size: 0.875rem;
   font-weight: 500;
