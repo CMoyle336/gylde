@@ -54,4 +54,4 @@ jobs:
 
       # Deploy Firebase resources (functions, firestore rules/indexes, storage rules)
       - name: Deploy to Firebase
-        run: firebase deploy --project ${{ env.FIREBASE_PROJECT }} --non-interactive --only functions,firestore,storage
+        run: firebase deploy --project ${{ env.FIREBASE_PROJECT }} --non-interactive --only functions,firestore,storage --force
