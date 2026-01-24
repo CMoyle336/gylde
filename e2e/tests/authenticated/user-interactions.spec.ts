@@ -4,7 +4,7 @@ import { test, expect } from '../fixtures/auth.fixture';
  * User Interaction Tests
  * 
  * Tests for authenticated user interactions.
- * Each test creates a unique user for full parallel execution.
+ * Users are created in global setup before tests run.
  */
 
 test.describe('Discover', () => {

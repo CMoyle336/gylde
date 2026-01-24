@@ -15,8 +15,14 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: process.env.CI ? [['html'], ['github']] : 'html',
   
-  // Increased timeout for authenticated tests (signup + onboarding takes ~20s)
-  timeout: 60000,
+  // Test timeout - tests just login now, so 30s is enough
+  timeout: 30000,
+
+  // Global setup: create and onboard all test users before tests run
+  globalSetup: './global.setup.ts',
+  
+  // Global teardown: delete all test users after tests complete
+  globalTeardown: './global.teardown.ts',
 
   use: {
     baseURL,
@@ -31,7 +37,6 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
-      testIgnore: ['**/global.setup.ts'],
     },
 
     // ============================================
@@ -40,12 +45,12 @@ export default defineConfig({
     {
       name: 'firefox',
       use: { ...devices['Desktop Firefox'] },
-      testIgnore: ['**/authenticated/**', '**/global.setup.ts', '**/accessibility.spec.ts'],
+      testIgnore: ['**/authenticated/**', '**/accessibility.spec.ts'],
     },
     {
       name: 'webkit',
       use: { ...devices['Desktop Safari'] },
-      testIgnore: ['**/authenticated/**', '**/global.setup.ts', '**/accessibility.spec.ts'],
+      testIgnore: ['**/authenticated/**', '**/accessibility.spec.ts'],
     },
   ],
 

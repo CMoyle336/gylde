@@ -1,10 +1,10 @@
 import { test, expect } from '../fixtures/auth.fixture';
 
 /**
- * Authenticated User Tests
+ * Authenticated User Access Tests
  * 
  * These tests verify that logged-in users can access authenticated routes.
- * Each test creates a unique user for full parallel execution.
+ * Users are created in global setup before tests run.
  */
 
 test.describe('Authenticated User Access', () => {

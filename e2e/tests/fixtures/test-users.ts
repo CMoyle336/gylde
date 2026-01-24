@@ -94,14 +94,14 @@ export const DISCOVER_TEST_USERS: Record<string, TestUser> = {
     testImage: 'test-user-woman.jpg',
   },
 
-  // Free unverified man, 35, new
+  // Free unverified man, 29, new
   freeMan35: {
-    id: 'test-free-man-35',
-    email: 'free-man-35@e2e.test',
+    id: 'test-free-man-29',
+    email: 'free-man-29@e2e.test',
     password: 'TestPassword123!',
     displayName: 'Free Frank',
-    storageStatePath: '.auth/free-man-35.json',
-    birthDate: ageToDate(35),
+    storageStatePath: '.auth/free-man-29.json',
+    birthDate: ageToDate(29),
     city: 'Miami',
     gender: 'man',
     interestedIn: ['women'],
@@ -112,14 +112,14 @@ export const DISCOVER_TEST_USERS: Record<string, TestUser> = {
     testImage: 'test-user-man.png',
   },
 
-  // Verified woman, 45, exemplary reputation
+  // Verified woman, 32, exemplary reputation
   verifiedWoman45: {
-    id: 'test-verified-woman-45',
-    email: 'verified-woman-45@e2e.test',
+    id: 'test-verified-woman-32',
+    email: 'verified-woman-32@e2e.test',
     password: 'TestPassword123!',
     displayName: 'Verified Vera',
-    storageStatePath: '.auth/verified-woman-45.json',
-    birthDate: ageToDate(45),
+    storageStatePath: '.auth/verified-woman-32.json',
+    birthDate: ageToDate(32),
     city: 'Seattle',
     gender: 'woman',
     interestedIn: ['men'],
@@ -166,14 +166,14 @@ export const DISCOVER_TEST_USERS: Record<string, TestUser> = {
     testImage: 'test-user-man.png',
   },
 
-  // Older woman, 55, verified, established
+  // Mature woman, 38, verified, established
   olderWoman55: {
-    id: 'test-older-woman-55',
-    email: 'older-woman-55@e2e.test',
+    id: 'test-mature-woman-38',
+    email: 'mature-woman-38@e2e.test',
     password: 'TestPassword123!',
-    displayName: 'Older Olivia',
-    storageStatePath: '.auth/older-woman-55.json',
-    birthDate: ageToDate(55),
+    displayName: 'Mature Mary',
+    storageStatePath: '.auth/mature-woman-38.json',
+    birthDate: ageToDate(38),
     city: 'Denver',
     gender: 'woman',
     interestedIn: ['men'],
