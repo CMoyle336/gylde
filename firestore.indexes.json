@@ -160,7 +160,7 @@
       "fields": [
         { "fieldPath": "reportedUserId", "order": "ASCENDING" },
         { "fieldPath": "reporterId", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
+        { "fieldPath": "createdAt", "order": "ASCENDING" }
       ]
     },
     {
@@ -168,7 +168,7 @@
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "reporterId", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
+        { "fieldPath": "createdAt", "order": "ASCENDING" }
       ]
     }
   ],

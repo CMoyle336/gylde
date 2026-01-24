@@ -1,0 +1,57 @@
+name: Deploy to Firebase
+
+on:
+  push:
+    branches:
+      - master
+      - preview
+
+concurrency:
+  group: deploy-${{ github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: '24'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    env:
+      FIREBASE_PROJECT: ${{ github.ref_name == 'master' && 'production' || 'preview' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: functions/package-lock.json
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      # Build Cloud Functions
+      - name: Install functions dependencies
+        run: npm ci
+        working-directory: ./functions
+
+      - name: Lint Cloud Functions
+        run: npm run lint
+        working-directory: ./functions
+
+      - name: Build Cloud Functions
+        run: npm run build
+        working-directory: ./functions
+
+      # Deploy Firebase resources (functions, firestore rules/indexes, storage rules)
+      - name: Deploy to Firebase
+        run: firebase deploy --project ${{ env.FIREBASE_PROJECT }} --non-interactive --only functions,firestore,storage --force

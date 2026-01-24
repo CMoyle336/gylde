@@ -91,7 +91,7 @@ export class HowItWorksComponent implements OnInit {
         'Create your profile',
         'Browse unlimited profiles',
         'Save favorites',
-        '3 photo uploads',
+        'Up to 5 photos',
         'Verify your identity',
         'Reputation-based conversation limits'
       ],
@@ -102,14 +102,14 @@ export class HowItWorksComponent implements OnInit {
       price: '$49.99/mo',
       description: 'The full experience',
       features: [
+        'Up to 20 photos',
         'Request & view private photos',
         'Advanced discovery filters',
         'See who viewed & favorited you',
         'Priority in search results',
         'AI message assistant',
         'AI profile polish',
-        'Virtual phone number',
-        '10 photo uploads'
+        'Virtual phone number'
       ],
       highlighted: true
     }
@@ -126,7 +126,7 @@ export class HowItWorksComponent implements OnInit {
     },
     {
       question: 'How does the reputation system work?',
-      answer: 'Your reputation tier (New, Active, Established, Trusted, Distinguished) reflects your engagement and behavior on the platform. Higher tiers unlock more features like additional photo uploads and the ability to start more conversations with members of any tier. Build your reputation by completing your profile, staying active, and being respectful to others.'
+      answer: 'Your reputation tier (New, Active, Established, Trusted, Distinguished) reflects your engagement and behavior on the platform. Higher tiers unlock the ability to start more conversations with higher-tier members each day. Build your reputation by completing your profile, staying active, and being respectful to others.'
     },
     {
       question: 'What are private photos?',

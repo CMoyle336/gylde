@@ -24,8 +24,6 @@ import {
   MessageMetrics,
   ReportReason,
   REPUTATION_CONFIG,
-  FOUNDER_CONFIG,
-  REPUTATION_TIER_ORDER,
   scoreToTier,
   getTierConfig,
   getDefaultSignals,
@@ -184,8 +182,7 @@ async function gatherSignals(userId: string): Promise<ReputationSignals> {
  * Recalculate reputation for a single user
  * Called by both real-time triggers and daily batch job
  *
- * Founders have special protection:
- * - They cannot fall below 'active' tier regardless of their score
+ * All users (including founders) are calculated the same way.
  *
  * @param userId - The user to recalculate
  * @param forceSignals - Optional signals to use instead of gathering (for testing)
@@ -205,9 +202,9 @@ export async function recalculateReputation(
     Object.assign(signals, forceSignals);
   }
 
-  // Calculate score
+  // Calculate score and tier
   const score = calculateScore(signals);
-  let tier = scoreToTier(score);
+  const tier = scoreToTier(score);
 
   // Get existing reputation data to preserve some fields
   const privateDoc = await db
@@ -220,40 +217,6 @@ export async function recalculateReputation(
   const privateData = privateDoc.data();
   const existingReputation = privateData?.reputation as ReputationData | undefined;
   const isFounder = privateData?.isFounder === true;
-
-  // Founders have special tier protection
-  if (isFounder) {
-    const calculatedTierIndex = REPUTATION_TIER_ORDER.indexOf(tier);
-    const startingTierIndex = REPUTATION_TIER_ORDER.indexOf(FOUNDER_CONFIG.startingTier);
-    const minimumTierIndex = REPUTATION_TIER_ORDER.indexOf(FOUNDER_CONFIG.minimumTier);
-
-    // Check if founder has negative signals that would justify a tier drop
-    const hasNegativeSignals =
-      signals.blockRatio > 0 ||
-      signals.reportRatio > 0 ||
-      signals.ghostRate > 0.5; // High ghost rate (abandoned more than half of conversations)
-
-    if (!hasNegativeSignals && calculatedTierIndex < startingTierIndex) {
-      // No negative signals - protect founder at their starting tier (trusted)
-      logger.info(
-        `Founder ${userId} protected at starting tier (no negative signals): ` +
-        `${tier} -> ${FOUNDER_CONFIG.startingTier}`
-      );
-      tier = FOUNDER_CONFIG.startingTier;
-    } else if (hasNegativeSignals && calculatedTierIndex < minimumTierIndex) {
-      // Has negative signals but still protect from falling below minimum (active)
-      logger.info(
-        `Founder ${userId} with negative signals protected at minimum tier: ` +
-        `${tier} -> ${FOUNDER_CONFIG.minimumTier}`
-      );
-      tier = FOUNDER_CONFIG.minimumTier;
-    } else if (hasNegativeSignals) {
-      logger.info(
-        `Founder ${userId} tier adjusted due to negative signals: ${tier} ` +
-        `(blocks: ${signals.blockRatio}, reports: ${signals.reportRatio}, ghost: ${signals.ghostRate})`
-      );
-    }
-  }
 
   const tierConfig = getTierConfig(tier);
   const now = Timestamp.now();
@@ -632,9 +595,8 @@ export const getReputationStatus = onCall<void>(
  * Initialize reputation for a new user
  * Called after onboarding completion
  *
- * Founders receive special treatment:
- * - They start at 'trusted' tier instead of 'new'
- * - They get a score that matches the trusted tier threshold
+ * All users (including founders) start at the same tier.
+ * Founders are tracked for display purposes but get no reputation bonus.
  */
 export async function initializeReputation(userId: string): Promise<void> {
   logger.info(`Initializing reputation for new user ${userId}`);
@@ -642,7 +604,7 @@ export async function initializeReputation(userId: string): Promise<void> {
   const now = Timestamp.now();
   const today = new Date().toISOString().split("T")[0];
 
-  // Check if user is a founder (set by tryGrantFounderStatus before this is called)
+  // Check if user is a founder (for tracking purposes only, no reputation bonus)
   const privateDoc = await db
     .collection("users")
     .doc(userId)
@@ -652,19 +614,11 @@ export async function initializeReputation(userId: string): Promise<void> {
 
   const isFounder = privateDoc.data()?.isFounder === true;
 
-  // Determine starting tier and score based on founder status
-  const startingTier: ReputationTier = isFounder ?
-    FOUNDER_CONFIG.startingTier :
-    "new";
-
-  // Founders get a score at the trusted tier threshold
-  const startingScore = isFounder ?
-    REPUTATION_CONFIG.tiers[FOUNDER_CONFIG.startingTier].minScore :
-    0;
-
+  // All users start at "new" tier with score 0
+  const startingTier: ReputationTier = "new";
+  const startingScore = 0;
   const tierConfig = getTierConfig(startingTier);
 
-  // Initialize with values based on founder status
   const initialReputation: ReputationData = {
     tier: startingTier,
     score: startingScore,
@@ -700,11 +654,7 @@ export async function initializeReputation(userId: string): Promise<void> {
     reputationTier: startingTier,
   });
 
-  if (isFounder) {
-    logger.info(`Founder reputation initialized for user ${userId} at tier: ${startingTier}`);
-  } else {
-    logger.info(`Reputation initialized for user ${userId} at tier: ${startingTier}`);
-  }
+  logger.info(`Reputation initialized for user ${userId} at tier: ${startingTier}${isFounder ? " (founder)" : ""}`);
 }
 
 // ============================================================================

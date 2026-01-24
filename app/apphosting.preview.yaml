@@ -1,4 +1,5 @@
-# Firebase App Hosting configuration - Base/Production
+# Firebase App Hosting configuration - Preview Environment
+# Used when backend's Environment name is set to "preview" in Firebase Console
 runConfig:
   concurrency: 80
   cpu: 1
@@ -8,6 +9,6 @@ runConfig:
 
 env:
   - variable: NG_BUILD_CONFIG
-    value: production
+    value: preview
     availability:
       - BUILD

@@ -152,7 +152,7 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
     }
 
     const currentUserId = request.auth.uid;
-    const {filters = {}, sort = {field: "lastActive", direction: "desc"}, pagination = {}} = request.data;
+    const {filters = {}, sort = {field: "reputation", direction: "desc"}, pagination = {}} = request.data;
     const {limit: pageLimit = 20, offset = 0} = pagination;
     const searcherLocation = request.data.location;
 
@@ -511,7 +511,8 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
           comparison = a.tierRank - b.tierRank;
           break;
         default:
-          comparison = a.lastActiveTimestamp - b.lastActiveTimestamp;
+          // Default to reputation sorting
+          comparison = a.tierRank - b.tierRank;
         }
 
         // Apply direction
