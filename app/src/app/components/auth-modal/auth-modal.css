@@ -279,7 +279,8 @@
 
 .method-btn.active {
   background: var(--color-bg-secondary);
-  color: var(--color-accent);
+  color: var(--color-text-primary);  /* Use primary text for better contrast */
+  font-weight: 600;  /* Bold to indicate active state */
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 

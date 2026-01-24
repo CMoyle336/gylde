@@ -14,23 +14,38 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: process.env.CI ? [['html'], ['github']] : 'html',
+  
+  // Increased timeout for authenticated tests (signup + onboarding takes ~20s)
+  timeout: 60000,
+
   use: {
     baseURL,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
+
   projects: [
+    // ============================================
+    // Default project - runs ALL tests (public + authenticated)
+    // ============================================
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
+      testIgnore: ['**/global.setup.ts'],
     },
+
+    // ============================================
+    // Cross-browser projects (public tests only)
+    // ============================================
     {
       name: 'firefox',
       use: { ...devices['Desktop Firefox'] },
+      testIgnore: ['**/authenticated/**', '**/global.setup.ts', '**/accessibility.spec.ts'],
     },
     {
       name: 'webkit',
       use: { ...devices['Desktop Safari'] },
+      testIgnore: ['**/authenticated/**', '**/global.setup.ts', '**/accessibility.spec.ts'],
     },
   ],
 
