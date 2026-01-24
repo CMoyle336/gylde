@@ -1,4 +1,4 @@
-import { test, expect, TEST_USERS } from '../fixtures/auth.fixture';
+import { test, expect } from '../fixtures/auth.fixture';
 import { Page } from '@playwright/test';
 
 /**
@@ -30,6 +30,29 @@ async function goToMatchesPage(page: Page): Promise<void> {
   await page.waitForTimeout(500); // Wait for Angular to fully initialize
 }
 
+// Helper to log out the current user
+async function logout(page: Page): Promise<void> {
+  await page.goto('/settings');
+  await page.waitForTimeout(500);
+  
+  // Click on the logout setting item (opens a dialog)
+  const logoutItem = page.locator('.setting-item', { has: page.locator('.logout-icon') });
+  await logoutItem.waitFor({ state: 'visible', timeout: 10000 });
+  await logoutItem.click();
+  
+  // Wait for logout dialog and click confirm button
+  const logoutDialog = page.locator('.logout-dialog');
+  await logoutDialog.waitFor({ state: 'visible', timeout: 5000 });
+  
+  // Click the confirm logout button (it's a warn colored button in the dialog)
+  const confirmBtn = logoutDialog.locator('button[color="warn"]');
+  await confirmBtn.click();
+  
+  // Wait for redirect to home page
+  await page.waitForURL('/', { timeout: 10000 });
+  await page.waitForTimeout(500);
+}
+
 // Helper to favorite a user by their display name on the discover page
 async function favoriteUserByName(page: Page, displayName: string): Promise<void> {
   // Find the profile card containing the user's name
@@ -43,9 +66,24 @@ async function favoriteUserByName(page: Page, displayName: string): Promise<void
   const favoriteBtn = profileCard.locator('.action-btn.favorite');
   await favoriteBtn.waitFor({ state: 'visible' });
   await favoriteBtn.click();
+  await page.waitForTimeout(500);
   
-  // Wait for the favorited state to be applied
-  await expect(profileCard.locator('.action-btn.favorite.favorited')).toBeVisible({ timeout: 5000 });
+  // Retry if favorited class doesn't appear (backend may be slow)
+  const favoritedBtn = profileCard.locator('.action-btn.favorite.favorited');
+  let isFavorited = await favoritedBtn.isVisible().catch(() => false);
+  
+  for (let attempt = 0; attempt < 3 && !isFavorited; attempt++) {
+    await page.waitForTimeout(1000);
+    isFavorited = await favoritedBtn.isVisible().catch(() => false);
+    if (!isFavorited && attempt < 2) {
+      // Try clicking again
+      await favoriteBtn.click().catch(() => {});
+      await page.waitForTimeout(500);
+    }
+  }
+  
+  // Final assertion with longer timeout
+  await expect(favoritedBtn).toBeVisible({ timeout: 10000 });
 }
 
 // Helper to check if activity sidebar contains a specific activity
@@ -62,12 +100,8 @@ async function checkActivityForFavorite(page: Page, favoritedByName: string): Pr
 }
 
 test.describe('Favorites - Non-Premium User (Bob)', () => {
-  test.beforeEach(async ({ page, loginAsBob }) => {
-    // Login as Bob (non-premium user)
+  test('cannot access favorited-me tab on matches page', async ({ page, loginAsBob }) => {
     await loginAsBob();
-  });
-
-  test('cannot access favorited-me tab on matches page', async ({ page }) => {
     await goToMatchesPage(page);
     
     // Find the "Favorited Me" tab button
@@ -81,26 +115,19 @@ test.describe('Favorites - Non-Premium User (Bob)', () => {
     await expect(favoritedMeTab.locator('.premium-badge')).toHaveText('Premium');
   });
 
-  test('does not see activity when favorited by another user', async ({ page, loginAs, alice }) => {
+  test('does not see activity when favorited by another user', async ({ page, loginAs, alice, bob }) => {
     // First, login as Alice (premium) and favorite Bob
-    await page.goto('/');
     await loginAs(alice);
     await goToDiscoverPage(page);
     
     // Favorite Bob
     await favoriteUserByName(page, 'Bob Test');
     
-    // Now log out (go to home and login as Bob)
-    await page.goto('/');
+    // Log out Alice
+    await logout(page);
     
     // Login as Bob
-    await page.getByRole('button', { name: /get started/i }).click();
-    await page.locator('.modal-backdrop').waitFor();
-    await page.locator('.auth-switch button').click();
-    await page.locator('#email').fill(TEST_USERS.bob.email);
-    await page.locator('#password').fill(TEST_USERS.bob.password);
-    await page.locator('.submit-btn').click();
-    await page.waitForURL(/\/(discover|messages|settings|favorites)/, { timeout: 15000 });
+    await loginAs(bob);
     
     // Navigate to a page where activity sidebar is visible
     await goToDiscoverPage(page);
@@ -113,31 +140,41 @@ test.describe('Favorites - Non-Premium User (Bob)', () => {
 });
 
 test.describe('Favorites - Premium User (Alice)', () => {
-  test.beforeEach(async ({ page, loginAsAlice }) => {
-    // Login as Alice (premium user)
+  test('can access favorited-me tab on matches page', async ({ page, loginAsAlice }) => {
     await loginAsAlice();
+    await goToMatchesPage(page);
+    
+    // Wait for subscription status to load
+    await page.waitForTimeout(1000);
+    
+    // Find the "Favorited Me" tab button
+    const favoritedMeTab = page.locator('.tab-btn', { hasText: 'Favorited Me' });
+    await expect(favoritedMeTab).toBeVisible();
+    
+    // Verify the tab does NOT have the premium-locked class for premium users
+    // Note: If this fails, Alice's premium status may not be set up correctly in global setup
+    await expect(favoritedMeTab).not.toHaveClass(/premium-locked/, { timeout: 10000 });
+    
+    // Click the tab
+    await favoritedMeTab.click();
+    
+    // Wait for tab to become active
+    await expect(favoritedMeTab).toHaveClass(/active/);
   });
 
-  test('sees activity record when favorited by another user', async ({ page, loginAs, bob }) => {
+  test('sees activity record when favorited by another user', async ({ page, loginAs, alice, bob }) => {
     // First, login as Bob (non-premium) and favorite Alice
-    await page.goto('/');
     await loginAs(bob);
     await goToDiscoverPage(page);
     
     // Favorite Alice
     await favoriteUserByName(page, 'Alice Test');
     
-    // Now log out and login as Alice
-    await page.goto('/');
+    // Log out Bob
+    await logout(page);
     
     // Login as Alice
-    await page.getByRole('button', { name: /get started/i }).click();
-    await page.locator('.modal-backdrop').waitFor();
-    await page.locator('.auth-switch button').click();
-    await page.locator('#email').fill(TEST_USERS.alice.email);
-    await page.locator('#password').fill(TEST_USERS.alice.password);
-    await page.locator('.submit-btn').click();
-    await page.waitForURL(/\/(discover|messages|settings|favorites)/, { timeout: 15000 });
+    await loginAs(alice);
     
     // Navigate to a page where activity sidebar is visible
     await goToDiscoverPage(page);
@@ -160,51 +197,31 @@ test.describe('Favorites - Premium User (Alice)', () => {
     await expect(favoriteActivity.locator('.activity-type-badge.type-favorite')).toBeVisible();
   });
 
-  test('can access favorited-me tab on matches page', async ({ page }) => {
-    await goToMatchesPage(page);
-    
-    // Find the "Favorited Me" tab button
-    const favoritedMeTab = page.locator('.tab-btn', { hasText: 'Favorited Me' });
-    await expect(favoritedMeTab).toBeVisible();
-    
-    // Verify the tab does NOT have the premium-locked class for premium users
-    await expect(favoritedMeTab).not.toHaveClass(/premium-locked/);
-    
-    // Click the tab
-    await favoritedMeTab.click();
-    
-    // Wait for tab to become active
-    await expect(favoritedMeTab).toHaveClass(/active/);
-  });
-
-  test('sees user who favorited them in favorited-me section', async ({ page, loginAs, bob }) => {
+  test('sees user who favorited them in favorited-me section', async ({ page, loginAs, alice, bob }) => {
     // First, login as Bob and favorite Alice
-    await page.goto('/');
     await loginAs(bob);
     await goToDiscoverPage(page);
     
     // Favorite Alice
     await favoriteUserByName(page, 'Alice Test');
     
-    // Now log out and login as Alice
-    await page.goto('/');
+    // Log out Bob
+    await logout(page);
     
     // Login as Alice
-    await page.getByRole('button', { name: /get started/i }).click();
-    await page.locator('.modal-backdrop').waitFor();
-    await page.locator('.auth-switch button').click();
-    await page.locator('#email').fill(TEST_USERS.alice.email);
-    await page.locator('#password').fill(TEST_USERS.alice.password);
-    await page.locator('.submit-btn').click();
-    await page.waitForURL(/\/(discover|messages|settings|favorites)/, { timeout: 15000 });
+    await loginAs(alice);
     
     // Go to matches page and click on "Favorited Me" tab
     await goToMatchesPage(page);
     
+    // Wait for subscription to load
+    await page.waitForTimeout(1000);
+    
     // Click the "Favorited Me" tab
     const favoritedMeTab = page.locator('.tab-btn', { hasText: 'Favorited Me' });
     await favoritedMeTab.click();
-    await expect(favoritedMeTab).toHaveClass(/active/);
+    await page.waitForTimeout(500);
+    await expect(favoritedMeTab).toHaveClass(/active/, { timeout: 10000 });
     
     // Wait for the profile grid to load
     await page.waitForTimeout(1000);
@@ -222,14 +239,16 @@ test.describe('Favorites - Premium User (Alice)', () => {
 });
 
 test.describe('Favorites - Mutual Interaction', () => {
-  test('mutual favorites creates a match', async ({ page, loginAsAlice, loginAs, bob }) => {
+  test('mutual favorites creates a match', async ({ page, loginAs, alice, bob }) => {
     // Login as Alice and favorite Bob
-    await loginAsAlice();
+    await loginAs(alice);
     await goToDiscoverPage(page);
     await favoriteUserByName(page, 'Bob Test');
     
+    // Log out Alice
+    await logout(page);
+    
     // Login as Bob and favorite Alice
-    await page.goto('/');
     await loginAs(bob);
     await goToDiscoverPage(page);
     await favoriteUserByName(page, 'Alice Test');

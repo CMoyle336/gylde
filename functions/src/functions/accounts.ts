@@ -163,7 +163,7 @@ export const deleteAccount = onCall(
 
       const userRef = db.collection("users").doc(userId);
 
-      // 1. Delete user's subcollections
+      // 1. Delete user's subcollections (except private - deleted after user doc to prevent recreation by triggers)
       logger.info(`[${userId}] Deleting user subcollections...`);
       const userSubcollections = [
         "favorites",
@@ -176,17 +176,6 @@ export const deleteAccount = onCall(
         "payments",
       ];
       await deleteSubcollections(userRef, userSubcollections);
-
-      // Delete private subcollection and its nested subcollections
-      const privateDocRef = userRef.collection("private").doc("data");
-      await privateDocRef.delete().catch(() => {}); // May not exist
-
-      const emailLogDocRef = userRef.collection("private").doc("emailLog");
-      await emailLogDocRef.delete().catch(() => {}); // May not exist
-
-      const virtualPhoneDocRef = userRef.collection("private").doc("virtualPhone");
-      await deleteSubcollections(virtualPhoneDocRef, ["callLogs", "messageLogs"]);
-      await virtualPhoneDocRef.delete().catch(() => {}); // May not exist
 
       // 2. Find and delete all conversations where user is a participant
       logger.info(`[${userId}] Deleting conversations and messages...`);
@@ -290,10 +279,26 @@ export const deleteAccount = onCall(
       }
 
       // 8. Delete the user document from Firestore
+      // This must happen BEFORE deleting private subcollection to prevent
+      // the onUserUpdated trigger from recreating the private/data document
       logger.info(`[${userId}] Deleting user document...`);
       await userRef.delete();
 
-      // 9. Delete the user from Firebase Auth
+      // 9. Delete private subcollection and its nested subcollections
+      // This is done AFTER deleting the user document to prevent the onUserUpdated
+      // trigger from recreating the private/data document with profileProgress, trust, etc.
+      logger.info(`[${userId}] Deleting private subcollection...`);
+      const privateDocRef = userRef.collection("private").doc("data");
+      await privateDocRef.delete().catch(() => {}); // May not exist
+
+      const emailLogDocRef = userRef.collection("private").doc("emailLog");
+      await emailLogDocRef.delete().catch(() => {}); // May not exist
+
+      const virtualPhoneDocRef = userRef.collection("private").doc("virtualPhone");
+      await deleteSubcollections(virtualPhoneDocRef, ["callLogs", "messageLogs"]);
+      await virtualPhoneDocRef.delete().catch(() => {}); // May not exist
+
+      // 10. Delete the user from Firebase Auth
       logger.info(`[${userId}] Deleting Firebase Auth user...`);
       try {
         await getAuth().deleteUser(userId);

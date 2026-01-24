@@ -1,4 +1,4 @@
-import { chromium, Page } from '@playwright/test';
+import { chromium, Browser, Page } from '@playwright/test';
 import { getAllTestUsers, TestUser } from './tests/fixtures/test-users';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -6,7 +6,10 @@ import * as fs from 'fs';
 const BASE_URL = process.env.BASE_URL || 'http://localhost:4200';
 const FIRESTORE_EMULATOR_URL = 'http://localhost:8080';
 const AUTH_EMULATOR_URL = 'http://localhost:9099';
-const FIREBASE_PROJECT_ID = process.env.FIREBASE_PROJECT_ID || 'gylde-dba55';
+const FIREBASE_PROJECT_ID = process.env.FIREBASE_PROJECT_ID || 'gylde-sandbox';
+
+// Maximum number of users to create in parallel
+const MAX_PARALLEL_USERS = 10;
 
 /**
  * Get current user's UID from the browser page
@@ -148,6 +151,107 @@ async function setupPremiumSubscription(uid: string): Promise<boolean> {
     return true;
   } catch (error) {
     console.error(`    ⚠ Exception in setupPremiumSubscription:`, error);
+    return false;
+  }
+}
+
+/**
+ * Reputation tier score thresholds (from REPUTATION_CONFIG)
+ */
+const TIER_SCORES: Record<string, number> = {
+  new: 100,        // Below 150
+  active: 200,     // 150+
+  established: 400, // 350+
+  trusted: 600,    // 550+
+  distinguished: 800, // 750+
+};
+
+/**
+ * Daily higher-tier conversation limits by tier
+ */
+const TIER_LIMITS: Record<string, number> = {
+  new: 1,
+  active: 3,
+  established: 5,
+  trusted: 10,
+  distinguished: -1, // unlimited
+};
+
+/**
+ * Set up reputation data for a user in Firestore emulator
+ */
+async function setupReputationData(uid: string, tier: string): Promise<boolean> {
+  try {
+    const adminHeaders = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer owner',
+    };
+    
+    const docPath = `projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/users/${uid}/private/data`;
+    const getUrl = `${FIRESTORE_EMULATOR_URL}/v1/${docPath}`;
+    
+    const getResponse = await fetch(getUrl, { headers: adminHeaders });
+    
+    let existingData: Record<string, unknown> = {};
+    if (getResponse.ok) {
+      const doc = await getResponse.json() as { fields?: Record<string, unknown> };
+      existingData = doc.fields || {};
+    }
+    
+    const now = new Date().toISOString();
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    
+    // Build reputation data structure
+    const reputationFields = {
+      tier: { stringValue: tier },
+      score: { integerValue: String(TIER_SCORES[tier] || 100) },
+      dailyHigherTierConversationLimit: { integerValue: String(TIER_LIMITS[tier] || 1) },
+      higherTierConversationsToday: { integerValue: '0' },
+      lastConversationDate: { stringValue: today },
+      lastCalculatedAt: { timestampValue: now },
+      tierChangedAt: { timestampValue: now },
+      createdAt: { timestampValue: now },
+      signals: {
+        mapValue: {
+          fields: {
+            profileCompletion: { integerValue: '100' },
+            identityVerified: { booleanValue: true },
+            accountAgeDays: { integerValue: '30' },
+            responseRate: { doubleValue: 0.8 },
+            conversationQuality: { doubleValue: 0.7 },
+            blockRatio: { doubleValue: 0 },
+            reportRatio: { doubleValue: 0 },
+            ghostRate: { doubleValue: 0.1 },
+            burstScore: { doubleValue: 0 },
+          },
+        },
+      },
+    };
+    
+    const updatedData = {
+      ...existingData,
+      reputation: {
+        mapValue: {
+          fields: reputationFields,
+        },
+      },
+    };
+    
+    const patchResponse = await fetch(`${FIRESTORE_EMULATOR_URL}/v1/${docPath}`, {
+      method: 'PATCH',
+      headers: adminHeaders,
+      body: JSON.stringify({ fields: updatedData }),
+    });
+    
+    if (!patchResponse.ok) {
+      const errorText = await patchResponse.text().catch(() => 'unknown');
+      console.log(`      PATCH error: ${patchResponse.status} - ${errorText}`);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error(`    ⚠ Exception in setupReputationData:`, error);
     return false;
   }
 }
@@ -347,70 +451,147 @@ async function completeOnboarding(page: Page, user: TestUser): Promise<void> {
 }
 
 /**
- * Global setup - creates and onboards all test users
+ * Create and onboard a single user
+ */
+async function createUser(browser: Browser, user: TestUser): Promise<{ email: string; success: boolean; error?: string }> {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  
+  try {
+    console.log(`  [${user.displayName}] Starting...`);
+    const signupResult = await signupAs(page, user);
+    
+    if (signupResult === 'created') {
+      console.log(`  [${user.displayName}] Signed up, completing onboarding...`);
+      await completeOnboarding(page, user);
+      console.log(`  [${user.displayName}] Onboarding complete`);
+    } else if (signupResult === 'exists') {
+      console.log(`  [${user.displayName}] Already exists, checking onboarding...`);
+      
+      const loginResult = await loginAs(page, user);
+      
+      if (loginResult === 'onboarding') {
+        console.log(`  [${user.displayName}] Completing onboarding...`);
+        await completeOnboarding(page, user);
+        console.log(`  [${user.displayName}] Onboarding complete`);
+      } else if (loginResult === 'discover') {
+        console.log(`  [${user.displayName}] Already onboarded`);
+      } else {
+        console.log(`  [${user.displayName}] Could not verify status`);
+      }
+    }
+    
+    // Get UID for setting up premium and reputation
+    const uid = await getCurrentUserUid(page);
+    
+    // Set up premium subscription if user should be premium
+    if (user.isPremium && uid) {
+      console.log(`  [${user.displayName}] Setting up premium...`);
+      const success = await setupPremiumSubscription(uid);
+      if (success) {
+        console.log(`  [${user.displayName}] ✓ Premium set up`);
+      } else {
+        console.log(`  [${user.displayName}] ⚠ Premium setup failed`);
+      }
+    }
+    
+    // Set up reputation tier if specified
+    if (user.reputationTier && uid) {
+      console.log(`  [${user.displayName}] Setting up reputation (${user.reputationTier})...`);
+      const success = await setupReputationData(uid, user.reputationTier);
+      if (success) {
+        console.log(`  [${user.displayName}] ✓ Reputation set up`);
+      } else {
+        console.log(`  [${user.displayName}] ⚠ Reputation setup failed`);
+      }
+    }
+    
+    console.log(`  [${user.displayName}] ✓ Done`);
+    return { email: user.email, success: true };
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    console.error(`  [${user.displayName}] ✗ Failed: ${errorMsg}`);
+    return { email: user.email, success: false, error: errorMsg };
+  } finally {
+    await context.close();
+  }
+}
+
+/**
+ * Process users in parallel with concurrency limit
+ */
+async function processInParallel<T, R>(
+  items: T[],
+  maxConcurrent: number,
+  processor: (item: T) => Promise<R>
+): Promise<R[]> {
+  const results: R[] = [];
+  const executing: Promise<void>[] = [];
+  
+  for (const item of items) {
+    const promise = processor(item).then(result => {
+      results.push(result);
+    });
+    
+    executing.push(promise);
+    
+    if (executing.length >= maxConcurrent) {
+      await Promise.race(executing);
+      // Remove completed promises
+      for (let i = executing.length - 1; i >= 0; i--) {
+        const p = executing[i];
+        // Check if promise is settled by racing with an immediate resolve
+        const isSettled = await Promise.race([
+          p.then(() => true).catch(() => true),
+          Promise.resolve(false)
+        ]);
+        if (isSettled) {
+          executing.splice(i, 1);
+        }
+      }
+    }
+  }
+  
+  // Wait for all remaining promises
+  await Promise.all(executing);
+  
+  return results;
+}
+
+/**
+ * Global setup - creates and onboards all test users in parallel
  */
 async function globalSetup() {
   console.log('🚀 Global Setup: Creating test users...\n');
+  console.log(`   Running with up to ${MAX_PARALLEL_USERS} parallel operations\n`);
   
   const browser = await chromium.launch();
   const users = getAllTestUsers();
   
-  for (const user of users) {
-    const context = await browser.newContext();
-    const page = await context.newPage();
-    
-    try {
-      console.log(`  Creating user: ${user.email}...`);
-      const signupResult = await signupAs(page, user);
-      
-      if (signupResult === 'created') {
-        console.log(`    ✓ Signed up, completing onboarding...`);
-        await completeOnboarding(page, user);
-        console.log(`    ✓ Onboarding complete`);
-      } else if (signupResult === 'exists') {
-        // User exists - try to log in and check if they need onboarding
-        console.log(`    ⏭ User already exists, checking onboarding status...`);
-        
-        const loginResult = await loginAs(page, user);
-        
-        if (loginResult === 'onboarding') {
-          console.log(`    ⚠ User needs onboarding, completing...`);
-          await completeOnboarding(page, user);
-          console.log(`    ✓ Onboarding complete`);
-        } else if (loginResult === 'discover') {
-          console.log(`    ✓ User already onboarded`);
-        } else {
-          console.log(`    ⚠ Could not log in to verify user status`);
-        }
-      }
-      
-      // Set up premium subscription if user should be premium
-      // Note: must be done while user is still logged in on the page
-      if (user.isPremium) {
-        console.log(`    💎 Setting up premium subscription...`);
-        const uid = await getCurrentUserUid(page);
-        console.log(`      Retrieved UID: ${uid || 'null'}`);
-        if (uid) {
-          const success = await setupPremiumSubscription(uid);
-          if (success) {
-            console.log(`    ✓ Premium subscription set up for UID: ${uid}`);
-          } else {
-            console.log(`    ⚠ Failed to set up premium subscription`);
-          }
-        } else {
-          console.log(`    ⚠ Could not get current user UID for premium setup`);
-        }
-      }
-    } catch (error) {
-      console.error(`    ✗ Failed to create ${user.email}:`, error);
-      throw error;
-    } finally {
-      await context.close();
-    }
-  }
+  const startTime = Date.now();
+  
+  // Process users in parallel with concurrency limit
+  const results = await processInParallel(
+    users,
+    MAX_PARALLEL_USERS,
+    (user) => createUser(browser, user)
+  );
   
   await browser.close();
-  console.log('\n✅ Global Setup complete: All test users ready\n');
+  
+  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+  const succeeded = results.filter(r => r.success).length;
+  const failed = results.filter(r => !r.success);
+  
+  console.log(`\n✅ Global Setup complete in ${elapsed}s`);
+  console.log(`   ${succeeded}/${results.length} users ready`);
+  
+  if (failed.length > 0) {
+    console.log(`   Failed users: ${failed.map(f => f.email).join(', ')}`);
+    throw new Error(`Failed to create ${failed.length} users`);
+  }
+  
+  console.log('');
 }
 
 export default globalSetup;

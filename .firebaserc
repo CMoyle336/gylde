@@ -1,6 +1,6 @@
 {
   "projects": {
-    "default": "gylde-dba55",
+    "default": "gylde-sandbox",
     "production": "gylde-dba55",
     "preview": "gylde-sandbox"
   }

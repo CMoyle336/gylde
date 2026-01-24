@@ -3,6 +3,33 @@
  * These users are created during auth setup and represent different user types
  */
 
+/**
+ * Reputation tier levels (matches backend types)
+ * Order from lowest to highest: new -> active -> established -> trusted -> distinguished
+ */
+export type ReputationTier = 'new' | 'active' | 'established' | 'trusted' | 'distinguished';
+
+/**
+ * Messaging limits by tier (for starting NEW conversations with HIGHER tier users):
+ * - new: 1/day
+ * - active: 3/day
+ * - established: 5/day
+ * - trusted: 10/day
+ * - distinguished: unlimited (-1)
+ */
+export const TIER_MESSAGING_LIMITS: Record<ReputationTier, number> = {
+  new: 1,
+  active: 3,
+  established: 5,
+  trusted: 10,
+  distinguished: -1, // unlimited
+};
+
+/**
+ * Tier order for comparison (index = rank, higher = better)
+ */
+export const TIER_ORDER: ReputationTier[] = ['new', 'active', 'established', 'trusted', 'distinguished'];
+
 export interface TestUser {
   id: string;
   email: string;
@@ -18,7 +45,7 @@ export interface TestUser {
   // Profile properties (set after user creation)
   isPremium?: boolean;
   isVerified?: boolean;
-  reputationTier?: 'new' | 'rising' | 'established' | 'trusted' | 'exemplary';
+  reputationTier?: ReputationTier;
   testImage: string; // Which test image to use
 }
 
@@ -34,7 +61,7 @@ function ageToDate(age: number): Date {
  * Note: emails match existing users in Firebase Auth emulator
  */
 export const TEST_USERS: Record<string, TestUser> = {
-  // Primary user - woman, 25, premium, verified
+  // Primary user - woman, 25, premium, verified, established tier
   alice: {
     id: 'test-user-a',
     email: 'test-user-a@e2e.test',
@@ -52,7 +79,7 @@ export const TEST_USERS: Record<string, TestUser> = {
     testImage: 'test-user-woman.jpg',
   },
 
-  // Primary user - man, 28, free, verified
+  // Primary user - man, 28, free, verified, active tier
   bob: {
     id: 'test-user-b',
     email: 'test-user-b@e2e.test',
@@ -66,41 +93,23 @@ export const TEST_USERS: Record<string, TestUser> = {
     tagline: 'Here for meaningful relationships',
     isPremium: false,
     isVerified: true,
-    reputationTier: 'rising',
+    reputationTier: 'active',
     testImage: 'test-user-man.png',
   },
 };
 
 /**
  * Extended test users - for comprehensive discover page testing
- * These represent different permutations of user properties
+ * These represent different permutations of user properties including all reputation tiers
  */
 export const DISCOVER_TEST_USERS: Record<string, TestUser> = {
-  // Premium verified woman, 22, trusted
-  premiumWoman22: {
-    id: 'test-premium-woman-22',
-    email: 'premium-woman-22@e2e.test',
+  // NEW tier user - man, 29, free, unverified
+  newTierUser: {
+    id: 'test-new-tier',
+    email: 'new-tier@e2e.test',
     password: 'TestPassword123!',
-    displayName: 'Premium Patty',
-    storageStatePath: '.auth/premium-woman-22.json',
-    birthDate: ageToDate(22),
-    city: 'Chicago',
-    gender: 'woman',
-    interestedIn: ['men', 'women'],
-    tagline: 'Premium member looking for quality',
-    isPremium: true,
-    isVerified: true,
-    reputationTier: 'trusted',
-    testImage: 'test-user-woman.jpg',
-  },
-
-  // Free unverified man, 29, new
-  freeMan35: {
-    id: 'test-free-man-29',
-    email: 'free-man-29@e2e.test',
-    password: 'TestPassword123!',
-    displayName: 'Free Frank',
-    storageStatePath: '.auth/free-man-29.json',
+    displayName: 'New Nick',
+    storageStatePath: '.auth/new-tier.json',
     birthDate: ageToDate(29),
     city: 'Miami',
     gender: 'man',
@@ -112,75 +121,111 @@ export const DISCOVER_TEST_USERS: Record<string, TestUser> = {
     testImage: 'test-user-man.png',
   },
 
-  // Verified woman, 32, exemplary reputation
-  verifiedWoman45: {
-    id: 'test-verified-woman-32',
-    email: 'verified-woman-32@e2e.test',
+  // ACTIVE tier user - woman, 22, premium, verified
+  activeTierUser: {
+    id: 'test-active-tier',
+    email: 'active-tier@e2e.test',
     password: 'TestPassword123!',
-    displayName: 'Verified Vera',
-    storageStatePath: '.auth/verified-woman-32.json',
+    displayName: 'Active Anna',
+    storageStatePath: '.auth/active-tier.json',
+    birthDate: ageToDate(22),
+    city: 'Chicago',
+    gender: 'woman',
+    interestedIn: ['men', 'women'],
+    tagline: 'Active and engaged',
+    isPremium: true,
+    isVerified: true,
+    reputationTier: 'active',
+    testImage: 'test-user-woman.jpg',
+  },
+
+  // ESTABLISHED tier user - woman, 32, free, verified
+  establishedTierUser: {
+    id: 'test-established-tier',
+    email: 'established-tier@e2e.test',
+    password: 'TestPassword123!',
+    displayName: 'Established Emma',
+    storageStatePath: '.auth/established-tier.json',
     birthDate: ageToDate(32),
     city: 'Seattle',
     gender: 'woman',
     interestedIn: ['men'],
-    tagline: 'Mature and looking for the same',
+    tagline: 'Established member',
     isPremium: false,
     isVerified: true,
-    reputationTier: 'exemplary',
+    reputationTier: 'established',
     testImage: 'test-user-woman.jpg',
   },
 
-  // Nonbinary user, 30, premium
-  nonbinary30: {
+  // TRUSTED tier user - woman, 30, premium, verified
+  trustedTierUser: {
+    id: 'test-trusted-tier',
+    email: 'trusted-tier@e2e.test',
+    password: 'TestPassword123!',
+    displayName: 'Trusted Tina',
+    storageStatePath: '.auth/trusted-tier.json',
+    birthDate: ageToDate(30),
+    city: 'Denver',
+    gender: 'woman',
+    interestedIn: ['men'],
+    tagline: 'Trusted community member',
+    isPremium: true,
+    isVerified: true,
+    reputationTier: 'trusted',
+    testImage: 'test-user-woman.jpg',
+  },
+
+  // DISTINGUISHED tier user - woman, 35, verified
+  distinguishedTierUser: {
+    id: 'test-distinguished-tier',
+    email: 'distinguished-tier@e2e.test',
+    password: 'TestPassword123!',
+    displayName: 'Distinguished Diana',
+    storageStatePath: '.auth/distinguished-tier.json',
+    birthDate: ageToDate(35),
+    city: 'Portland',
+    gender: 'woman',
+    interestedIn: ['men'],
+    tagline: 'Distinguished member',
+    isPremium: false,
+    isVerified: true,
+    reputationTier: 'distinguished',
+    testImage: 'test-user-woman.jpg',
+  },
+
+  // Nonbinary user, 30, premium, active tier
+  nonbinaryUser: {
     id: 'test-nonbinary-30',
     email: 'nonbinary-30@e2e.test',
     password: 'TestPassword123!',
     displayName: 'Nonbinary Noel',
     storageStatePath: '.auth/nonbinary-30.json',
     birthDate: ageToDate(30),
-    city: 'Portland',
+    city: 'Austin',
     gender: 'nonbinary',
     interestedIn: ['men', 'women', 'nonbinary'],
     tagline: 'Open to all connections',
     isPremium: true,
     isVerified: false,
-    reputationTier: 'rising',
-    testImage: 'test-user-woman.jpg', // Use woman image as placeholder
+    reputationTier: 'active',
+    testImage: 'test-user-woman.jpg',
   },
 
-  // Young man, 21, free, new
-  youngMan21: {
-    id: 'test-young-man-21',
-    email: 'young-man-21@e2e.test',
+  // Second NEW tier user - woman, 24, for same-tier messaging tests
+  newTierUser2: {
+    id: 'test-new-tier-2',
+    email: 'new-tier-2@e2e.test',
     password: 'TestPassword123!',
-    displayName: 'Young Yusuf',
-    storageStatePath: '.auth/young-man-21.json',
-    birthDate: ageToDate(21),
-    city: 'Austin',
-    gender: 'man',
-    interestedIn: ['women'],
-    tagline: 'New here and excited',
+    displayName: 'New Nancy',
+    storageStatePath: '.auth/new-tier-2.json',
+    birthDate: ageToDate(24),
+    city: 'Miami',
+    gender: 'woman',
+    interestedIn: ['men'],
+    tagline: 'Also just getting started',
     isPremium: false,
     isVerified: false,
     reputationTier: 'new',
-    testImage: 'test-user-man.png',
-  },
-
-  // Mature woman, 38, verified, established
-  olderWoman55: {
-    id: 'test-mature-woman-38',
-    email: 'mature-woman-38@e2e.test',
-    password: 'TestPassword123!',
-    displayName: 'Mature Mary',
-    storageStatePath: '.auth/mature-woman-38.json',
-    birthDate: ageToDate(38),
-    city: 'Denver',
-    gender: 'woman',
-    interestedIn: ['men'],
-    tagline: 'Age is just a number',
-    isPremium: false,
-    isVerified: true,
-    reputationTier: 'established',
     testImage: 'test-user-woman.jpg',
   },
 };
@@ -197,6 +242,27 @@ export function getAllTestUsers(): TestUser[] {
  */
 export function getUserById(id: string): TestUser | undefined {
   return getAllTestUsers().find(u => u.id === id);
+}
+
+/**
+ * Get users by reputation tier
+ */
+export function getUsersByTier(tier: ReputationTier): TestUser[] {
+  return getAllTestUsers().filter(u => u.reputationTier === tier);
+}
+
+/**
+ * Get a user with a specific tier (returns first match)
+ */
+export function getUserWithTier(tier: ReputationTier): TestUser | undefined {
+  return getAllTestUsers().find(u => u.reputationTier === tier);
+}
+
+/**
+ * Compare tiers - returns positive if tier1 > tier2
+ */
+export function compareTiers(tier1: ReputationTier, tier2: ReputationTier): number {
+  return TIER_ORDER.indexOf(tier1) - TIER_ORDER.indexOf(tier2);
 }
 
 export const AUTH_EMULATOR_URL = 'http://localhost:9099';

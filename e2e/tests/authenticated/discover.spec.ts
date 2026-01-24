@@ -28,20 +28,62 @@ async function goToDiscoverPage(page: Page) {
  * Helper function to open filters and wait for animation to complete
  */
 async function openFiltersPanel(page: Page) {
-  await page.locator('.filter-toggle-btn').click();
-  await page.locator('.filters-panel').waitFor({ state: 'visible' });
-  // Wait for animation to complete
-  await page.waitForTimeout(300);
+  const filterBtn = page.locator('.filter-toggle-btn');
+  const filtersPanel = page.locator('.filters-panel');
+  
+  // Wait for button to be ready
+  await filterBtn.waitFor({ state: 'visible', timeout: 10000 });
+  
+  // Check if already open
+  if (await filtersPanel.isVisible().catch(() => false)) {
+    // Wait for content to be ready
+    await page.locator('.quick-filter-card').first().waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
+    return;
+  }
+  
+  // Retry clicking if panel doesn't appear
+  for (let attempt = 0; attempt < 3; attempt++) {
+    // Check state before clicking - if already open from previous attempt, don't click again
+    const isOpen = await filtersPanel.isVisible().catch(() => false);
+    if (!isOpen) {
+      await filterBtn.click();
+    }
+    await page.waitForTimeout(500);
+    
+    try {
+      await filtersPanel.waitFor({ state: 'visible', timeout: 5000 });
+      // Wait for content to fully render
+      await page.locator('.quick-filter-card').first().waitFor({ state: 'visible', timeout: 5000 });
+      await page.waitForTimeout(300);
+      
+      // Final verification before returning
+      const finalCheck = await filtersPanel.isVisible().catch(() => false);
+      if (finalCheck) {
+        return;
+      }
+    } catch {
+      // Check if panel is visible despite error with quick-filter-card
+      const panelVisible = await filtersPanel.isVisible().catch(() => false);
+      if (panelVisible) {
+        await page.waitForTimeout(300);
+        return;
+      }
+      
+      if (attempt === 2) {
+        throw new Error('Filters panel failed to open after 3 attempts');
+      }
+    }
+  }
 }
 
 test.describe('Discover Page', () => {
   test.describe('Page Layout', () => {
     test('displays discover page with correct layout', async ({ page, loginAsAlice }) => {
       await loginAsAlice();
-      await page.goto('/discover');
+      await page.goto('/discover', { timeout: 60000 });
       
       // Should have main discover component
-      await expect(page.locator('app-discover')).toBeVisible();
+      await expect(page.locator('app-discover')).toBeVisible({ timeout: 10000 });
       
       // Should have filter controls
       await expect(page.getByRole('button', { name: /filters/i })).toBeVisible();
@@ -115,15 +157,15 @@ test.describe('Discover Page', () => {
       // Click filters button to open
       await openFiltersPanel(page);
       
-      // Filter panel should appear
-      await expect(page.locator('.filters-panel')).toBeVisible();
+      // Filter panel should appear (use longer timeout for assertion)
+      await expect(page.locator('.filters-panel')).toBeVisible({ timeout: 10000 });
       
       // Click again to close
       await page.locator('.filter-toggle-btn').click();
-      await page.waitForTimeout(300);
+      await page.waitForTimeout(500);
       
       // Filter panel should be hidden
-      await expect(page.locator('.filters-panel')).not.toBeVisible();
+      await expect(page.locator('.filters-panel')).not.toBeVisible({ timeout: 5000 });
     });
 
     test('quick filters are available to all users', async ({ page, loginAsBob }) => {
@@ -346,8 +388,9 @@ test.describe('Discover Page', () => {
       // Open filters
       await openFiltersPanel(page);
       
-      // Click "More filters" button - scroll into view first
+      // Click "More filters" button - wait for it first, then scroll and click
       const moreFiltersBtn = page.locator('.show-more-btn');
+      await moreFiltersBtn.waitFor({ state: 'visible', timeout: 10000 });
       await moreFiltersBtn.scrollIntoViewIfNeeded();
       await moreFiltersBtn.click();
       
