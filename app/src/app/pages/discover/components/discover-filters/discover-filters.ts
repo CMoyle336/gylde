@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, input, output, signal, computed } from '@angular/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -56,7 +55,6 @@ const TIER_VISUAL_CONFIG: Record<string, { icon: string; color: string; descript
   imports: [
     MatFormFieldModule,
     MatSelectModule,
-    MatSlideToggleModule,
     MatButtonModule,
     MatIconModule,
     MatTooltipModule,

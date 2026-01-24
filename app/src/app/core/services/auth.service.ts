@@ -22,6 +22,7 @@ import {
   ConfirmationResult,
 } from '@angular/fire/auth';
 import { AuthUser } from '../interfaces';
+import { AnalyticsService } from './analytics.service';
 import { environment } from '../../../environments/environment';
 
 @Injectable({
@@ -30,6 +31,7 @@ import { environment } from '../../../environments/environment';
 export class AuthService {
   private readonly auth = inject(Auth);
   private readonly router = inject(Router);
+  private readonly analytics = inject(AnalyticsService);
 
   private readonly _user = signal<AuthUser | null>(null);
   private readonly _loading = signal(true);
@@ -103,6 +105,10 @@ export class AuthService {
       }
 
       this._user.set(this.mapUser(credential.user));
+      
+      // Track signup and set user ID
+      this.analytics.setUser(credential.user.uid);
+      this.analytics.trackSignup('email');
     } catch (error) {
       this._error.set(this.getErrorMessage(error));
       throw error;
@@ -117,6 +123,10 @@ export class AuthService {
       this._loading.set(true);
       const credential = await signInWithEmailAndPassword(this.auth, email, password);
       this._user.set(this.mapUser(credential.user));
+      
+      // Track login and set user ID
+      this.analytics.setUser(credential.user.uid);
+      this.analytics.trackLogin('email');
     } catch (error) {
       this._error.set(this.getErrorMessage(error));
       throw error;
@@ -132,6 +142,17 @@ export class AuthService {
       const provider = new GoogleAuthProvider();
       const credential = await signInWithPopup(this.auth, provider);
       this._user.set(this.mapUser(credential.user));
+      
+      // Check if this is a new user (sign up) or existing user (sign in)
+      const isNewUser = credential.user.metadata.creationTime === credential.user.metadata.lastSignInTime;
+      
+      // Track and set user ID
+      this.analytics.setUser(credential.user.uid);
+      if (isNewUser) {
+        this.analytics.trackSignup('google');
+      } else {
+        this.analytics.trackLogin('google');
+      }
     } catch (error) {
       this._error.set(this.getErrorMessage(error));
       throw error;

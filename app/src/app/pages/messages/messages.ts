@@ -26,6 +26,7 @@ import { BlockService } from '../../core/services/block.service';
 import { SubscriptionService } from '../../core/services/subscription.service';
 import { AiChatService } from '../../core/services/ai-chat.service';
 import { UserProfileService } from '../../core/services/user-profile.service';
+import { AnalyticsService } from '../../core/services/analytics.service';
 import { ConversationDisplay, MessageDisplay, VirtualPhone, VirtualPhoneSettings } from '../../core/interfaces';
 import { AiAssistPanelComponent, AiAssistContext } from '../../components/ai-assist-panel';
 
@@ -71,6 +72,7 @@ export class MessagesComponent implements OnInit, OnDestroy, AfterViewInit {
   private readonly functions = inject(Functions);
   private readonly auth = inject(Auth);
   private readonly dialog = inject(MatDialog);
+  private readonly analytics = inject(AnalyticsService);
 
   @ViewChild(ChatInputComponent) chatInput!: ChatInputComponent;
 
@@ -131,7 +133,7 @@ export class MessagesComponent implements OnInit, OnDestroy, AfterViewInit {
     return true;
   });
   
-  // Premium users can start unlimited conversations with any tier
+  // Premium capability for unlimited messaging (not related to higher-tier conversation limits)
   protected readonly hasUnlimitedMessaging = computed(() => {
     return this.subscriptionService.capabilities().unlimitedMessaging;
   });
@@ -693,6 +695,9 @@ export class MessagesComponent implements OnInit, OnDestroy, AfterViewInit {
   // ============================================
 
   protected onConversationSelected(conversation: ConversationDisplay): void {
+    // Track conversation opened
+    this.analytics.trackConversationOpened();
+    
     // Reset state for new conversation
     this.lastMessageCount = 0;
     this.lastMessageId = undefined;
@@ -733,6 +738,7 @@ export class MessagesComponent implements OnInit, OnDestroy, AfterViewInit {
   protected onViewProfile(): void {
     const activeConvo = this.activeConversation();
     if (!activeConvo?.otherUser?.uid) return;
+    this.analytics.trackProfileView(activeConvo.otherUser.uid, 'messages');
     this.router.navigate(['/user', activeConvo.otherUser.uid]);
   }
 
@@ -804,6 +810,12 @@ export class MessagesComponent implements OnInit, OnDestroy, AfterViewInit {
   // ============================================
 
   protected onMessageSent(event: SendMessageEvent): void {
+    // Track message sent
+    this.analytics.trackMessageSent(
+      !!(event.files && event.files.length > 0),
+      event.content.length
+    );
+    
     this.messageService.sendMessage(event.content, event.files, event.timer ?? undefined);
     this.currentDraft.set(''); // Clear draft after sending
   }
@@ -947,6 +959,7 @@ export class MessagesComponent implements OnInit, OnDestroy, AfterViewInit {
       const provisionFn = httpsCallable<void, VirtualPhone>(this.functions, 'provisionVirtualNumber');
       const result = await provisionFn();
       this.virtualPhone.set(result.data);
+      this.analytics.trackVirtualPhoneViewed();
     } catch (error: any) {
       console.error('Failed to provision virtual number:', error);
       this.virtualPhoneError.set(

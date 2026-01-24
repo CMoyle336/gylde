@@ -22,6 +22,7 @@ import { ActivityService } from '../../core/services/activity.service';
 import { PhotoAccessService } from '../../core/services/photo-access.service';
 import { BlockService, BlockStatus } from '../../core/services/block.service';
 import { SubscriptionService } from '../../core/services/subscription.service';
+import { AnalyticsService } from '../../core/services/analytics.service';
 import { ProfileSkeletonComponent } from './components';
 import { ReputationBadgeComponent } from '../../components/reputation-badge';
 import { FounderBadgeComponent } from '../../components/founder-badge';
@@ -58,6 +59,7 @@ export class UserProfileComponent implements OnInit, OnDestroy {
   private readonly destroyRef = inject(DestroyRef);
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly analytics = inject(AnalyticsService);
 
   protected readonly profile = signal<UserProfile | null>(null);
   protected readonly loading = signal(true);
@@ -336,6 +338,8 @@ export class UserProfileComponent implements OnInit, OnDestroy {
       const conversationId = await this.messageService.startConversation(p.uid);
 
       if (conversationId) {
+        this.analytics.trackConversationStarted('user_profile');
+        
         this.messageService.openConversation({
           id: conversationId,
           otherUser: {
@@ -359,13 +363,22 @@ export class UserProfileComponent implements OnInit, OnDestroy {
   protected async onFavorite(): Promise<void> {
     const p = this.profile();
     if (!p) return;
+    
+    const wasFavorited = this.isFavorited();
     await this.favoriteService.toggleFavorite(p.uid);
+    
+    if (wasFavorited) {
+      this.analytics.trackFavoriteRemoved('user_profile');
+    } else {
+      this.analytics.trackFavoriteAdded('user_profile');
+    }
   }
 
   protected onReport(): void {
     const p = this.profile();
     if (!p) return;
 
+    this.analytics.trackDialogOpened('report_user');
     this.dialog.open<ReportDialogComponent, ReportDialogData>(ReportDialogComponent, {
       data: {
         userId: p.uid,
@@ -389,6 +402,7 @@ export class UserProfileComponent implements OnInit, OnDestroy {
     try {
       await this.photoAccessService.requestAccess(p.uid);
       this.photoAccess.set({ hasAccess: false, requestStatus: 'pending' });
+      this.analytics.trackPhotoAccessRequested();
     } catch (error) {
       console.error('Error requesting photo access:', error);
     } finally {
@@ -543,6 +557,7 @@ export class UserProfileComponent implements OnInit, OnDestroy {
     const p = this.profile();
     if (!p) return;
 
+    this.analytics.trackDialogOpened('block_user');
     const dialogRef = this.dialog.open<BlockConfirmDialogComponent, BlockConfirmDialogData, boolean>(
       BlockConfirmDialogComponent,
       {
@@ -557,6 +572,7 @@ export class UserProfileComponent implements OnInit, OnDestroy {
 
     dialogRef.afterClosed().subscribe((blocked) => {
       if (blocked) {
+        this.analytics.trackUserBlocked();
         // Navigate away since they can no longer see this profile
         this.router.navigate(['/discover']);
       }
@@ -571,6 +587,7 @@ export class UserProfileComponent implements OnInit, OnDestroy {
     try {
       await this.blockService.unblockUser(p.uid);
       this.blockStatus.set({ isBlocked: false, blockedByMe: false, blockedMe: false });
+      this.analytics.trackUserUnblocked();
     } catch (error) {
       console.error('Error unblocking user:', error);
     } finally {

@@ -2,6 +2,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { ThemeService } from './core/services/theme.service';
 import { SeoService } from './core/services/seo.service';
+import { AnalyticsService } from './core/services/analytics.service';
 
 @Component({
   selector: 'app-root',
@@ -11,13 +12,15 @@ import { SeoService } from './core/services/seo.service';
 })
 export class App implements OnInit {
   protected readonly title = signal('gylde');
-  
   // Inject ThemeService early to initialize theme before first paint
   private readonly themeService = inject(ThemeService);
   private readonly seoService = inject(SeoService);
+  private readonly analytics = inject(AnalyticsService);
 
   ngOnInit(): void {
     // Initialize SEO service to handle route-based meta updates
     this.seoService.init();
+    // Log app loaded event
+    this.analytics.trackAppLoaded();
   }
 }

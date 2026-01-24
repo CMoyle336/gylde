@@ -17,6 +17,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { UserProfileService } from '../../core/services/user-profile.service';
 import { ThemeService } from '../../core/services/theme.service';
 import { SubscriptionService } from '../../core/services/subscription.service';
+import { AnalyticsService } from '../../core/services/analytics.service';
 import { UserSettings } from '../../core/interfaces';
 import { BlockedUsersDialogComponent } from '../../components/blocked-users-dialog';
 
@@ -47,6 +48,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
   private readonly dialog = inject(MatDialog);
   protected readonly themeService = inject(ThemeService);
   protected readonly subscriptionService = inject(SubscriptionService);
+  private readonly analytics = inject(AnalyticsService);
 
   // User info
   protected readonly userEmail = computed(() => this.authService.user()?.email || null);
@@ -288,9 +290,18 @@ export class SettingsComponent implements OnInit, OnDestroy {
     this.settings.set(updatedSettings);
     await this.saveSettings(updatedSettings);
 
+    // Track setting changed
+    this.analytics.trackSettingChanged(category, key, value);
+
     // Handle language change
     if (category === 'preferences' && key === 'language') {
+      this.analytics.trackLanguageChanged(value as string);
       this.translateService.use(value as string);
+    }
+    
+    // Handle theme change tracking
+    if (category === 'preferences' && key === 'theme') {
+      this.analytics.trackThemeChanged(value as 'light' | 'dark');
     }
   }
 
@@ -334,6 +345,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
     try {
       await this.authService.sendEmailVerification();
       this.dialogSuccess.set(this.translateService.instant('SETTINGS.DIALOGS.VERIFY_EMAIL_SENT'));
+      this.analytics.trackEmailVerificationSent();
     } catch (error: any) {
       console.error('Failed to send verification email:', error);
       if (error?.code === 'auth/too-many-requests') {
@@ -489,6 +501,8 @@ export class SettingsComponent implements OnInit, OnDestroy {
       };
       this.settings.set(updatedSettings);
 
+      this.analytics.trackAccountDisabled();
+      
       // Close dialog and sign out
       this.closeDialogs();
       await this.authService.signOutUser();
@@ -519,6 +533,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
         },
       };
       this.settings.set(updatedSettings);
+      this.analytics.trackAccountEnabled();
     } catch (error) {
       console.error('Error enabling account:', error);
     } finally {
@@ -540,6 +555,8 @@ export class SettingsComponent implements OnInit, OnDestroy {
       // Call Cloud Function to permanently delete all user data
       const deleteAccountFn = httpsCallable(this.functions, 'deleteAccount');
       await deleteAccountFn({});
+      
+      this.analytics.trackAccountDeleted();
       
       // Close dialog, sign out, and redirect to home
       this.closeDialogs();
@@ -569,6 +586,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
   }
 
   async confirmLogout(): Promise<void> {
+    this.analytics.trackLogout();
     await this.authService.signOutUser();
     this.router.navigate(['/']);
   }
@@ -580,6 +598,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
     this.phoneVerificationStep.set('input');
     this.dialogError.set(null);
     this.showPhoneDialog.set(true);
+    this.analytics.trackPhoneVerificationStarted();
     
     // Initialize reCAPTCHA after dialog opens
     setTimeout(() => {
@@ -664,8 +683,10 @@ export class SettingsComponent implements OnInit, OnDestroy {
       }
       
       this.phoneVerificationStep.set('success');
+      this.analytics.trackPhoneVerificationCompleted(true);
     } catch (error: any) {
       console.error('Failed to verify code:', error);
+      this.analytics.trackPhoneVerificationCompleted(false);
       // Handle specific Firebase error codes
       if (error?.code === 'auth/invalid-verification-code') {
         this.dialogError.set('Invalid verification code. Please try again.');

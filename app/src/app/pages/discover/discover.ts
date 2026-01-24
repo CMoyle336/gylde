@@ -11,6 +11,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { DiscoveryService } from '../../core/services/discovery.service';
 import { FavoriteService } from '../../core/services/favorite.service';
 import { MessageService } from '../../core/services/message.service';
+import { AnalyticsService } from '../../core/services/analytics.service';
 import { DiscoverableProfile, DiscoveryFilters, DiscoverySort, SavedView } from '../../core/interfaces';
 import { ProfileCardComponent, ProfileCardData } from '../../components/profile-card';
 import { ProfileCardSkeletonComponent } from '../../components/profile-card-skeleton';
@@ -45,6 +46,7 @@ export class DiscoverComponent implements OnInit {
   private readonly favoriteService = inject(FavoriteService);
   private readonly messageService = inject(MessageService);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly analytics = inject(AnalyticsService);
 
   // UI state
   protected readonly showFilters = signal(false);
@@ -114,10 +116,19 @@ export class DiscoverComponent implements OnInit {
   protected async applyFilters(): Promise<void> {
     this.showFilters.set(false);
     await this.discoveryService.searchProfiles(false, true); // Force refresh to show loading
+    
+    // Track search with filters
+    this.analytics.trackDiscoverySearch({
+      filterCount: this.activeFilterCount(),
+      sortField: this.sort().field,
+      sortDirection: this.sort().direction,
+      resultCount: this.profiles().length,
+    });
   }
 
   // Sort management
   protected setSort(sort: DiscoverySort): void {
+    this.analytics.trackSortChanged(sort.field, sort.direction);
     this.discoveryService.updateSort(sort);
     this.discoveryService.searchProfiles(false, true); // Force refresh to show loading
   }
@@ -137,6 +148,7 @@ export class DiscoverComponent implements OnInit {
 
   // View management
   protected applyView(view: SavedView): void {
+    this.analytics.trackSavedViewApplied(view.name);
     this.discoveryService.applyView(view);
     this.discoveryService.searchProfiles(false, true); // Force refresh to show loading
   }
@@ -151,6 +163,7 @@ export class DiscoverComponent implements OnInit {
 
   protected async onSaveView(event: { name: string; isDefault: boolean }): Promise<void> {
     await this.discoveryService.saveView(event.name, event.isDefault);
+    this.analytics.trackSavedViewCreated(event.name, event.isDefault);
     this.closeSaveViewDialog();
   }
 
@@ -171,7 +184,10 @@ export class DiscoverComponent implements OnInit {
   }
 
   // Pagination
+  private pageNumber = 1;
   protected async loadMore(): Promise<void> {
+    this.pageNumber++;
+    this.analytics.trackLoadMore(this.pageNumber);
     await this.discoveryService.loadMore();
   }
 
@@ -181,11 +197,19 @@ export class DiscoverComponent implements OnInit {
   }
 
   protected onViewProfile(profile: ProfileCardData): void {
+    this.analytics.trackProfileView(profile.uid, 'discover');
     this.router.navigate(['/user', profile.uid]);
   }
 
   protected async onFavoriteProfile(profile: ProfileCardData): Promise<void> {
+    const wasFavorited = this.isFavorited(profile.uid);
     await this.favoriteService.toggleFavorite(profile.uid);
+    
+    if (wasFavorited) {
+      this.analytics.trackFavoriteRemoved('discover');
+    } else {
+      this.analytics.trackFavoriteAdded('discover');
+    }
   }
 
   protected async onMessageProfile(profile: ProfileCardData): Promise<void> {
@@ -219,6 +243,8 @@ export class DiscoverComponent implements OnInit {
       const conversationId = await this.messageService.startConversation(profile.uid);
       
       if (conversationId) {
+        this.analytics.trackConversationStarted('discover');
+        
         this.messageService.openConversation({
           id: conversationId,
           otherUser: {

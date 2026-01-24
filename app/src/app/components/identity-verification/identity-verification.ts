@@ -16,7 +16,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Functions, httpsCallable } from '@angular/fire/functions';
 
 import { environment } from '../../../environments/environment';
-import { AuthService, UserProfileService, StripeService } from '../../core/services';
+import { AuthService, UserProfileService, StripeService, AnalyticsService } from '../../core/services';
 
 type VerificationStep = 'info' | 'payment' | 'verifying' | 'pending' | 'success' | 'failed';
 
@@ -39,6 +39,7 @@ export class IdentityVerificationComponent implements OnInit, OnDestroy {
   private readonly authService = inject(AuthService);
   private readonly userProfileService = inject(UserProfileService);
   private readonly stripeService = inject(StripeService);
+  private readonly analytics = inject(AnalyticsService);
   private readonly functions = inject(Functions);
 
   protected readonly step = signal<VerificationStep>('info');
@@ -105,6 +106,13 @@ export class IdentityVerificationComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // Track checkout initiation for identity verification
+    this.analytics.trackCheckoutInitiated({
+      tier: 'identity_verification',
+      priceInCents: this.price,
+      currency: 'USD',
+    });
+
     this.loading.set(true);
     this.error.set(null);
 
@@ -157,6 +165,14 @@ export class IdentityVerificationComponent implements OnInit, OnDestroy {
       await confirmPayment({ 
         paymentIntentId: this.paymentIntentId,
         type: 'identity_verification',
+      });
+
+      // Track the identity verification purchase for revenue
+      this.analytics.trackOneTimePurchase({
+        transactionId: this.paymentIntentId || undefined,
+        itemName: 'Identity Verification',
+        priceInCents: this.price,
+        currency: 'USD',
       });
 
       // Refresh profile to get updated identityVerificationPaid status

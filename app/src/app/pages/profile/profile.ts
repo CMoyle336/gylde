@@ -20,6 +20,7 @@ import { PlacesService, PlaceSuggestion } from '../../core/services/places.servi
 import { SubscriptionService } from '../../core/services/subscription.service';
 import { RemoteConfigService } from '../../core/services/remote-config.service';
 import { AiChatService } from '../../core/services/ai-chat.service';
+import { AnalyticsService } from '../../core/services/analytics.service';
 import { OnboardingProfile, GeoLocation, ReputationTier, TIER_CONFIG } from '../../core/interfaces';
 import { Photo } from '../../core/interfaces/photo.interface';
 import { ALL_CONNECTION_TYPES, getConnectionTypeLabel, SUPPORT_ORIENTATION_OPTIONS, getSupportOrientationLabel } from '../../core/constants/connection-types';
@@ -93,6 +94,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
   private readonly placesService = inject(PlacesService);
   protected readonly subscriptionService = inject(SubscriptionService);
   private readonly remoteConfig = inject(RemoteConfigService);
+  private readonly analytics = inject(AnalyticsService);
   
   // Show US-only notice when the only allowed region is 'us'
   protected readonly showUsOnlyNotice = computed(() => {
@@ -164,18 +166,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
     return this.reputationData()?.tier ?? 'new';
   });
 
-  // Higher-tier conversation limits (premium users have unlimited)
+  // Higher-tier conversation limits (based on reputation tier, not subscription)
   protected readonly higherTierConversationStatus = computed(() => {
-    // Premium users have unlimited conversations
-    if (this.isPremium()) {
-      return {
-        dailyLimit: -1, // -1 means unlimited
-        usedToday: 0,
-        remaining: -1, // -1 means unlimited
-        isUnlimited: true,
-      };
-    }
-
     const rep = this.reputationData();
     const tier = rep?.tier ?? 'new';
     const config = TIER_CONFIG[tier];
@@ -390,6 +382,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
     const profile = this.profile();
     if (!profile) return;
 
+    this.analytics.trackProfileEditStarted();
+
     // Initialize city input value for autocomplete
     const cityDisplay = profile.onboarding?.city 
       ? `${profile.onboarding.city}, ${profile.onboarding.country || ''}`.trim().replace(/, $/, '')
@@ -505,6 +499,17 @@ export class ProfileComponent implements OnInit, OnDestroy {
         await this.authService.updateUserPhoto(profilePhoto || '');
       }
 
+      // Track profile save with fields that were changed
+      const changedFields: string[] = [];
+      if (this.editForm.displayName !== profile.displayName) changedFields.push('displayName');
+      if (this.editForm.city !== profile.onboarding?.city) changedFields.push('city');
+      if (this.editForm.tagline !== profile.onboarding?.tagline) changedFields.push('tagline');
+      if (this.editForm.genderIdentity !== profile.onboarding?.genderIdentity) changedFields.push('genderIdentity');
+      if (this.editForm.supportOrientation !== profile.onboarding?.supportOrientation) changedFields.push('supportOrientation');
+      if (this.editForm.idealRelationship !== profile.onboarding?.idealRelationship) changedFields.push('idealRelationship');
+      if (this.editForm.supportMeaning !== profile.onboarding?.supportMeaning) changedFields.push('supportMeaning');
+      this.analytics.trackProfileSaved(changedFields);
+
       this.isEditing.set(false);
     } catch (error) {
       console.error('Error saving profile:', error);
@@ -589,7 +594,11 @@ export class ProfileComponent implements OnInit, OnDestroy {
           this.removeUploadingPhoto(uploadingItem.id);
           
           // Add to editable photos
-          this.editablePhotos.set([...this.editablePhotos(), result.url]);
+          const currentPhotos = this.editablePhotos();
+          this.editablePhotos.set([...currentPhotos, result.url]);
+          
+          // Track photo upload
+          this.analytics.trackPhotoUploaded(currentPhotos.length + 1, currentPhotos.length === 0);
         } else {
           this.updateUploadingPhotoStatus(uploadingItem.id, 'error', result.error);
           // Remove failed upload after showing error briefly
@@ -631,6 +640,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     const photos = this.editablePhotos();
     const newPhotos = photos.filter(url => url !== photoUrl);
     this.editablePhotos.set(newPhotos);
+    this.analytics.trackPhotoDeleted();
 
     // If not editing, save immediately
     // Storage cleanup is handled by Cloud Function trigger on user document
@@ -697,6 +707,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     }
     
     this.profilePhotoUrl.set(photoUrl);
+    this.analytics.trackProfilePhotoChanged();
 
     // If not editing, save immediately
     if (!this.isEditing()) {
@@ -725,6 +736,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
         newMap.set(photoUrl, newPrivacy);
         return newMap;
       });
+      
+      this.analytics.trackPhotoPrivacyToggled(newPrivacy);
     } catch (error) {
       console.error('Error toggling photo privacy:', error);
       this.uploadError.set('Failed to update photo privacy');
@@ -1156,10 +1169,15 @@ export class ProfileComponent implements OnInit, OnDestroy {
         break;
     }
     
+    this.analytics.trackAiPolishUsed(field, true);
     this.polishSuggestions.set(null);
   }
 
   protected dismissPolishSuggestions(): void {
+    const suggestion = this.polishSuggestions();
+    if (suggestion) {
+      this.analytics.trackAiPolishUsed(suggestion.field, false);
+    }
     this.polishSuggestions.set(null);
   }
 }

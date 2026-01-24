@@ -79,5 +79,6 @@ export const appConfig: ApplicationConfig = {
         : 60 * 1000;
       return remoteConfig;
     }),
+    // Note: Analytics is added in main.ts (browser-only) to avoid SSR issues
   ],
 };

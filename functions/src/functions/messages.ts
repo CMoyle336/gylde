@@ -602,7 +602,7 @@ export const checkMessagePermission = onCall<{
 /**
  * Get current user's messaging status
  * Returns daily higher-tier conversation limit and remaining
- * Premium users have unlimited messaging
+ * Higher-tier limits are based on reputation tier, not subscription
  */
 export const getMessagingStatus = onCall<void>(
   {region: "us-central1"},
@@ -624,22 +624,9 @@ export const getMessagingStatus = onCall<void>(
       const privateData = privateDoc.data();
       const reputation = privateData?.reputation as ReputationData | undefined;
       const tier: ReputationTier = reputation?.tier ?? "new";
-
-      // Check if user is premium - they have unlimited messaging
       const isPremium = privateData?.subscription?.tier === "premium";
 
-      if (isPremium) {
-        return {
-          tier,
-          dailyHigherTierConversationLimit: -1, // Unlimited
-          higherTierConversationsToday: 0,
-          higherTierRemaining: -1, // Unlimited
-          isPremium: true,
-          isUnlimited: true,
-        };
-      }
-
-      // Non-premium users: apply reputation-based limits
+      // Higher-tier conversation limits are based on reputation tier only (not subscription)
       const tierConfig = getTierConfig(tier);
       const isUnlimited = tierConfig.dailyHigherTierConversations === -1;
 
@@ -655,7 +642,7 @@ export const getMessagingStatus = onCall<void>(
         higherTierConversationsToday: usedToday,
         higherTierRemaining: isUnlimited ? -1 :
           Math.max(0, tierConfig.dailyHigherTierConversations - usedToday),
-        isPremium: false,
+        isPremium,
         isUnlimited,
       };
     } catch (error) {

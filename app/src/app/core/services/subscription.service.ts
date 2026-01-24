@@ -3,6 +3,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { AuthService } from './auth.service';
 import { FirestoreService } from './firestore.service';
 import { RemoteConfigService } from './remote-config.service';
+import { AnalyticsService } from './analytics.service';
 import {
   SubscriptionTier,
   UserSubscription,
@@ -33,6 +34,7 @@ export class SubscriptionService {
   private readonly authService = inject(AuthService);
   private readonly firestoreService = inject(FirestoreService);
   private readonly remoteConfigService = inject(RemoteConfigService);
+  private readonly analytics = inject(AnalyticsService);
   private readonly dialog = inject(MatDialog);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -45,6 +47,9 @@ export class SubscriptionService {
   private readonly _founderCity = signal<string | null>(null);
   private readonly _loading = signal(false);
   private unsubscribe: (() => void) | null = null;
+  
+  // Track previous tier to detect changes
+  private previousTier: SubscriptionTier | null = null;
 
   // Public signals
   readonly subscription = this._subscription.asReadonly();
@@ -155,7 +160,13 @@ export class SubscriptionService {
       'data',
       (data) => {
         if (data) {
-          this._subscription.set(data.subscription ?? { tier: 'free', status: 'active' });
+          const newSubscription = data.subscription ?? { tier: 'free', status: 'active' };
+          const newTier = newSubscription.tier === 'premium' ? 'premium' : 'free';
+          
+          // Detect subscription tier changes for analytics
+          this.trackSubscriptionChange(newTier, newSubscription);
+          
+          this._subscription.set(newSubscription);
           this._profileProgress.set(data.profileProgress ?? 0);
           this._trustData.set(data.trust ?? null);
           this._reputationData.set(data.reputation ?? null);
@@ -169,10 +180,61 @@ export class SubscriptionService {
           this._reputationData.set(null);
           this._isFounder.set(false);
           this._founderCity.set(null);
+          this.previousTier = 'free';
         }
         this._loading.set(false);
       }
     );
+  }
+
+  /**
+   * Track subscription tier changes for analytics and revenue attribution
+   */
+  private trackSubscriptionChange(newTier: SubscriptionTier, subscription: UserSubscription): void {
+    // Skip if this is the first load (previousTier is null)
+    if (this.previousTier === null) {
+      this.previousTier = newTier;
+      return;
+    }
+
+    // Check if tier actually changed
+    if (this.previousTier !== newTier) {
+      // Track general subscription change
+      this.analytics.trackSubscriptionChanged(newTier, this.previousTier);
+
+      // If upgrading to premium, track as subscription start (revenue event)
+      if (newTier === 'premium' && this.previousTier === 'free') {
+        const priceInCents = this.priceMonthly();
+        
+        this.analytics.trackSubscriptionStart({
+          subscriptionId: subscription.stripeSubscriptionId,
+          tier: 'premium',
+          priceInCents,
+          currency: 'USD',
+          source: 'upgrade_dialog',
+        });
+
+        // Update user properties in analytics
+        this.analytics.setUserProperties({
+          subscription_tier: 'premium',
+        });
+      }
+
+      // If downgrading (cancellation took effect)
+      if (newTier === 'free' && this.previousTier === 'premium') {
+        this.analytics.trackSubscriptionCancelled({
+          tier: 'premium',
+          reason: 'period_end',
+        });
+
+        // Update user properties in analytics
+        this.analytics.setUserProperties({
+          subscription_tier: 'free',
+        });
+      }
+
+      this.previousTier = newTier;
+    }
   }
 
   private cleanup(): void {

@@ -23,7 +23,7 @@
       <a 
         routerLink="/progress"
         class="sidebar-profile"
-        (click)="onNavItemClick()"
+        (click)="onNavItemClick({ id: 'progress', path: '/progress' })"
         [matTooltip]="'Profile Progress'"
         [matTooltipDisabled]="sidenavExpanded()"
         matTooltipPosition="right">
@@ -55,7 +55,7 @@
             class="nav-item"
             [routerLink]="item.path"
             routerLinkActive="active"
-            (click)="onNavItemClick()"
+            (click)="onNavItemClick(item)"
             [matTooltip]="'DASHBOARD.NAV.' + item.labelKey | translate"
             [matTooltipDisabled]="sidenavExpanded()"
             matTooltipPosition="right">
@@ -195,7 +195,7 @@
           <span class="material-icons-outlined">{{ sidenavOpen() ? 'close' : 'menu' }}</span>
         </button>
         <span class="mobile-logo">Gylde</span>
-        <button type="button" class="mobile-profile-btn" routerLink="/progress" (click)="onNavItemClick()">
+        <button type="button" class="mobile-profile-btn" routerLink="/progress" (click)="onNavItemClick({ id: 'progress', path: '/progress' })">
           @if (userPhotoURL()) {
             <img [src]="userPhotoURL()" alt="Profile" class="mobile-avatar">
           } @else {
