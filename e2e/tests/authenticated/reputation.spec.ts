@@ -8,6 +8,48 @@ import {
   TIER_MESSAGING_LIMITS,
   compareTiers 
 } from '../fixtures/test-users';
+import dotenv from 'dotenv';
+import path from 'path';
+
+// Load environment variables from e2e/.env
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+
+// Detect if running against live environment
+function isLiveEnvironment(): boolean {
+  const baseUrl = process.env.BASE_URL || 'http://localhost:4200';
+  return baseUrl.includes('gylde.com');
+}
+
+// Firebase Admin SDK - lazy loaded for live environments
+let adminDb: FirebaseFirestore.Firestore | null = null;
+let adminInitialized = false;
+
+async function getAdminDb(): Promise<FirebaseFirestore.Firestore | null> {
+  if (!isLiveEnvironment()) return null;
+  if (adminInitialized) return adminDb;
+  
+  try {
+    const { initializeApp, applicationDefault, getApps } = await import('firebase-admin/app');
+    const { getFirestore } = await import('firebase-admin/firestore');
+    
+    // Only initialize if not already done
+    if (getApps().length === 0) {
+      initializeApp({
+        credential: applicationDefault(),
+        projectId: 'gylde-sandbox',
+      });
+    }
+    
+    adminDb = getFirestore();
+    adminInitialized = true;
+    console.log('  [Live env] Firebase Admin SDK initialized');
+    return adminDb;
+  } catch (error) {
+    console.error('  [Live env] Failed to initialize Firebase Admin:', error);
+    adminInitialized = true; // Don't retry
+    return null;
+  }
+}
 
 /**
  * Reputation Engine E2E Tests
@@ -483,11 +525,43 @@ async function getCurrentUserUid(page: Page): Promise<string | null> {
   }
 }
 
-// Helper to set higher-tier conversation count via Firestore REST API
+// Helper to set higher-tier conversation count via Firestore
+// Uses Admin SDK for live environments, REST API for emulator
 async function setHigherTierConversationCount(userId: string, count: number): Promise<boolean> {
+  const today = new Date().toISOString().split('T')[0];
+  
+  // Live environment: use Admin SDK
+  if (isLiveEnvironment()) {
+    const db = await getAdminDb();
+    if (!db) {
+      console.error('  [Live env] Admin SDK not available');
+      return false;
+    }
+    
+    try {
+      const docRef = db.doc(`users/${userId}/private/data`);
+      const doc = await docRef.get();
+      const existingRep = doc.exists ? (doc.data()?.reputation || {}) : {};
+      
+      await docRef.set({
+        reputation: {
+          ...existingRep,
+          higherTierConversationsToday: count,
+          lastConversationDate: today,
+        },
+      }, { merge: true });
+      
+      console.log(`  [Live env] Set higherTierConversationsToday=${count} for user ${userId}`);
+      return true;
+    } catch (error) {
+      console.error('  [Live env] Error setting conversation count:', error);
+      return false;
+    }
+  }
+  
+  // Local emulator: use REST API
   const FIREBASE_PROJECT_ID = 'gylde-sandbox';
   const FIRESTORE_EMULATOR_URL = 'http://localhost:8080';
-  const today = new Date().toISOString().split('T')[0];
   
   try {
     const docPath = `projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/users/${userId}/private/data`;
@@ -504,7 +578,6 @@ async function setHigherTierConversationCount(userId: string, count: number): Pr
     if (getResponse.ok) {
       const doc = await getResponse.json() as { fields?: Record<string, unknown> };
       existingData = doc.fields || {};
-      console.log('Existing reputation before update:', JSON.stringify(existingData.reputation, null, 2));
     }
     
     // Update reputation with new count
@@ -532,15 +605,6 @@ async function setHigherTierConversationCount(userId: string, count: number): Pr
       body: JSON.stringify({ fields: updatedData }),
     });
     
-    if (patchResponse.ok) {
-      // Verify the update by reading back
-      const verifyResponse = await fetch(getUrl, { headers: adminHeaders });
-      if (verifyResponse.ok) {
-        const verifyDoc = await verifyResponse.json() as { fields?: Record<string, unknown> };
-        console.log('Reputation after update:', JSON.stringify(verifyDoc.fields?.reputation, null, 2));
-      }
-    }
-    
     return patchResponse.ok;
   } catch (error) {
     console.error('Error setting higher tier conversation count:', error);
@@ -549,10 +613,42 @@ async function setHigherTierConversationCount(userId: string, count: number): Pr
 }
 
 // Helper to GET higher-tier conversation count from Firestore
+// Uses Admin SDK for live environments, REST API for emulator
 async function getHigherTierConversationCount(userId: string): Promise<number> {
+  const today = new Date().toISOString().split('T')[0];
+  
+  // Live environment: use Admin SDK
+  if (isLiveEnvironment()) {
+    const db = await getAdminDb();
+    if (!db) {
+      console.error('  [Live env] Admin SDK not available');
+      return 0;
+    }
+    
+    try {
+      const docRef = db.doc(`users/${userId}/private/data`);
+      const doc = await docRef.get();
+      
+      if (!doc.exists) return 0;
+      
+      const reputation = doc.data()?.reputation || {};
+      const lastDate = reputation.lastConversationDate ?? '';
+      const count = reputation.higherTierConversationsToday ?? 0;
+      
+      // Only return count if it's for today
+      if (lastDate === today) {
+        return count;
+      }
+      return 0;
+    } catch (error) {
+      console.error('  [Live env] Error getting conversation count:', error);
+      return 0;
+    }
+  }
+  
+  // Local emulator: use REST API
   const FIREBASE_PROJECT_ID = 'gylde-sandbox';
   const FIRESTORE_EMULATOR_URL = 'http://localhost:8080';
-  const today = new Date().toISOString().split('T')[0];
   
   try {
     const docPath = `projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/users/${userId}/private/data`;
@@ -571,7 +667,6 @@ async function getHigherTierConversationCount(userId: string): Promise<number> {
       const lastDate = (repFields.lastConversationDate as { stringValue?: string })?.stringValue ?? '';
       const count = (repFields.higherTierConversationsToday as { integerValue?: string })?.integerValue ?? '0';
       
-      // Only return count if it's for today, otherwise counter has reset
       if (lastDate === today) {
         return parseInt(count, 10);
       }
@@ -585,7 +680,40 @@ async function getHigherTierConversationCount(userId: string): Promise<number> {
 }
 
 // Helper to delete ALL conversations for a user
+// Uses Admin SDK for live environments, REST API for emulator
 async function deleteAllConversationsForUser(userId: string): Promise<void> {
+  // Live environment: use Admin SDK
+  if (isLiveEnvironment()) {
+    const db = await getAdminDb();
+    if (!db) {
+      console.error('  [Live env] Admin SDK not available');
+      return;
+    }
+    
+    try {
+      // Query conversations where user is a participant
+      const conversationsRef = db.collection('conversations');
+      const snapshot = await conversationsRef.where('participants', 'array-contains', userId).get();
+      
+      console.log(`  [Live env] Found ${snapshot.size} conversations for user ${userId}`);
+      
+      // Delete each conversation
+      const batch = db.batch();
+      snapshot.docs.forEach(doc => {
+        batch.delete(doc.ref);
+      });
+      
+      if (snapshot.size > 0) {
+        await batch.commit();
+        console.log(`  [Live env] Deleted ${snapshot.size} conversations`);
+      }
+    } catch (error) {
+      console.error('  [Live env] Error deleting conversations:', error);
+    }
+    return;
+  }
+  
+  // Local emulator: use REST API
   const FIREBASE_PROJECT_ID = 'gylde-sandbox';
   const FIRESTORE_EMULATOR_URL = 'http://localhost:8080';
   
@@ -622,99 +750,100 @@ async function deleteAllConversationsForUser(userId: string): Promise<void> {
   }
 }
 
+// Helper to start a conversation and SEND a message to use up the limit
+// Moved to module level so it can be used by multiple test suites
+async function startConversationAndSendMessage(page: Page, targetName: string, message: string): Promise<{
+  success: boolean;
+  limitReached: boolean;
+  errorMessage: string | null;
+}> {
+  await goToDiscoverPage(page);
+  
+  // Wait for profiles to load
+  await page.locator('.profile-grid app-profile-card').first().waitFor({ state: 'visible', timeout: 15000 });
+  
+  // Find the target user's profile card
+  const profileCard = page.locator('app-profile-card').filter({
+    has: page.locator('.card-name', { hasText: targetName })
+  });
+  
+  // Check if target is visible
+  const isVisible = await profileCard.isVisible({ timeout: 5000 }).catch(() => false);
+  if (!isVisible) {
+    console.log(`Target user "${targetName}" not visible in discover page`);
+    return { success: false, limitReached: false, errorMessage: `User ${targetName} not found` };
+  }
+  
+  // Click message button
+  const messageBtn = profileCard.locator('.action-btn.message');
+  await messageBtn.waitFor({ state: 'visible', timeout: 5000 });
+  await messageBtn.click();
+  
+  // Wait for response - either navigation to messages or snackbar
+  await Promise.race([
+    page.waitForURL(/\/messages/, { timeout: 10000 }),
+    page.locator('.mat-mdc-snack-bar-container').waitFor({ state: 'visible', timeout: 10000 }),
+  ]).catch(() => {});
+  
+  await page.waitForTimeout(500);
+  
+  // Check if we got blocked before navigation
+  const snackbar = page.locator('.mat-mdc-snack-bar-container');
+  const hasSnackbar = await snackbar.isVisible().catch(() => false);
+  
+  if (hasSnackbar) {
+    const errorMessage = await snackbar.textContent().catch(() => null);
+    const limitReached = errorMessage?.toLowerCase().includes('limit') || 
+                         errorMessage?.toLowerCase().includes('daily') ||
+                         false;
+    if (limitReached) {
+      return { success: false, limitReached: true, errorMessage };
+    }
+  }
+  
+  // If we're on messages page, send an actual message to use up the limit
+  const onMessagesPage = page.url().includes('/messages');
+  if (onMessagesPage) {
+    // Wait for chat to load
+    await page.waitForTimeout(1000);
+    
+    // Find and fill the message input
+    const messageInput = page.locator('.chat-input input[type="text"]');
+    
+    if (await messageInput.isVisible({ timeout: 5000 }).catch(() => false)) {
+      // Focus and fill the input - fill() is more reliable than pressSequentially
+      await messageInput.click();
+      await messageInput.fill(message);
+      
+      // Wait for Angular to update canSend()
+      await page.waitForTimeout(500);
+      
+      // Click send button
+      const sendBtn = page.locator('.chat-input .send-btn:not([disabled])');
+      try {
+        await sendBtn.waitFor({ state: 'visible', timeout: 3000 });
+        await sendBtn.click();
+        
+        // Wait for the message to appear in the chat (confirms it was sent)
+        const sentMessage = page.locator('.message-bubble, .chat-message, .message-content', { hasText: message });
+        await sentMessage.waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
+        
+        // Wait extra time for Cloud Function to process and increment counter in Firestore
+        await page.waitForTimeout(5000);
+      } catch {
+        console.log('Send button not enabled - message may not have been typed correctly');
+      }
+    }
+    
+    return { success: true, limitReached: false, errorMessage: null };
+  }
+  
+  return { success: false, limitReached: false, errorMessage: 'Navigation failed' };
+}
+
 test.describe.serial('Reputation - Messaging Limit Enforcement', () => {
   // Get the second new tier user for same-tier testing
   const newTierUser2 = DISCOVER_TEST_USERS.newTierUser2;
-  
-  // Helper to start a conversation and SEND a message to use up the limit
-  async function startConversationAndSendMessage(page: Page, targetName: string, message: string): Promise<{
-    success: boolean;
-    limitReached: boolean;
-    errorMessage: string | null;
-  }> {
-    await goToDiscoverPage(page);
-    
-    // Wait for profiles to load
-    await page.locator('.profile-grid app-profile-card').first().waitFor({ state: 'visible', timeout: 15000 });
-    
-    // Find the target user's profile card
-    const profileCard = page.locator('app-profile-card').filter({
-      has: page.locator('.card-name', { hasText: targetName })
-    });
-    
-    // Check if target is visible
-    const isVisible = await profileCard.isVisible({ timeout: 5000 }).catch(() => false);
-    if (!isVisible) {
-      console.log(`Target user "${targetName}" not visible in discover page`);
-      return { success: false, limitReached: false, errorMessage: `User ${targetName} not found` };
-    }
-    
-    // Click message button
-    const messageBtn = profileCard.locator('.action-btn.message');
-    await messageBtn.waitFor({ state: 'visible', timeout: 5000 });
-    await messageBtn.click();
-    
-    // Wait for response - either navigation to messages or snackbar
-    await Promise.race([
-      page.waitForURL(/\/messages/, { timeout: 10000 }),
-      page.locator('.mat-mdc-snack-bar-container').waitFor({ state: 'visible', timeout: 10000 }),
-    ]).catch(() => {});
-    
-    await page.waitForTimeout(500);
-    
-    // Check if we got blocked before navigation
-    const snackbar = page.locator('.mat-mdc-snack-bar-container');
-    const hasSnackbar = await snackbar.isVisible().catch(() => false);
-    
-    if (hasSnackbar) {
-      const errorMessage = await snackbar.textContent().catch(() => null);
-      const limitReached = errorMessage?.toLowerCase().includes('limit') || 
-                           errorMessage?.toLowerCase().includes('daily') ||
-                           false;
-      if (limitReached) {
-        return { success: false, limitReached: true, errorMessage };
-      }
-    }
-    
-    // If we're on messages page, send an actual message to use up the limit
-    const onMessagesPage = page.url().includes('/messages');
-    if (onMessagesPage) {
-      // Wait for chat to load
-      await page.waitForTimeout(1000);
-      
-      // Find and fill the message input
-      const messageInput = page.locator('.chat-input input[type="text"]');
-      
-      if (await messageInput.isVisible({ timeout: 5000 }).catch(() => false)) {
-        // Focus and fill the input - fill() is more reliable than pressSequentially
-        await messageInput.click();
-        await messageInput.fill(message);
-        
-        // Wait for Angular to update canSend()
-        await page.waitForTimeout(500);
-        
-        // Click send button
-        const sendBtn = page.locator('.chat-input .send-btn:not([disabled])');
-        try {
-          await sendBtn.waitFor({ state: 'visible', timeout: 3000 });
-          await sendBtn.click();
-          
-          // Wait for the message to appear in the chat (confirms it was sent)
-          const sentMessage = page.locator('.message-bubble, .chat-message, .message-content', { hasText: message });
-          await sentMessage.waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
-          
-          // Wait extra time for Cloud Function to process and increment counter in Firestore
-          await page.waitForTimeout(5000);
-        } catch {
-          console.log('Send button not enabled - message may not have been typed correctly');
-        }
-      }
-      
-      return { success: true, limitReached: false, errorMessage: null };
-    }
-    
-    return { success: false, limitReached: false, errorMessage: 'Navigation failed' };
-  }
   
   // Helper to just attempt to navigate to messages (to check if blocked)
   async function attemptMessage(page: Page, targetName: string): Promise<{
@@ -732,10 +861,17 @@ test.describe.serial('Reputation - Messaging Limit Enforcement', () => {
       has: page.locator('.card-name', { hasText: targetName })
     });
     
-    // Check if target is visible
-    const isVisible = await profileCard.isVisible({ timeout: 5000 }).catch(() => false);
+    // Check if target is visible with retry
+    let isVisible = await profileCard.isVisible({ timeout: 5000 }).catch(() => false);
+    for (let attempt = 0; attempt < 3 && !isVisible; attempt++) {
+      console.log(`Target user "${targetName}" not visible, refreshing (attempt ${attempt + 1})...`);
+      await page.reload();
+      await page.locator('.profile-grid app-profile-card').first().waitFor({ state: 'visible', timeout: 15000 });
+      isVisible = await profileCard.isVisible({ timeout: 5000 }).catch(() => false);
+    }
+    
     if (!isVisible) {
-      console.log(`Target user "${targetName}" not visible in discover page`);
+      console.log(`Target user "${targetName}" not visible after 3 attempts`);
       return { success: false, limitReached: false, errorMessage: `User ${targetName} not found` };
     }
     
@@ -787,10 +923,7 @@ test.describe.serial('Reputation - Messaging Limit Enforcement', () => {
     expect(result.limitReached).toBe(false);
   });
 
-  // Skip: This test depends on checkMessagePermission Cloud Function running correctly in the emulator.
-  // The app uses a "fail open" design where Cloud Function errors result in allowed=true.
-  // The limit enforcement works in production but is unreliable in emulator testing.
-  test.skip('new tier user is blocked from second higher tier conversation (limit = 1)', async ({ page, loginAs }) => {
+  test('new tier user is blocked from second higher tier conversation (limit = 1)', async ({ page, loginAs }) => {
     // Increase timeout for this multi-step test
     test.setTimeout(90000);
     
@@ -922,17 +1055,17 @@ test.describe.serial('Reputation - Active Tier Limits (3/day)', () => {
       has: page.locator('.card-name', { hasText: targetName })
     });
     
-    // Retry finding the target user with page refresh
+    // Retry finding the target user with page refresh (up to 3 attempts)
     let isVisible = await profileCard.isVisible({ timeout: 5000 }).catch(() => false);
-    if (!isVisible) {
-      console.log(`Target "${targetName}" not visible, refreshing page...`);
+    for (let attempt = 0; attempt < 3 && !isVisible; attempt++) {
+      console.log(`Target "${targetName}" not visible, refreshing page (attempt ${attempt + 1})...`);
       await page.reload();
       await page.locator('.profile-grid app-profile-card').first().waitFor({ state: 'visible', timeout: 15000 });
       isVisible = await profileCard.isVisible({ timeout: 5000 }).catch(() => false);
     }
     
     if (!isVisible) {
-      console.log(`Target "${targetName}" still not visible after refresh`);
+      console.log(`Target "${targetName}" still not visible after 3 refresh attempts`);
       return { success: false, limitReached: false };
     }
     
@@ -1065,10 +1198,7 @@ test.describe.serial('Reputation - Active Tier Limits (3/day)', () => {
     expect(result.limitReached).toBe(false);
   });
 
-  // Skip: This test depends on checkMessagePermission Cloud Function running correctly in the emulator.
-  // The app uses a "fail open" design where Cloud Function errors result in allowed=true.
-  // The limit enforcement works in production but is unreliable in emulator testing.
-  test.skip('active tier user (Bob) is blocked on fourth higher tier message', async ({ page, loginAs }) => {
+  test('active tier user (Bob) is blocked on fourth higher tier message', async ({ page, loginAs }) => {
     // Increase timeout for this multi-step test (sending 4 messages)
     test.setTimeout(180000);
     

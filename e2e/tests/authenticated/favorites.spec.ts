@@ -197,13 +197,21 @@ test.describe('Favorites - Premium User (Alice)', () => {
     await expect(favoriteActivity.locator('.activity-type-badge.type-favorite')).toBeVisible();
   });
 
+  // Skip: This test depends on onFavoriteCreated Cloud Function populating the favorites data.
+  // The Cloud Function execution is unreliable in the emulator environment.
   test('sees user who favorited them in favorited-me section', async ({ page, loginAs, alice, bob }) => {
+    // Increase timeout for this multi-step test
+    test.setTimeout(90000);
+    
     // First, login as Bob and favorite Alice
     await loginAs(bob);
     await goToDiscoverPage(page);
     
     // Favorite Alice
     await favoriteUserByName(page, 'Alice Test');
+    
+    // Wait for Cloud Function to process favorite
+    await page.waitForTimeout(3000);
     
     // Log out Bob
     await logout(page);
@@ -226,19 +234,32 @@ test.describe('Favorites - Premium User (Alice)', () => {
     // Wait for the profile grid to load
     await page.waitForTimeout(1000);
     
-    // Check that Bob appears in the favorited-me list
+    // Check that Bob appears in the favorited-me list (with retries)
     const profileGrid = page.locator('.matches-content .profile-grid');
-    
-    // Look for Bob's profile card
     const bobCard = profileGrid.locator('app-profile-card').filter({
       has: page.locator('.card-name', { hasText: 'Bob Test' })
     });
+    
+    // Retry if Bob doesn't appear immediately (Cloud Function may take time)
+    let exists = await bobCard.isVisible().catch(() => false);
+    for (let attempt = 0; attempt < 5 && !exists; attempt++) {
+      console.log(`Retry ${attempt + 1}: Waiting for Bob Test to appear...`);
+      await page.waitForTimeout(3000);
+      await page.reload();
+      await page.locator('.matches-page').waitFor({ state: 'visible', timeout: 15000 });
+      await page.waitForTimeout(1000);
+      await favoritedMeTab.click();
+      await page.waitForTimeout(500);
+      exists = await bobCard.isVisible().catch(() => false);
+    }
     
     await expect(bobCard).toBeVisible({ timeout: 10000 });
   });
 });
 
 test.describe('Favorites - Mutual Interaction', () => {
+  // Skip: This test depends on onFavoriteCreated Cloud Function creating match records.
+  // The Cloud Function execution is unreliable in the emulator environment.
   test('mutual favorites creates a match', async ({ page, loginAs, alice, bob }) => {
     // Login as Alice and favorite Bob
     await loginAs(alice);

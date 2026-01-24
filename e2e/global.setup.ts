@@ -1,15 +1,50 @@
-import { chromium, Browser, Page } from '@playwright/test';
+import { chromium, Browser, Page, BrowserContext } from '@playwright/test';
 import { getAllTestUsers, TestUser } from './tests/fixtures/test-users';
 import * as path from 'path';
 import * as fs from 'fs';
+
+// Directory to store auth states for reuse in tests
+const AUTH_STATE_DIR = path.join(__dirname, '.auth');
+import dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config();
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:4200';
 const FIRESTORE_EMULATOR_URL = 'http://localhost:8080';
 const AUTH_EMULATOR_URL = 'http://localhost:9099';
 const FIREBASE_PROJECT_ID = process.env.FIREBASE_PROJECT_ID || 'gylde-sandbox';
 
+// Detect if running against live environment
+const isLiveEnv = BASE_URL.includes('gylde.com');
+
+// Firebase Admin SDK - only loaded for live environments
+let adminDb: FirebaseFirestore.Firestore | null = null;
+
+async function initFirebaseAdmin(): Promise<void> {
+  if (!isLiveEnv || adminDb) return;
+  
+  try {
+    const { initializeApp, applicationDefault } = await import('firebase-admin/app');
+    const { getFirestore } = await import('firebase-admin/firestore');
+    
+    initializeApp({
+      credential: applicationDefault(),
+      projectId: FIREBASE_PROJECT_ID,
+    });
+    
+    adminDb = getFirestore();
+    console.log('   ✓ Firebase Admin SDK initialized for live environment');
+  } catch (error) {
+    console.log('   ⚠ Could not initialize Firebase Admin SDK:', error);
+    console.log('     Premium/reputation setup will be skipped.');
+    console.log('     Run: gcloud auth application-default set-quota-project gylde-sandbox');
+  }
+}
+
 // Maximum number of users to create in parallel
-const MAX_PARALLEL_USERS = 10;
+// Reduced for live environments to avoid Firebase auth quota issues
+const MAX_PARALLEL_USERS = isLiveEnv ? 3 : 10;
 
 /**
  * Get current user's UID from the browser page
@@ -98,18 +133,36 @@ async function getCurrentUserUid(page: Page): Promise<string | null> {
 }
 
 /**
- * Set up premium subscription for a user in Firestore emulator
- * Uses the emulator admin bypass to write directly without security rules
+ * Set up premium subscription for a user in Firestore
+ * Uses emulator REST API for local, Admin SDK for live
  */
 async function setupPremiumSubscription(uid: string): Promise<boolean> {
+  // Live environment: use Admin SDK
+  if (isLiveEnv) {
+    if (!adminDb) return false;
+    
+    try {
+      const docRef = adminDb.doc(`users/${uid}/private/data`);
+      await docRef.set({
+        subscription: {
+          tier: 'premium',
+          status: 'active',
+        },
+      }, { merge: true });
+      return true;
+    } catch (error) {
+      console.error(`    ⚠ Exception in setupPremiumSubscription (live):`, error);
+      return false;
+    }
+  }
+  
+  // Local environment: use emulator REST API
   try {
-    // Use the emulator admin token to bypass security rules
     const adminHeaders = {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer owner',
     };
     
-    // First, get the existing private data document
     const docPath = `projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/users/${uid}/private/data`;
     const getUrl = `${FIRESTORE_EMULATOR_URL}/v1/${docPath}`;
     
@@ -121,7 +174,6 @@ async function setupPremiumSubscription(uid: string): Promise<boolean> {
       existingData = doc.fields || {};
     }
     
-    // Update with premium subscription
     const subscriptionFields = {
       tier: { stringValue: 'premium' },
       status: { stringValue: 'active' },
@@ -178,9 +230,50 @@ const TIER_LIMITS: Record<string, number> = {
 };
 
 /**
- * Set up reputation data for a user in Firestore emulator
+ * Set up reputation data for a user in Firestore
+ * Uses emulator REST API for local, Admin SDK for live
  */
 async function setupReputationData(uid: string, tier: string): Promise<boolean> {
+  const now = new Date();
+  const today = now.toISOString().split('T')[0]; // YYYY-MM-DD
+  
+  const reputationData = {
+    tier,
+    score: TIER_SCORES[tier] || 100,
+    dailyHigherTierConversationLimit: TIER_LIMITS[tier] || 1,
+    higherTierConversationsToday: 0,
+    lastConversationDate: today,
+    lastCalculatedAt: now,
+    tierChangedAt: now,
+    createdAt: now,
+    signals: {
+      profileCompletion: 100,
+      identityVerified: true,
+      accountAgeDays: 30,
+      responseRate: 0.8,
+      conversationQuality: 0.7,
+      blockRatio: 0,
+      reportRatio: 0,
+      ghostRate: 0.1,
+      burstScore: 0,
+    },
+  };
+  
+  // Live environment: use Admin SDK
+  if (isLiveEnv) {
+    if (!adminDb) return false;
+    
+    try {
+      const docRef = adminDb.doc(`users/${uid}/private/data`);
+      await docRef.set({ reputation: reputationData }, { merge: true });
+      return true;
+    } catch (error) {
+      console.error(`    ⚠ Exception in setupReputationData (live):`, error);
+      return false;
+    }
+  }
+  
+  // Local environment: use emulator REST API
   try {
     const adminHeaders = {
       'Content-Type': 'application/json',
@@ -198,19 +291,17 @@ async function setupReputationData(uid: string, tier: string): Promise<boolean> 
       existingData = doc.fields || {};
     }
     
-    const now = new Date().toISOString();
-    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const nowIso = now.toISOString();
     
-    // Build reputation data structure
     const reputationFields = {
       tier: { stringValue: tier },
       score: { integerValue: String(TIER_SCORES[tier] || 100) },
       dailyHigherTierConversationLimit: { integerValue: String(TIER_LIMITS[tier] || 1) },
       higherTierConversationsToday: { integerValue: '0' },
       lastConversationDate: { stringValue: today },
-      lastCalculatedAt: { timestampValue: now },
-      tierChangedAt: { timestampValue: now },
-      createdAt: { timestampValue: now },
+      lastCalculatedAt: { timestampValue: nowIso },
+      tierChangedAt: { timestampValue: nowIso },
+      createdAt: { timestampValue: nowIso },
       signals: {
         mapValue: {
           fields: {
@@ -260,7 +351,12 @@ async function setupReputationData(uid: string, tier: string): Promise<boolean> 
  * Login via UI - logs in an existing user
  * Returns: 'discover' if logged in and on discover, 'onboarding' if needs onboarding, 'failed' if login failed
  */
-async function loginAs(page: Page, user: TestUser): Promise<'discover' | 'onboarding' | 'failed'> {
+async function loginAs(page: Page, user: TestUser, retryCount = 0): Promise<'discover' | 'onboarding' | 'failed'> {
+  // Add delay for live environment to avoid quota issues
+  if (isLiveEnv && retryCount > 0) {
+    await page.waitForTimeout(3000 * retryCount); // Exponential backoff
+  }
+  
   await page.goto(BASE_URL);
   
   // Open auth modal
@@ -291,7 +387,14 @@ async function loginAs(page: Page, user: TestUser): Promise<'discover' | 'onboar
       return 'onboarding';
     }
     return 'discover';
-  } catch {
+  } catch (error) {
+    // Check for quota exceeded error and retry
+    const errorText = await page.locator('[role="alert"]').textContent().catch(() => '');
+    if (errorText?.includes('quota') && retryCount < 3) {
+      console.log(`  [${user.displayName}] Quota exceeded, waiting and retrying...`);
+      await page.waitForTimeout(5000 * (retryCount + 1));
+      return loginAs(page, user, retryCount + 1);
+    }
     return 'failed';
   }
 }
@@ -451,6 +554,29 @@ async function completeOnboarding(page: Page, user: TestUser): Promise<void> {
 }
 
 /**
+ * Get the auth state file path for a user
+ */
+function getAuthStatePath(user: TestUser): string {
+  // Create a safe filename from the email
+  const safeEmail = user.email.replace(/[^a-zA-Z0-9]/g, '-');
+  return path.join(AUTH_STATE_DIR, `${safeEmail}.json`);
+}
+
+/**
+ * Save auth state for a user after successful login
+ */
+async function saveAuthState(context: BrowserContext, user: TestUser): Promise<void> {
+  // Ensure auth state directory exists
+  if (!fs.existsSync(AUTH_STATE_DIR)) {
+    fs.mkdirSync(AUTH_STATE_DIR, { recursive: true });
+  }
+  
+  const statePath = getAuthStatePath(user);
+  await context.storageState({ path: statePath });
+  console.log(`  [${user.displayName}] ✓ Auth state saved`);
+}
+
+/**
  * Create and onboard a single user
  */
 async function createUser(browser: Browser, user: TestUser): Promise<{ email: string; success: boolean; error?: string }> {
@@ -505,6 +631,9 @@ async function createUser(browser: Browser, user: TestUser): Promise<{ email: st
         console.log(`  [${user.displayName}] ⚠ Reputation setup failed`);
       }
     }
+    
+    // Save auth state for reuse in tests (avoids re-login and Firebase quota issues)
+    await saveAuthState(context, user);
     
     console.log(`  [${user.displayName}] ✓ Done`);
     return { email: user.email, success: true };
@@ -563,7 +692,14 @@ async function processInParallel<T, R>(
  */
 async function globalSetup() {
   console.log('🚀 Global Setup: Creating test users...\n');
+  console.log(`   Base URL: ${BASE_URL}`);
+  console.log(`   Environment: ${isLiveEnv ? 'LIVE' : 'LOCAL EMULATOR'}`);
   console.log(`   Running with up to ${MAX_PARALLEL_USERS} parallel operations\n`);
+  
+  // Initialize Firebase Admin for live environments
+  if (isLiveEnv) {
+    await initFirebaseAdmin();
+  }
   
   const browser = await chromium.launch();
   const users = getAllTestUsers();

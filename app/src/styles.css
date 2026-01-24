@@ -121,7 +121,7 @@
   --color-accent-glow: rgba(122, 102, 40, 0.2);
   --color-text-primary: #1a1720;
   --color-text-secondary: #4a4654;
-  --color-text-muted: #5c5868;  /* Darkened for better contrast (5.5:1 on white) */
+  --color-text-muted: #4a464f;  /* Darkened for WCAG AA contrast (4.5:1+ on elevated backgrounds) */
   --color-border: rgba(0, 0, 0, 0.08);
   --color-border-strong: rgba(0, 0, 0, 0.15);
   --color-error: #c62828;  /* Slightly darker for contrast */

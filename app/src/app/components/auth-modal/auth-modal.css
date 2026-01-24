@@ -118,18 +118,17 @@
 .form-group input {
   width: 100%;
   padding: 0.875rem 1rem;
-  background: var(--color-bg-elevated);
+  background: var(--color-bg-elevated, #ebe8e3);
   border: 1px solid var(--color-border);
   border-radius: 12px;
-  color: var(--color-text-primary);
+  color: var(--color-text-primary, #1a1720);  /* WCAG AA compliant fallback */
   font-family: var(--font-body);
   font-size: 1rem;
   transition: all 0.2s ease;
 }
 
 .form-group input::placeholder {
-  color: var(--color-text-secondary);  /* Improved contrast for readability */
-  opacity: 0.8;
+  color: var(--color-text-muted, #4a464f);  /* WCAG AA compliant - 4.5:1+ contrast on elevated backgrounds */
 }
 
 .form-group input:hover:not(:focus) {
@@ -374,10 +373,10 @@
   gap: 0.75rem;
   width: 100%;
   padding: 0.875rem 1.5rem;
-  background: var(--color-bg-elevated);
+  background: var(--color-bg-elevated, #ebe8e3);
   border: 1px solid var(--color-border);
   border-radius: 12px;
-  color: var(--color-text-primary);
+  color: var(--color-text-primary, #1a1720);  /* WCAG AA compliant fallback */
   font-family: var(--font-body);
   font-size: 0.9375rem;
   font-weight: 500;

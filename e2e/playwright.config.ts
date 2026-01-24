@@ -1,27 +1,31 @@
 import { defineConfig, devices } from '@playwright/test';
+import dotenv from 'dotenv';
+
+// Load environment variables from .env file
+dotenv.config();
 
 /**
  * Base URL configuration:
  * - Local: http://localhost:4200 (default)
- * - CI/Preview: Set via BASE_URL environment variable
+ * - Live/Preview: Set BASE_URL env var (e.g., BASE_URL=https://preview.gylde.com)
  */
 const baseURL = process.env.BASE_URL || 'http://localhost:4200';
+const isLiveEnv = baseURL.includes('gylde.com');
 
 export default defineConfig({
   testDir: './tests',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  // Reduce workers for live environments to avoid Firebase auth quota issues
+  workers: process.env.CI ? 1 : (isLiveEnv ? 2 : undefined),
   reporter: process.env.CI ? [['html'], ['github']] : 'html',
   
-  // Test timeout - tests just login now, so 30s is enough
-  timeout: 30000,
+  // Test timeout - increase for live environments (network latency)
+  timeout: isLiveEnv ? 60000 : 30000,
 
-  // Global setup: create and onboard all test users before tests run
+  // Global setup/teardown: creates test users
   globalSetup: './global.setup.ts',
-  
-  // Global teardown: delete all test users after tests complete
   globalTeardown: './global.teardown.ts',
 
   use: {
@@ -54,8 +58,8 @@ export default defineConfig({
     },
   ],
 
-  /* Run local dev server when not in CI */
-  ...(process.env.CI ? {} : {
+  /* Run local dev server when not in CI and not targeting a live environment */
+  ...(process.env.CI || isLiveEnv ? {} : {
     webServer: {
       command: 'npm run start',
       url: 'http://localhost:4200',

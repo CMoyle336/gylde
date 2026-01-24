@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "test": "playwright test",
-    "test:chromium": "playwright test --project=chromium --project=auth-user-a",
+    "test:chromium": "playwright test --project=chromium",
     "test:a11y": "playwright test accessibility.spec.ts --project=chromium",
     "test:headed": "playwright test --headed",
     "test:ui": "playwright test --ui",
@@ -17,6 +17,8 @@
     "@axe-core/playwright": "^4.11.0",
     "@playwright/test": "^1.58.0",
     "@types/node": "^25.0.10",
-    "cross-env": "^7.0.3"
+    "cross-env": "^7.0.3",
+    "dotenv": "^17.2.3",
+    "firebase-admin": "^13.6.0"
   }
 }

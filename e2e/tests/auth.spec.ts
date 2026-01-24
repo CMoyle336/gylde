@@ -65,7 +65,8 @@ test.describe('Authentication', () => {
     test('closes modal when clicking backdrop', async ({ page }) => {
       // Click on the backdrop (outside the modal container)
       await page.locator('.modal-backdrop').click({ position: { x: 10, y: 10 } });
-      await expect(page.locator('.modal-backdrop')).not.toBeVisible();
+      await page.waitForTimeout(500); // Wait for animation
+      await expect(page.locator('.modal-backdrop')).not.toBeVisible({ timeout: 5000 });
     });
   });
 

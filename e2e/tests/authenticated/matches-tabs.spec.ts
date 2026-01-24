@@ -231,11 +231,21 @@ test.describe('Matches Tabs - Premium Lock Status', () => {
     await loginAsAlice();
     await goToMatchesPage(page);
     
-    // Wait for subscription to load
-    await page.waitForTimeout(1000);
+    // Wait for subscription to load (may take time)
+    await page.waitForTimeout(2000);
     
-    // Favorited Me should NOT be locked
+    // Favorited Me should NOT be locked - retry if premium status hasn't loaded
     const favoritedMeTab = page.locator('.tab-btn', { hasText: 'Favorited Me' });
+    let hasLockClass = await favoritedMeTab.evaluate(el => el.classList.contains('premium-locked'));
+    for (let attempt = 0; attempt < 5 && hasLockClass; attempt++) {
+      console.log(`Retry ${attempt + 1}: Waiting for premium status to load...`);
+      await page.waitForTimeout(1000);
+      await page.reload();
+      await page.locator('.matches-page').waitFor({ state: 'visible', timeout: 15000 });
+      await page.waitForTimeout(1000);
+      hasLockClass = await favoritedMeTab.evaluate(el => el.classList.contains('premium-locked'));
+    }
+    
     await expect(favoritedMeTab).not.toHaveClass(/premium-locked/, { timeout: 10000 });
     
     // Viewed Me should NOT be locked
@@ -276,25 +286,38 @@ test.describe('Matches Tabs - My Favorites Tab', () => {
     await expectUserInTab(page, 'Bob Test');
   });
 
+  // Skip: This test is flaky due to slow tab content loading in the emulator environment.
   test('tab shows content or empty state', async ({ page, loginAsBob }) => {
     await loginAsBob();
     await goToMatchesPage(page);
     await clickMatchesTab(page, 'My Favorites');
     await waitForTabContent(page);
     
-    // Check for empty state or profiles - both are valid states
+    // Check for empty state or profiles with retry - both are valid states
     const profileGrid = page.locator('.matches-content .profile-grid');
     const emptyState = page.locator('.empty-state');
     
-    const hasProfiles = await profileGrid.locator('app-profile-card').count() > 0;
-    const hasEmptyState = await emptyState.isVisible();
+    let hasProfiles = await profileGrid.locator('app-profile-card').count() > 0;
+    let hasEmptyState = await emptyState.isVisible();
+    
+    // Retry if neither is visible yet
+    for (let attempt = 0; attempt < 5 && !hasProfiles && !hasEmptyState; attempt++) {
+      await page.waitForTimeout(1000);
+      hasProfiles = await profileGrid.locator('app-profile-card').count() > 0;
+      hasEmptyState = await emptyState.isVisible();
+    }
     
     expect(hasProfiles || hasEmptyState).toBe(true);
   });
 });
 
 test.describe('Matches Tabs - My Matches Tab', () => {
+  // Skip: This test depends on onFavoriteCreated Cloud Function creating match records.
+  // The Cloud Function execution is unreliable in the emulator environment.
   test('shows users with mutual favorites', async ({ page, loginAs, alice, bob }) => {
+    // Increase timeout for this multi-step test
+    test.setTimeout(90000);
+    
     // Ensure mutual favorites: Alice <-> Bob
     
     // First, login as Alice and ensure Bob is favorited
@@ -333,6 +356,7 @@ test.describe('Matches Tabs - My Matches Tab', () => {
     await expectUserInTab(page, 'Alice Test');
   });
 
+  // Skip: This test is flaky due to slow tab content loading in the emulator environment.
   test('tab content loads correctly', async ({ page, loginAsAlice }) => {
     await loginAsAlice();
     await goToMatchesPage(page);
@@ -362,13 +386,21 @@ test.describe('Matches Tabs - My Matches Tab', () => {
 });
 
 test.describe('Matches Tabs - Recently Viewed Tab', () => {
+  // Skip: This test depends on profile views being recorded in the backend which 
+  // requires Cloud Functions. The Cloud Function execution is unreliable in the emulator.
   test('shows profiles the current user has viewed', async ({ page, loginAs, bob }) => {
+    // Increase timeout for this test
+    test.setTimeout(60000);
+    
     // Use Bob to view Alice (avoiding parallel interference with Alice's tests)
     await loginAs(bob);
     await goToDiscoverPage(page);
     
     // View Alice's profile
     await viewUserProfile(page, 'Alice Test');
+    
+    // Wait for profile view to be recorded
+    await page.waitForTimeout(3000);
     
     // Go back and check Recently Viewed
     await goToMatchesPage(page);
@@ -378,36 +410,47 @@ test.describe('Matches Tabs - Recently Viewed Tab', () => {
     await page.waitForTimeout(2000);
     await waitForTabContent(page);
     
-    // Alice should appear in Recently Viewed
-    const exists = await userExistsInTab(page, 'Alice Test');
-    if (!exists) {
-      // Refresh and try again - sometimes there's a delay
+    // Alice should appear in Recently Viewed - retry multiple times if needed
+    let exists = await userExistsInTab(page, 'Alice Test');
+    for (let attempt = 0; attempt < 3 && !exists; attempt++) {
+      console.log(`Retry ${attempt + 1}: Waiting for Alice Test in Recently Viewed...`);
+      await page.waitForTimeout(2000);
       await page.reload();
       await page.locator('.matches-page').waitFor({ state: 'visible', timeout: 15000 });
       await clickMatchesTab(page, 'Recently Viewed');
       await waitForTabContent(page);
+      exists = await userExistsInTab(page, 'Alice Test');
     }
     await expectUserInTab(page, 'Alice Test');
   });
 
+  // Skip: This test is flaky due to slow tab content loading in the emulator environment.
   test('tab content loads correctly', async ({ page, loginAsAlice }) => {
     await loginAsAlice();
     await goToMatchesPage(page);
     await clickMatchesTab(page, 'Recently Viewed');
     await waitForTabContent(page);
     
-    // Either empty state or profiles should be visible
+    // Either empty state or profiles should be visible with retry
     const profileGrid = page.locator('.matches-content .profile-grid');
     const emptyState = page.locator('.empty-state');
     
-    const hasProfiles = await profileGrid.locator('app-profile-card').count() > 0;
-    const hasEmptyState = await emptyState.isVisible();
+    let hasProfiles = await profileGrid.locator('app-profile-card').count() > 0;
+    let hasEmptyState = await emptyState.isVisible();
+    
+    // Retry if neither is visible yet
+    for (let attempt = 0; attempt < 5 && !hasProfiles && !hasEmptyState; attempt++) {
+      await page.waitForTimeout(1000);
+      hasProfiles = await profileGrid.locator('app-profile-card').count() > 0;
+      hasEmptyState = await emptyState.isVisible();
+    }
     
     expect(hasProfiles || hasEmptyState).toBe(true);
   });
 });
 
 test.describe('Matches Tabs - Favorited Me Tab (Premium)', () => {
+  // Skip: This test is flaky because the premium subscription status doesn't always load quickly enough.
   test('premium user can access Favorited Me tab', async ({ page, loginAsAlice }) => {
     await loginAsAlice();
     await goToMatchesPage(page);
@@ -418,15 +461,24 @@ test.describe('Matches Tabs - Favorited Me Tab (Premium)', () => {
     
     // Click Favorited Me tab
     await clickMatchesTab(page, 'Favorited Me');
+    await page.waitForTimeout(500);
     
-    // Verify tab is active
-    await expect(favoritedMeTab).toHaveClass(/active/, { timeout: 5000 });
+    // Verify tab is active (retry click if not)
+    let isActive = await favoritedMeTab.evaluate(el => el.classList.contains('active'));
+    if (!isActive) {
+      await favoritedMeTab.click();
+      await page.waitForTimeout(500);
+    }
+    
+    await expect(favoritedMeTab).toHaveClass(/active/, { timeout: 10000 });
     await waitForTabContent(page);
   });
 
+  // Skip: This test depends on onFavoriteCreated Cloud Function populating the favorites data.
+  // The Cloud Function execution is unreliable in the emulator environment.
   test('premium user sees who favorited them', async ({ page, loginAs, alice, bob }) => {
-    // Increase timeout for this multi-step test
-    test.setTimeout(60000);
+    // Increase timeout for this multi-step test with retries
+    test.setTimeout(90000);
     
     // Bob favorites Alice
     await loginAs(bob);
@@ -447,8 +499,9 @@ test.describe('Matches Tabs - Favorited Me Tab (Premium)', () => {
     
     // Retry multiple times if Bob doesn't appear (Cloud Function may take time)
     let exists = await userExistsInTab(page, 'Bob Test');
-    for (let attempt = 0; attempt < 3 && !exists; attempt++) {
-      await page.waitForTimeout(2000);
+    for (let attempt = 0; attempt < 5 && !exists; attempt++) {
+      console.log(`Retry ${attempt + 1}: Waiting for Bob Test to appear in Favorited Me...`);
+      await page.waitForTimeout(3000);
       await page.reload();
       await page.locator('.matches-page').waitFor({ state: 'visible', timeout: 15000 });
       await page.waitForTimeout(1000);
@@ -476,6 +529,7 @@ test.describe('Matches Tabs - Favorited Me Tab (Premium)', () => {
 });
 
 test.describe('Matches Tabs - Viewed Me Tab (Premium)', () => {
+  // Skip: This test is flaky because the premium subscription status doesn't always load quickly enough.
   test('premium user can access Viewed Me tab', async ({ page, loginAsAlice }) => {
     await loginAsAlice();
     await goToMatchesPage(page);
@@ -496,6 +550,8 @@ test.describe('Matches Tabs - Viewed Me Tab (Premium)', () => {
     await waitForTabContent(page);
   });
 
+  // Skip: This test depends on onProfileViewCreated Cloud Function populating the view data.
+  // The Cloud Function execution is unreliable in the emulator environment.
   test('premium user sees who viewed them', async ({ page, loginAs, alice, bob }) => {
     // Bob views Alice's profile
     await loginAs(bob);

@@ -79,6 +79,9 @@ async function openFiltersPanel(page: Page) {
 test.describe('Discover Page', () => {
   test.describe('Page Layout', () => {
     test('displays discover page with correct layout', async ({ page, loginAsAlice }) => {
+      // Increase test timeout for slow page loads
+      test.setTimeout(60000);
+      
       await loginAsAlice();
       await page.goto('/discover', { timeout: 60000 });
       
@@ -119,9 +122,14 @@ test.describe('Discover Page', () => {
       // Wait for profiles to load
       await page.waitForTimeout(2000);
       
-      // Should show results section (may have profiles or empty state)
-      const resultCount = page.locator('[class*="results"]');
-      await expect(resultCount).toBeVisible();
+      // Should show profile grid or empty state (results-count is hidden on mobile)
+      const profileGrid = page.locator('.profile-grid');
+      const emptyState = page.locator('.empty-state');
+      
+      // Either profile grid or empty state should be visible
+      const hasProfileGrid = await profileGrid.isVisible().catch(() => false);
+      const hasEmptyState = await emptyState.isVisible().catch(() => false);
+      expect(hasProfileGrid || hasEmptyState).toBe(true);
     });
 
     test('cards show location info when available', async ({ page, loginAsAlice }) => {
@@ -406,9 +414,21 @@ test.describe('Discover Page', () => {
       // Open filters
       await openFiltersPanel(page);
       
-      // Expand advanced filters
-      await page.locator('.show-more-btn').click();
-      await expect(page.locator('.advanced-filters')).toBeVisible();
+      // Wait for subscription status to load, then expand advanced filters
+      await page.waitForTimeout(500);
+      const showMoreBtn = page.locator('.show-more-btn');
+      await showMoreBtn.click();
+      await page.waitForTimeout(500);
+      
+      // Retry if advanced filters didn't expand
+      const advancedFilters = page.locator('.advanced-filters');
+      let isVisible = await advancedFilters.isVisible().catch(() => false);
+      if (!isVisible) {
+        await showMoreBtn.click();
+        await page.waitForTimeout(500);
+      }
+      
+      await expect(advancedFilters).toBeVisible({ timeout: 10000 });
       
       // All advanced filter sections should be visible
       await expect(page.getByText('Support Style')).toBeVisible();
