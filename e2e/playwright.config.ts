@@ -12,17 +12,22 @@ dotenv.config();
 const baseURL = process.env.BASE_URL || 'http://localhost:4200';
 const isLiveEnv = baseURL.includes('gylde.com');
 
+// Determine worker count:
+// - CI: 1 worker (sequential for reliability)
+// - Live env: 4 workers max (avoid Firebase Auth quota issues)
+// - Local: undefined (use all CPUs)
+const workers = process.env.CI ? 1 : (isLiveEnv ? 4 : undefined);
+
 export default defineConfig({
   testDir: './tests',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  // Reduce workers for live environments to avoid Firebase auth quota issues
-  workers: process.env.CI ? 1 : (isLiveEnv ? 2 : undefined),
+  retries: process.env.CI ? 2 : (isLiveEnv ? 1 : 0),
+  workers,
   reporter: process.env.CI ? [['html'], ['github']] : 'html',
   
   // Test timeout - increase for live environments (network latency)
-  timeout: isLiveEnv ? 60000 : 30000,
+  timeout: isLiveEnv ? 90000 : 30000,
 
   // Global setup/teardown: creates test users
   globalSetup: './global.setup.ts',

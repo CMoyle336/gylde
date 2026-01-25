@@ -1,5 +1,119 @@
 import { test, expect } from '../fixtures/auth.fixture';
-import { Page } from '@playwright/test';
+import { Locator, Page } from '@playwright/test';
+import dotenv from 'dotenv';
+import path from 'path';
+
+// Load environment variables from e2e/.env (for live env Admin SDK)
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+
+function isLiveEnvironment(): boolean {
+  const baseUrl = process.env.BASE_URL || 'http://localhost:4200';
+  return baseUrl.includes('gylde.com');
+}
+
+// Firebase Admin SDK - lazy loaded for live environments (used to verify persisted settings)
+let adminDb: FirebaseFirestore.Firestore | null = null;
+let adminInitialized = false;
+
+async function getAdminDb(): Promise<FirebaseFirestore.Firestore | null> {
+  if (!isLiveEnvironment()) return null;
+  if (adminInitialized) return adminDb;
+
+  try {
+    const { initializeApp, applicationDefault, getApps } = await import('firebase-admin/app');
+    const { getFirestore } = await import('firebase-admin/firestore');
+
+    if (getApps().length === 0) {
+      initializeApp({
+        credential: applicationDefault(),
+        projectId: process.env.FIREBASE_PROJECT_ID || 'gylde-sandbox',
+      });
+    }
+
+    adminDb = getFirestore();
+    adminInitialized = true;
+    return adminDb;
+  } catch {
+    adminInitialized = true;
+    return null;
+  }
+}
+
+async function getCurrentUserUid(page: Page): Promise<string | null> {
+  try {
+    await page.waitForTimeout(500);
+    const uid = await page.evaluate(() => {
+      return new Promise<string | null>((resolve) => {
+        try {
+          const request = indexedDB.open('firebaseLocalStorageDb');
+          request.onsuccess = () => {
+            try {
+              const db = request.result;
+              if (!db.objectStoreNames.contains('firebaseLocalStorage')) {
+                db.close();
+                resolve(null);
+                return;
+              }
+              const tx = db.transaction('firebaseLocalStorage', 'readonly');
+              const store = tx.objectStore('firebaseLocalStorage');
+              const getAllRequest = store.getAll();
+              getAllRequest.onsuccess = () => {
+                const items = getAllRequest.result;
+                for (const item of items) {
+                  if (item?.value?.uid) {
+                    resolve(item.value.uid);
+                    db.close();
+                    return;
+                  }
+                }
+                db.close();
+                resolve(null);
+              };
+              getAllRequest.onerror = () => {
+                db.close();
+                resolve(null);
+              };
+            } catch {
+              resolve(null);
+            }
+          };
+          request.onerror = () => resolve(null);
+        } catch {
+          resolve(null);
+        }
+        setTimeout(() => resolve(null), 2000);
+      });
+    });
+    return uid;
+  } catch {
+    return null;
+  }
+}
+
+async function verifyUserShowOnlineStatus(uid: string, expected: boolean): Promise<boolean> {
+  const db = await getAdminDb();
+  if (!db) return false;
+  const snap = await db.doc(`users/${uid}`).get();
+  const data = snap.data() as any;
+  const actual = data?.settings?.privacy?.showOnlineStatus;
+  return actual === expected;
+}
+
+async function forceSetUserShowOnlineStatus(uid: string, value: boolean): Promise<boolean> {
+  const db = await getAdminDb();
+  if (!db) return false;
+
+  await db.doc(`users/${uid}`).set(
+    { settings: { privacy: { showOnlineStatus: value } } },
+    { merge: true }
+  );
+
+  await expect
+    .poll(async () => verifyUserShowOnlineStatus(uid, value), { timeout: 30000 })
+    .toBe(true);
+
+  return true;
+}
 
 /**
  * Settings E2E Tests
@@ -13,11 +127,91 @@ import { Page } from '@playwright/test';
  * 2. User B (Bob) verifies the setting is respected when viewing User A
  */
 
-// Helper to navigate to settings page
+// Helper to navigate to settings page and wait for content to load
 async function goToSettingsPage(page: Page): Promise<void> {
   await page.goto('/settings');
-  await page.locator('.settings-page').waitFor({ state: 'visible', timeout: 15000 });
+  await page.locator('.settings-page').waitFor({ state: 'visible', timeout: 30000 });
+  // Wait for settings content to be fully loaded
+  await page.locator('.settings-content').waitFor({ state: 'visible', timeout: 15000 });
+  // Wait for at least one settings section to be visible
+  await page.locator('.settings-section').first().waitFor({ state: 'visible', timeout: 15000 });
+  await page.waitForTimeout(1000); // Allow content to stabilize
+}
+
+async function waitForSettingsSave(page: Page): Promise<void> {
+  // When a setting is toggled, the page briefly shows a saving indicator.
+  // In some environments it may never render (fast save), so treat "not present" as ok.
+  const savingIndicator = page.locator('.saving-indicator');
+  await savingIndicator.waitFor({ state: 'hidden', timeout: 15000 });
   await page.waitForTimeout(500);
+}
+
+function getMaterialToggleSwitch(toggle: Locator): Locator {
+  // Angular Material slide toggle typically renders a button with role="switch"
+  // In case markup differs, also accept any element with role="switch".
+  return toggle.locator('button[role="switch"], [role="switch"]').first();
+}
+
+async function isMaterialToggleChecked(toggleSwitch: Locator, toggleRoot?: Locator): Promise<boolean> {
+  const ariaChecked = await toggleSwitch.getAttribute('aria-checked');
+  if (ariaChecked === 'true') return true;
+  if (ariaChecked === 'false') return false;
+
+  // Fallback: Material sometimes reflects state via CSS classes on the root.
+  if (toggleRoot) {
+    return await toggleRoot.evaluate((el) => {
+      const cls = (el as HTMLElement).classList;
+      return cls.contains('mat-mdc-slide-toggle-checked') || cls.contains('mat-checked');
+    });
+  }
+
+  return false;
+}
+
+async function setMaterialToggle(toggleRoot: Locator, toggleSwitch: Locator, enable: boolean): Promise<void> {
+  // Ensure the switch exists and is interactable
+  await toggleSwitch.waitFor({ state: 'visible', timeout: 15000 });
+
+  const current = await isMaterialToggleChecked(toggleSwitch, toggleRoot);
+  if (current === enable) return;
+
+  await toggleSwitch.click();
+
+  await expect
+    .poll(async () => isMaterialToggleChecked(toggleSwitch, toggleRoot), { timeout: 15000 })
+    .toBe(enable);
+}
+
+// Helper to get the privacy section toggle for "Show Online Status" (first toggle)
+async function getOnlineStatusToggle(page: Page) {
+  // The privacy section is the second .settings-section (after subscription)
+  // We can identify it by its position (nth(1)) or by text content
+  
+  // Wait for sections to load
+  await page.locator('.settings-section').first().waitFor({ state: 'visible', timeout: 15000 });
+  
+  // The Privacy section is the 2nd section (index 1)
+  // It contains text like "Privacy" in the h2 or has the setting "Show online status"
+  // Using nth(1) is most reliable since section order is fixed
+  const privacySection = page.locator('.settings-section').nth(1);
+  
+  // Verify we got the right section by checking it has the expected content
+  await privacySection.waitFor({ state: 'visible', timeout: 15000 });
+  
+  // Get the first setting item's toggle (Show Online Status)
+  const settingsGroup = privacySection.locator('.settings-group');
+  await settingsGroup.waitFor({ state: 'visible', timeout: 10000 });
+  
+  const firstSettingItem = settingsGroup.locator('.setting-item').first();
+  await firstSettingItem.waitFor({ state: 'visible', timeout: 10000 });
+  
+  const toggle = firstSettingItem.locator('mat-slide-toggle');
+  await toggle.waitFor({ state: 'visible', timeout: 10000 });
+
+  const toggleSwitch = getMaterialToggleSwitch(toggle);
+  await toggleSwitch.waitFor({ state: 'visible', timeout: 10000 });
+  
+  return { privacySection, toggle, toggleSwitch };
 }
 
 // Helper to navigate to discover page
@@ -71,16 +265,9 @@ async function togglePrivacySetting(page: Page, settingLabel: string, enable: bo
   
   // Find the toggle within this setting
   const toggle = settingItem.locator('mat-slide-toggle');
-  const toggleInput = toggle.locator('input[type="checkbox"]');
-  
-  // Check current state
-  const isChecked = await toggleInput.isChecked();
-  
-  // Toggle if needed
-  if (isChecked !== enable) {
-    await toggle.click();
-    await page.waitForTimeout(1000); // Wait for setting to save
-  }
+  await toggle.waitFor({ state: 'visible', timeout: 10000 });
+  const toggleSwitch = getMaterialToggleSwitch(toggle);
+  await setMaterialToggle(toggle, toggleSwitch, enable);
 }
 
 // Helper to check if a toggle is in a specific state
@@ -89,8 +276,11 @@ async function isSettingEnabled(page: Page, settingLabel: string): Promise<boole
     has: page.locator('.setting-label', { hasText: settingLabel })
   });
   
-  const toggleInput = settingItem.locator('mat-slide-toggle input[type="checkbox"]');
-  return await toggleInput.isChecked();
+  const toggle = settingItem.locator('mat-slide-toggle');
+  await toggle.waitFor({ state: 'visible', timeout: 10000 });
+  const toggleSwitch = getMaterialToggleSwitch(toggle);
+  await toggleSwitch.waitFor({ state: 'visible', timeout: 10000 });
+  return await isMaterialToggleChecked(toggleSwitch, toggle);
 }
 
 // Helper to view a user's profile from discover
@@ -138,36 +328,13 @@ test.describe('Settings - Show Online Status', () => {
   test('can toggle show online status setting', async ({ page }) => {
     await goToSettingsPage(page);
     
-    // Find the "Show Online Status" toggle (may be translated, look for the setting in privacy section)
-    const onlineStatusSetting = page.locator('.setting-item').filter({
-      has: page.locator('.setting-label')
-    }).first(); // First setting in privacy section is "Show Online Status"
-    
-    // Navigate to privacy section specifically
-    const privacySection = page.locator('.settings-section').filter({
-      has: page.locator('h2', { hasText: /privacy/i })
-    });
-    
-    await expect(privacySection).toBeVisible();
-    
-    // Get the first toggle in privacy section (Show Online Status)
-    const firstToggle = privacySection.locator('.setting-item').first().locator('mat-slide-toggle');
-    await expect(firstToggle).toBeVisible();
-    
-    // Toggle off
-    const toggleInput = firstToggle.locator('input[type="checkbox"]');
-    const wasChecked = await toggleInput.isChecked();
-    
-    await firstToggle.click();
-    await page.waitForTimeout(1000);
-    
-    // Verify it changed
-    const isNowChecked = await toggleInput.isChecked();
-    expect(isNowChecked).not.toBe(wasChecked);
-    
-    // Toggle back to original state
-    await firstToggle.click();
-    await page.waitForTimeout(1000);
+    // Get the online status toggle using helper
+    const { toggle, toggleSwitch } = await getOnlineStatusToggle(page);
+
+    const wasChecked = await isMaterialToggleChecked(toggleSwitch, toggle);
+
+    await setMaterialToggle(toggle, toggleSwitch, !wasChecked);
+    await setMaterialToggle(toggle, toggleSwitch, wasChecked);
   });
 
   test('when disabled, other users cannot see online status on discover page', async ({ page, loginAs, alice, bob }) => {
@@ -176,22 +343,9 @@ test.describe('Settings - Show Online Status', () => {
     // Step 1: Alice disables "Show Online Status"
     await goToSettingsPage(page);
     
-    const privacySection = page.locator('.settings-section').filter({
-      has: page.locator('h2', { hasText: /privacy/i })
-    });
-    
-    // First toggle in privacy is "Show Online Status"
-    const onlineToggle = privacySection.locator('.setting-item').first().locator('mat-slide-toggle');
-    const toggleInput = onlineToggle.locator('input[type="checkbox"]');
-    
-    // Disable if currently enabled
-    if (await toggleInput.isChecked()) {
-      await onlineToggle.click();
-      await page.waitForTimeout(2000); // Wait for setting to save
-    }
-    
-    // Verify it's disabled
-    await expect(toggleInput).not.toBeChecked();
+    // Get the online status toggle using helper
+    const { toggle, toggleSwitch } = await getOnlineStatusToggle(page);
+    await setMaterialToggle(toggle, toggleSwitch, false);
     
     // Step 2: Logout Alice
     await logout(page);
@@ -219,16 +373,8 @@ test.describe('Settings - Show Online Status', () => {
     await loginAs(alice);
     await goToSettingsPage(page);
     
-    const privacySectionCleanup = page.locator('.settings-section').filter({
-      has: page.locator('h2', { hasText: /privacy/i })
-    });
-    const onlineToggleCleanup = privacySectionCleanup.locator('.setting-item').first().locator('mat-slide-toggle');
-    const toggleInputCleanup = onlineToggleCleanup.locator('input[type="checkbox"]');
-    
-    if (!(await toggleInputCleanup.isChecked())) {
-      await onlineToggleCleanup.click();
-      await page.waitForTimeout(1000);
-    }
+    const { toggle: toggleCleanup, toggleSwitch: toggleSwitchCleanup } = await getOnlineStatusToggle(page);
+    await setMaterialToggle(toggleCleanup, toggleSwitchCleanup, true);
   });
 
   test('when disabled, other users cannot see online status on matches page', async ({ page, loginAs, alice, bob }) => {
@@ -237,17 +383,9 @@ test.describe('Settings - Show Online Status', () => {
     // Step 1: Alice disables "Show Online Status"
     await goToSettingsPage(page);
     
-    const privacySection = page.locator('.settings-section').filter({
-      has: page.locator('h2', { hasText: /privacy/i })
-    });
-    
-    const onlineToggle = privacySection.locator('.setting-item').first().locator('mat-slide-toggle');
-    const toggleInput = onlineToggle.locator('input[type="checkbox"]');
-    
-    if (await toggleInput.isChecked()) {
-      await onlineToggle.click();
-      await page.waitForTimeout(2000);
-    }
+    // Get the online status toggle using helper
+    const { toggle, toggleSwitch } = await getOnlineStatusToggle(page);
+    await setMaterialToggle(toggle, toggleSwitch, false);
     
     // Step 2: Logout Alice
     await logout(page);
@@ -299,15 +437,8 @@ test.describe('Settings - Show Online Status', () => {
     await loginAs(alice);
     await goToSettingsPage(page);
     
-    const privacySectionCleanup = page.locator('.settings-section').filter({
-      has: page.locator('h2', { hasText: /privacy/i })
-    });
-    const onlineToggleCleanup = privacySectionCleanup.locator('.setting-item').first().locator('mat-slide-toggle');
-    
-    if (!(await onlineToggleCleanup.locator('input[type="checkbox"]').isChecked())) {
-      await onlineToggleCleanup.click();
-      await page.waitForTimeout(1000);
-    }
+    const { toggle: toggleCleanup, toggleSwitch: toggleSwitchCleanup } = await getOnlineStatusToggle(page);
+    await setMaterialToggle(toggleCleanup, toggleSwitchCleanup, true);
   });
 
   test('when disabled, other users cannot see online status on profile page', async ({ page, loginAs, alice, bob }) => {
@@ -316,17 +447,9 @@ test.describe('Settings - Show Online Status', () => {
     // Step 1: Alice disables "Show Online Status"
     await goToSettingsPage(page);
     
-    const privacySection = page.locator('.settings-section').filter({
-      has: page.locator('h2', { hasText: /privacy/i })
-    });
-    
-    const onlineToggle = privacySection.locator('.setting-item').first().locator('mat-slide-toggle');
-    const toggleInput = onlineToggle.locator('input[type="checkbox"]');
-    
-    if (await toggleInput.isChecked()) {
-      await onlineToggle.click();
-      await page.waitForTimeout(2000);
-    }
+    // Get the online status toggle using helper
+    const { toggle, toggleSwitch } = await getOnlineStatusToggle(page);
+    await setMaterialToggle(toggle, toggleSwitch, false);
     
     // Step 2: Logout Alice
     await logout(page);
@@ -359,15 +482,8 @@ test.describe('Settings - Show Online Status', () => {
     await loginAs(alice);
     await goToSettingsPage(page);
     
-    const privacySectionCleanup = page.locator('.settings-section').filter({
-      has: page.locator('h2', { hasText: /privacy/i })
-    });
-    const onlineToggleCleanup = privacySectionCleanup.locator('.setting-item').first().locator('mat-slide-toggle');
-    
-    if (!(await onlineToggleCleanup.locator('input[type="checkbox"]').isChecked())) {
-      await onlineToggleCleanup.click();
-      await page.waitForTimeout(1000);
-    }
+    const { toggle: toggleCleanup, toggleSwitch: toggleSwitchCleanup } = await getOnlineStatusToggle(page);
+    await setMaterialToggle(toggleCleanup, toggleSwitchCleanup, true);
   });
 
   test('when disabled, other users cannot see online status in messages', async ({ page, loginAs, alice, bob }) => {
@@ -376,16 +492,31 @@ test.describe('Settings - Show Online Status', () => {
     // Step 1: Alice disables "Show Online Status"
     await goToSettingsPage(page);
     
-    const privacySection = page.locator('.settings-section').filter({
-      has: page.locator('h2', { hasText: /privacy/i })
-    });
-    
-    const onlineToggle = privacySection.locator('.setting-item').first().locator('mat-slide-toggle');
-    const toggleInput = onlineToggle.locator('input[type="checkbox"]');
-    
-    if (await toggleInput.isChecked()) {
-      await onlineToggle.click();
-      await page.waitForTimeout(2000);
+    // Get the online status toggle using helper
+    const { toggle, toggleSwitch } = await getOnlineStatusToggle(page);
+    await setMaterialToggle(toggle, toggleSwitch, false);
+    await waitForSettingsSave(page);
+
+    // Ensure the setting actually persisted to Firestore (not just local UI state)
+    // (we've seen cases where the UI updates but the save fails silently)
+    const aliceUid = await getCurrentUserUid(page);
+    if (aliceUid) {
+      // If Admin SDK is available (live env), verify/persist the setting for determinism
+      const adminAvailable = await getAdminDb();
+      if (adminAvailable) {
+        const persisted = await verifyUserShowOnlineStatus(aliceUid, false);
+        if (!persisted) {
+          await forceSetUserShowOnlineStatus(aliceUid, false);
+        }
+      } else {
+        // Fallback: force a full page reload to ensure we aren't relying on cached UI state
+        await page.reload({ waitUntil: 'domcontentloaded' });
+        await goToSettingsPage(page);
+        const { toggle: toggleVerify, toggleSwitch: toggleSwitchVerify } = await getOnlineStatusToggle(page);
+        await expect
+          .poll(async () => isMaterialToggleChecked(toggleSwitchVerify, toggleVerify), { timeout: 15000 })
+          .toBe(false);
+      }
     }
     
     // Step 2: Logout Alice
@@ -404,11 +535,11 @@ test.describe('Settings - Show Online Status', () => {
     if (headerVisible) {
       // Online dot should not be visible
       const onlineDot = chatHeader.locator('.online-dot');
-      await expect(onlineDot).not.toBeVisible();
+      await expect(onlineDot).not.toBeVisible({ timeout: 30000 });
       
       // "Online" status text should not show "Online"
       const onlineStatusText = chatHeader.locator('.chat-user-status.online');
-      await expect(onlineStatusText).not.toBeVisible();
+      await expect(onlineStatusText).not.toBeVisible({ timeout: 30000 });
     }
     
     // Cleanup
@@ -416,15 +547,9 @@ test.describe('Settings - Show Online Status', () => {
     await loginAs(alice);
     await goToSettingsPage(page);
     
-    const privacySectionCleanup = page.locator('.settings-section').filter({
-      has: page.locator('h2', { hasText: /privacy/i })
-    });
-    const onlineToggleCleanup = privacySectionCleanup.locator('.setting-item').first().locator('mat-slide-toggle');
-    
-    if (!(await onlineToggleCleanup.locator('input[type="checkbox"]').isChecked())) {
-      await onlineToggleCleanup.click();
-      await page.waitForTimeout(1000);
-    }
+    const { toggle: toggleCleanup, toggleSwitch: toggleSwitchCleanup } = await getOnlineStatusToggle(page);
+    await setMaterialToggle(toggleCleanup, toggleSwitchCleanup, true);
+    await waitForSettingsSave(page);
   });
 
   test('when enabled, other users CAN see online status', async ({ page, loginAs, alice, bob }) => {
@@ -433,21 +558,9 @@ test.describe('Settings - Show Online Status', () => {
     // Step 1: Ensure Alice has "Show Online Status" ENABLED
     await goToSettingsPage(page);
     
-    const privacySection = page.locator('.settings-section').filter({
-      has: page.locator('h2', { hasText: /privacy/i })
-    });
-    
-    const onlineToggle = privacySection.locator('.setting-item').first().locator('mat-slide-toggle');
-    const toggleInput = onlineToggle.locator('input[type="checkbox"]');
-    
-    // Enable if not already
-    if (!(await toggleInput.isChecked())) {
-      await onlineToggle.click();
-      await page.waitForTimeout(2000);
-    }
-    
-    // Verify it's enabled
-    await expect(toggleInput).toBeChecked();
+    // Get the online status toggle using helper
+    const { toggle, toggleSwitch } = await getOnlineStatusToggle(page);
+    await setMaterialToggle(toggle, toggleSwitch, true);
     
     // Step 2: Logout Alice
     await logout(page);

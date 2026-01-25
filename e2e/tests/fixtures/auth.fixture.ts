@@ -2,29 +2,9 @@ import { test as base, expect, Page, BrowserContext } from '@playwright/test';
 import { TEST_USERS, DISCOVER_TEST_USERS, TestUser, getAllTestUsers } from './test-users';
 import dotenv from 'dotenv';
 import path from 'path';
-import fs from 'fs';
 
 // Load environment variables
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
-
-// Directory where auth states are saved by global setup
-const AUTH_STATE_DIR = path.join(__dirname, '../../.auth');
-
-/**
- * Get the auth state file path for a user
- */
-function getAuthStatePath(user: TestUser): string {
-  const safeEmail = user.email.replace(/[^a-zA-Z0-9]/g, '-');
-  return path.join(AUTH_STATE_DIR, `${safeEmail}.json`);
-}
-
-/**
- * Check if auth state exists for a user
- */
-function hasAuthState(user: TestUser): boolean {
-  const statePath = getAuthStatePath(user);
-  return fs.existsSync(statePath);
-}
 
 // Detect live environment for timeout adjustment
 function isLiveEnvironment(): boolean {
@@ -32,75 +12,66 @@ function isLiveEnvironment(): boolean {
   return baseUrl.includes('gylde.com');
 }
 
-/**
- * Login helper - uses saved auth state when available, falls back to UI login
- */
-async function loginAs(page: Page, context: BrowserContext, user: TestUser): Promise<void> {
-  const statePath = getAuthStatePath(user);
-  
-  // Try to use saved auth state first (much faster, no Firebase quota usage)
-  if (fs.existsSync(statePath)) {
-    try {
-      // Load the storage state into the context
-      const storageState = JSON.parse(fs.readFileSync(statePath, 'utf-8'));
-      
-      // Apply cookies
-      if (storageState.cookies?.length) {
-        await context.addCookies(storageState.cookies);
-      }
-      
-      // Apply localStorage by navigating and setting it
-      await page.goto('/');
-      
-      if (storageState.origins?.length) {
-        for (const origin of storageState.origins) {
-          if (origin.localStorage?.length) {
-            await page.evaluate((items: { name: string; value: string }[]) => {
-              for (const item of items) {
-                localStorage.setItem(item.name, item.value);
-              }
-            }, origin.localStorage);
-          }
-        }
-      }
-      
-      // Reload to apply auth state
-      await page.reload();
-      await page.waitForLoadState('domcontentloaded');
-      
-      // Check if we're authenticated by waiting for redirect or checking for auth elements
-      // Give it a moment to process the auth state
-      await page.waitForTimeout(1000);
-      
-      // Try navigating to discover to verify auth
-      await page.goto('/discover');
-      
-      // Wait for either the discover page content or redirect to home
-      try {
-        await page.waitForURL(/\/(discover|messages|settings|favorites)/, { timeout: 10000 });
-        // Auth state worked!
-        return;
-      } catch {
-        // Auth state didn't work, fall through to UI login
-        console.log(`Auth state expired for ${user.email}, falling back to UI login`);
-      }
-    } catch (error) {
-      console.log(`Failed to load auth state for ${user.email}:`, error);
+// Simple in-memory rate limiter to prevent too many concurrent Firebase logins
+// This helps avoid quota issues when running tests in parallel
+// Note: This only works within a single worker process - use limited workers in playwright.config.ts
+const loginQueue: { resolve: () => void }[] = [];
+let activeLogins = 0;
+const MAX_CONCURRENT_LOGINS = isLiveEnvironment() ? 1 : 5; // Only 1 login at a time per worker for live
+const LOGIN_DELAY_MS = isLiveEnvironment() ? 2000 : 0; // Delay between logins for live env
+
+async function acquireLoginSlot(): Promise<void> {
+  if (activeLogins < MAX_CONCURRENT_LOGINS) {
+    activeLogins++;
+    if (LOGIN_DELAY_MS > 0) {
+      // Add random jitter to prevent workers from syncing up
+      const jitter = Math.random() * 1000;
+      await new Promise(resolve => setTimeout(resolve, LOGIN_DELAY_MS + jitter));
     }
+    return;
   }
   
-  // Fallback: UI login (uses Firebase auth quota)
+  // Wait in queue
+  await new Promise<void>(resolve => {
+    loginQueue.push({ resolve });
+  });
+  activeLogins++;
+  
+  // Add delay when coming out of queue
+  if (LOGIN_DELAY_MS > 0) {
+    const jitter = Math.random() * 1000;
+    await new Promise(resolve => setTimeout(resolve, LOGIN_DELAY_MS + jitter));
+  }
+}
+
+function releaseLoginSlot(): void {
+  activeLogins--;
+  if (loginQueue.length > 0) {
+    const next = loginQueue.shift();
+    next?.resolve();
+  }
+}
+
+/**
+ * Login helper - performs UI login with quota-aware retry logic
+ * Note: Firebase stores auth in IndexedDB which Playwright can't persist,
+ * so we always use UI login but with careful rate limiting.
+ */
+async function loginAs(page: Page, context: BrowserContext, user: TestUser): Promise<void> {
   await loginViaUI(page, user);
 }
 
 /**
- * Login via UI - performs a login through the UI
+ * Login via UI - performs a login through the UI with rate limiting
  */
 async function loginViaUI(page: Page, user: TestUser, retryCount = 0, isQuotaRetry = false): Promise<void> {
   const isLive = isLiveEnvironment();
-  const loginTimeout = isLive ? 45000 : 15000;
+  const loginTimeout = isLive ? 60000 : 15000; // Increased timeout for live environments
   // More retries for quota errors (they often clear after a wait)
-  const maxRetries = isQuotaRetry ? 5 : (isLive ? 2 : 1);
+  const maxRetries = isQuotaRetry ? 5 : (isLive ? 3 : 1);
+  
+  // Acquire a login slot to prevent too many concurrent Firebase auth requests
+  await acquireLoginSlot();
   
   try {
     await page.goto('/');
@@ -130,7 +101,13 @@ async function loginViaUI(page: Page, user: TestUser, retryCount = 0, isQuotaRet
     if (page.url().includes('/onboarding')) {
       console.log(`Warning: User ${user.email} redirected to onboarding`);
     }
+    
+    // Release slot on success
+    releaseLoginSlot();
   } catch (error) {
+    // Release slot before retry
+    releaseLoginSlot();
+    
     const errorMessage = error instanceof Error ? error.message : String(error);
     const isBrowserClosed = errorMessage.includes('Target page, context or browser has been closed') ||
                             errorMessage.includes('Target closed') ||
@@ -149,7 +126,7 @@ async function loginViaUI(page: Page, user: TestUser, retryCount = 0, isQuotaRet
     const effectiveMaxRetries = isQuotaError ? 5 : maxRetries;
     
     if (retryCount < effectiveMaxRetries) {
-      const waitTime = isQuotaError ? 10000 * (retryCount + 1) : 2000;
+      const waitTime = isQuotaError ? 15000 * (retryCount + 1) : 3000;
       console.log(`Login attempt ${retryCount + 1} failed for ${user.email}${isQuotaError ? ' (quota exceeded)' : ''}, retrying in ${waitTime/1000}s...`);
       try {
         await page.waitForTimeout(waitTime);

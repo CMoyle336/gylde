@@ -1,10 +1,7 @@
-import { chromium, Browser, Page, BrowserContext } from '@playwright/test';
+import { chromium, Browser, Page } from '@playwright/test';
 import { getAllTestUsers, TestUser } from './tests/fixtures/test-users';
 import * as path from 'path';
 import * as fs from 'fs';
-
-// Directory to store auth states for reuse in tests
-const AUTH_STATE_DIR = path.join(__dirname, '.auth');
 import dotenv from 'dotenv';
 
 // Load environment variables
@@ -43,8 +40,8 @@ async function initFirebaseAdmin(): Promise<void> {
 }
 
 // Maximum number of users to create in parallel
-// Reduced for live environments to avoid Firebase auth quota issues
-const MAX_PARALLEL_USERS = isLiveEnv ? 3 : 10;
+// Limit for live environments to reduce Firebase auth quota pressure
+const MAX_PARALLEL_USERS = isLiveEnv ? 2 : 5;
 
 /**
  * Get current user's UID from the browser page
@@ -554,29 +551,6 @@ async function completeOnboarding(page: Page, user: TestUser): Promise<void> {
 }
 
 /**
- * Get the auth state file path for a user
- */
-function getAuthStatePath(user: TestUser): string {
-  // Create a safe filename from the email
-  const safeEmail = user.email.replace(/[^a-zA-Z0-9]/g, '-');
-  return path.join(AUTH_STATE_DIR, `${safeEmail}.json`);
-}
-
-/**
- * Save auth state for a user after successful login
- */
-async function saveAuthState(context: BrowserContext, user: TestUser): Promise<void> {
-  // Ensure auth state directory exists
-  if (!fs.existsSync(AUTH_STATE_DIR)) {
-    fs.mkdirSync(AUTH_STATE_DIR, { recursive: true });
-  }
-  
-  const statePath = getAuthStatePath(user);
-  await context.storageState({ path: statePath });
-  console.log(`  [${user.displayName}] ✓ Auth state saved`);
-}
-
-/**
  * Create and onboard a single user
  */
 async function createUser(browser: Browser, user: TestUser): Promise<{ email: string; success: boolean; error?: string }> {
@@ -631,9 +605,6 @@ async function createUser(browser: Browser, user: TestUser): Promise<{ email: st
         console.log(`  [${user.displayName}] ⚠ Reputation setup failed`);
       }
     }
-    
-    // Save auth state for reuse in tests (avoids re-login and Firebase quota issues)
-    await saveAuthState(context, user);
     
     console.log(`  [${user.displayName}] ✓ Done`);
     return { email: user.email, success: true };
