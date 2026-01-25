@@ -1,4 +1,5 @@
 export const environment = {
+  name: 'preview',
   production: true,
   useEmulators: false,
   firebase: {
