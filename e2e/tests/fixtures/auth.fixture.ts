@@ -159,6 +159,14 @@ export const test = base.extend<{
 
   // Create additional unique users from templates
   provisionUser: (template: TestUser, label?: string) => Promise<ProvisionedUser>;
+
+  // Per-serial-suite users (cached by describe titlePath)
+  provisionSuiteUser: (template: TestUser, label?: string) => Promise<ProvisionedUser>;
+  suiteAlice: ProvisionedUser;
+  suiteBob: ProvisionedUser;
+
+  loginAsSuiteAlice: () => Promise<void>;
+  loginAsSuiteBob: () => Promise<void>;
   
   // Login helpers
   loginAsAlice: () => Promise<void>;
@@ -186,12 +194,47 @@ export const test = base.extend<{
     });
   },
 
+  provisionSuiteUser: async ({ browser }, use, testInfo) => {
+    const runId = getRunId();
+    // Cache across tests in the same worker for the same suite (describe.serial recommended).
+    const suiteKey = testInfo.titlePath.slice(0, -1).join(' > ');
+    const globalKeyPrefix = `${testInfo.project.name}::${testInfo.workerIndex}::${suiteKey}`;
+    const globalCache = (globalThis as any).__GYLDE_E2E_SUITE_USER_CACHE__ as Map<string, ProvisionedUser> | undefined;
+    const cache: Map<string, ProvisionedUser> =
+      globalCache ?? new Map<string, ProvisionedUser>();
+    (globalThis as any).__GYLDE_E2E_SUITE_USER_CACHE__ = cache;
+
+    await use(async (template: TestUser, label?: string) => {
+      const key = `${globalKeyPrefix}::${label || template.id}::${template.id}`;
+      const cached = cache.get(key);
+      if (cached) return cached;
+
+      const unique = makeUniqueUser(template, {
+        runId,
+        workerIndex: testInfo.workerIndex,
+        testId: `${suiteKey}::${label || template.id}`,
+        label,
+      });
+      const created = await provisionUserInternal(browser, unique, { runId });
+      cache.set(key, created);
+      return created;
+    });
+  },
+
   alice: async ({ provisionUser }, use) => {
     await use(await provisionUser(TEST_USERS.alice, 'alice'));
   },
 
   bob: async ({ provisionUser }, use) => {
     await use(await provisionUser(TEST_USERS.bob, 'bob'));
+  },
+
+  suiteAlice: async ({ provisionSuiteUser }, use) => {
+    await use(await provisionSuiteUser(TEST_USERS.alice, 'alice'));
+  },
+
+  suiteBob: async ({ provisionSuiteUser }, use) => {
+    await use(await provisionSuiteUser(TEST_USERS.bob, 'bob'));
   },
 
   // Login as Alice (primary female user)
@@ -205,6 +248,18 @@ export const test = base.extend<{
   loginAsBob: async ({ page, context, bob }, use) => {
     await use(async () => {
       await loginAs(page, context, bob);
+    });
+  },
+
+  loginAsSuiteAlice: async ({ page, context, suiteAlice }, use) => {
+    await use(async () => {
+      await loginAs(page, context, suiteAlice);
+    });
+  },
+
+  loginAsSuiteBob: async ({ page, context, suiteBob }, use) => {
+    await use(async () => {
+      await loginAs(page, context, suiteBob);
     });
   },
 

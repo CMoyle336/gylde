@@ -913,9 +913,9 @@ test.describe.serial('Reputation - Messaging Limit Enforcement', () => {
     };
   }
 
-  test('new tier user can message a higher tier user and send first message', async ({ page, loginAs, provisionUser }) => {
-    const newUser = await provisionUser(newTierUserTemplate, 'new-sender');
-    const distinguished = await provisionUser(distinguishedTierUserTemplate, 'distinguished-target');
+  test('new tier user can message a higher tier user and send first message', async ({ page, loginAs, provisionSuiteUser }) => {
+    const newUser = await provisionSuiteUser(newTierUserTemplate, 'new-sender');
+    const distinguished = await provisionSuiteUser(distinguishedTierUserTemplate, 'distinguished-target');
 
     // Login as new tier user
     await loginAs(newUser);
@@ -930,13 +930,13 @@ test.describe.serial('Reputation - Messaging Limit Enforcement', () => {
     expect(result.limitReached).toBe(false);
   });
 
-  test('new tier user is blocked from second higher tier conversation (limit = 1)', async ({ page, loginAs, provisionUser }) => {
+  test('new tier user is blocked from second higher tier conversation (limit = 1)', async ({ page, loginAs, provisionSuiteUser }) => {
     // Increase timeout for this multi-step test
     test.setTimeout(90000);
     
-    const newUser = await provisionUser(newTierUserTemplate, 'new-sender');
-    const distinguished = await provisionUser(distinguishedTierUserTemplate, 'distinguished-target');
-    const trusted = await provisionUser(trustedTierUserTemplate, 'trusted-target');
+    const newUser = await provisionSuiteUser(newTierUserTemplate, 'new-sender');
+    const distinguished = await provisionSuiteUser(distinguishedTierUserTemplate, 'distinguished-target');
+    const trusted = await provisionSuiteUser(trustedTierUserTemplate, 'trusted-target');
 
     // Login as new tier user
     await loginAs(newUser);
@@ -1009,9 +1009,9 @@ test.describe.serial('Reputation - Messaging Limit Enforcement', () => {
     expect(secondResult.errorMessage).toMatch(/limit|daily/i);
   });
 
-  test('new tier user can still message same tier user (no limit)', async ({ page, loginAs, provisionUser }) => {
-    const newUser = await provisionUser(newTierUserTemplate, 'new-sender');
-    const newPeer = await provisionUser(DISCOVER_TEST_USERS.newTierUser2, 'new-peer');
+  test('new tier user can still message same tier user (no limit)', async ({ page, loginAs, provisionSuiteUser }) => {
+    const newUser = await provisionSuiteUser(newTierUserTemplate, 'new-sender');
+    const newPeer = await provisionSuiteUser(DISCOVER_TEST_USERS.newTierUser2, 'new-peer');
 
     // Login as new tier user
     await loginAs(newUser);
@@ -1027,9 +1027,9 @@ test.describe.serial('Reputation - Messaging Limit Enforcement', () => {
     expect(result.limitReached).toBe(false);
   });
 
-  test('distinguished tier user has unlimited higher tier messaging', async ({ page, loginAs, provisionUser, bob }) => {
-    const distinguished = await provisionUser(distinguishedTierUserTemplate, 'distinguished-sender');
-    const otherMan = await provisionUser(newTierUserTemplate, 'other-man');
+  test('distinguished tier user has unlimited higher tier messaging', async ({ page, loginAs, provisionSuiteUser, suiteBob: bob }) => {
+    const distinguished = await provisionSuiteUser(distinguishedTierUserTemplate, 'distinguished-sender');
+    const otherMan = await provisionSuiteUser(newTierUserTemplate, 'other-man');
 
     // Login as distinguished tier user
     await loginAs(distinguished);
@@ -1181,8 +1181,8 @@ test.describe.serial('Reputation - Active Tier Limits (3/day)', () => {
     return { success: onMessagesPage && !limitReached, limitReached };
   }
 
-  test('active tier user (Bob) can send first message to higher tier user', async ({ page, loginAs, provisionUser, bob }) => {
-    const established = await provisionUser(establishedTierUserTemplate, 'established-target');
+  test('active tier user (Bob) can send first message to higher tier user', async ({ page, loginAs, provisionSuiteUser, suiteBob: bob }) => {
+    const established = await provisionSuiteUser(establishedTierUserTemplate, 'established-target');
 
     // Bob is active tier (limit = 3)
     await loginAs(bob);
@@ -1201,8 +1201,8 @@ test.describe.serial('Reputation - Active Tier Limits (3/day)', () => {
     expect(result.limitReached).toBe(false);
   });
 
-  test('active tier user (Bob) can send second message to higher tier user', async ({ page, loginAs, provisionUser, bob }) => {
-    const trusted = await provisionUser(trustedTierUserTemplate, 'trusted-target');
+  test('active tier user (Bob) can send second message to higher tier user', async ({ page, loginAs, provisionSuiteUser, suiteBob: bob }) => {
+    const trusted = await provisionSuiteUser(trustedTierUserTemplate, 'trusted-target');
 
     await loginAs(bob);
 
@@ -1220,8 +1220,8 @@ test.describe.serial('Reputation - Active Tier Limits (3/day)', () => {
     expect(result.limitReached).toBe(false);
   });
 
-  test('active tier user (Bob) can send third message to higher tier user', async ({ page, loginAs, provisionUser, bob }) => {
-    const distinguished = await provisionUser(distinguishedTierUserTemplate, 'distinguished-target');
+  test('active tier user (Bob) can send third message to higher tier user', async ({ page, loginAs, provisionSuiteUser, suiteBob: bob }) => {
+    const distinguished = await provisionSuiteUser(distinguishedTierUserTemplate, 'distinguished-target');
 
     await loginAs(bob);
 
@@ -1239,7 +1239,7 @@ test.describe.serial('Reputation - Active Tier Limits (3/day)', () => {
     expect(result.limitReached).toBe(false);
   });
 
-  test('active tier user (Bob) is blocked on fourth higher tier message', async ({ page, loginAs, provisionUser, bob }) => {
+  test('active tier user (Bob) is blocked on fourth higher tier message', async ({ page, loginAs, provisionSuiteUser, suiteBob: bob }) => {
     // Increase timeout for this multi-step test (sending 4 messages)
     test.setTimeout(240000);
     
@@ -1249,10 +1249,10 @@ test.describe.serial('Reputation - Active Tier Limits (3/day)', () => {
     // 2. The function correctly identifies higher-tier conversations
     // 3. Firestore writes are completing before the next message is sent
     
-    const established1 = await provisionUser(establishedTierUserTemplate, 'established-1');
-    const trusted = await provisionUser(trustedTierUserTemplate, 'trusted-1');
-    const distinguished = await provisionUser(distinguishedTierUserTemplate, 'distinguished-1');
-    const established2 = await provisionUser(establishedTierUserTemplate, 'established-2');
+    const established1 = await provisionSuiteUser(establishedTierUserTemplate, 'established-1');
+    const trusted = await provisionSuiteUser(trustedTierUserTemplate, 'trusted-1');
+    const distinguished = await provisionSuiteUser(distinguishedTierUserTemplate, 'distinguished-1');
+    const established2 = await provisionSuiteUser(establishedTierUserTemplate, 'established-2');
 
     await loginAs(bob);
     
@@ -1325,8 +1325,8 @@ test.describe.serial('Reputation - Active Tier Limits (3/day)', () => {
     expect(result.limitReached).toBe(true);
   });
 
-  test('active tier user (Bob) can still message same/lower tier', async ({ page, loginAs, provisionUser, bob }) => {
-    const newPeer = await provisionUser(DISCOVER_TEST_USERS.newTierUser2, 'new-peer');
+  test('active tier user (Bob) can still message same/lower tier', async ({ page, loginAs, provisionSuiteUser, suiteBob: bob }) => {
+    const newPeer = await provisionSuiteUser(DISCOVER_TEST_USERS.newTierUser2, 'new-peer');
 
     await loginAs(bob);
     

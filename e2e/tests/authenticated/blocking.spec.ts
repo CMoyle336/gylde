@@ -103,8 +103,8 @@ test.describe.serial('Blocking', () => {
   test('block + unblock: hides from discover/matches, deletes favorites/views/activity, preserves conversation but blocks messaging', async ({
     page,
     loginAs,
-    alice,
-    bob,
+    suiteAlice: alice,
+    suiteBob: bob,
   }) => {
     test.setTimeout(360000);
 
@@ -190,7 +190,7 @@ test.describe.serial('Blocking', () => {
     await expect(page.locator('app-chat-input')).toBeVisible({ timeout: 20000 });
   });
 
-  test('mutual block requires BOTH to unblock', async ({ page, loginAs, alice, bob }) => {
+  test('mutual block requires BOTH to unblock', async ({ page, loginAs, suiteAlice: alice, suiteBob: bob }) => {
     test.setTimeout(360000);
 
     const aliceUid = await getUidByEmail(alice.email);

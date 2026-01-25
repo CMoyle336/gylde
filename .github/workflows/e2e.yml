@@ -1,10 +1,6 @@
 name: E2E Tests
 
 on:
-  pull_request:
-    branches:
-      - master
-    types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
     inputs:
       base_url:
@@ -18,7 +14,7 @@ permissions:
   statuses: read
 
 concurrency:
-  group: e2e-${{ github.event.pull_request.number || github.ref_name }}
+  group: e2e-${{ github.ref_name }}
   cancel-in-progress: true
 
 env:
@@ -33,9 +29,6 @@ jobs:
   e2e:
     runs-on: self-hosted-high
     timeout-minutes: 30
-    # Only run automatically for PRs from preview -> master.
-    # (Manual workflow_dispatch still works for any branch.)
-    if: ${{ github.event_name != 'pull_request' || (github.base_ref == 'master' && github.head_ref == 'preview') }}
 
     steps:
       - name: Wait for App Hosting rollout check
