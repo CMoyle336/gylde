@@ -26,7 +26,7 @@ import { faker } from '@faker-js/faker';
 
 // Configuration
 const FIRESTORE_EMULATOR_HOST = 'localhost:8080';
-const PROJECT_ID = 'gylde-dba55';
+const PROJECT_ID = 'gylde-sandbox';
 
 // Parse command line arguments (positional)
 function parseArgs(): {

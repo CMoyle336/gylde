@@ -299,6 +299,7 @@
   text-align: center;
   padding: 1.5rem 0;
   width: 100%;
+  /* Veriff embed tends to render slightly right-shifted; nudge for desktop */
   margin-left: 1rem;
 }
 
@@ -342,6 +343,24 @@
 
 :host ::ng-deep #veriff-root a:hover {
   text-decoration: underline;
+}
+
+/* Light theme overrides for Veriff embed (fix low-contrast text) */
+:host-context([data-theme="light"]) ::ng-deep #veriff-root p,
+:host-context([data-theme="light"]) ::ng-deep #veriff-root span:not(.material-icons):not(.material-icons-outlined),
+:host-context([data-theme="light"]) ::ng-deep #veriff-root div:not(#veriff-root) {
+  color: var(--color-text-secondary) !important;
+}
+
+:host-context([data-theme="light"]) ::ng-deep #veriff-root a {
+  color: var(--color-accent) !important;
+}
+
+@media (max-width: 640px) {
+  :host ::ng-deep #veriff-root {
+    padding: 1rem 0;
+    margin-left: 0;
+  }
 }
 
 .hidden {

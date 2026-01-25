@@ -31,7 +31,7 @@ import {
 // Configuration
 const FIRESTORE_EMULATOR_HOST = 'localhost:8080';
 const AUTH_EMULATOR_HOST = 'localhost:9099';
-const PROJECT_ID = 'gylde-dba55';
+const PROJECT_ID = 'gylde-sandbox';
 
 // Parse command line arguments
 const args = process.argv.slice(2);
@@ -309,7 +309,7 @@ async function seedFirestoreUsers(db: FirebaseFirestore.Firestore, users: SeedUs
           lastCalculatedAt: FieldValue.serverTimestamp(),
           tierChangedAt: FieldValue.serverTimestamp(),
         },
-      });
+      }, { merge: true });
     }
     
     await batch.commit();
