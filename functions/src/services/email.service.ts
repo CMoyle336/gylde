@@ -5,6 +5,7 @@
 import sgMail from "@sendgrid/mail";
 import {db, auth} from "../config/firebase";
 import * as logger from "firebase-functions/logger";
+import {getAppBaseUrl} from "../config/app-url";
 
 // Email types
 export type EmailType = "match" | "message" | "favorite";
@@ -75,7 +76,7 @@ function generateEmailTemplate(
   conversationId?: string
 ): EmailTemplate {
   const appName = "Gylde";
-  const appUrl = "https://www.gylde.com";
+  const appUrl = getAppBaseUrl();
 
   // Links based on email type
   const profileLink = `${appUrl}/user/${fromUserId}`;

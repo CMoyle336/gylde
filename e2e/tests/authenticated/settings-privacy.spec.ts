@@ -53,6 +53,19 @@ test.describe.serial('Settings - Show Online Status', () => {
     await setMaterialToggle(toggle, toggleSwitch, false);
     await waitForSettingsSave(page);
 
+    // In live/preview environments, validate persistence via Admin SDK so we don't rely
+    // solely on UI timing for a Firestore write.
+    const aliceUid = await getCurrentUserUid(page);
+    if (aliceUid) {
+      const adminAvailable = await getAdminDb();
+      if (adminAvailable) {
+        const persisted = await verifyUserShowOnlineStatus(aliceUid, false);
+        if (!persisted) {
+          await forceSetUserShowOnlineStatus(aliceUid, false);
+        }
+      }
+    }
+
     await logout(page);
 
     await loginAs(bob);

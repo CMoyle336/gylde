@@ -191,10 +191,12 @@ test.describe('Favorites - Premium User (Alice)', () => {
       has: page.locator('.activity-text', { hasText: 'Bob Test favorited you' })
     });
     
-    await expect(favoriteActivity).toBeVisible({ timeout: 10000 });
+    // Activity feeds can contain duplicates (e.g., retries or prior runs in live env).
+    // Use .first() to avoid strict-mode violations while still asserting presence.
+    await expect(favoriteActivity.first()).toBeVisible({ timeout: 10000 });
     
     // Verify it has the correct activity type badge
-    await expect(favoriteActivity.locator('.activity-type-badge.type-favorite')).toBeVisible();
+    await expect(favoriteActivity.first().locator('.activity-type-badge.type-favorite')).toBeVisible();
   });
 
   // Skip: This test depends on onFavoriteCreated Cloud Function populating the favorites data.

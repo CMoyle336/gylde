@@ -41,7 +41,7 @@ async function initFirebaseAdmin(): Promise<void> {
 
 // Maximum number of users to create in parallel
 // Limit for live environments to reduce Firebase auth quota pressure
-const MAX_PARALLEL_USERS = isLiveEnv ? 2 : 5;
+const MAX_PARALLEL_USERS = 5;
 
 /**
  * Get current user's UID from the browser page
@@ -400,7 +400,7 @@ async function loginAs(page: Page, user: TestUser, retryCount = 0): Promise<'dis
  * Signup via UI - creates a new user through the signup flow
  * Returns: 'created' if new user, 'exists' if user already exists, 'error' on failure
  */
-async function signupAs(page: Page, user: TestUser): Promise<'created' | 'exists' | 'error'> {
+async function signupAs(page: Page, user: TestUser, retryCount = 0): Promise<'created' | 'exists' | 'error'> {
   await page.goto(BASE_URL);
   
   // Open auth modal
@@ -430,9 +430,34 @@ async function signupAs(page: Page, user: TestUser): Promise<'created' | 'exists
   } catch {
     // Check if email already exists
     const errorText = await page.locator('[role="alert"]').textContent().catch(() => '');
-    if (errorText?.toLowerCase().includes('already') || errorText?.toLowerCase().includes('exists')) {
+    const normalized = (errorText || '').toLowerCase();
+    if (normalized.includes('already') || normalized.includes('exists')) {
       return 'exists'; // User already exists
     }
+
+    // Live env can hit Firebase Auth throttling. If we get rate-limited, try to login
+    // (in case the user was created in a prior run), otherwise backoff + retry.
+    const isRateLimited =
+      normalized.includes('too many attempts') ||
+      normalized.includes('try again later') ||
+      normalized.includes('rate') ||
+      normalized.includes('throttle');
+
+    if (isRateLimited) {
+      if (retryCount < 3) {
+        // Try login first (covers "already exists" but different error strings).
+        const loginResult = await loginAs(page, user).catch(() => 'failed' as const);
+        if (loginResult !== 'failed') {
+          return 'exists';
+        }
+
+        const backoffMs = 10000 * (retryCount + 1) + Math.floor(Math.random() * 2000);
+        console.log(`  [${user.displayName}] Rate-limited on signup, retrying in ${Math.round(backoffMs / 1000)}s...`);
+        await page.waitForTimeout(backoffMs);
+        return signupAs(page, user, retryCount + 1);
+      }
+    }
+
     throw new Error(`Signup failed for ${user.email}: ${errorText}`);
   }
 }

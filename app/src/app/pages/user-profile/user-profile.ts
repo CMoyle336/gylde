@@ -225,11 +225,6 @@ export class UserProfileComponent implements OnInit, OnDestroy {
       // Start lastViewedBy fetch in parallel (doesn't need profile data)
       const lastViewedPromise = this.activityService.getLastViewedBy(userId);
       
-      // Record view in background immediately (doesn't need profile data)
-      this.activityService.recordProfileView(userId).catch(err => {
-        console.error('Error recording profile view:', err);
-      });
-      
       // Fetch block status and profile in parallel
       const [blockStatus, userSnap] = await Promise.all([
         this.blockService.checkBlockStatus(userId),
@@ -258,6 +253,11 @@ export class UserProfileComponent implements OnInit, OnDestroy {
         this.loading.set(false);
         return;
       }
+
+      // Record view only after confirming the profile is viewable (not blocked / not disabled).
+      this.activityService.recordProfileView(userId).catch(err => {
+        console.error('Error recording profile view:', err);
+      });
 
       // Note: We do NOT check profileVisible here.
       // profileVisible only affects discover/search results.

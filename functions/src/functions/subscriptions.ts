@@ -8,6 +8,7 @@ import {onCall, onRequest, HttpsError} from "firebase-functions/v2/https";
 import {db} from "../config/firebase";
 import {FieldValue} from "firebase-admin/firestore";
 import Stripe from "stripe";
+import {getAppBaseUrl} from "../config/app-url";
 
 // Initialize Stripe
 const getStripe = (): Stripe => {
@@ -102,7 +103,7 @@ export const createSubscriptionCheckout = onCall(
       // Determine success and cancel URLs
       const baseUrl = process.env.FUNCTIONS_EMULATOR ?
         "http://localhost:4200" :
-        "https://www.gylde.com";
+        getAppBaseUrl();
 
       // Create Checkout Session
       const session = await stripe.checkout.sessions.create({
@@ -175,7 +176,7 @@ export const createCustomerPortal = onCall(
 
       const baseUrl = process.env.FUNCTIONS_EMULATOR ?
         "http://localhost:4200" :
-        "https://www.gylde.com";
+        getAppBaseUrl();
 
       // Create Customer Portal session
       const session = await stripe.billingPortal.sessions.create({
