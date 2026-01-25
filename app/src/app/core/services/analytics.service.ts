@@ -2,6 +2,8 @@ import { Injectable, inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Analytics, logEvent, setUserId, setUserProperties } from '@angular/fire/analytics';
 import { ReputationTier } from '../interfaces';
+import { environment } from '../../../environments/environment';
+import { BUILD_INFO } from '../../../environments/build-info';
 
 /**
  * Analytics event categories for organized tracking
@@ -44,6 +46,11 @@ export interface AnalyticsUserProperties {
   account_age_days?: number;
   language?: string;
   theme?: 'light' | 'dark';
+  // App/Firebase context (helps correlate users to environment/build)
+  app_env?: string;
+  app_build?: string;
+  firebase_project_id?: string;
+  firebase_app_id?: string;
 }
 
 /**
@@ -67,12 +74,54 @@ export class AnalyticsService {
   
   private sessionStartTime = Date.now();
   private currentPage: string | null = null;
+  private contextLogged = false;
+
+  private readonly contextUserProperties: AnalyticsUserProperties = (() => {
+    const appEnv = (environment as unknown as { name?: string }).name
+      || (environment.production ? 'production' : 'development');
+
+    const props: AnalyticsUserProperties = {
+      app_env: appEnv,
+      app_build: BUILD_INFO?.buildId || BUILD_INFO?.gitSha || 'unknown',
+      firebase_project_id: environment.firebase?.projectId,
+      firebase_app_id: environment.firebase?.appId,
+    };
+
+    // Strip undefined/null so we don't create noisy user properties
+    for (const [key, value] of Object.entries(props)) {
+      if (value === undefined || value === null || value === '') {
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+        delete (props as Record<string, unknown>)[key];
+      }
+    }
+
+    return props;
+  })();
+
+  private readonly contextEventParams: Record<string, unknown> = (() => {
+    const params: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(this.contextUserProperties)) {
+      if (value !== undefined && value !== null && value !== '') {
+        params[key] = value;
+      }
+    }
+    return params;
+  })();
 
   /**
    * Check if analytics is available (browser environment with Analytics initialized)
    */
   private get isAvailable(): boolean {
     return isPlatformBrowser(this.platformId) && !!this.analytics;
+  }
+
+  /**
+   * Log a Firebase Analytics event without adding automatic enrichments.
+   * Use this to avoid accidental recursion when emitting "context" events.
+   */
+  private logEventRaw(eventName: string, params?: Record<string, unknown>): void {
+    if (!this.isAvailable) return;
+    logEvent(this.analytics!, eventName, params);
   }
 
   // ============================================
@@ -85,6 +134,8 @@ export class AnalyticsService {
   setUser(userId: string): void {
     if (!this.isAvailable) return;
     setUserId(this.analytics!, userId);
+    // Ensure app/build/env context is associated with this user session
+    this.trackAppContext();
   }
 
   /**
@@ -101,9 +152,15 @@ export class AnalyticsService {
   setUserProperties(properties: AnalyticsUserProperties): void {
     if (!this.isAvailable) return;
     
+    // Always include app/build/env context so other calls don't "forget" it.
+    const merged: AnalyticsUserProperties = {
+      ...this.contextUserProperties,
+      ...properties,
+    };
+
     // Convert to record with string values as required by Firebase
     const props: Record<string, string> = {};
-    for (const [key, value] of Object.entries(properties)) {
+    for (const [key, value] of Object.entries(merged)) {
       if (value !== undefined && value !== null) {
         props[key] = String(value);
       }
@@ -124,6 +181,7 @@ export class AnalyticsService {
     
     // Add session duration to all events
     const enrichedParams = {
+      ...this.contextEventParams,
       ...params,
       session_duration_ms: Date.now() - this.sessionStartTime,
     };
@@ -136,9 +194,29 @@ export class AnalyticsService {
   // ============================================
 
   /**
+   * Track app context (build/env/firebase ids) once per session.
+   *
+   * This makes it easy to find a user/session in GA4 and see exactly which
+   * Firebase project/app + build they were using.
+   */
+  trackAppContext(): void {
+    if (!this.isAvailable) return;
+    if (this.contextLogged) return;
+
+    this.contextLogged = true;
+    this.setUserProperties({});
+
+    this.logEventRaw('app_context', {
+      category: 'engagement',
+      ...this.contextEventParams,
+    });
+  }
+
+  /**
    * Track app loaded event
    */
   trackAppLoaded(): void {
+    this.trackAppContext();
     this.logEvent('app_loaded', { category: 'engagement' });
   }
 

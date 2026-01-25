@@ -121,7 +121,7 @@ test.describe('Favorites - Non-Premium User (Bob)', () => {
     await goToDiscoverPage(page);
     
     // Favorite Bob
-    await favoriteUserByName(page, 'Bob Test');
+    await favoriteUserByName(page, bob.displayName);
     
     // Log out Alice
     await logout(page);
@@ -134,7 +134,7 @@ test.describe('Favorites - Non-Premium User (Bob)', () => {
     
     // Check that the activity section does NOT show Alice favorited Bob
     // Non-premium users should not see who favorited them
-    const hasActivity = await checkActivityForFavorite(page, 'Alice Test');
+    const hasActivity = await checkActivityForFavorite(page, alice.displayName);
     expect(hasActivity).toBe(false);
   });
 });
@@ -168,7 +168,7 @@ test.describe('Favorites - Premium User (Alice)', () => {
     await goToDiscoverPage(page);
     
     // Favorite Alice
-    await favoriteUserByName(page, 'Alice Test');
+    await favoriteUserByName(page, alice.displayName);
     
     // Log out Bob
     await logout(page);
@@ -182,19 +182,21 @@ test.describe('Favorites - Premium User (Alice)', () => {
     // Wait a moment for activities to load
     await page.waitForTimeout(1000);
     
-    // Check that the activity section shows "Bob Test favorited you"
+    // Check that the activity section shows "<bob> favorited you"
     const activitySection = page.locator('.sidebar-activity');
     await expect(activitySection).toBeVisible();
     
     // Find activity item with favorite type for Bob
     const favoriteActivity = activitySection.locator('.activity-item').filter({
-      has: page.locator('.activity-text', { hasText: 'Bob Test favorited you' })
+      has: page.locator('.activity-text', { hasText: `${bob.displayName} favorited you` })
     });
     
-    await expect(favoriteActivity).toBeVisible({ timeout: 10000 });
+    // Activity feeds can contain duplicates (e.g., retries or prior runs in live env).
+    // Use .first() to avoid strict-mode violations while still asserting presence.
+    await expect(favoriteActivity.first()).toBeVisible({ timeout: 10000 });
     
     // Verify it has the correct activity type badge
-    await expect(favoriteActivity.locator('.activity-type-badge.type-favorite')).toBeVisible();
+    await expect(favoriteActivity.first().locator('.activity-type-badge.type-favorite')).toBeVisible();
   });
 
   // Skip: This test depends on onFavoriteCreated Cloud Function populating the favorites data.
@@ -208,7 +210,7 @@ test.describe('Favorites - Premium User (Alice)', () => {
     await goToDiscoverPage(page);
     
     // Favorite Alice
-    await favoriteUserByName(page, 'Alice Test');
+    await favoriteUserByName(page, alice.displayName);
     
     // Wait for Cloud Function to process favorite
     await page.waitForTimeout(3000);
@@ -237,13 +239,13 @@ test.describe('Favorites - Premium User (Alice)', () => {
     // Check that Bob appears in the favorited-me list (with retries)
     const profileGrid = page.locator('.matches-content .profile-grid');
     const bobCard = profileGrid.locator('app-profile-card').filter({
-      has: page.locator('.card-name', { hasText: 'Bob Test' })
+      has: page.locator('.card-name', { hasText: bob.displayName })
     });
     
     // Retry if Bob doesn't appear immediately (Cloud Function may take time)
     let exists = await bobCard.isVisible().catch(() => false);
     for (let attempt = 0; attempt < 5 && !exists; attempt++) {
-      console.log(`Retry ${attempt + 1}: Waiting for Bob Test to appear...`);
+      console.log(`Retry ${attempt + 1}: Waiting for ${bob.displayName} to appear...`);
       await page.waitForTimeout(3000);
       await page.reload();
       await page.locator('.matches-page').waitFor({ state: 'visible', timeout: 15000 });
@@ -264,7 +266,7 @@ test.describe('Favorites - Mutual Interaction', () => {
     // Login as Alice and favorite Bob
     await loginAs(alice);
     await goToDiscoverPage(page);
-    await favoriteUserByName(page, 'Bob Test');
+    await favoriteUserByName(page, bob.displayName);
     
     // Log out Alice
     await logout(page);
@@ -272,7 +274,7 @@ test.describe('Favorites - Mutual Interaction', () => {
     // Login as Bob and favorite Alice
     await loginAs(bob);
     await goToDiscoverPage(page);
-    await favoriteUserByName(page, 'Alice Test');
+    await favoriteUserByName(page, alice.displayName);
     
     // Now check if there's a match - go to matches page
     await goToMatchesPage(page);
@@ -284,7 +286,7 @@ test.describe('Favorites - Mutual Interaction', () => {
     // Check for Alice in the matches
     const profileGrid = page.locator('.matches-content .profile-grid');
     const aliceCard = profileGrid.locator('app-profile-card').filter({
-      has: page.locator('.card-name', { hasText: 'Alice Test' })
+      has: page.locator('.card-name', { hasText: alice.displayName })
     });
     
     // Alice should appear in Bob's matches

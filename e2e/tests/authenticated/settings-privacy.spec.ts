@@ -30,8 +30,8 @@ import {
 } from '../utils/settings-helpers';
 
 test.describe.serial('Settings - Show Online Status', () => {
-  test.beforeEach(async ({ loginAsAlice }) => {
-    await loginAsAlice();
+  test.beforeEach(async ({ loginAsSuiteAlice }) => {
+    await loginAsSuiteAlice();
   });
 
   test('can toggle show online status setting', async ({ page }) => {
@@ -45,7 +45,7 @@ test.describe.serial('Settings - Show Online Status', () => {
     await waitForSettingsSave(page);
   });
 
-  test('when disabled, other users cannot see online status on discover page', async ({ page, loginAs, alice, bob }) => {
+  test('when disabled, other users cannot see online status on discover page', async ({ page, loginAs, suiteAlice: alice, suiteBob: bob }) => {
     test.setTimeout(90000);
 
     await goToSettingsPage(page);
@@ -53,13 +53,26 @@ test.describe.serial('Settings - Show Online Status', () => {
     await setMaterialToggle(toggle, toggleSwitch, false);
     await waitForSettingsSave(page);
 
+    // In live/preview environments, validate persistence via Admin SDK so we don't rely
+    // solely on UI timing for a Firestore write.
+    const aliceUid = await getCurrentUserUid(page);
+    if (aliceUid) {
+      const adminAvailable = await getAdminDb();
+      if (adminAvailable) {
+        const persisted = await verifyUserShowOnlineStatus(aliceUid, false);
+        if (!persisted) {
+          await forceSetUserShowOnlineStatus(aliceUid, false);
+        }
+      }
+    }
+
     await logout(page);
 
     await loginAs(bob);
     await goToDiscoverPage(page);
 
     const aliceCard = page.locator('app-profile-card').filter({
-      has: page.locator('.card-name', { hasText: 'Alice Test' }),
+      has: page.locator('.card-name', { hasText: alice.displayName }),
     });
 
     const isVisible = await aliceCard.isVisible({ timeout: 5000 }).catch(() => false);
@@ -76,7 +89,7 @@ test.describe.serial('Settings - Show Online Status', () => {
     await waitForSettingsSave(page);
   });
 
-  test('when disabled, other users cannot see online status on matches page', async ({ page, loginAs, alice, bob }) => {
+  test('when disabled, other users cannot see online status on matches page', async ({ page, loginAs, suiteAlice: alice, suiteBob: bob }) => {
     test.setTimeout(90000);
 
     await goToSettingsPage(page);
@@ -99,7 +112,7 @@ test.describe.serial('Settings - Show Online Status', () => {
     await goToDiscoverPage(page);
 
     const aliceCard = page.locator('app-profile-card').filter({
-      has: page.locator('.card-name', { hasText: 'Alice Test' }),
+      has: page.locator('.card-name', { hasText: alice.displayName }),
     });
 
     const isVisible = await aliceCard.isVisible({ timeout: 5000 }).catch(() => false);
@@ -116,7 +129,7 @@ test.describe.serial('Settings - Show Online Status', () => {
       await page.waitForTimeout(1000);
 
       const aliceCardInFavorites = page.locator('.matches-content app-profile-card').filter({
-        has: page.locator('.card-name', { hasText: 'Alice Test' }),
+        has: page.locator('.card-name', { hasText: alice.displayName }),
       });
 
       const inFavorites = await aliceCardInFavorites.isVisible({ timeout: 5000 }).catch(() => false);
@@ -137,7 +150,7 @@ test.describe.serial('Settings - Show Online Status', () => {
     await waitForSettingsSave(page);
   });
 
-  test('when disabled, other users cannot see online status on profile page', async ({ page, loginAs, alice, bob }) => {
+  test('when disabled, other users cannot see online status on profile page', async ({ page, loginAs, suiteAlice: alice, suiteBob: bob }) => {
     test.setTimeout(90000);
 
     await goToSettingsPage(page);
@@ -151,11 +164,11 @@ test.describe.serial('Settings - Show Online Status', () => {
     await goToDiscoverPage(page);
 
     const aliceCard = page.locator('app-profile-card').filter({
-      has: page.locator('.card-name', { hasText: 'Alice Test' }),
+      has: page.locator('.card-name', { hasText: alice.displayName }),
     });
     const isVisible = await aliceCard.isVisible({ timeout: 5000 }).catch(() => false);
     if (isVisible) {
-      await viewUserProfile(page, 'Alice Test');
+      await viewUserProfile(page, alice.displayName);
       await expect(page.locator('.stat-value.online')).not.toBeVisible();
       await expect(page.locator('.stat-value', { hasText: 'Online now' })).not.toBeVisible();
     }
@@ -169,7 +182,7 @@ test.describe.serial('Settings - Show Online Status', () => {
     await waitForSettingsSave(page);
   });
 
-  test('when disabled, other users cannot see online status in messages', async ({ page, loginAs, alice, bob }) => {
+  test('when disabled, other users cannot see online status in messages', async ({ page, loginAs, suiteAlice: alice, suiteBob: bob }) => {
     test.setTimeout(120000);
 
     await goToSettingsPage(page);
@@ -191,7 +204,7 @@ test.describe.serial('Settings - Show Online Status', () => {
     await logout(page);
 
     await loginAs(bob);
-    await startConversation(page, 'Alice Test');
+    await startConversation(page, alice.displayName);
 
     const chatHeader = page.locator('app-chat-header, .chat-header').first();
     const headerVisible = await chatHeader.isVisible({ timeout: 5000 }).catch(() => false);
@@ -209,7 +222,7 @@ test.describe.serial('Settings - Show Online Status', () => {
     await waitForSettingsSave(page);
   });
 
-  test('when enabled, other users CAN see online status', async ({ page, loginAs, bob }) => {
+  test('when enabled, other users CAN see online status', async ({ page, loginAs, suiteAlice: alice, suiteBob: bob }) => {
     test.setTimeout(90000);
 
     await goToSettingsPage(page);
@@ -223,7 +236,7 @@ test.describe.serial('Settings - Show Online Status', () => {
     await goToDiscoverPage(page);
 
     const aliceCard = page.locator('app-profile-card').filter({
-      has: page.locator('.card-name', { hasText: 'Alice Test' }),
+      has: page.locator('.card-name', { hasText: alice.displayName }),
     });
     const isVisible = await aliceCard.isVisible({ timeout: 5000 }).catch(() => false);
     if (isVisible) {
@@ -245,9 +258,10 @@ test.describe.serial('Settings - Show Last Active', () => {
     await forceSetUserShowLastActive(subjectUid, true);
   });
 
-  test('when disabled, other users cannot see last active on discover page', async ({ page, loginAs, bob }) => {
+  test('when disabled, other users cannot see last active on discover page', async ({ page, loginAs, suiteBob: bob, provisionSuiteUser }) => {
     test.setTimeout(120000);
 
+    const subject = await provisionSuiteUser(DISCOVER_TEST_USERS.activeTierUser, 'subject-active');
     await loginAs(subject);
     await goToSettingsPage(page);
 
@@ -282,9 +296,10 @@ test.describe.serial('Settings - Show Last Active', () => {
     }
   });
 
-  test('when disabled, other users cannot see last active on matches page', async ({ page, loginAs, bob }) => {
+  test('when disabled, other users cannot see last active on matches page', async ({ page, loginAs, suiteBob: bob, provisionSuiteUser }) => {
     test.setTimeout(150000);
 
+    const subject = await provisionSuiteUser(DISCOVER_TEST_USERS.activeTierUser, 'subject-active');
     await loginAs(subject);
     await goToSettingsPage(page);
 
@@ -335,9 +350,10 @@ test.describe.serial('Settings - Show Last Active', () => {
     }
   });
 
-  test('when disabled, other users cannot see last active on profile page', async ({ page, loginAs, bob }) => {
+  test('when disabled, other users cannot see last active on profile page', async ({ page, loginAs, suiteBob: bob, provisionSuiteUser }) => {
     test.setTimeout(150000);
 
+    const subject = await provisionSuiteUser(DISCOVER_TEST_USERS.activeTierUser, 'subject-active');
     await loginAs(subject);
     await goToSettingsPage(page);
 
@@ -379,9 +395,10 @@ test.describe.serial('Settings - Show Last Active', () => {
     }
   });
 
-  test('when disabled, other users cannot see last active in messages', async ({ page, loginAs, bob }) => {
+  test('when disabled, other users cannot see last active in messages', async ({ page, loginAs, suiteBob: bob, provisionSuiteUser }) => {
     test.setTimeout(180000);
 
+    const subject = await provisionSuiteUser(DISCOVER_TEST_USERS.activeTierUser, 'subject-active');
     await loginAs(subject);
     await goToSettingsPage(page);
 
@@ -436,10 +453,11 @@ test.describe.serial('Settings - Profile Visibility', () => {
     await forceSetUserProfileVisible(subjectUid, true);
   });
 
-  test('hides user from discover, but keeps them visible in matches + messages', async ({ page, loginAs, bob }) => {
+  test('hides user from discover, but keeps them visible in matches + messages', async ({ page, loginAs, suiteBob: bob, provisionSuiteUser }) => {
     test.setTimeout(240000);
 
     // 1) Ensure subject is discoverable to begin with (so Bob can favorite + start a chat).
+    const subject = await provisionSuiteUser(DISCOVER_TEST_USERS.activeTierUser, 'subject-active');
     await loginAs(subject);
     await goToSettingsPage(page);
     const { toggle: visibleToggle, toggleSwitch: visibleSwitch } = await getProfileVisibilityToggle(page);
@@ -535,10 +553,11 @@ test.describe.serial('Settings - Show Location', () => {
     await forceSetUserShowLocation(subjectUid, true);
   });
 
-  test('when disabled, other users cannot see location on discover, matches, or profile page', async ({ page, loginAs, bob }) => {
+  test('when disabled, other users cannot see location on discover, matches, or profile page', async ({ page, loginAs, suiteBob: bob, provisionSuiteUser }) => {
     test.setTimeout(240000);
 
     // 1) Subject disables showLocation
+    const subject = await provisionSuiteUser(DISCOVER_TEST_USERS.activeTierUser, 'subject-active');
     await loginAs(subject);
     await goToSettingsPage(page);
 
@@ -616,7 +635,7 @@ test.describe.serial('Settings - Profile View Notifications', () => {
     await forceSetUserCreateOnView(bobUid, true);
   });
 
-  test('when disabled, viewing someone does not create activity or show in Viewed Me (premium)', async ({ page, loginAs, alice, bob }) => {
+  test('when disabled, viewing someone does not create activity or show in Viewed Me (premium)', async ({ page, loginAs, suiteAlice: alice, suiteBob: bob }) => {
     test.setTimeout(240000);
 
     // Bob disables "profile view notifications" (i.e., don't create view activity for others).

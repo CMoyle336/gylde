@@ -1,4 +1,5 @@
 export const environment = {
+  name: 'development',
   production: false,
   useEmulators: true, // Set to false to use production Firebase
   firebase: {

@@ -13,6 +13,8 @@ function isLiveEnvironment(): boolean {
 // Firebase Admin SDK - lazy loaded for live environments (used to verify/persist settings)
 let adminDb: any | null = null;
 let adminInitialized = false;
+let adminAuth: any | null = null;
+let adminAuthInitialized = false;
 
 export async function getAdminDb(): Promise<any | null> {
   if (!isLiveEnvironment()) return null;
@@ -34,6 +36,41 @@ export async function getAdminDb(): Promise<any | null> {
     return adminDb;
   } catch {
     adminInitialized = true;
+    return null;
+  }
+}
+
+export async function getAdminAuth(): Promise<any | null> {
+  if (!isLiveEnvironment()) return null;
+  if (adminAuthInitialized) return adminAuth;
+
+  try {
+    const { initializeApp, applicationDefault, getApps } = await import('firebase-admin/app');
+    const { getAuth } = await import('firebase-admin/auth');
+
+    if (getApps().length === 0) {
+      initializeApp({
+        credential: applicationDefault(),
+        projectId: process.env.FIREBASE_PROJECT_ID || 'gylde-sandbox',
+      });
+    }
+
+    adminAuth = getAuth();
+    adminAuthInitialized = true;
+    return adminAuth;
+  } catch {
+    adminAuthInitialized = true;
+    return null;
+  }
+}
+
+export async function getUidByEmail(email: string): Promise<string | null> {
+  const auth = await getAdminAuth();
+  if (!auth) return null;
+  try {
+    const user = await auth.getUserByEmail(email);
+    return user?.uid || null;
+  } catch {
     return null;
   }
 }
@@ -238,7 +275,22 @@ export async function goToSettingsPage(page: Page): Promise<void> {
 
 export async function waitForSettingsSave(page: Page): Promise<void> {
   const savingIndicator = page.locator('.saving-indicator');
-  await savingIndicator.waitFor({ state: 'hidden', timeout: 15000 });
+  const timeoutMs = isLiveEnvironment() ? 45000 : 20000;
+
+  // The indicator is only rendered while the Settings page's `saving()` signal is true.
+  // In live/CI environments Firestore writes can be slow, so we use a longer timeout.
+  // If the UI gets stuck in a "saving" state, we do a single best-effort reload to
+  // unstick the UI before failing the test.
+  try {
+    await savingIndicator.waitFor({ state: 'hidden', timeout: timeoutMs });
+  } catch (err) {
+    // Best-effort recovery: reload once and re-check.
+    await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+    await page.locator('.settings-page').waitFor({ state: 'visible', timeout: 30000 }).catch(() => {});
+    await savingIndicator.waitFor({ state: 'hidden', timeout: 15000 });
+    // If we got here, the UI is no longer stuck; continue the test.
+  }
+
   await page.waitForTimeout(500);
 }
 

@@ -330,24 +330,32 @@ async function deleteMatchesBetweenUsers(userId1: string, userId2: string): Prom
 }
 
 async function deleteProfileViewsBetweenUsers(userId1: string, userId2: string): Promise<void> {
-  const batch = db.batch();
+  // Avoid composite-index requirements by querying on a single field, then filtering in memory.
+  // This also mirrors the matches cleanup approach (query + filter).
+  const deleteByViewer = async (viewerId: string, viewedUserId: string) => {
+    const snap = await db.collection("profileViews").where("viewerId", "==", viewerId).get();
+    const toDelete = snap.docs.filter((d) => d.data()?.viewedUserId === viewedUserId);
+    if (toDelete.length === 0) return 0;
 
-  // Delete views where user1 viewed user2
-  const views1Query = db.collection("profileViews")
-    .where("viewerId", "==", userId1)
-    .where("viewedUserId", "==", userId2);
-  const snapshot1 = await views1Query.get();
-  snapshot1.docs.forEach((doc) => batch.delete(doc.ref));
+    // Commit in chunks to stay within Firestore batch limits.
+    let deleted = 0;
+    for (let i = 0; i < toDelete.length; i += 450) {
+      const batch = db.batch();
+      for (const doc of toDelete.slice(i, i + 450)) {
+        batch.delete(doc.ref);
+      }
+      await batch.commit();
+      deleted += Math.min(450, toDelete.length - i);
+    }
+    return deleted;
+  };
 
-  // Delete views where user2 viewed user1
-  const views2Query = db.collection("profileViews")
-    .where("viewerId", "==", userId2)
-    .where("viewedUserId", "==", userId1);
-  const snapshot2 = await views2Query.get();
-  snapshot2.docs.forEach((doc) => batch.delete(doc.ref));
+  const [a, b] = await Promise.all([
+    deleteByViewer(userId1, userId2),
+    deleteByViewer(userId2, userId1),
+  ]);
 
-  await batch.commit();
-  logger.info(`Deleted profile views between ${userId1} and ${userId2}`);
+  logger.info(`Deleted ${a + b} profile view(s) between ${userId1} and ${userId2}`);
 }
 
 async function deletePhotoAccessBetweenUsers(userId1: string, userId2: string): Promise<void> {
