@@ -30,7 +30,7 @@ env:
 
 jobs:
   e2e:
-    runs-on: ubuntu-latest
+    runs-on: github-runner-Nge084s41woSf
     timeout-minutes: 30
     # Only run automatically for PRs from preview -> master.
     # (Manual workflow_dispatch still works for any branch.)
