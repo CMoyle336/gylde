@@ -11,6 +11,11 @@ on:
         required: false
         default: ''
 
+permissions:
+  contents: read
+  checks: read
+  statuses: read
+
 concurrency:
   group: e2e-${{ github.ref_name }}
   cancel-in-progress: true
@@ -19,15 +24,114 @@ env:
   NODE_VERSION: '24'
   # Set your preview environment URL here
   PREVIEW_URL: 'https://preview.gylde.com'
+  # Used by e2e/global.setup.ts when running against live preview
+  FIREBASE_PROJECT_ID: 'gylde-sandbox'
 
 jobs:
   e2e:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
 
     steps:
+      - name: Wait for App Hosting rollout check
+        if: ${{ github.event_name == 'push' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const ref = context.sha;
+
+            const requiredName = "App Hosting - Rollout (gylde-sandbox/us-east4/gylde-server)";
+            const fallbackNeedle = "App Hosting - Rollout";
+            const timeoutMs = 20 * 60 * 1000; // 20 minutes
+            const pollMs = 15 * 1000; // 15 seconds
+            const startedAt = Date.now();
+
+            const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+            const matchesName = (name) =>
+              name === requiredName || (name || "").includes(fallbackNeedle);
+
+            while (true) {
+              // Some providers publish as "check runs", others as legacy "status contexts".
+              const [checksResp, statusResp] = await Promise.all([
+                github.rest.checks.listForRef({owner, repo, ref, per_page: 100}),
+                github.rest.repos.getCombinedStatusForRef({owner, repo, ref}),
+              ]);
+
+              const rolloutChecks = (checksResp.data.check_runs || [])
+                .filter((cr) => matchesName(cr.name))
+                .map((cr) => ({
+                  kind: "check",
+                  name: cr.name,
+                  status: cr.status, // queued|in_progress|completed
+                  conclusion: cr.conclusion, // success|failure|cancelled|...
+                }));
+
+              const rolloutStatuses = (statusResp.data.statuses || [])
+                .filter((st) => matchesName(st.context))
+                .map((st) => ({
+                  kind: "status",
+                  name: st.context,
+                  status: st.state === "pending" ? "in_progress" : "completed",
+                  conclusion: st.state, // success|failure|error|pending
+                }));
+
+              const rollouts = [...rolloutChecks, ...rolloutStatuses];
+
+              if (rollouts.length === 0) {
+                if (Date.now() - startedAt > timeoutMs) {
+                  core.setFailed(
+                    `Timed out waiting for a rollout check named "${requiredName}" on ${ref}`
+                  );
+                  return;
+                }
+                core.info(`No rollout check found yet ("${requiredName}"). Waiting...`);
+                await sleep(pollMs);
+                continue;
+              }
+
+              const incomplete = rollouts.filter((r) => r.status !== "completed");
+              const completed = rollouts.filter((r) => r.status === "completed");
+              const failed = completed.filter((r) => r.conclusion !== "success");
+
+              core.info(
+                `Found ${rollouts.length} rollout signal(s): ` +
+                  `${incomplete.length} pending, ${completed.length} completed`
+              );
+
+              if (failed.length > 0) {
+                core.setFailed(
+                  "App Hosting rollout failed: " +
+                    failed.map((r) => `${r.name} (${r.conclusion})`).join(", ")
+                );
+                return;
+              }
+
+              if (incomplete.length === 0) {
+                core.info("App Hosting rollout completed successfully.");
+                return;
+              }
+
+              if (Date.now() - startedAt > timeoutMs) {
+                core.setFailed(
+                  `Timed out waiting for rollout check "${requiredName}" to complete`
+                );
+                return;
+              }
+
+              await sleep(pollMs);
+            }
+
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud (for Firestore Admin SDK)
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+          create_credentials_file: true
+          export_environment_variables: true
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
