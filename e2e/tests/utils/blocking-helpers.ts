@@ -126,6 +126,16 @@ export async function openManageBlockedUsers(page: Page): Promise<void> {
   await page.goto('/settings');
   await page.locator('.settings-page').waitFor({ state: 'visible', timeout: 30000 });
 
+  // If a prior dialog is still present (e.g. due to retries/navigation timing),
+  // close it so we don't hit strict-mode violations.
+  const existingDialogs = page.locator('.cdk-overlay-container .blocked-users-dialog');
+  const existingCount = await existingDialogs.count().catch(() => 0);
+  if (existingCount > 0) {
+    await page.keyboard.press('Escape').catch(() => {});
+    // Best-effort: wait for overlays to settle.
+    await existingDialogs.first().waitFor({ state: 'hidden', timeout: 8000 }).catch(() => {});
+  }
+
   const blockedSection = page.locator('.settings-section').filter({
     has: page.locator('.section-header mat-icon', { hasText: /^block$/ }),
   });
@@ -135,11 +145,19 @@ export async function openManageBlockedUsers(page: Page): Promise<void> {
   await manageItem.scrollIntoViewIfNeeded().catch(() => {});
   await manageItem.click();
 
-  await page.locator('.blocked-users-dialog').waitFor({ state: 'visible', timeout: 15000 });
+  // Target the top-most dialog to avoid strict-mode violations when multiple dialogs exist in the DOM.
+  const dialog = page.locator('.cdk-overlay-container mat-dialog-container').filter({
+    has: page.locator('.blocked-users-dialog'),
+  }).last().locator('.blocked-users-dialog');
+  await dialog.waitFor({ state: 'visible', timeout: 15000 });
 }
 
 export async function unblockUserFromManageBlocked(page: Page, displayName: string): Promise<void> {
-  const dialog = page.locator('.blocked-users-dialog');
+  const dialog = page
+    .locator('.cdk-overlay-container mat-dialog-container')
+    .filter({ has: page.locator('.blocked-users-dialog') })
+    .last()
+    .locator('.blocked-users-dialog');
   await dialog.waitFor({ state: 'visible', timeout: 15000 });
 
   // Wait for the dialog to finish loading its list (or show empty state).
@@ -161,7 +179,11 @@ export async function unblockUserFromManageBlocked(page: Page, displayName: stri
 }
 
 export async function unblockFirstUserFromManageBlocked(page: Page): Promise<boolean> {
-  const dialog = page.locator('.blocked-users-dialog');
+  const dialog = page
+    .locator('.cdk-overlay-container mat-dialog-container')
+    .filter({ has: page.locator('.blocked-users-dialog') })
+    .last()
+    .locator('.blocked-users-dialog');
   await dialog.waitFor({ state: 'visible', timeout: 15000 });
 
   const loadingState = dialog.locator('.loading-state');

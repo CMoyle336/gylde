@@ -12,6 +12,7 @@ concurrency:
 
 env:
   NODE_VERSION: '24'
+  DOTENV_CONFIG_QUIET: 'true'
 
 jobs:
   build-and-deploy:

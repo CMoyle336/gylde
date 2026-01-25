@@ -78,3 +78,5 @@ typings/
 *.tsbuildinfo
 
 build/
+
+.tmp/

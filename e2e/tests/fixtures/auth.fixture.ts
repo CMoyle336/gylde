@@ -2,6 +2,7 @@ import { test as base, expect, Page, BrowserContext } from '@playwright/test';
 import { TEST_USERS, DISCOVER_TEST_USERS, TestUser, getAllTestUsers } from './test-users';
 import dotenv from 'dotenv';
 import path from 'path';
+import { getRunId, makeUniqueUser, provisionUser as provisionUserInternal, type ProvisionedUser } from '../utils/user-provisioning';
 
 // Load environment variables
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
@@ -152,35 +153,58 @@ async function loginViaUI(page: Page, user: TestUser, retryCount = 0, isQuotaRet
  *   - alice, bob: Access to user data for assertions
  */
 export const test = base.extend<{
-  // Pre-created users (for data access in tests)
-  alice: TestUser;
-  bob: TestUser;
+  // Per-test unique users (created & onboarded automatically)
+  alice: ProvisionedUser;
+  bob: ProvisionedUser;
+
+  // Create additional unique users from templates
+  provisionUser: (template: TestUser, label?: string) => Promise<ProvisionedUser>;
   
   // Login helpers
   loginAsAlice: () => Promise<void>;
   loginAsBob: () => Promise<void>;
   loginAs: (user: TestUser) => Promise<void>;
 }>({
-  // User data fixtures
-  alice: async ({}, use) => {
-    await use(TEST_USERS.alice);
+  provisionUser: async ({ browser }, use, testInfo) => {
+    const runId = getRunId();
+    const cache = new Map<string, ProvisionedUser>();
+
+    await use(async (template: TestUser, label?: string) => {
+      const key = `${label || template.id}::${template.id}`;
+      const cached = cache.get(key);
+      if (cached) return cached;
+
+      const unique = makeUniqueUser(template, {
+        runId,
+        workerIndex: testInfo.workerIndex,
+        testId: testInfo.testId,
+        label,
+      });
+      const created = await provisionUserInternal(browser, unique, { runId });
+      cache.set(key, created);
+      return created;
+    });
   },
 
-  bob: async ({}, use) => {
-    await use(TEST_USERS.bob);
+  alice: async ({ provisionUser }, use) => {
+    await use(await provisionUser(TEST_USERS.alice, 'alice'));
+  },
+
+  bob: async ({ provisionUser }, use) => {
+    await use(await provisionUser(TEST_USERS.bob, 'bob'));
   },
 
   // Login as Alice (primary female user)
-  loginAsAlice: async ({ page, context }, use) => {
+  loginAsAlice: async ({ page, context, alice }, use) => {
     await use(async () => {
-      await loginAs(page, context, TEST_USERS.alice);
+      await loginAs(page, context, alice);
     });
   },
 
   // Login as Bob (primary male user)
-  loginAsBob: async ({ page, context }, use) => {
+  loginAsBob: async ({ page, context, bob }, use) => {
     await use(async () => {
-      await loginAs(page, context, TEST_USERS.bob);
+      await loginAs(page, context, bob);
     });
   },
 

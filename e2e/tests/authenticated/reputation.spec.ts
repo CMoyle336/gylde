@@ -67,12 +67,12 @@ async function getAdminDb(): Promise<FirebaseFirestore.Firestore | null> {
  * - distinguished: unlimited
  */
 
-// Get test users by tier
-const newTierUser = DISCOVER_TEST_USERS.newTierUser;
-const activeTierUser = DISCOVER_TEST_USERS.activeTierUser;
-const establishedTierUser = DISCOVER_TEST_USERS.establishedTierUser;
-const trustedTierUser = DISCOVER_TEST_USERS.trustedTierUser;
-const distinguishedTierUser = DISCOVER_TEST_USERS.distinguishedTierUser;
+// User templates (auth fixture will create unique instances per test)
+const newTierUserTemplate = DISCOVER_TEST_USERS.newTierUser;
+const activeTierUserTemplate = DISCOVER_TEST_USERS.activeTierUser;
+const establishedTierUserTemplate = DISCOVER_TEST_USERS.establishedTierUser;
+const trustedTierUserTemplate = DISCOVER_TEST_USERS.trustedTierUser;
+const distinguishedTierUserTemplate = DISCOVER_TEST_USERS.distinguishedTierUser;
 
 // Helper to navigate to discover page
 async function goToDiscoverPage(page: Page): Promise<void> {
@@ -225,9 +225,10 @@ test.describe('Reputation - Discover Page Sorting', () => {
     await expect(sortBtn).toContainText('Prioritize Trusted');
   });
 
-  test('reputation sorting shows higher tier users first', async ({ page, loginAs }) => {
+  test('reputation sorting shows higher tier users first', async ({ page, loginAs, provisionUser }) => {
     // Login as a user who can see various tier users
-    await loginAs(newTierUser);
+    const viewer = await provisionUser(newTierUserTemplate, 'viewer-new');
+    await loginAs(viewer);
     await goToDiscoverPage(page);
     
     // Wait for profiles to load
@@ -327,8 +328,9 @@ test.describe('Reputation - Messages Filtering', () => {
 });
 
 test.describe('Reputation - Messaging Limits', () => {
-  test('message button is available on profile cards', async ({ page, loginAs }) => {
-    await loginAs(newTierUser);
+  test('message button is available on profile cards', async ({ page, loginAs, provisionUser }) => {
+    const viewer = await provisionUser(newTierUserTemplate, 'viewer-new');
+    await loginAs(viewer);
     await goToDiscoverPage(page);
     
     // Wait for profiles to load
@@ -392,9 +394,11 @@ test.describe('Reputation - Tier Visibility', () => {
     console.log(`Found ${badgeCount} reputation badges in conversation list`);
   });
 
-  test('reputation tier determines conversation permission', async ({ page, loginAs }) => {
+  test('reputation tier determines conversation permission', async ({ page, loginAs, provisionUser }) => {
     // Login as a new tier user
-    await loginAs(newTierUser);
+    const viewer = await provisionUser(newTierUserTemplate, 'viewer-new');
+    const trusted = await provisionUser(trustedTierUserTemplate, 'trusted-target');
+    await loginAs(viewer);
     await goToDiscoverPage(page);
     
     // Wait for profiles
@@ -402,7 +406,7 @@ test.describe('Reputation - Tier Visibility', () => {
     
     // Try to message a higher tier user
     const trustedUser = page.locator('app-profile-card').filter({
-      has: page.locator('.card-name', { hasText: 'Trusted Tina' })
+      has: page.locator('.card-name', { hasText: trusted.displayName })
     });
     
     if (await trustedUser.isVisible({ timeout: 5000 }).catch(() => false)) {
@@ -909,12 +913,15 @@ test.describe.serial('Reputation - Messaging Limit Enforcement', () => {
     };
   }
 
-  test('new tier user can message a higher tier user and send first message', async ({ page, loginAs }) => {
-    // Login as new tier user (New Nick)
-    await loginAs(newTierUser);
+  test('new tier user can message a higher tier user and send first message', async ({ page, loginAs, provisionUser }) => {
+    const newUser = await provisionUser(newTierUserTemplate, 'new-sender');
+    const distinguished = await provisionUser(distinguishedTierUserTemplate, 'distinguished-target');
+
+    // Login as new tier user
+    await loginAs(newUser);
     
     // Start conversation with Distinguished Diana AND send a message to use up the limit
-    const result = await startConversationAndSendMessage(page, 'Distinguished Diana', 'Hello! This is a test message.');
+    const result = await startConversationAndSendMessage(page, distinguished.displayName, 'Hello! This is a test message.');
     
     console.log(`First higher-tier message sent: success=${result.success}, limitReached=${result.limitReached}`);
     
@@ -923,12 +930,16 @@ test.describe.serial('Reputation - Messaging Limit Enforcement', () => {
     expect(result.limitReached).toBe(false);
   });
 
-  test('new tier user is blocked from second higher tier conversation (limit = 1)', async ({ page, loginAs }) => {
+  test('new tier user is blocked from second higher tier conversation (limit = 1)', async ({ page, loginAs, provisionUser }) => {
     // Increase timeout for this multi-step test
     test.setTimeout(90000);
     
-    // Login as new tier user (New Nick)
-    await loginAs(newTierUser);
+    const newUser = await provisionUser(newTierUserTemplate, 'new-sender');
+    const distinguished = await provisionUser(distinguishedTierUserTemplate, 'distinguished-target');
+    const trusted = await provisionUser(trustedTierUserTemplate, 'trusted-target');
+
+    // Login as new tier user
+    await loginAs(newUser);
     
     // Get the actual user UID from IndexedDB
     const uid = await getCurrentUserUid(page);
@@ -953,7 +964,7 @@ test.describe.serial('Reputation - Messaging Limit Enforcement', () => {
     // STEP 1: First, naturally use up the limit by sending a message to a higher tier user
     // Use Distinguished Diana who is higher tier
     console.log('Step 1: Sending first higher-tier message to use up the limit...');
-    const firstResult = await startConversationAndSendMessage(page, 'Distinguished Diana', 'Test message to use limit');
+    const firstResult = await startConversationAndSendMessage(page, distinguished.displayName, 'Test message to use limit');
     console.log(`First message result: success=${firstResult.success}, limitReached=${firstResult.limitReached}`);
     
     // First message should succeed
@@ -989,7 +1000,7 @@ test.describe.serial('Reputation - Messaging Limit Enforcement', () => {
     // STEP 2: Now try to message a DIFFERENT higher tier user - should be blocked
     // Try Trusted Tina who is also higher tier
     console.log('Step 2: Attempting second higher-tier message (should be blocked)...');
-    const secondResult = await attemptMessage(page, 'Trusted Tina');
+    const secondResult = await attemptMessage(page, trusted.displayName);
     
     console.log(`Second higher-tier message attempt: success=${secondResult.success}, limitReached=${secondResult.limitReached}, error=${secondResult.errorMessage}`);
     
@@ -998,13 +1009,16 @@ test.describe.serial('Reputation - Messaging Limit Enforcement', () => {
     expect(secondResult.errorMessage).toMatch(/limit|daily/i);
   });
 
-  test('new tier user can still message same tier user (no limit)', async ({ page, loginAs }) => {
-    // Login as new tier user (New Nick)
-    await loginAs(newTierUser);
+  test('new tier user can still message same tier user (no limit)', async ({ page, loginAs, provisionUser }) => {
+    const newUser = await provisionUser(newTierUserTemplate, 'new-sender');
+    const newPeer = await provisionUser(DISCOVER_TEST_USERS.newTierUser2, 'new-peer');
+
+    // Login as new tier user
+    await loginAs(newUser);
     
     // Try to message another new tier user - New Nancy
     // This should succeed because same-tier messaging has no limits
-    const result = await attemptMessage(page, 'New Nancy');
+    const result = await attemptMessage(page, newPeer.displayName);
     
     console.log(`Same-tier message attempt: success=${result.success}, limitReached=${result.limitReached}`);
     
@@ -1013,22 +1027,25 @@ test.describe.serial('Reputation - Messaging Limit Enforcement', () => {
     expect(result.limitReached).toBe(false);
   });
 
-  test('distinguished tier user has unlimited higher tier messaging', async ({ page, loginAs }) => {
+  test('distinguished tier user has unlimited higher tier messaging', async ({ page, loginAs, provisionUser, bob }) => {
+    const distinguished = await provisionUser(distinguishedTierUserTemplate, 'distinguished-sender');
+    const otherMan = await provisionUser(newTierUserTemplate, 'other-man');
+
     // Login as distinguished tier user
-    await loginAs(distinguishedTierUser);
+    await loginAs(distinguished);
     
     // Distinguished users have unlimited messaging (-1 limit)
     // They can message anyone, and even after sending messages, are never blocked
     
     // First conversation + message
-    const result1 = await startConversationAndSendMessage(page, 'Alice Test', 'Hello from Distinguished tier!');
+    const result1 = await startConversationAndSendMessage(page, bob.displayName, 'Hello from Distinguished tier!');
     console.log(`Distinguished user first message: success=${result1.success}`);
     
     // Distinguished users should never be blocked
     expect(result1.limitReached).toBe(false);
     
     // Try a second conversation
-    const result2 = await attemptMessage(page, 'Trusted Tina');
+    const result2 = await attemptMessage(page, otherMan.displayName);
     console.log(`Distinguished user second message: success=${result2.success}`);
     
     expect(result2.limitReached).toBe(false);
@@ -1164,41 +1181,65 @@ test.describe.serial('Reputation - Active Tier Limits (3/day)', () => {
     return { success: onMessagesPage && !limitReached, limitReached };
   }
 
-  test('active tier user (Bob) can send first message to higher tier user', async ({ page, loginAs }) => {
+  test('active tier user (Bob) can send first message to higher tier user', async ({ page, loginAs, provisionUser, bob }) => {
+    const established = await provisionUser(establishedTierUserTemplate, 'established-target');
+
     // Bob is active tier (limit = 3)
-    await loginAs(TEST_USERS.bob);
+    await loginAs(bob);
+
+    const uid = await getCurrentUserUid(page);
+    if (uid) {
+      await setHigherTierConversationCount(uid, 0);
+      await page.waitForTimeout(500);
+    }
     
     // First message to established tier (higher) - must SEND to use up limit
-    const result = await sendMessageTo(page, 'Established Emma', 'Hello Emma, test message 1!');
+    const result = await sendMessageTo(page, established.displayName, 'Hello Emma, test message 1!');
     console.log(`Active tier user 1st message: success=${result.success}`);
     
     expect(result.success).toBe(true);
     expect(result.limitReached).toBe(false);
   });
 
-  test('active tier user (Bob) can send second message to higher tier user', async ({ page, loginAs }) => {
-    await loginAs(TEST_USERS.bob);
+  test('active tier user (Bob) can send second message to higher tier user', async ({ page, loginAs, provisionUser, bob }) => {
+    const trusted = await provisionUser(trustedTierUserTemplate, 'trusted-target');
+
+    await loginAs(bob);
+
+    const uid = await getCurrentUserUid(page);
+    if (uid) {
+      await setHigherTierConversationCount(uid, 1);
+      await page.waitForTimeout(500);
+    }
     
     // Second message to trusted tier (higher)
-    const result = await sendMessageTo(page, 'Trusted Tina', 'Hello Tina, test message 2!');
+    const result = await sendMessageTo(page, trusted.displayName, 'Hello Tina, test message 2!');
     console.log(`Active tier user 2nd message: success=${result.success}`);
     
     expect(result.success).toBe(true);
     expect(result.limitReached).toBe(false);
   });
 
-  test('active tier user (Bob) can send third message to higher tier user', async ({ page, loginAs }) => {
-    await loginAs(TEST_USERS.bob);
+  test('active tier user (Bob) can send third message to higher tier user', async ({ page, loginAs, provisionUser, bob }) => {
+    const distinguished = await provisionUser(distinguishedTierUserTemplate, 'distinguished-target');
+
+    await loginAs(bob);
+
+    const uid = await getCurrentUserUid(page);
+    if (uid) {
+      await setHigherTierConversationCount(uid, 2);
+      await page.waitForTimeout(500);
+    }
     
     // Third message to distinguished tier (higher)
-    const result = await sendMessageTo(page, 'Distinguished Diana', 'Hello Diana, test message 3!');
+    const result = await sendMessageTo(page, distinguished.displayName, 'Hello Diana, test message 3!');
     console.log(`Active tier user 3rd message: success=${result.success}`);
     
     expect(result.success).toBe(true);
     expect(result.limitReached).toBe(false);
   });
 
-  test('active tier user (Bob) is blocked on fourth higher tier message', async ({ page, loginAs }) => {
+  test('active tier user (Bob) is blocked on fourth higher tier message', async ({ page, loginAs, provisionUser, bob }) => {
     // Increase timeout for this multi-step test (sending 4 messages)
     test.setTimeout(240000);
     
@@ -1208,7 +1249,12 @@ test.describe.serial('Reputation - Active Tier Limits (3/day)', () => {
     // 2. The function correctly identifies higher-tier conversations
     // 3. Firestore writes are completing before the next message is sent
     
-    await loginAs(TEST_USERS.bob);
+    const established1 = await provisionUser(establishedTierUserTemplate, 'established-1');
+    const trusted = await provisionUser(trustedTierUserTemplate, 'trusted-1');
+    const distinguished = await provisionUser(distinguishedTierUserTemplate, 'distinguished-1');
+    const established2 = await provisionUser(establishedTierUserTemplate, 'established-2');
+
+    await loginAs(bob);
     
     // Get Bob's UID
     const uid = await getCurrentUserUid(page);
@@ -1232,7 +1278,7 @@ test.describe.serial('Reputation - Active Tier Limits (3/day)', () => {
     
     // Bob (active tier, limit = 3) needs to send 3 messages first, then 4th should be blocked
     // Higher tier users Bob can message (Bob is active): established, trusted, distinguished
-    const higherTierTargets = ['Alice Test', 'Trusted Tina', 'Distinguished Diana'];
+    const higherTierTargets = [established1.displayName, trusted.displayName, distinguished.displayName];
     
     // Send messages to 3 different higher-tier users to use up the limit
     for (let i = 0; i < 3; i++) {
@@ -1269,9 +1315,9 @@ test.describe.serial('Reputation - Active Tier Limits (3/day)', () => {
     }
     
     // Now try to message a 4th higher tier user - should be blocked
-    // Use Established Emma who is also higher tier than active
+    // Use a NEW established-tier user (not previously messaged) who is also higher tier than active
     console.log('Attempting 4th higher-tier message (should be blocked)...');
-    const result = await attemptMessage(page, 'Established Emma');
+    const result = await attemptMessage(page, established2.displayName);
     console.log(`Active tier user 4th message: success=${result.success}, blocked=${result.limitReached}`);
     
     // Should be blocked (when counter reaches 3)
@@ -1279,12 +1325,14 @@ test.describe.serial('Reputation - Active Tier Limits (3/day)', () => {
     expect(result.limitReached).toBe(true);
   });
 
-  test('active tier user (Bob) can still message same/lower tier', async ({ page, loginAs }) => {
-    await loginAs(TEST_USERS.bob);
+  test('active tier user (Bob) can still message same/lower tier', async ({ page, loginAs, provisionUser, bob }) => {
+    const newPeer = await provisionUser(DISCOVER_TEST_USERS.newTierUser2, 'new-peer');
+
+    await loginAs(bob);
     
     // Should be able to message new tier user (lower tier) without limits
     // Use New Nancy (woman, new tier) since Bob is only interested in women
-    const result = await attemptMessage(page, 'New Nancy');
+    const result = await attemptMessage(page, newPeer.displayName);
     console.log(`Active tier messaging lower tier: success=${result.success}`);
     
     // Same/lower tier should always work

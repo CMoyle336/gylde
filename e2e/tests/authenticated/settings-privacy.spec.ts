@@ -72,7 +72,7 @@ test.describe.serial('Settings - Show Online Status', () => {
     await goToDiscoverPage(page);
 
     const aliceCard = page.locator('app-profile-card').filter({
-      has: page.locator('.card-name', { hasText: 'Alice Test' }),
+      has: page.locator('.card-name', { hasText: alice.displayName }),
     });
 
     const isVisible = await aliceCard.isVisible({ timeout: 5000 }).catch(() => false);
@@ -112,7 +112,7 @@ test.describe.serial('Settings - Show Online Status', () => {
     await goToDiscoverPage(page);
 
     const aliceCard = page.locator('app-profile-card').filter({
-      has: page.locator('.card-name', { hasText: 'Alice Test' }),
+      has: page.locator('.card-name', { hasText: alice.displayName }),
     });
 
     const isVisible = await aliceCard.isVisible({ timeout: 5000 }).catch(() => false);
@@ -129,7 +129,7 @@ test.describe.serial('Settings - Show Online Status', () => {
       await page.waitForTimeout(1000);
 
       const aliceCardInFavorites = page.locator('.matches-content app-profile-card').filter({
-        has: page.locator('.card-name', { hasText: 'Alice Test' }),
+        has: page.locator('.card-name', { hasText: alice.displayName }),
       });
 
       const inFavorites = await aliceCardInFavorites.isVisible({ timeout: 5000 }).catch(() => false);
@@ -164,11 +164,11 @@ test.describe.serial('Settings - Show Online Status', () => {
     await goToDiscoverPage(page);
 
     const aliceCard = page.locator('app-profile-card').filter({
-      has: page.locator('.card-name', { hasText: 'Alice Test' }),
+      has: page.locator('.card-name', { hasText: alice.displayName }),
     });
     const isVisible = await aliceCard.isVisible({ timeout: 5000 }).catch(() => false);
     if (isVisible) {
-      await viewUserProfile(page, 'Alice Test');
+      await viewUserProfile(page, alice.displayName);
       await expect(page.locator('.stat-value.online')).not.toBeVisible();
       await expect(page.locator('.stat-value', { hasText: 'Online now' })).not.toBeVisible();
     }
@@ -204,7 +204,7 @@ test.describe.serial('Settings - Show Online Status', () => {
     await logout(page);
 
     await loginAs(bob);
-    await startConversation(page, 'Alice Test');
+    await startConversation(page, alice.displayName);
 
     const chatHeader = page.locator('app-chat-header, .chat-header').first();
     const headerVisible = await chatHeader.isVisible({ timeout: 5000 }).catch(() => false);
@@ -222,7 +222,7 @@ test.describe.serial('Settings - Show Online Status', () => {
     await waitForSettingsSave(page);
   });
 
-  test('when enabled, other users CAN see online status', async ({ page, loginAs, bob }) => {
+  test('when enabled, other users CAN see online status', async ({ page, loginAs, alice, bob }) => {
     test.setTimeout(90000);
 
     await goToSettingsPage(page);
@@ -236,7 +236,7 @@ test.describe.serial('Settings - Show Online Status', () => {
     await goToDiscoverPage(page);
 
     const aliceCard = page.locator('app-profile-card').filter({
-      has: page.locator('.card-name', { hasText: 'Alice Test' }),
+      has: page.locator('.card-name', { hasText: alice.displayName }),
     });
     const isVisible = await aliceCard.isVisible({ timeout: 5000 }).catch(() => false);
     if (isVisible) {

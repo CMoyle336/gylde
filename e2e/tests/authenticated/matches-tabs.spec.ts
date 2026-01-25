@@ -269,13 +269,13 @@ test.describe('Matches Tabs - Premium Lock Status', () => {
 });
 
 test.describe('Matches Tabs - My Favorites Tab', () => {
-  test('shows users that current user has favorited', async ({ page, loginAs, alice }) => {
+  test('shows users that current user has favorited', async ({ page, loginAs, alice, bob }) => {
     // Login as Alice and ensure Bob is favorited
     await loginAs(alice);
     await goToDiscoverPage(page);
     
     // Ensure Bob is favorited (idempotent - won't toggle if already favorited)
-    await ensureFavorited(page, 'Bob Test');
+    await ensureFavorited(page, bob.displayName);
     
     // Navigate to matches and check My Favorites tab
     await goToMatchesPage(page);
@@ -283,7 +283,7 @@ test.describe('Matches Tabs - My Favorites Tab', () => {
     await waitForTabContent(page);
     
     // Bob should appear in My Favorites
-    await expectUserInTab(page, 'Bob Test');
+    await expectUserInTab(page, bob.displayName);
   });
 
   // Skip: This test is flaky due to slow tab content loading in the emulator environment.
@@ -323,7 +323,7 @@ test.describe('Matches Tabs - My Matches Tab', () => {
     // First, login as Alice and ensure Bob is favorited
     await loginAs(alice);
     await goToDiscoverPage(page);
-    await ensureFavorited(page, 'Bob Test');
+    await ensureFavorited(page, bob.displayName);
     
     // Wait for favorite to be recorded by Cloud Function
     await page.waitForTimeout(2000);
@@ -332,7 +332,7 @@ test.describe('Matches Tabs - My Matches Tab', () => {
     // Then, login as Bob and ensure Alice is favorited
     await loginAs(bob);
     await goToDiscoverPage(page);
-    await ensureFavorited(page, 'Alice Test');
+    await ensureFavorited(page, alice.displayName);
     
     // Wait for favorite to be recorded and match to be created by Cloud Function
     await page.waitForTimeout(3000);
@@ -343,17 +343,17 @@ test.describe('Matches Tabs - My Matches Tab', () => {
     await waitForTabContent(page);
     
     // Retry multiple times if Alice doesn't appear (Cloud Function may take time)
-    let exists = await userExistsInTab(page, 'Alice Test');
+    let exists = await userExistsInTab(page, alice.displayName);
     for (let attempt = 0; attempt < 3 && !exists; attempt++) {
       await page.waitForTimeout(2000);
       await page.reload();
       await page.locator('.matches-page').waitFor({ state: 'visible', timeout: 15000 });
       await clickMatchesTab(page, 'My Matches');
       await waitForTabContent(page);
-      exists = await userExistsInTab(page, 'Alice Test');
+      exists = await userExistsInTab(page, alice.displayName);
     }
     
-    await expectUserInTab(page, 'Alice Test');
+    await expectUserInTab(page, alice.displayName);
   });
 
   // Skip: This test is flaky due to slow tab content loading in the emulator environment.
@@ -388,7 +388,7 @@ test.describe('Matches Tabs - My Matches Tab', () => {
 test.describe('Matches Tabs - Recently Viewed Tab', () => {
   // Skip: This test depends on profile views being recorded in the backend which 
   // requires Cloud Functions. The Cloud Function execution is unreliable in the emulator.
-  test('shows profiles the current user has viewed', async ({ page, loginAs, bob }) => {
+  test('shows profiles the current user has viewed', async ({ page, loginAs, alice, bob }) => {
     // Increase timeout for this test
     test.setTimeout(60000);
     
@@ -397,7 +397,7 @@ test.describe('Matches Tabs - Recently Viewed Tab', () => {
     await goToDiscoverPage(page);
     
     // View Alice's profile
-    await viewUserProfile(page, 'Alice Test');
+    await viewUserProfile(page, alice.displayName);
     
     // Wait for profile view to be recorded
     await page.waitForTimeout(3000);
@@ -411,17 +411,17 @@ test.describe('Matches Tabs - Recently Viewed Tab', () => {
     await waitForTabContent(page);
     
     // Alice should appear in Recently Viewed - retry multiple times if needed
-    let exists = await userExistsInTab(page, 'Alice Test');
+    let exists = await userExistsInTab(page, alice.displayName);
     for (let attempt = 0; attempt < 3 && !exists; attempt++) {
-      console.log(`Retry ${attempt + 1}: Waiting for Alice Test in Recently Viewed...`);
+      console.log(`Retry ${attempt + 1}: Waiting for ${alice.displayName} in Recently Viewed...`);
       await page.waitForTimeout(2000);
       await page.reload();
       await page.locator('.matches-page').waitFor({ state: 'visible', timeout: 15000 });
       await clickMatchesTab(page, 'Recently Viewed');
       await waitForTabContent(page);
-      exists = await userExistsInTab(page, 'Alice Test');
+      exists = await userExistsInTab(page, alice.displayName);
     }
-    await expectUserInTab(page, 'Alice Test');
+    await expectUserInTab(page, alice.displayName);
   });
 
   // Skip: This test is flaky due to slow tab content loading in the emulator environment.
@@ -483,7 +483,7 @@ test.describe('Matches Tabs - Favorited Me Tab (Premium)', () => {
     // Bob favorites Alice
     await loginAs(bob);
     await goToDiscoverPage(page);
-    await ensureFavorited(page, 'Alice Test');
+    await ensureFavorited(page, alice.displayName);
     
     // Wait for favorite to be recorded
     await page.waitForTimeout(3000);
@@ -498,20 +498,20 @@ test.describe('Matches Tabs - Favorited Me Tab (Premium)', () => {
     await waitForTabContent(page);
     
     // Retry multiple times if Bob doesn't appear (Cloud Function may take time)
-    let exists = await userExistsInTab(page, 'Bob Test');
+    let exists = await userExistsInTab(page, bob.displayName);
     for (let attempt = 0; attempt < 5 && !exists; attempt++) {
-      console.log(`Retry ${attempt + 1}: Waiting for Bob Test to appear in Favorited Me...`);
+      console.log(`Retry ${attempt + 1}: Waiting for ${bob.displayName} to appear in Favorited Me...`);
       await page.waitForTimeout(3000);
       await page.reload();
       await page.locator('.matches-page').waitFor({ state: 'visible', timeout: 15000 });
       await page.waitForTimeout(1000);
       await clickMatchesTab(page, 'Favorited Me');
       await waitForTabContent(page);
-      exists = await userExistsInTab(page, 'Bob Test');
+      exists = await userExistsInTab(page, bob.displayName);
     }
     
     // Bob should appear in Favorited Me
-    await expectUserInTab(page, 'Bob Test');
+    await expectUserInTab(page, bob.displayName);
   });
 
   test('non-premium user cannot access Favorited Me tab', async ({ page, loginAsBob }) => {
@@ -556,7 +556,7 @@ test.describe('Matches Tabs - Viewed Me Tab (Premium)', () => {
     // Bob views Alice's profile
     await loginAs(bob);
     await goToDiscoverPage(page);
-    await viewUserProfile(page, 'Alice Test');
+    await viewUserProfile(page, alice.displayName);
     
     // Wait for view to be recorded on backend
     await page.waitForTimeout(2000);
@@ -574,7 +574,7 @@ test.describe('Matches Tabs - Viewed Me Tab (Premium)', () => {
     await waitForTabContent(page);
     
     // Check if Bob appears; if not, refresh and try again
-    const exists = await userExistsInTab(page, 'Bob Test');
+    const exists = await userExistsInTab(page, bob.displayName);
     if (!exists) {
       await page.reload();
       await page.locator('.matches-page').waitFor({ state: 'visible', timeout: 15000 });
@@ -584,7 +584,7 @@ test.describe('Matches Tabs - Viewed Me Tab (Premium)', () => {
     }
     
     // Bob should appear in Viewed Me
-    await expectUserInTab(page, 'Bob Test');
+    await expectUserInTab(page, bob.displayName);
   });
 
   test('non-premium user cannot access Viewed Me tab', async ({ page, loginAsBob }) => {

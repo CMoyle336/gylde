@@ -23,6 +23,7 @@ concurrency:
 
 env:
   NODE_VERSION: '24'
+  DOTENV_CONFIG_QUIET: 'true'
   # Set your preview environment URL here
   PREVIEW_URL: 'https://preview.gylde.com'
   # Used by e2e/global.setup.ts when running against live preview
