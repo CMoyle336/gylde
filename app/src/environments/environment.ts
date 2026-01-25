@@ -2,13 +2,14 @@ export const environment = {
   production: false,
   useEmulators: true, // Set to false to use production Firebase
   firebase: {
-    apiKey: 'AIzaSyAh86oAhHxMIZxqJBIreBF6lOHbC3bU7XY',
-    authDomain: 'gylde-dba55.firebaseapp.com',
-    projectId: 'gylde-dba55',
-    storageBucket: 'gylde-dba55.firebasestorage.app',
-    messagingSenderId: '786713739296',
-    appId: '1:786713739296:web:c6495e7d8e278982213c45',
-    measurementId: 'G-ETS6XP4QJ9',
+    // TODO: Update with your preview Firebase project config
+    apiKey: "AIzaSyDhEBotYsIo6H94OfGMENSh532CEKwoUVo",
+    authDomain: "gylde-sandbox.firebaseapp.com",
+    projectId: "gylde-sandbox",
+    storageBucket: "gylde-sandbox.firebasestorage.app",
+    messagingSenderId: "693709602499",
+    appId: "1:693709602499:web:ab7f6e65e178e889e5ec76",
+    measurementId: "G-B2YQNRZZNR"
   },
   firestoreLogLevel: 'debug',
   // Google Maps API key for geocoding

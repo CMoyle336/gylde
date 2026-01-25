@@ -204,15 +204,29 @@ export class SubscriptionService {
 
       // If upgrading to premium, track as subscription start (revenue event)
       if (newTier === 'premium' && this.previousTier === 'free') {
-        const priceInCents = this.priceMonthly();
-        
-        this.analytics.trackSubscriptionStart({
-          subscriptionId: subscription.stripeSubscriptionId,
-          tier: 'premium',
-          priceInCents,
-          currency: 'USD',
-          source: 'upgrade_dialog',
-        });
+        /**
+         * IMPORTANT:
+         * Only log a revenue-bearing `purchase` event when we have a Stripe-backed subscription.
+         *
+         * Without a real `stripeSubscriptionId`, GA4/Firebase can't dedupe, and any accidental/manual
+         * tier flips to premium would incorrectly show as revenue.
+         */
+        const isStripeBacked =
+          (subscription.status === 'active' || subscription.status === 'trialing') &&
+          typeof subscription.stripeSubscriptionId === 'string' &&
+          subscription.stripeSubscriptionId.length > 0;
+
+        if (isStripeBacked) {
+          const priceInCents = this.priceMonthly();
+
+          this.analytics.trackSubscriptionStart({
+            subscriptionId: subscription.stripeSubscriptionId,
+            tier: 'premium',
+            priceInCents,
+            currency: 'USD',
+            source: 'upgrade_dialog',
+          });
+        }
 
         // Update user properties in analytics
         this.analytics.setUserProperties({

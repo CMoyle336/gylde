@@ -74,8 +74,8 @@
 }
 
 .legal-badge {
-  background-color: var(--color-accent-glow);
-  color: var(--color-accent);
+  background-color: var(--color-accent);
+  color: var(--color-bg-primary);  /* High contrast: dark text on accent background */
   padding: 0.25rem 0.75rem;
   border-radius: 9999px;
   font-size: 0.75rem;
@@ -192,13 +192,14 @@
 
 .legal-section a {
   color: var(--color-accent);
-  text-decoration: none;
+  text-decoration: underline;  /* WCAG: Links in text must be distinguishable */
+  text-underline-offset: 2px;
   transition: color var(--transition-fast);
 }
 
 .legal-section a:hover {
   color: var(--color-accent-light);
-  text-decoration: underline;
+  text-decoration-thickness: 2px;
 }
 
 /* Contact Info */

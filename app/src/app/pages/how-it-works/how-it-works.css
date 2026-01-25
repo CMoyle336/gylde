@@ -76,8 +76,8 @@
 
 .hero-badge {
   display: inline-block;
-  background-color: var(--color-accent-glow);
-  color: var(--color-accent);
+  background-color: var(--color-accent);
+  color: var(--color-bg-primary);  /* High contrast: dark text on accent background */
   padding: 0.5rem 1rem;
   border-radius: 9999px;
   font-size: 0.875rem;
@@ -179,8 +179,7 @@
   font-family: var(--font-display);
   font-size: 4rem;
   font-weight: 700;
-  color: var(--color-accent);
-  opacity: 0.3;
+  color: var(--color-text-secondary);  /* Solid color for WCAG AA compliant contrast */
   line-height: 1;
   margin-bottom: 1rem;
 }
@@ -489,33 +488,33 @@
 }
 
 .tier-label.new {
-  background: rgba(156, 163, 175, 0.2);
-  color: #9ca3af;
-  border: 1px solid rgba(156, 163, 175, 0.3);
+  background: #6b7280;  /* Solid dark gray for contrast */
+  color: #ffffff;
+  border: 1px solid #6b7280;
 }
 
 .tier-label.active {
-  background: rgba(59, 130, 246, 0.15);
-  color: #60a5fa;
-  border: 1px solid rgba(59, 130, 246, 0.3);
+  background: #2563eb;  /* Solid blue for contrast */
+  color: #ffffff;
+  border: 1px solid #2563eb;
 }
 
 .tier-label.established {
-  background: rgba(139, 92, 246, 0.15);
-  color: #a78bfa;
-  border: 1px solid rgba(139, 92, 246, 0.3);
+  background: #7c3aed;  /* Solid purple for contrast */
+  color: #ffffff;
+  border: 1px solid #7c3aed;
 }
 
 .tier-label.trusted {
-  background: rgba(201, 169, 98, 0.15);
-  color: var(--color-accent);
-  border: 1px solid rgba(201, 169, 98, 0.3);
+  background: var(--color-accent);
+  color: var(--color-bg-primary);  /* Dark text on accent background */
+  border: 1px solid var(--color-accent);
 }
 
 .tier-label.distinguished {
-  background: linear-gradient(135deg, rgba(201, 169, 98, 0.2), rgba(245, 158, 11, 0.2));
-  color: #f59e0b;
-  border: 1px solid rgba(245, 158, 11, 0.4);
+  background: linear-gradient(135deg, #b45309, #d97706);  /* Darker amber gradient */
+  color: #ffffff;
+  border: 1px solid #b45309;
 }
 
 /* FAQ Section */

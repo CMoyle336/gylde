@@ -66,8 +66,8 @@
 
 .hero-badge {
   display: inline-block;
-  background-color: var(--color-accent-glow);
-  color: var(--color-accent);
+  background-color: var(--color-accent);
+  color: var(--color-bg-primary);  /* High contrast: dark text on accent background */
   padding: 0.5rem 1rem;
   border-radius: 9999px;
   font-size: 0.875rem;
@@ -294,7 +294,7 @@
 }
 
 .consequence-item.warning h4 {
-  color: var(--color-warning);
+  color: var(--color-text-primary);  /* Use primary text for contrast; icon provides color coding */
 }
 
 .consequence-item.suspension {
@@ -339,11 +339,12 @@
 
 .closing-section a {
   color: var(--color-accent);
-  text-decoration: none;
+  text-decoration: underline;  /* WCAG: Links must be distinguishable */
+  text-underline-offset: 2px;
 }
 
 .closing-section a:hover {
-  text-decoration: underline;
+  text-decoration-thickness: 2px;
 }
 
 /* Footer */

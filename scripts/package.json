@@ -8,7 +8,9 @@
     "seed:clear": "npx tsx seed.ts --clear",
     "seed:50": "npx tsx seed.ts --clear --count 50",
     "seed:100": "npx tsx seed.ts --clear --count 100",
-    "stress:messages": "npx tsx message-stress.ts"
+    "stress:messages": "npx tsx message-stress.ts",
+    "clean:preview": "npx tsx clean-preview.ts",
+    "clean:preview:confirm": "npx tsx clean-preview.ts --confirm"
   },
   "dependencies": {
     "@faker-js/faker": "^10.2.0",

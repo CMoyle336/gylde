@@ -76,8 +76,8 @@
 
 .hero-badge {
   display: inline-block;
-  background-color: var(--color-accent-glow);
-  color: var(--color-accent);
+  background-color: var(--color-accent);
+  color: var(--color-bg-primary);  /* High contrast: dark text on accent background */
   padding: 0.5rem 1rem;
   border-radius: 9999px;
   font-size: 0.875rem;
