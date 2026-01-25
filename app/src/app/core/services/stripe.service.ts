@@ -92,14 +92,34 @@ export class StripeService {
     }
 
     try {
+      const isLightTheme =
+        typeof document !== 'undefined' &&
+        document.documentElement.getAttribute('data-theme') === 'light';
+
+      const getCssVar = (name: string, fallback: string): string => {
+        try {
+          const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+          return value || fallback;
+        } catch {
+          return fallback;
+        }
+      };
+
+      // Use app theme tokens so Stripe Elements matches light/dark mode.
+      const colorPrimary = getCssVar('--color-accent', '#c9a962');
+      const colorBackground = getCssVar('--color-bg-elevated', isLightTheme ? '#f5f3f0' : '#1a1a1a');
+      const colorText = getCssVar('--color-text-primary', isLightTheme ? '#111827' : '#ffffff');
+      const colorMuted = getCssVar('--color-text-muted', isLightTheme ? '#6b7280' : '#9ca3af');
+      const colorDanger = getCssVar('--color-danger', '#ef4444');
+
       this.elements = this.stripe.elements({
         appearance: {
-          theme: 'night',
+          theme: isLightTheme ? 'stripe' : 'night',
           variables: {
-            colorPrimary: '#c9a962',
-            colorBackground: '#1a1a1a',
-            colorText: '#ffffff',
-            colorDanger: '#ef4444',
+            colorPrimary,
+            colorBackground,
+            colorText,
+            colorDanger,
             fontFamily: 'system-ui, -apple-system, sans-serif',
             borderRadius: '8px',
           },
@@ -110,13 +130,13 @@ export class StripeService {
         style: {
           base: {
             fontSize: '16px',
-            color: '#ffffff',
+            color: colorText,
             '::placeholder': {
-              color: '#9ca3af',
+              color: colorMuted,
             },
           },
           invalid: {
-            color: '#ef4444',
+            color: colorDanger,
           },
         },
       });

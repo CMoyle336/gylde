@@ -297,7 +297,13 @@ export const onUserCreated = onDocumentCreated(
       },
 
       updatedAt: Timestamp.now(),
-    });
+    }, {merge: true});
+
+    // If a user is created with onboarding already completed (e.g. seeded/dev data),
+    // ensure baseline reputation exists immediately.
+    if (data.onboardingCompleted === true) {
+      await initializeReputation(userId);
+    }
 
     logger.info(`Set denormalized fields for new user ${userId}:`, {
       isSearchable,

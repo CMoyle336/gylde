@@ -604,7 +604,7 @@ export async function initializeReputation(userId: string): Promise<void> {
   const now = Timestamp.now();
   const today = new Date().toISOString().split("T")[0];
 
-  // Check if user is a founder (for tracking purposes only, no reputation bonus)
+  // If reputation already exists, don't overwrite it (important for seeded/dev users and retries).
   const privateDoc = await db
     .collection("users")
     .doc(userId)
@@ -612,6 +612,12 @@ export async function initializeReputation(userId: string): Promise<void> {
     .doc("data")
     .get();
 
+  if (privateDoc.exists && privateDoc.data()?.reputation) {
+    logger.info(`Reputation already exists for user ${userId}, skipping initialization`);
+    return;
+  }
+
+  // Check if user is a founder (for tracking purposes only, no reputation bonus)
   const isFounder = privateDoc.data()?.isFounder === true;
 
   // All users start at "new" tier with score 0
