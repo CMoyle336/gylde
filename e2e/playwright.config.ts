@@ -16,7 +16,7 @@ const isLiveEnv = baseURL.includes('gylde.com');
 // - CI: 1 worker (sequential for reliability)
 // - Live env: 4 workers max (avoid Firebase Auth quota issues)
 // - Local: undefined (use all CPUs)
-const workers = 2;
+const workers = undefined;
 
 export default defineConfig({
   testDir: './tests',
