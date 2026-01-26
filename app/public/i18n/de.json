@@ -1,5 +1,27 @@
 {
+  "LANGUAGE": {
+    "EN": "Englisch",
+    "DE": "Deutsch",
+    "ES": "Spanisch"
+  },
   "HOME": {
+    "NAV": {
+      "FEATURES": "Funktionen",
+      "HOW_IT_WORKS": "So funktioniert's",
+      "SIGN_IN": "Anmelden",
+      "GET_STARTED": "Loslegen",
+      "DASHBOARD": "Dashboard",
+      "LOGOUT": "Abmelden",
+      "ARIA_LABEL": "Hauptnavigation",
+      "LAUNCH": "Starten",
+      "SWITCH_TO_LIGHT_ARIA": "Zum hellen Modus wechseln",
+      "SWITCH_TO_DARK_ARIA": "Zum dunklen Modus wechseln",
+      "OPEN_MENU_ARIA": "Menü öffnen",
+      "LIGHT_MODE": "Heller Modus",
+      "DARK_MODE": "Dunkler Modus",
+      "LANGUAGE": "Sprache",
+      "CHANGE_LANGUAGE_ARIA": "Sprache ändern"
+    },
     "HERO": {
       "TAGLINE": "Dating für bewusste, unterstützte Beziehungen",
       "TITLE": "Finde dein",

@@ -17,6 +17,39 @@
         </button>
       }
 
+      <!-- Language Picker -->
+      <div class="language-picker">
+        <button 
+          type="button" 
+          class="language-toggle"
+          [attr.aria-label]="'HOME.NAV.CHANGE_LANGUAGE_ARIA' | translate"
+          [attr.aria-expanded]="languageDropdownOpen()"
+          (click)="toggleLanguageDropdown()">
+          <span class="material-icons-outlined">language</span>
+          <span class="language-code">{{ languageService.currentLanguage() | uppercase }}</span>
+          <span class="material-icons-outlined dropdown-arrow">
+            {{ languageDropdownOpen() ? 'expand_less' : 'expand_more' }}
+          </span>
+        </button>
+        @if (languageDropdownOpen()) {
+          <div class="language-dropdown-backdrop" (click)="closeLanguageDropdown()"></div>
+          <div class="language-dropdown">
+            @for (lang of languageService.languages; track lang.code) {
+              <button 
+                type="button" 
+                class="language-option"
+                [class.active]="lang.code === languageService.currentLanguage()"
+                (click)="selectLanguage(lang.code)">
+                <span class="language-native">{{ lang.nativeName }}</span>
+                @if (lang.code === languageService.currentLanguage()) {
+                  <span class="material-icons-outlined check-icon">check</span>
+                }
+              </button>
+            }
+          </div>
+        }
+      </div>
+
       <!-- Theme Toggle -->
       <button 
         type="button" 
@@ -56,6 +89,22 @@
             {{ 'HOME.NAV.GET_STARTED' | translate }}
           </button>
         }
+
+        <!-- Mobile Language Picker -->
+        <div class="mobile-language-picker">
+          <span class="mobile-picker-label">{{ 'HOME.NAV.LANGUAGE' | translate }}</span>
+          <div class="mobile-language-options">
+            @for (lang of languageService.languages; track lang.code) {
+              <button 
+                type="button" 
+                class="mobile-language-option"
+                [class.active]="lang.code === languageService.currentLanguage()"
+                (click)="selectLanguage(lang.code)">
+                {{ lang.nativeName }}
+              </button>
+            }
+          </div>
+        </div>
 
         <!-- Mobile Theme Toggle -->
         <button 

@@ -1,4 +1,9 @@
 {
+  "LANGUAGE": {
+    "EN": "English",
+    "DE": "German",
+    "ES": "Spanish"
+  },
   "HOME": {
     "NAV": {
       "FEATURES": "Features",
@@ -13,7 +18,9 @@
       "SWITCH_TO_DARK_ARIA": "Switch to dark mode",
       "OPEN_MENU_ARIA": "Open menu",
       "LIGHT_MODE": "Light Mode",
-      "DARK_MODE": "Dark Mode"
+      "DARK_MODE": "Dark Mode",
+      "LANGUAGE": "Language",
+      "CHANGE_LANGUAGE_ARIA": "Change language"
     },
     "HERO": {
       "TAGLINE": "Dating for Intentional, Supported Relationships",

@@ -1,0 +1,132 @@
+{
+  "LANGUAGE": {
+    "EN": "Inglés",
+    "DE": "Alemán",
+    "ES": "Español"
+  },
+  "HOME": {
+    "NAV": {
+      "FEATURES": "Características",
+      "HOW_IT_WORKS": "Cómo funciona",
+      "SIGN_IN": "Iniciar sesión",
+      "GET_STARTED": "Comenzar",
+      "DASHBOARD": "Panel",
+      "LOGOUT": "Cerrar sesión",
+      "ARIA_LABEL": "Navegación principal",
+      "LAUNCH": "Lanzar",
+      "SWITCH_TO_LIGHT_ARIA": "Cambiar a modo claro",
+      "SWITCH_TO_DARK_ARIA": "Cambiar a modo oscuro",
+      "OPEN_MENU_ARIA": "Abrir menú",
+      "LIGHT_MODE": "Modo claro",
+      "DARK_MODE": "Modo oscuro",
+      "LANGUAGE": "Idioma",
+      "CHANGE_LANGUAGE_ARIA": "Cambiar idioma"
+    },
+    "HERO": {
+      "TAGLINE": "Citas para relaciones intencionales y con apoyo",
+      "TITLE": "Encuentra tu",
+      "TITLE_ACCENT": "Gylde",
+      "DESCRIPTION": "No son citas casuales. No hay conjeturas. Un espacio estructurado donde la claridad se encuentra con la conexión y las relaciones se construyen con intención.",
+      "CTA_PRIMARY": "Comienza tu viaje",
+      "CTA_SECONDARY": "Más información",
+      "VERIFIED_MEMBER": "Miembro verificado",
+      "PREMIUM_MEMBER": "Miembro premium",
+      "ITS_A_MATCH": "¡Es un match!"
+    },
+    "STATS": {
+      "ACTIVE_MEMBERS": "Miembros activos",
+      "CONNECTIONS_MADE": "Conexiones realizadas",
+      "SATISFACTION_RATE": "Tasa de satisfacción"
+    },
+    "FEATURES": {
+      "LABEL": "Por qué Gylde",
+      "TITLE": "Claridad, no adivinanzas",
+      "DESCRIPTION": "Nuestros miembros se unen porque quieren estructura en lo que más importa: estilo de vida, ambición, generosidad e intención.",
+      "LIFESTYLE": {
+        "TITLE": "Expectativas de estilo de vida",
+        "DESCRIPTION": "Sé sincero sobre cómo vives y lo que esperas. Sin ambigüedad, solo estilos de vida alineados desde el principio."
+      },
+      "AMBITION": {
+        "TITLE": "Ambición y crecimiento",
+        "DESCRIPTION": "Conecta con miembros que valoran el desarrollo personal, los objetivos profesionales y construir hacia algo más grande."
+      },
+      "GENEROSITY": {
+        "TITLE": "Generosidad y apoyo",
+        "DESCRIPTION": "Un espacio para quienes están abiertos a dar y recibir apoyo. Claros en las intenciones, respetuosos en el enfoque."
+      },
+      "INTENTION": {
+        "TITLE": "Construido con intención",
+        "DESCRIPTION": "Cada relación aquí comienza con un propósito. Sin juegos, sin incertidumbre, solo conexiones genuinas e intencionales."
+      },
+      "VERIFIED": {
+        "TITLE": "Miembros verificados",
+        "DESCRIPTION": "Cada perfil está verificado. Sabe que la persona con la que te conectas es real, seria y auténtica."
+      },
+      "PRIVACY": {
+        "TITLE": "Privacidad y discreción",
+        "DESCRIPTION": "Tu privacidad importa. Comparte en tus términos con controles robustos diseñados para tu tranquilidad."
+      }
+    },
+    "HOW_IT_WORKS": {
+      "LABEL": "El viaje",
+      "TITLE": "Tres pasos hacia la conexión",
+      "STEP_1": {
+        "TITLE": "Define lo que quieres",
+        "DESCRIPTION": "Nuestro perfil estructurado te guía a través del estilo de vida, ambiciones y expectativas de relación. Sin adivinar, solo claridad."
+      },
+      "STEP_2": {
+        "TITLE": "Encuentra coincidencias alineadas",
+        "DESCRIPTION": "Explora miembros verificados que comparten tus intenciones. Filtra por lo que importa: estilo de vida, objetivos y apertura al apoyo."
+      },
+      "STEP_3": {
+        "TITLE": "Conecta con propósito",
+        "DESCRIPTION": "Inicia conversaciones sabiendo que ambos están en la misma página. Construye relaciones basadas en el respeto mutuo y las intenciones claras."
+      }
+    },
+    "VALUES": {
+      "LABEL": "Nuestra promesa",
+      "TITLE": "Estructura que funciona",
+      "DESCRIPTION": "Construimos Gylde porque las citas no deberían requerir descifrar señales mixtas. Nuestra plataforma te da la estructura para ser claro sobre lo que quieres, y encontrar a otros que quieren lo mismo.",
+      "INTENTIONAL_CONNECTIONS": "Conexiones intencionales",
+      "LIST": {
+        "CLEAR_EXPECTATIONS": "Expectativas claras desde el primer mensaje",
+        "VERIFIED_IDENTITY": "Identidad verificada para cada miembro",
+        "ZERO_TOLERANCE": "Cero tolerancia con la deshonestidad o los juegos",
+        "STRUCTURED_PROFILES": "Perfiles estructurados que muestran lo que importa",
+        "MUTUAL_RESPECT": "Una comunidad construida sobre el respeto mutuo"
+      }
+    },
+    "CTA": {
+      "TITLE": "Proporcionamos la",
+      "TITLE_ACCENT": "Estructura",
+      "DESCRIPTION": "Tú defines la conexión. Únete a una comunidad construida sobre claridad, intención y respeto mutuo.",
+      "BUTTON": "Crea tu perfil"
+    },
+    "FOOTER": {
+      "TAGLINE": "Proporcionamos la estructura. Tú defines la conexión.",
+      "ARIA_LABEL": "Navegación del pie de página",
+      "PLATFORM": {
+        "TITLE": "Plataforma",
+        "ABOUT": "Sobre nosotros",
+        "HOW_IT_WORKS": "Cómo funciona",
+        "MEMBERSHIP": "Membresía",
+        "SUCCESS_STORIES": "Historias de éxito"
+      },
+      "SUPPORT": {
+        "TITLE": "Soporte",
+        "HELP": "Centro de ayuda",
+        "SAFETY": "Consejos de seguridad",
+        "GUIDELINES": "Directrices de la comunidad",
+        "CONTACT": "Contacto"
+      },
+      "LEGAL": {
+        "TITLE": "Legal",
+        "PRIVACY": "Política de privacidad",
+        "TERMS": "Términos de servicio",
+        "COOKIES": "Política de cookies"
+      },
+      "COPYRIGHT": "Gylde. Todos los derechos reservados.",
+      "DISCLAIMER": "Gylde es una plataforma de citas. No respaldamos ni toleramos ninguna forma de actividad ilegal."
+    }
+  }
+}

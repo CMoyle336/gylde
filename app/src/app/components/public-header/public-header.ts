@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { AuthService } from '../../core/services/auth.service';
 import { ThemeService } from '../../core/services/theme.service';
+import { LanguageService, SupportedLanguage } from '../../core/services/language.service';
 
 @Component({
   selector: 'app-public-header',
@@ -15,9 +16,11 @@ import { ThemeService } from '../../core/services/theme.service';
 export class PublicHeaderComponent {
   private readonly authService = inject(AuthService);
   protected readonly themeService = inject(ThemeService);
+  protected readonly languageService = inject(LanguageService);
 
   protected readonly isAuthenticated = this.authService.isAuthenticated;
   protected readonly mobileMenuOpen = signal(false);
+  protected readonly languageDropdownOpen = signal(false);
 
   /** Emits when user clicks Sign In */
   readonly signInClicked = output<void>();
@@ -45,6 +48,20 @@ export class PublicHeaderComponent {
 
   protected async logout(): Promise<void> {
     await this.authService.signOutUser();
+    this.closeMobileMenu();
+  }
+
+  protected toggleLanguageDropdown(): void {
+    this.languageDropdownOpen.update((v) => !v);
+  }
+
+  protected closeLanguageDropdown(): void {
+    this.languageDropdownOpen.set(false);
+  }
+
+  protected selectLanguage(code: SupportedLanguage): void {
+    this.languageService.setLanguage(code);
+    this.closeLanguageDropdown();
     this.closeMobileMenu();
   }
 }
