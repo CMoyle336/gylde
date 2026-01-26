@@ -166,6 +166,8 @@ export class ShellComponent implements OnInit, OnDestroy {
         profile_complete: !!profile?.onboarding?.photoDetails?.length,
         has_photos: !!(profile?.onboarding?.photoDetails?.length),
         photo_count: profile?.onboarding?.photoDetails?.length || 0,
+        language: profile?.settings?.preferences?.language || this.translateService.currentLang || 'en',
+        theme: (profile?.settings?.preferences?.theme as 'light' | 'dark' | undefined) || 'dark',
       });
     }
   }

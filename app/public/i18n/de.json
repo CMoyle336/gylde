@@ -1137,6 +1137,38 @@
       }
     }
   },
+  "FOUNDER_FEEDBACK": {
+    "TITLE": "Founder‑Feedback",
+    "INTRO": "Hilf uns, Gylde zu verbessern, indem du Probleme meldest oder Feedback teilst. Als Founder werden deine Hinweise priorisiert.",
+    "CATEGORY_PROMPT": "Welche Art von Feedback ist das?",
+    "CATEGORIES": {
+      "BUG": "Bug / Etwas funktioniert nicht",
+      "UI": "UI‑/Designproblem",
+      "FEATURE": "Feature‑Wunsch",
+      "PERFORMANCE": "Performance‑Problem",
+      "OTHER": "Sonstiges Feedback"
+    },
+    "FIELDS": {
+      "SUMMARY_LABEL": "Kurze Zusammenfassung",
+      "SUMMARY_PLACEHOLDER": "z. B. Profilseite lädt auf Mobilgeräten nicht",
+      "DETAILS_LABEL": "Details (optional)",
+      "DETAILS_PLACEHOLDER": "Schritte zur Reproduktion, erwartetes Verhalten oder zusätzlicher Kontext..."
+    },
+    "ACTIONS": {
+      "CANCEL": "Abbrechen",
+      "SUBMIT": "Feedback senden",
+      "DONE": "Fertig"
+    },
+    "SUCCESS": {
+      "TITLE": "Vielen Dank!",
+      "BODY": "Dein Feedback wurde gesendet. Als Founder ist dein Input wertvoll für die Zukunft von Gylde.",
+      "NOTE": "Wir prüfen deine Einsendung und melden uns ggf., wenn wir mehr Details brauchen."
+    },
+    "ERRORS": {
+      "MISSING_REQUIRED": "Bitte wähle eine Kategorie und gib eine Zusammenfassung an",
+      "SUBMIT_FAILED": "Senden fehlgeschlagen. Bitte versuche es erneut."
+    }
+  },
   "SETTINGS": {
     "TITLE": "Einstellungen",
     "SUBTITLE": "Verwalte dein Konto, deine Privatsphäre und deine Präferenzen",

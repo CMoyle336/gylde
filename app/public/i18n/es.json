@@ -1137,6 +1137,38 @@
       }
     }
   },
+  "FOUNDER_FEEDBACK": {
+    "TITLE": "Feedback de fundador",
+    "INTRO": "Ayúdanos a mejorar Gylde informando problemas o compartiendo comentarios. Como fundador, tus aportes tienen prioridad.",
+    "CATEGORY_PROMPT": "¿Qué tipo de comentario es este?",
+    "CATEGORIES": {
+      "BUG": "Error / Algo roto",
+      "UI": "Problema de UI / diseño",
+      "FEATURE": "Solicitud de función",
+      "PERFORMANCE": "Problema de rendimiento",
+      "OTHER": "Otro comentario"
+    },
+    "FIELDS": {
+      "SUMMARY_LABEL": "Resumen breve",
+      "SUMMARY_PLACEHOLDER": "p. ej., La página de perfil no carga en móvil",
+      "DETAILS_LABEL": "Detalles (opcional)",
+      "DETAILS_PLACEHOLDER": "Pasos para reproducir, comportamiento esperado o cualquier contexto adicional..."
+    },
+    "ACTIONS": {
+      "CANCEL": "Cancelar",
+      "SUBMIT": "Enviar comentarios",
+      "DONE": "Listo"
+    },
+    "SUCCESS": {
+      "TITLE": "¡Gracias!",
+      "BODY": "Tus comentarios se han enviado. Como fundador, tu aporte es invaluable para dar forma al futuro de Gylde.",
+      "NOTE": "Revisaremos tu envío y podemos contactarte si necesitamos más detalles."
+    },
+    "ERRORS": {
+      "MISSING_REQUIRED": "Selecciona una categoría y proporciona un título",
+      "SUBMIT_FAILED": "No se pudo enviar. Inténtalo de nuevo."
+    }
+  },
   "SETTINGS": {
     "TITLE": "Configuración",
     "SUBTITLE": "Administra tu cuenta, privacidad y preferencias",

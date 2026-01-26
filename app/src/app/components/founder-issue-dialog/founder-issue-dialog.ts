@@ -6,10 +6,11 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Functions, httpsCallable } from '@angular/fire/functions';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 interface IssueCategory {
   value: string;
-  label: string;
+  labelKey: string;
   icon: string;
 }
 
@@ -19,6 +20,7 @@ interface IssueCategory {
   styleUrl: './founder-issue-dialog.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    TranslateModule,
     FormsModule,
     MatDialogModule,
     MatButtonModule,
@@ -40,16 +42,16 @@ export class FounderIssueDialogComponent {
   protected description = '';
 
   protected readonly categories: IssueCategory[] = [
-    { value: 'bug', label: 'Bug / Something broken', icon: 'bug_report' },
-    { value: 'ui', label: 'UI / Design issue', icon: 'palette' },
-    { value: 'feature', label: 'Feature request', icon: 'lightbulb' },
-    { value: 'performance', label: 'Performance issue', icon: 'speed' },
-    { value: 'other', label: 'Other feedback', icon: 'feedback' },
+    { value: 'bug', labelKey: 'FOUNDER_FEEDBACK.CATEGORIES.BUG', icon: 'bug_report' },
+    { value: 'ui', labelKey: 'FOUNDER_FEEDBACK.CATEGORIES.UI', icon: 'palette' },
+    { value: 'feature', labelKey: 'FOUNDER_FEEDBACK.CATEGORIES.FEATURE', icon: 'lightbulb' },
+    { value: 'performance', labelKey: 'FOUNDER_FEEDBACK.CATEGORIES.PERFORMANCE', icon: 'speed' },
+    { value: 'other', labelKey: 'FOUNDER_FEEDBACK.CATEGORIES.OTHER', icon: 'feedback' },
   ];
 
   protected async submitIssue(): Promise<void> {
     if (!this.selectedCategory || !this.title.trim()) {
-      this.error.set('Please select a category and provide a title');
+      this.error.set('FOUNDER_FEEDBACK.ERRORS.MISSING_REQUIRED');
       return;
     }
 
@@ -69,7 +71,7 @@ export class FounderIssueDialogComponent {
       this.submitted.set(true);
     } catch (err) {
       console.error('Error submitting issue:', err);
-      this.error.set('Failed to submit issue. Please try again.');
+      this.error.set('FOUNDER_FEEDBACK.ERRORS.SUBMIT_FAILED');
     } finally {
       this.loading.set(false);
     }

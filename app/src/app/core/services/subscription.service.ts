@@ -147,6 +147,8 @@ export class SubscriptionService {
       return;
     }
 
+    // Ensure GA user id is associated with subscription/user properties
+    this.analytics.setUser(user.uid);
     this.subscribeToPrivateData(user.uid);
   }
 
@@ -172,6 +174,13 @@ export class SubscriptionService {
           this._reputationData.set(data.reputation ?? null);
           this._isFounder.set(data.isFounder ?? false);
           this._founderCity.set(data.founderCity ?? null);
+
+          // Keep GA user properties in sync for Remote Config targeting/segmentation
+          this.analytics.setUserProperties({
+            subscription_tier: newTier,
+            reputation_tier: data.reputation?.tier ?? 'new',
+            is_founder: data.isFounder ?? false,
+          });
         } else {
           // Private doc doesn't exist yet - default to free
           this._subscription.set({ tier: 'free', status: 'active' });
@@ -181,6 +190,13 @@ export class SubscriptionService {
           this._isFounder.set(false);
           this._founderCity.set(null);
           this.previousTier = 'free';
+
+          // Keep GA user properties in sync for Remote Config targeting/segmentation
+          this.analytics.setUserProperties({
+            subscription_tier: 'free',
+            reputation_tier: 'new',
+            is_founder: false,
+          });
         }
         this._loading.set(false);
       }

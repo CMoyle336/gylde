@@ -1,6 +1,6 @@
 <h2 mat-dialog-title>
   <mat-icon>feedback</mat-icon>
-  Founder Feedback
+  {{ 'FOUNDER_FEEDBACK.TITLE' | translate }}
 </h2>
 
 <div mat-dialog-content>
@@ -8,30 +8,28 @@
     <!-- Success State -->
     <div class="success-state">
       <mat-icon class="success-icon">check_circle</mat-icon>
-      <h3>Thank You!</h3>
+      <h3>{{ 'FOUNDER_FEEDBACK.SUCCESS.TITLE' | translate }}</h3>
       <p>
-        Your feedback has been submitted. As a founder, your input is invaluable 
-        in shaping Gylde's future.
+        {{ 'FOUNDER_FEEDBACK.SUCCESS.BODY' | translate }}
       </p>
       <p class="note">
-        We'll review your submission and may reach out if we need more details.
+        {{ 'FOUNDER_FEEDBACK.SUCCESS.NOTE' | translate }}
       </p>
     </div>
   } @else {
     <!-- Issue Form -->
     <p class="intro-text">
-      Help us improve Gylde by reporting issues or sharing feedback. 
-      As a founder, your insights are prioritized.
+      {{ 'FOUNDER_FEEDBACK.INTRO' | translate }}
     </p>
 
     <div class="category-section">
-      <label class="section-label">What type of feedback is this?</label>
+      <label class="section-label">{{ 'FOUNDER_FEEDBACK.CATEGORY_PROMPT' | translate }}</label>
       <mat-radio-group [(ngModel)]="selectedCategory" class="category-list">
         @for (category of categories; track category.value) {
           <mat-radio-button [value]="category.value">
             <span class="category-option">
               <mat-icon>{{ category.icon }}</mat-icon>
-              {{ category.label }}
+              {{ category.labelKey | translate }}
             </span>
           </mat-radio-button>
         }
@@ -39,22 +37,22 @@
     </div>
 
     <div class="title-section">
-      <label class="section-label" for="title">Brief summary</label>
+      <label class="section-label" for="title">{{ 'FOUNDER_FEEDBACK.FIELDS.SUMMARY_LABEL' | translate }}</label>
       <input
         id="title"
         type="text"
         [(ngModel)]="title"
-        placeholder="e.g., Profile page doesn't load on mobile"
+        [placeholder]="'FOUNDER_FEEDBACK.FIELDS.SUMMARY_PLACEHOLDER' | translate"
         maxlength="200">
       <span class="char-count">{{ title.length }} / 200</span>
     </div>
 
     <div class="description-section">
-      <label class="section-label" for="description">Details (optional)</label>
+      <label class="section-label" for="description">{{ 'FOUNDER_FEEDBACK.FIELDS.DETAILS_LABEL' | translate }}</label>
       <textarea
         id="description"
         [(ngModel)]="description"
-        placeholder="Steps to reproduce, expected behavior, or any additional context..."
+        [placeholder]="'FOUNDER_FEEDBACK.FIELDS.DETAILS_PLACEHOLDER' | translate"
         rows="4"
         maxlength="2000">
       </textarea>
@@ -64,7 +62,7 @@
     @if (error()) {
       <div class="error-message">
         <mat-icon>error</mat-icon>
-        {{ error() }}
+        {{ error() | translate }}
       </div>
     }
   }
@@ -73,11 +71,11 @@
 <div mat-dialog-actions align="end">
   @if (submitted()) {
     <button mat-flat-button color="primary" (click)="close()">
-      Done
+      {{ 'FOUNDER_FEEDBACK.ACTIONS.DONE' | translate }}
     </button>
   } @else {
     <button mat-button (click)="close()" [disabled]="loading()">
-      Cancel
+      {{ 'FOUNDER_FEEDBACK.ACTIONS.CANCEL' | translate }}
     </button>
     <button 
       mat-flat-button 
@@ -87,7 +85,7 @@
       @if (loading()) {
         <mat-spinner diameter="20"></mat-spinner>
       } @else {
-        Submit Feedback
+        {{ 'FOUNDER_FEEDBACK.ACTIONS.SUBMIT' | translate }}
       }
     </button>
   }
