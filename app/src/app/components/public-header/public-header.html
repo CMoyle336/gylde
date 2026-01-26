@@ -32,7 +32,6 @@
           </span>
         </button>
         @if (languageDropdownOpen()) {
-          <div class="language-dropdown-backdrop" (click)="closeLanguageDropdown()"></div>
           <div class="language-dropdown">
             @for (lang of languageService.languages; track lang.code) {
               <button 

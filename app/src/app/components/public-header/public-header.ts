@@ -1,4 +1,4 @@
-import { Component, inject, output, signal } from '@angular/core';
+import { Component, HostListener, inject, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
@@ -57,6 +57,26 @@ export class PublicHeaderComponent {
 
   protected closeLanguageDropdown(): void {
     this.languageDropdownOpen.set(false);
+  }
+
+  @HostListener('document:click', ['$event'])
+  protected onDocumentClick(event: MouseEvent): void {
+    if (!this.languageDropdownOpen()) return;
+
+    const target = event.target as HTMLElement | null;
+    if (!target) return;
+
+    // If the click is outside the language picker, close it.
+    if (!target.closest('.language-picker')) {
+      this.closeLanguageDropdown();
+    }
+  }
+
+  @HostListener('document:keydown.escape')
+  protected onEscape(): void {
+    if (this.languageDropdownOpen()) {
+      this.closeLanguageDropdown();
+    }
   }
 
   protected selectLanguage(code: SupportedLanguage): void {
