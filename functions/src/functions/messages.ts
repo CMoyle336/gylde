@@ -475,11 +475,12 @@ export const checkMessagePermission = onCall<{
     }
 
     try {
-      // Fetch sender and recipient data
-      const [senderPrivateDoc, recipientPrivateDoc, blockedDoc, blockedByDoc] =
+      // Fetch sender and recipient data (including recipient's user doc for settings)
+      const [senderPrivateDoc, recipientPrivateDoc, recipientUserDoc, blockedDoc, blockedByDoc] =
         await Promise.all([
           db.collection("users").doc(senderId).collection("private").doc("data").get(),
           db.collection("users").doc(recipientId).collection("private").doc("data").get(),
+          db.collection("users").doc(recipientId).get(),
           db.collection("users").doc(senderId).collection("blocks").doc(recipientId).get(),
           db.collection("users").doc(senderId).collection("blockedBy").doc(recipientId).get(),
         ]);
@@ -491,6 +492,14 @@ export const checkMessagePermission = onCall<{
           reason: "blocked",
         };
       }
+
+      // Get sender's reputation tier
+      const senderPrivateData = senderPrivateDoc.data();
+      const senderReputation = senderPrivateData?.reputation as ReputationData | undefined;
+      const senderTier: ReputationTier = senderReputation?.tier ?? "new";
+      const recipientReputation = recipientPrivateDoc.data()?.reputation as ReputationData | undefined;
+      const recipientTier: ReputationTier = recipientReputation?.tier ?? "new";
+      const isPremium = senderPrivateData?.subscription?.tier === "premium";
 
       // Check if conversation already exists by querying participants
       const existingConvSnapshot = await db.collection("conversations")
@@ -504,20 +513,12 @@ export const checkMessagePermission = onCall<{
 
       const isNewConversation = !existingConversation;
 
-      const senderPrivateData = senderPrivateDoc.data();
-      const senderReputation = senderPrivateData?.reputation as ReputationData | undefined;
-      const recipientReputation = recipientPrivateDoc.data()?.reputation as ReputationData | undefined;
-
-      const senderTier: ReputationTier = senderReputation?.tier ?? "new";
-      const recipientTier: ReputationTier = recipientReputation?.tier ?? "new";
-      const isPremium = senderPrivateData?.subscription?.tier === "premium";
-
       // Check if recipient is higher tier
       const senderTierIndex = REPUTATION_TIER_ORDER.indexOf(senderTier);
       const recipientTierIndex = REPUTATION_TIER_ORDER.indexOf(recipientTier);
       const isHigherTier = recipientTierIndex > senderTierIndex;
 
-      // Premium users or existing conversations: always allowed
+      // Premium users or existing conversations: always allowed (no tier restrictions)
       if (isPremium || !isNewConversation) {
         return {
           allowed: true,
@@ -531,6 +532,31 @@ export const checkMessagePermission = onCall<{
           higherTierConversationsToday: 0,
           higherTierRemaining: -1,
         };
+      }
+
+      // === NEW CONVERSATION CHECKS ===
+      // From here on, we're checking restrictions for NEW conversations only
+
+      // Check recipient's minimum tier requirement for incoming messages
+      const recipientUserData = recipientUserDoc.data();
+      const recipientMinTier: ReputationTier =
+        recipientUserData?.settings?.messaging?.minReputationTierToMessageMe ?? "new";
+
+      // If recipient requires a minimum tier, check if sender meets it
+      if (recipientMinTier !== "new") {
+        const requiredTierIndex = REPUTATION_TIER_ORDER.indexOf(recipientMinTier);
+
+        if (senderTierIndex < requiredTierIndex) {
+          // Format tier label for display (capitalize first letter)
+          const tierLabel = recipientMinTier.charAt(0).toUpperCase() + recipientMinTier.slice(1);
+          return {
+            allowed: false,
+            reason: "recipient_min_tier_not_met",
+            senderTier,
+            recipientMinTier,
+            recipientMinTierLabel: tierLabel,
+          };
+        }
       }
 
       // New conversation with same/lower tier: always allowed

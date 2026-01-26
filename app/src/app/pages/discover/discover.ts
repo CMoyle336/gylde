@@ -220,7 +220,14 @@ export class DiscoverComponent implements OnInit {
       const permission = await this.messageService.canStartConversation(profile.uid);
       
       if (!permission.allowed) {
-        if (permission.reason === 'higher_tier_limit_reached') {
+        if (permission.reason === 'recipient_min_tier_not_met') {
+          const tierLabel = permission.recipientMinTierLabel || 'a higher';
+          this.snackBar.open(
+            `This member accepts messages from ${tierLabel} reputation and above.`,
+            'OK',
+            { duration: 5000, panelClass: 'info-snackbar' }
+          );
+        } else if (permission.reason === 'higher_tier_limit_reached') {
           const tierDisplay = permission.recipientTier 
             ? permission.recipientTier.charAt(0).toUpperCase() + permission.recipientTier.slice(1)
             : 'higher tier';

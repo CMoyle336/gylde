@@ -58,6 +58,32 @@
                 }
               </span>
             </div>
+
+            <div class="messaging-gate">
+              <div class="messaging-gate__row">
+                <div class="messaging-gate__label">
+                  <mat-icon>shield</mat-icon>
+                  <span>Who can message you</span>
+                </div>
+                @if (isEditing()) {
+                  <div class="messaging-gate__dropdown">
+                    <select 
+                      [(ngModel)]="editForm.minReputationTierToMessageMe"
+                      class="messaging-gate__native-select">
+                      @for (opt of minReputationTierOptions; track opt.value) {
+                        <option [value]="opt.value">{{ opt.label }}</option>
+                      }
+                    </select>
+                    <mat-icon class="messaging-gate__dropdown-icon">expand_more</mat-icon>
+                  </div>
+                } @else {
+                  <span class="messaging-gate__chip">{{ formatMinTierLabel(minReputationTierToMessageMe()) }}</span>
+                }
+              </div>
+              <p class="messaging-gate__hint">
+                Only members at this reputation tier or above can start new conversations with you.
+              </p>
+            </div>
             <!-- Dev-only refresh button -->
             @if (isDev) {
               <button 

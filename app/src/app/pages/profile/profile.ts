@@ -21,7 +21,7 @@ import { SubscriptionService } from '../../core/services/subscription.service';
 import { RemoteConfigService } from '../../core/services/remote-config.service';
 import { AiChatService } from '../../core/services/ai-chat.service';
 import { AnalyticsService } from '../../core/services/analytics.service';
-import { OnboardingProfile, GeoLocation, ReputationTier, TIER_CONFIG } from '../../core/interfaces';
+import { OnboardingProfile, GeoLocation, ReputationTier, TIER_CONFIG, TIER_DISPLAY } from '../../core/interfaces';
 import { Photo } from '../../core/interfaces/photo.interface';
 import { ALL_CONNECTION_TYPES, getConnectionTypeLabel, SUPPORT_ORIENTATION_OPTIONS, getSupportOrientationLabel } from '../../core/constants/connection-types';
 import { PhotoAccessDialogComponent } from '../../components/photo-access-dialog';
@@ -37,6 +37,8 @@ interface EditForm {
   displayName: string;
   city: string;
   tagline: string; // Short phrase for profile
+  // Messaging gate (reputation)
+  minReputationTierToMessageMe: ReputationTier;
   // Dating preferences
   genderIdentity: string;
   interestedIn: string[];
@@ -165,6 +167,25 @@ export class ProfileComponent implements OnInit, OnDestroy {
   protected readonly reputationTier = computed<ReputationTier>(() => {
     return this.reputationData()?.tier ?? 'new';
   });
+
+  // Minimum reputation tier required to message this user (user setting)
+  protected readonly minReputationTierToMessageMe = computed<ReputationTier>(() => {
+    return this.profile()?.settings?.messaging?.minReputationTierToMessageMe ?? 'new';
+  });
+
+  protected readonly minReputationTierOptions: { value: ReputationTier; label: string }[] = [
+    { value: 'new', label: 'Anyone' },
+    { value: 'active', label: 'Active+' },
+    { value: 'established', label: 'Established+' },
+    { value: 'trusted', label: 'Trusted+' },
+    { value: 'distinguished', label: 'Distinguished' },
+  ];
+
+  protected formatMinTierLabel(tier: ReputationTier): string {
+    if (tier === 'new') return 'Anyone';
+    if (tier === 'distinguished') return TIER_DISPLAY[tier].label;
+    return `${TIER_DISPLAY[tier].label}+`;
+  }
 
   // Higher-tier conversation limits (based on reputation tier, not subscription)
   protected readonly higherTierConversationStatus = computed(() => {
@@ -314,6 +335,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     displayName: '',
     city: '',
     tagline: '',
+    minReputationTierToMessageMe: 'new',
     genderIdentity: '',
     interestedIn: [],
     ageRangeMin: 18,
@@ -399,6 +421,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
       displayName: profile.displayName || '',
       city: profile.onboarding?.city || '',
       tagline: profile.onboarding?.tagline || '',
+      minReputationTierToMessageMe: profile.settings?.messaging?.minReputationTierToMessageMe ?? 'new',
       genderIdentity: profile.onboarding?.genderIdentity || '',
       interestedIn: [...(profile.onboarding?.interestedIn || [])],
       ageRangeMin: profile.onboarding?.ageRangeMin || 18,
@@ -475,6 +498,15 @@ export class ProfileComponent implements OnInit, OnDestroy {
         photoDetails,
       };
 
+      // Build updated settings (merge-safe)
+      const updatedSettings = {
+        ...(profile.settings ?? {}),
+        messaging: {
+          ...(profile.settings?.messaging ?? {}),
+          minReputationTierToMessageMe: this.editForm.minReputationTierToMessageMe,
+        },
+      };
+
       // Only add secondary fields if they have values
       if (this.editForm.height) updatedOnboarding.height = this.editForm.height;
       if (this.editForm.weight) updatedOnboarding.weight = this.editForm.weight;
@@ -492,6 +524,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
         displayName: this.editForm.displayName || profile.displayName,
         photoURL: profilePhoto,
         onboarding: updatedOnboarding as OnboardingProfile,
+        settings: updatedSettings,
       });
 
       // Update Firebase Auth photo if changed
