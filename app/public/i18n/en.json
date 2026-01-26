@@ -280,6 +280,559 @@
       "CTA": "Start Exploring"
     }
   },
+  "ABOUT": {
+    "HERO": {
+      "BADGE": "About Us",
+      "TITLE": "Dating With",
+      "TITLE_ACCENT": "Purpose",
+      "DESCRIPTION": "Gylde isn't just another dating app. We're building a community where clarity, intention, and genuine connection come first."
+    },
+    "MISSION": {
+      "LABEL": "Our Mission",
+      "TITLE": "Structure That Empowers",
+      "P1": "Modern dating is exhausting. Endless swiping, mixed signals, and profiles that don't reflect reality. We built Gylde to change that.",
+      "P2": "Our platform provides the structure for meaningful connections—where people are upfront about their intentions, verified to be who they say they are, and supported by tools that make dating feel less like a game and more like a genuine pursuit of partnership.",
+      "P3": "Whether you're looking for companionship, mentorship, or a life partner, Gylde gives you the framework to find it—on your terms.",
+      "VISUAL": "Intentional Connections"
+    },
+    "STATS": {
+      "ACTIVE_MEMBERS": "Active Members",
+      "SUCCESSFUL_MATCHES": "Successful Matches",
+      "VERIFIED_PROFILES": "Verified Profiles",
+      "APP_STORE_RATING": "App Store Rating"
+    },
+    "VALUES": {
+      "LABEL": "Our Values",
+      "HEADER_TITLE": "What We Stand For",
+      "HEADER_DESCRIPTION": "These principles guide everything we build and every decision we make.",
+      "AUTHENTICITY": {
+        "TITLE": "Authenticity",
+        "DESCRIPTION": "We believe real connections start with real people. Our verification systems ensure you're meeting who you expect to meet."
+      },
+      "INTENTIONALITY": {
+        "TITLE": "Intentionality",
+        "DESCRIPTION": "No games, no guesswork. Gylde is for people who know what they want and aren't afraid to be upfront about it."
+      },
+      "SAFETY": {
+        "TITLE": "Safety",
+        "DESCRIPTION": "Your security is our priority. From identity verification to private messaging, we build safety into every feature."
+      },
+      "RESPECT": {
+        "TITLE": "Respect",
+        "DESCRIPTION": "Every member deserves respect. Our community guidelines ensure a welcoming environment for all."
+      }
+    },
+    "STORY": {
+      "LABEL": "Our Story",
+      "TITLE": "Built by People Who Get It",
+      "P1": "Gylde was founded by people who had experienced the frustrations of modern dating firsthand. The endless profiles with no substance. The matches that went nowhere. The uncertainty of not knowing if someone was even who they claimed to be.",
+      "P2": "We envisioned a platform where intentions are clear from the start. Where a lifestyle preference isn't something to hide but something to match on. Where verification isn't optional—it's the foundation of trust.",
+      "P3": "Today, Gylde serves thousands of members who share our belief that dating should be intentional, respectful, and rewarding. We're not trying to be the biggest dating platform. We're trying to be the most meaningful one.",
+      "CARD": {
+        "TITLE": "The Vision",
+        "SUBTITLE": "Why We Built Gylde",
+        "DESCRIPTION": "We saw a gap in the dating world—platforms that either encouraged superficial swiping or made no effort to verify who was really behind the profile. Gylde was born from the belief that dating should be intentional, transparent, and safe."
+      }
+    },
+    "DIFFERENCE": {
+      "LABEL": "The Gylde Difference",
+      "TITLE": "Why People Choose Us",
+      "ITEMS": {
+        "IDENTITY_VERIFICATION": {
+          "TITLE": "Identity Verification",
+          "DESCRIPTION": "Every profile can be verified with government ID, so you know who you're talking to."
+        },
+        "AI_ASSISTANCE": {
+          "TITLE": "AI-Powered Assistance",
+          "DESCRIPTION": "Premium members get AI help crafting messages and perfecting their profiles."
+        },
+        "VIRTUAL_PHONE": {
+          "TITLE": "Virtual Phone Numbers",
+          "DESCRIPTION": "Share a number without sharing your real one. Privacy meets convenience."
+        },
+        "CLEAR_INTENTIONS": {
+          "TITLE": "Clear Intentions",
+          "DESCRIPTION": "Know what someone is looking for before you match. No surprises, no wasted time."
+        },
+        "PRIVATE_PHOTOS": {
+          "TITLE": "Private Photo Control",
+          "DESCRIPTION": "Share private photos only with people you choose. You control access."
+        },
+        "TRUST_SCORE": {
+          "TITLE": "Trust Score System",
+          "DESCRIPTION": "Build credibility over time. Complete your profile, verify your identity, earn trust."
+        }
+      }
+    },
+    "CTA": {
+      "TITLE": "Ready to Experience",
+      "TITLE_ACCENT": "Intentional Dating",
+      "DESCRIPTION": "Join thousands of members who've chosen clarity over chaos.",
+      "BUTTON": "Create Your Profile"
+    }
+  },
+  "HOW_IT_WORKS": {
+    "HERO": {
+      "BADGE": "How It Works",
+      "TITLE": "Your Journey to",
+      "TITLE_ACCENT": "Connection",
+      "DESCRIPTION": "From creating your profile to building meaningful relationships—here's how Gylde makes intentional dating simple."
+    },
+    "STEPS": {
+      "S1": {
+        "TITLE": "Create Your Profile",
+        "DESCRIPTION": "Tell us about yourself—your lifestyle, what you're looking for, and what makes you unique. Upload photos that show the real you.",
+        "DETAILS": {
+          "D1": "Choose your lifestyle and relationship preferences",
+          "D2": "Upload up to 10 photos (including private albums)",
+          "D3": "Write a bio that captures your personality",
+          "D4": "Set your location and distance preferences"
+        }
+      },
+      "S2": {
+        "TITLE": "Verify Your Identity",
+        "DESCRIPTION": "Build trust from the start. Our quick verification process confirms you're really you—and shows others you're serious.",
+        "DETAILS": {
+          "D1": "Quick ID verification with Veriff",
+          "D2": "Photo matching ensures profile authenticity",
+          "D3": "Earn a verification badge on your profile",
+          "D4": "Stand out and build trust with connections"
+        }
+      },
+      "S3": {
+        "TITLE": "Discover Compatible Matches",
+        "DESCRIPTION": "Browse profiles filtered by what matters to you. Our matching considers lifestyle, intentions, and compatibility—not just photos.",
+        "DETAILS": {
+          "D1": "Filter by lifestyle, values, and intentions",
+          "D2": "See reputation tiers to gauge member quality",
+          "D3": "Save favorites for later",
+          "D4": "View who's interested in you (Premium)"
+        }
+      },
+      "S4": {
+        "TITLE": "Start Meaningful Conversations",
+        "DESCRIPTION": "When you find someone intriguing, reach out. Our messaging features help you connect genuinely and safely.",
+        "DETAILS": {
+          "D1": "AI-powered message suggestions",
+          "D2": "Request access to private photos",
+          "D3": "Virtual phone numbers for safety"
+        }
+      },
+      "S5": {
+        "TITLE": "Build Real Connections",
+        "DESCRIPTION": "Take your connection offline when you're ready. We provide the structure—you define the relationship.",
+        "DETAILS": {
+          "D1": "Match when there's mutual interest",
+          "D2": "Exchange contact info on your terms",
+          "D3": "Use virtual numbers to stay private",
+          "D4": "Meet up with confidence"
+        }
+      }
+    },
+    "MEMBERSHIP": {
+      "LABEL": "Membership Tiers",
+      "TITLE": "Choose Your Experience",
+      "DESCRIPTION": "Start free and upgrade when you're ready to connect.",
+      "MOST_POPULAR": "Most Popular",
+      "GET_STARTED": "Get Started",
+      "LEARN_MORE": "Learn More",
+      "TIERS": {
+        "FREE": {
+          "NAME": "Free",
+          "PRICE": "Free",
+          "DESCRIPTION": "Browse and discover",
+          "FEATURES": {
+            "F1": "Create your profile",
+            "F2": "Browse unlimited profiles",
+            "F3": "Save favorites",
+            "F4": "Up to 5 photos",
+            "F5": "Verify your identity",
+            "F6": "Reputation-based conversation limits"
+          }
+        },
+        "PREMIUM": {
+          "NAME": "Premium",
+          "PRICE": "$49.99/mo",
+          "DESCRIPTION": "The full experience",
+          "FEATURES": {
+            "F1": "Up to 20 photos",
+            "F2": "Request & view private photos",
+            "F3": "Advanced discovery filters",
+            "F4": "See who viewed & favorited you",
+            "F5": "Priority in search results",
+            "F6": "AI message assistant",
+            "F7": "AI profile polish",
+            "F8": "Virtual phone number"
+          }
+        }
+      }
+    },
+    "REPUTATION": {
+      "LABEL": "Build Your Reputation",
+      "TITLE": "The Reputation System",
+      "DESCRIPTION": "Your reputation tier reflects your engagement and behavior on Gylde. Higher tiers unlock more features and show others you're a quality member.",
+      "FACTORS": {
+        "COMPLETE_PROFILE": {
+          "TITLE": "Complete Profile",
+          "DESCRIPTION": "Add photos, write a bio, and fill out your preferences"
+        },
+        "IDENTITY_VERIFICATION": {
+          "TITLE": "Identity Verification",
+          "DESCRIPTION": "Verify your ID to build reputation faster"
+        },
+        "QUALITY_CONVERSATIONS": {
+          "TITLE": "Quality Conversations",
+          "DESCRIPTION": "Engage respectfully and respond to messages"
+        },
+        "CONSISTENT_ACTIVITY": {
+          "TITLE": "Consistent Activity",
+          "DESCRIPTION": "Stay active to maintain and grow your tier"
+        }
+      },
+      "TIERS": {
+        "NEW": "New",
+        "ACTIVE": "Active",
+        "ESTABLISHED": "Established",
+        "TRUSTED": "Trusted",
+        "DISTINGUISHED": "Distinguished"
+      },
+      "CAPTION": "Reputation Tiers"
+    },
+    "FAQ": {
+      "LABEL": "FAQ",
+      "TITLE": "Common Questions",
+      "Q1": {
+        "QUESTION": "How is Gylde different from other dating apps?",
+        "ANSWER": "Gylde is built for intentional connections. We focus on clear communication of relationship goals, robust identity verification, and a reputation system that rewards quality members. No endless swiping—just meaningful matches."
+      },
+      "Q2": {
+        "QUESTION": "Is identity verification required?",
+        "ANSWER": "Verification is optional but highly encouraged. Verified profiles earn a badge and build reputation faster, making them more likely to receive responses. It's a quick process that takes just a few minutes."
+      },
+      "Q3": {
+        "QUESTION": "How does the reputation system work?",
+        "ANSWER": "Your reputation tier (New, Active, Established, Trusted, Distinguished) reflects your engagement and behavior on the platform. Higher tiers unlock the ability to start more conversations with higher-tier members each day. Build your reputation by completing your profile, staying active, and being respectful to others."
+      },
+      "Q4": {
+        "QUESTION": "What are private photos?",
+        "ANSWER": "Private photos are images only visible to people you approve. When someone requests access, you can accept or decline. This gives you control over who sees your more personal content. Private photos are a Premium feature."
+      },
+      "Q5": {
+        "QUESTION": "How does the virtual phone number work?",
+        "ANSWER": "Premium members get a dedicated virtual phone number. You can share it with matches instead of your real number. Calls and texts are forwarded to you, keeping your actual number private."
+      },
+      "Q6": {
+        "QUESTION": "Can I cancel my subscription anytime?",
+        "ANSWER": "Yes, you can cancel anytime. You'll keep your premium features until the end of your current billing period. No long-term commitments required."
+      }
+    },
+    "CTA": {
+      "TITLE": "Ready to Find Your",
+      "TITLE_ACCENT": "Connection",
+      "DESCRIPTION": "Join Gylde today and experience dating with intention.",
+      "BUTTON": "Create Your Profile"
+    }
+  },
+  "SAFETY": {
+    "HERO": {
+      "BADGE": "Your Safety Matters",
+      "TITLE": "Safety Tips",
+      "DESCRIPTION": "Meeting new people should be exciting, not stressful. Follow these tips to protect yourself while making meaningful connections."
+    },
+    "TIPS_SECTION": {
+      "LABEL": "Best Practices",
+      "TITLE": "Stay Safe Online & Offline"
+    },
+    "TIPS": {
+      "T1": {
+        "TITLE": "Keep Conversations on Gylde",
+        "DESCRIPTION": "Use our messaging system until you feel comfortable. It's monitored for safety and gives you easy access to blocking and reporting tools."
+      },
+      "T2": {
+        "TITLE": "Look for Verified Profiles",
+        "DESCRIPTION": "Verified members have confirmed their identity. While not a guarantee of character, it means they are who they claim to be."
+      },
+      "T3": {
+        "TITLE": "Take Your Time",
+        "DESCRIPTION": "Don't rush into sharing personal information or meeting in person. Genuine connections can develop at a comfortable pace."
+      },
+      "T4": {
+        "TITLE": "Video Chat First",
+        "DESCRIPTION": "Before meeting in person, consider a video call. It confirms they look like their photos and helps you gauge chemistry."
+      },
+      "T5": {
+        "TITLE": "Meet in Public",
+        "DESCRIPTION": "For first meetings, choose busy, public places. Coffee shops, restaurants, and popular venues are great options."
+      },
+      "T6": {
+        "TITLE": "Tell Someone Your Plans",
+        "DESCRIPTION": "Let a friend or family member know where you're going, who you're meeting, and when you expect to be back."
+      }
+    },
+    "RED_FLAGS_SECTION": {
+      "TITLE": "Red Flags to Watch For",
+      "DESCRIPTION": "Trust your instincts. If something feels off, it probably is. Here are warning signs to look out for:",
+      "ACTION": "If you encounter any of these behaviors, stop communication immediately and report the user through our app."
+    },
+    "RED_FLAGS": {
+      "F1": "Asks for money or financial help",
+      "F2": "Refuses to video chat or meet in public",
+      "F3": "Gets angry when you set boundaries",
+      "F4": "Pressures you to share personal information quickly",
+      "F5": "Has inconsistent stories or profile details",
+      "F6": "Wants to move off Gylde immediately",
+      "F7": "Sends unsolicited explicit content",
+      "F8": "Makes you feel uncomfortable or unsafe"
+    },
+    "MEETING_SECTION": {
+      "LABEL": "First Date Safety",
+      "TITLE": "Meeting In Person",
+      "DESCRIPTION": "When you're ready to take a connection offline, follow these precautions.",
+      "CARDS": {
+        "C1": {
+          "TITLE": "Choose the Location",
+          "DESCRIPTION": "Pick a public place you're familiar with—a busy coffee shop, restaurant, or popular venue. Don't let them choose a remote or private location for a first meeting."
+        },
+        "C2": {
+          "TITLE": "Arrange Your Own Transportation",
+          "DESCRIPTION": "Drive yourself or use a rideshare. Don't rely on your date for a ride, especially for the first few meetings. This gives you control over when you leave."
+        },
+        "C3": {
+          "TITLE": "Tell a Friend",
+          "DESCRIPTION": "Share your plans with someone you trust: where you're going, who you're meeting, and when you expect to return. Consider sharing your live location."
+        },
+        "C4": {
+          "TITLE": "Stay Sober",
+          "DESCRIPTION": "Keep your wits about you. Limit alcohol consumption and never leave your drink unattended. Being alert helps you make good decisions."
+        },
+        "C5": {
+          "TITLE": "Trust Your Gut",
+          "DESCRIPTION": "If something feels wrong, leave. You don't owe anyone an explanation. Your safety is more important than being polite."
+        },
+        "C6": {
+          "TITLE": "Check In",
+          "DESCRIPTION": "Set up a check-in system with a friend. A text or call at a predetermined time lets them know you're okay—or signals that you need help."
+        }
+      }
+    },
+    "FINANCIAL_SECTION": {
+      "TITLE": "Protect Your Finances",
+      "STRONG": "Never send money to someone you haven't met in person.",
+      "P1_REST": "Scammers often build emotional connections before asking for financial help. No matter how compelling the story, don't send money, gift cards, or financial information to anyone on Gylde.",
+      "P2": "Common scams include: medical emergencies, travel costs to meet you, business investments, and cryptocurrency schemes. If someone asks for money, report them immediately."
+    },
+    "FEATURES_SECTION": {
+      "LABEL": "Built-In Protection",
+      "TITLE": "Gylde Safety Features",
+      "DESCRIPTION": "We've built safety into our platform. Here's how we help protect you:",
+      "ITEMS": {
+        "IDENTITY_VERIFICATION": {
+          "TITLE": "Identity Verification",
+          "DESCRIPTION": "Our ID verification confirms members are who they claim to be."
+        },
+        "VIRTUAL_PHONE": {
+          "TITLE": "Virtual Phone Numbers",
+          "DESCRIPTION": "Premium members can share a number without revealing their real one."
+        },
+        "BLOCKING": {
+          "TITLE": "Easy Blocking",
+          "DESCRIPTION": "Block anyone instantly. They can't contact you or see your profile."
+        },
+        "REPORT": {
+          "TITLE": "Report Function",
+          "DESCRIPTION": "Report concerning behavior directly from profiles or conversations."
+        },
+        "PRIVATE_PHOTOS": {
+          "TITLE": "Private Photos",
+          "DESCRIPTION": "Control who sees your private photos with approval-based access."
+        },
+        "TRUST_SCORE": {
+          "TITLE": "Trust Score",
+          "DESCRIPTION": "See at a glance how complete and verified someone's profile is."
+        }
+      }
+    },
+    "RESOURCES_SECTION": {
+      "LABEL": "Get Help",
+      "TITLE": "Safety Resources",
+      "DESCRIPTION": "If you're in an unsafe situation or need support, these resources can help.",
+      "VISIT_WEBSITE": "Visit Website",
+      "EMERGENCY": "In an emergency, call 911 (or your local emergency number) immediately."
+    },
+    "RESOURCES": {
+      "R1": { "NAME": "National Domestic Violence Hotline" },
+      "R2": { "NAME": "RAINN (Sexual Assault)" },
+      "R3": { "NAME": "Crisis Text Line" }
+    },
+    "REPORT_SECTION": {
+      "TITLE": "Report a Concern",
+      "DESCRIPTION": "If you've experienced harassment, abuse, or any concerning behavior on Gylde, please report it. Your reports help us keep the community safe.",
+      "METHODS": {
+        "IN_APP": {
+          "TITLE": "In the App",
+          "DESCRIPTION": "Use the report button on any profile or conversation"
+        },
+        "EMAIL": {
+          "TITLE": "Email"
+        }
+      }
+    }
+  },
+  "GUIDELINES": {
+    "HERO": {
+      "BADGE": "Community",
+      "TITLE": "Community Guidelines",
+      "DESCRIPTION": "Our community is built on respect, honesty, and genuine connection. These guidelines help us maintain a safe and welcoming environment for everyone.",
+      "LAST_UPDATED_LABEL": "Last Updated:"
+    },
+    "INTRO": {
+      "P1": "Gylde is a community of individuals seeking meaningful connections. To ensure everyone has a positive experience, we ask all members to follow these guidelines. Violations may result in warnings, temporary suspension, or permanent removal from the platform."
+    },
+    "CORE_VALUES": {
+      "TITLE": "Our Core Values",
+      "AUTHENTICITY": {
+        "TITLE": "Authenticity",
+        "DESCRIPTION": "Be genuine. Use real photos. Share honest information about yourself."
+      },
+      "RESPECT": {
+        "TITLE": "Respect",
+        "DESCRIPTION": "Treat every member with dignity, regardless of whether you're interested in them."
+      },
+      "INTEGRITY": {
+        "TITLE": "Integrity",
+        "DESCRIPTION": "Be clear about your intentions. Don't mislead or manipulate others."
+      },
+      "SAFETY": {
+        "TITLE": "Safety",
+        "DESCRIPTION": "Protect yourself and others. Report concerning behavior promptly."
+      }
+    },
+    "COMMON": {
+      "DO": "Do:",
+      "DONT": "Don't:"
+    },
+    "SECTIONS": {
+      "AUTHENTIC": {
+        "TITLE": "Be Authentic",
+        "DO": {
+          "D1": "Use recent photos that accurately represent how you look today",
+          "D2": "Provide truthful information about your age, location, and relationship status",
+          "D3": "Be honest about your intentions and what you're looking for",
+          "D4": "Complete identity verification to build trust",
+          "D5": "Update your profile if your circumstances change"
+        },
+        "DONT": {
+          "D1": "Use photos of other people or heavily filtered/edited images",
+          "D2": "Create fake profiles or impersonate others",
+          "D3": "Misrepresent your identity, profession, or lifestyle",
+          "D4": "Maintain multiple accounts",
+          "D5": "Use the platform if you're not legally eligible (under 18)"
+        }
+      },
+      "RESPECT": {
+        "TITLE": "Be Respectful",
+        "DO": {
+          "D1": "Communicate politely, even when declining interest",
+          "D2": "Accept \"no\" gracefully and move on",
+          "D3": "Respect others' time and boundaries",
+          "D4": "Appreciate that everyone has different preferences",
+          "D5": "Give thoughtful responses to messages"
+        },
+        "DONT": {
+          "D1": "Send unsolicited explicit messages or photos",
+          "D2": "Harass, bully, stalk, or intimidate anyone",
+          "D3": "Use hateful, discriminatory, or offensive language",
+          "D4": "Continue contacting someone who has blocked you or asked you to stop",
+          "D5": "Shame or mock other users publicly or privately"
+        }
+      },
+      "LEGAL": {
+        "TITLE": "Keep It Legal",
+        "PROHIBITED_TITLE": "Prohibited Activities:",
+        "PROHIBITED": {
+          "P1": "Soliciting or offering prostitution or escort services",
+          "P2": "Soliciting money, gifts, or financial support",
+          "P3": "Promoting illegal substances or activities",
+          "P4": "Human trafficking or exploitation of any kind",
+          "P5": "Sharing copyrighted content without permission",
+          "P6": "Using Gylde for commercial purposes or advertising",
+          "P7": "Attempting to hack, scrape, or compromise the platform"
+        },
+        "WARNING": "We report illegal activity to law enforcement when required or appropriate."
+      },
+      "PRIVACY": {
+        "TITLE": "Protect Privacy",
+        "DO": {
+          "D1": "Keep personal information private until you've built trust",
+          "D2": "Use our in-app messaging until you're comfortable sharing contact info",
+          "D3": "Report anyone who asks for sensitive information inappropriately",
+          "D4": "Respect that private photos require permission to view"
+        },
+        "DONT": {
+          "D1": "Share screenshots or content from private conversations publicly",
+          "D2": "Share other users' personal information without consent",
+          "D3": "Record video or voice calls without permission",
+          "D4": "Create content featuring other users without their consent"
+        }
+      },
+      "CONTENT_STANDARDS": {
+        "TITLE": "Content Standards",
+        "PHOTO_MUST_TITLE": "Profile Photos Must:",
+        "PHOTO_MUST": {
+          "D1": "Clearly show your face (at least one photo)",
+          "D2": "Be appropriate for all audiences in public areas",
+          "D3": "Be photos you have the right to use",
+          "D4": "Not contain contact information or social media handles"
+        },
+        "PROHIBITED_TITLE": "Prohibited Content:",
+        "PROHIBITED": {
+          "P1": "Nudity or sexually explicit content in public profile areas",
+          "P2": "Violence, gore, or graphic imagery",
+          "P3": "Hateful symbols or imagery",
+          "P4": "Images of minors (children should not appear in your photos)",
+          "P5": "Weapons displayed prominently",
+          "P6": "Spam, advertisements, or promotional content"
+        },
+        "NOTE": "Private photos have more flexibility but still must not contain illegal content."
+      }
+    },
+    "REPORTING": {
+      "TITLE": "Reporting Violations",
+      "P1": "If you encounter behavior that violates these guidelines, please report it immediately. You can report users directly from their profile or conversation.",
+      "WHAT_HAPPENS_TITLE": "What Happens When You Report:",
+      "WHAT_HAPPENS": {
+        "L1": "Your report is reviewed by our Trust & Safety team",
+        "L2": "The reported user is not notified who made the report",
+        "L3": "Appropriate action is taken based on the severity of the violation",
+        "L4": "Repeated or serious violations result in permanent bans"
+      },
+      "CONTACT_PREFIX": "For urgent safety concerns, contact us directly at"
+    },
+    "CONSEQUENCES": {
+      "TITLE": "Consequences",
+      "P1": "Violations of these guidelines result in action proportional to the offense:",
+      "LEVELS": {
+        "WARNING": {
+          "TITLE": "Warning",
+          "DESCRIPTION": "Minor first-time violations may result in a warning and content removal."
+        },
+        "SUSPENSION": {
+          "TITLE": "Temporary Suspension",
+          "DESCRIPTION": "Repeated violations or moderate offenses may result in a temporary ban."
+        },
+        "BAN": {
+          "TITLE": "Permanent Ban",
+          "DESCRIPTION": "Serious violations or continued misbehavior result in permanent removal."
+        }
+      },
+      "NOTE": "Bans are typically not reversible. We take the safety of our community seriously."
+    },
+    "CLOSING": {
+      "TITLE": "Thank You",
+      "P1": "By following these guidelines, you help create a community where genuine connections can flourish. Thank you for being part of Gylde and treating fellow members with the respect they deserve.",
+      "P2_PREFIX": "Questions about these guidelines? Contact us at"
+    }
+  },
   "DASHBOARD": {
     "NAV": {
       "DISCOVER": "Discover",
@@ -819,6 +1372,72 @@
     "MINUTES_AGO_SHORT": "{{minutes}}m ago",
     "HOURS_AGO_SHORT": "{{hours}}h ago",
     "DAYS_AGO_SHORT": "{{days}}d ago",
-    "WEEKS_AGO_SHORT": "{{weeks}}w ago"
+    "WEEKS_AGO_SHORT": "{{weeks}}w ago",
+    "TODAY": "Today",
+    "DAYS_AGO": "{{days}} days ago",
+    "WEEKS_AGO": "{{weeks}} weeks ago",
+    "MONTHS_AGO": "{{months}} month{{months === 1 ? '' : 's'}} ago",
+    "YEARS_AGO": "{{years}} year{{years === 1 ? '' : 's'}} ago"
+  },
+  "COMMON": {
+    "OK": "OK"
+  },
+  "USER_PROFILE": {
+    "ERROR_HINT": "This profile may be private or no longer exists.",
+    "PROFILE_PHOTO_ALT": "Profile photo",
+    "PHOTO_ALT": "Photo {{index}}",
+    "PRIVATE_BADGE": "Private",
+    "PRIVATE_PHOTO": "private photo",
+    "PRIVATE_PHOTOS": "private photos",
+    "REQUEST_ACCESS_HINT": "Request access to view",
+    "REQUEST_ACCESS_BUTTON": "Request Access",
+    "CANCEL_REQUEST_BUTTON": "Cancel Request",
+    "REQUEST_AGAIN_BUTTON": "Request Again",
+    "VIEWED_YOUR_PROFILE": "Viewed your profile",
+    "LAST_ACTIVE_LABEL": "Last active",
+    "ONLINE_NOW": "Online now",
+    "UNKNOWN": "Unknown",
+    "MEMBER_SINCE_LABEL": "Member since",
+    "VERIFICATION_LABEL": "Verification",
+    "VERIFIED": "Verified",
+    "NOT_VERIFIED": "Not verified",
+    "ANONYMOUS_NAME": "Anonymous",
+    "IDENTITY_VERIFIED_TOOLTIP": "Identity verified",
+    "MESSAGE_BUTTON": "Message",
+    "ADD_FAVORITE_TOOLTIP": "Add to favorites",
+    "REMOVE_FAVORITE_TOOLTIP": "Remove from favorites",
+    "MORE_OPTIONS_TOOLTIP": "More options",
+    "REPORT_USER_MENU": "Report User",
+    "BLOCK_USER_MENU": "Block User",
+    "IDEAL_RELATIONSHIP_TITLE": "My Ideal Relationship",
+    "SUPPORT_MEANING_TITLE": "What Support Means to Me",
+    "LOOKING_FOR_TITLE": "Looking For",
+    "SUPPORT_ORIENTATION_TITLE": "Support Orientation",
+    "DETAILS_TITLE": "Details",
+    "NOT_SPECIFIED": "Not specified",
+    "DETAIL": {
+      "GENDER": "Gender",
+      "HEIGHT": "Height",
+      "WEIGHT": "Weight",
+      "ETHNICITY": "Ethnicity",
+      "RELATIONSHIP_STATUS": "Relationship Status",
+      "CHILDREN": "Children",
+      "EDUCATION": "Education",
+      "OCCUPATION": "Occupation",
+      "INCOME": "Income",
+      "SMOKING": "Smoking",
+      "DRINKING": "Drinking"
+    },
+    "ERROR": {
+      "USER_NOT_FOUND": "User not found",
+      "PROFILE_UNAVAILABLE": "This profile is not available",
+      "LOAD_FAILED": "Failed to load profile"
+    },
+    "MESSAGE": {
+      "TIER_REQUIREMENT": "This member accepts messages from {{tier}} reputation and above.",
+      "TIER_LIMIT_REACHED": "You've reached your daily limit for starting conversations with {{tier}} members. Try again tomorrow or upgrade your reputation.",
+      "BLOCKED": "You cannot message this user."
+    },
+    "THIS_USER": "This user"
   }
 }

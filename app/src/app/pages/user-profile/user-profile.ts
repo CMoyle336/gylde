@@ -11,6 +11,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Firestore, doc, getDoc } from '@angular/fire/firestore';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ReportDialogComponent, ReportDialogData } from '../../components/report-dialog';
 import { BlockConfirmDialogComponent, BlockConfirmDialogData } from '../../components/block-confirm-dialog';
 import { UserProfile, ReputationTier, shouldShowPublicBadge, getTierDisplay } from '../../core/interfaces';
@@ -26,7 +27,7 @@ import { AnalyticsService } from '../../core/services/analytics.service';
 import { ProfileSkeletonComponent } from './components';
 import { ReputationBadgeComponent } from '../../components/reputation-badge';
 import { FounderBadgeComponent } from '../../components/founder-badge';
-import { formatConnectionTypes as formatConnectionTypesUtil, getSupportOrientationLabel } from '../../core/constants/connection-types';
+import { ALL_CONNECTION_TYPES, SUPPORT_ORIENTATION_OPTIONS } from '../../core/constants/connection-types';
 
 @Component({
   selector: 'app-user-profile',
@@ -40,6 +41,7 @@ import { formatConnectionTypes as formatConnectionTypesUtil, getSupportOrientati
     MatTooltipModule,
     MatMenuModule,
     MatProgressSpinnerModule,
+    TranslateModule,
     ProfileSkeletonComponent,
     ReputationBadgeComponent,
     FounderBadgeComponent,
@@ -60,6 +62,7 @@ export class UserProfileComponent implements OnInit, OnDestroy {
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
   private readonly analytics = inject(AnalyticsService);
+  private readonly translate = inject(TranslateService);
 
   protected readonly profile = signal<UserProfile | null>(null);
   protected readonly loading = signal(true);
@@ -188,7 +191,7 @@ export class UserProfileComponent implements OnInit, OnDestroy {
           
           this.loadProfile(userId);
         } else {
-          this.error.set('User not found');
+          this.error.set('USER_PROFILE.ERROR.USER_NOT_FOUND');
           this.loading.set(false);
         }
       });
@@ -234,13 +237,13 @@ export class UserProfileComponent implements OnInit, OnDestroy {
       this.blockStatus.set(blockStatus);
       
       if (blockStatus.isBlocked) {
-        this.error.set('This profile is not available');
+        this.error.set('USER_PROFILE.ERROR.PROFILE_UNAVAILABLE');
         this.loading.set(false);
         return;
       }
 
       if (!userSnap.exists()) {
-        this.error.set('User not found');
+        this.error.set('USER_PROFILE.ERROR.USER_NOT_FOUND');
         this.loading.set(false);
         return;
       }
@@ -249,7 +252,7 @@ export class UserProfileComponent implements OnInit, OnDestroy {
       
       // Check if account is disabled - disabled accounts should not be viewable
       if (userData.settings?.account?.disabled === true) {
-        this.error.set('This profile is not available');
+        this.error.set('USER_PROFILE.ERROR.PROFILE_UNAVAILABLE');
         this.loading.set(false);
         return;
       }
@@ -279,7 +282,7 @@ export class UserProfileComponent implements OnInit, OnDestroy {
       this.lastViewedMe.set(lastViewed);
     } catch (err) {
       console.error('Error loading profile:', err);
-      this.error.set('Failed to load profile');
+      this.error.set('USER_PROFILE.ERROR.LOAD_FAILED');
     } finally {
       this.loading.set(false);
     }
@@ -319,8 +322,8 @@ export class UserProfileComponent implements OnInit, OnDestroy {
         if (permission.reason === 'recipient_min_tier_not_met') {
           const tierLabel = permission.recipientMinTierLabel || 'a higher';
           this.snackBar.open(
-            `This member accepts messages from ${tierLabel} reputation and above.`,
-            'OK',
+            this.translate.instant('USER_PROFILE.MESSAGE.TIER_REQUIREMENT', { tier: tierLabel }),
+            this.translate.instant('COMMON.OK'),
             { duration: 5000, panelClass: 'info-snackbar' }
           );
         } else if (permission.reason === 'higher_tier_limit_reached') {
@@ -328,14 +331,14 @@ export class UserProfileComponent implements OnInit, OnDestroy {
             ? permission.recipientTier.charAt(0).toUpperCase() + permission.recipientTier.slice(1)
             : 'higher tier';
           this.snackBar.open(
-            `You've reached your daily limit for starting conversations with ${tierDisplay} members. Try again tomorrow or upgrade your reputation.`,
-            'OK',
+            this.translate.instant('USER_PROFILE.MESSAGE.TIER_LIMIT_REACHED', { tier: tierDisplay }),
+            this.translate.instant('COMMON.OK'),
             { duration: 6000, panelClass: 'error-snackbar' }
           );
         } else if (permission.reason === 'blocked') {
           this.snackBar.open(
-            'You cannot message this user.',
-            'OK',
+            this.translate.instant('USER_PROFILE.MESSAGE.BLOCKED'),
+            this.translate.instant('COMMON.OK'),
             { duration: 4000, panelClass: 'error-snackbar' }
           );
         }
@@ -351,7 +354,7 @@ export class UserProfileComponent implements OnInit, OnDestroy {
           id: conversationId,
           otherUser: {
             uid: p.uid,
-            displayName: p.displayName || 'Unknown',
+            displayName: p.displayName || this.translate.instant('USER_PROFILE.UNKNOWN'),
             photoURL: p.photoURL,
             reputationTier: p.reputationTier,
           },
@@ -389,7 +392,7 @@ export class UserProfileComponent implements OnInit, OnDestroy {
     this.dialog.open<ReportDialogComponent, ReportDialogData>(ReportDialogComponent, {
       data: {
         userId: p.uid,
-        displayName: p.displayName || 'This user',
+        displayName: p.displayName || this.translate.instant('USER_PROFILE.THIS_USER'),
       },
       width: '500px',
       maxWidth: '95vw',
@@ -462,21 +465,35 @@ export class UserProfileComponent implements OnInit, OnDestroy {
   }
 
   protected formatGender(gender: string | undefined): string {
-    const labels: Record<string, string> = {
-      'woman': 'Woman',
-      'man': 'Man',
-      'nonbinary': 'Non-binary',
-      'self-describe': 'Other',
-    };
-    return gender ? labels[gender] || gender : '';
+    if (!gender) return '';
+    switch (gender) {
+      case 'woman':
+        return this.translate.instant('ONBOARDING.STEP_2.IDENTITY_WOMAN');
+      case 'man':
+        return this.translate.instant('ONBOARDING.STEP_2.IDENTITY_MAN');
+      case 'nonbinary':
+        return this.translate.instant('ONBOARDING.STEP_2.IDENTITY_NONBINARY');
+      case 'self-describe':
+        return this.translate.instant('ONBOARDING.STEP_2.IDENTITY_SELF_DESCRIBE');
+      default:
+        return gender.charAt(0).toUpperCase() + gender.slice(1);
+    }
   }
 
   protected formatConnectionTypes(types: string[] | undefined): string {
-    return formatConnectionTypesUtil(types);
+    if (!types?.length) return '';
+    return types
+      .map(value => {
+        const option = ALL_CONNECTION_TYPES.find(o => o.value === value);
+        return option ? this.translate.instant(`ONBOARDING.STEP_3.${option.labelKey}`) : value;
+      })
+      .join(', ');
   }
 
   protected formatSupportOrientation(value: string | undefined): string {
-    return getSupportOrientationLabel(value);
+    if (!value) return '';
+    const option = SUPPORT_ORIENTATION_OPTIONS.find(o => o.value === value);
+    return option ? this.translate.instant(`ONBOARDING.STEP_4.${option.labelKey}`) : value;
   }
 
   protected isOnline(): boolean {
@@ -509,12 +526,12 @@ export class UserProfileComponent implements OnInit, OnDestroy {
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     
-    if (minutes < 1) return 'Just now';
-    if (minutes < 60) return `${minutes}m ago`;
-    if (hours < 24) return `${hours}h ago`;
-    if (days === 1) return 'Yesterday';
-    if (days < 7) return `${days}d ago`;
-    return `${Math.floor(days / 7)}w ago`;
+    if (minutes < 1) return this.translate.instant('TIME.JUST_NOW');
+    if (minutes < 60) return this.translate.instant('TIME.MINUTES_AGO_SHORT', { minutes });
+    if (hours < 24) return this.translate.instant('TIME.HOURS_AGO_SHORT', { hours });
+    if (days === 1) return this.translate.instant('TIME.YESTERDAY');
+    if (days < 7) return this.translate.instant('TIME.DAYS_AGO_SHORT', { days });
+    return this.translate.instant('TIME.WEEKS_AGO_SHORT', { weeks: Math.floor(days / 7) });
   }
 
   protected formatLastViewedMe(): string {
@@ -528,18 +545,18 @@ export class UserProfileComponent implements OnInit, OnDestroy {
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     
-    if (minutes < 1) return 'Just now';
-    if (minutes < 60) return `${minutes}m ago`;
-    if (hours < 24) return `${hours}h ago`;
-    if (days === 1) return 'Yesterday';
-    if (days < 7) return `${days}d ago`;
-    if (days < 30) return `${Math.floor(days / 7)}w ago`;
+    if (minutes < 1) return this.translate.instant('TIME.JUST_NOW');
+    if (minutes < 60) return this.translate.instant('TIME.MINUTES_AGO_SHORT', { minutes });
+    if (hours < 24) return this.translate.instant('TIME.HOURS_AGO_SHORT', { hours });
+    if (days === 1) return this.translate.instant('TIME.YESTERDAY');
+    if (days < 7) return this.translate.instant('TIME.DAYS_AGO_SHORT', { days });
+    if (days < 30) return this.translate.instant('TIME.WEEKS_AGO_SHORT', { weeks: Math.floor(days / 7) });
     return date.toLocaleDateString();
   }
 
   protected formatProfileAge(): string {
     const p = this.profile();
-    if (!p?.createdAt) return 'Unknown';
+    if (!p?.createdAt) return this.translate.instant('USER_PROFILE.UNKNOWN');
     
     const createdAt = (p.createdAt as { toDate?: () => Date })?.toDate?.() 
       || new Date(p.createdAt as string);
@@ -551,12 +568,12 @@ export class UserProfileComponent implements OnInit, OnDestroy {
     const months = Math.floor(days / 30);
     const years = Math.floor(days / 365);
     
-    if (days < 1) return 'Today';
-    if (days === 1) return 'Yesterday';
-    if (days < 7) return `${days} days ago`;
-    if (days < 30) return `${Math.floor(days / 7)} weeks ago`;
-    if (months < 12) return `${months} month${months > 1 ? 's' : ''} ago`;
-    return `${years} year${years > 1 ? 's' : ''} ago`;
+    if (days < 1) return this.translate.instant('TIME.TODAY');
+    if (days === 1) return this.translate.instant('TIME.YESTERDAY');
+    if (days < 7) return this.translate.instant('TIME.DAYS_AGO', { days });
+    if (days < 30) return this.translate.instant('TIME.WEEKS_AGO', { weeks: Math.floor(days / 7) });
+    if (months < 12) return this.translate.instant('TIME.MONTHS_AGO', { months });
+    return this.translate.instant('TIME.YEARS_AGO', { years });
   }
 
   // Block user functionality

@@ -8,12 +8,9 @@
   <section class="hero-section">
     <div class="hero-backdrop"></div>
     <div class="hero-content">
-      <span class="hero-badge">How It Works</span>
-      <h1 class="hero-title">Your Journey to <span class="text-accent">Connection</span></h1>
-      <p class="hero-description">
-        From creating your profile to building meaningful relationships—here's how Gylde 
-        makes intentional dating simple.
-      </p>
+      <span class="hero-badge">{{ 'HOW_IT_WORKS.HERO.BADGE' | translate }}</span>
+      <h1 class="hero-title">{{ 'HOW_IT_WORKS.HERO.TITLE' | translate }} <span class="text-accent">{{ 'HOW_IT_WORKS.HERO.TITLE_ACCENT' | translate }}</span></h1>
+      <p class="hero-description">{{ 'HOW_IT_WORKS.HERO.DESCRIPTION' | translate }}</p>
     </div>
   </section>
 
@@ -25,13 +22,13 @@
           <div class="step-card" [class.reverse]="i % 2 === 1">
             <div class="step-content">
               <div class="step-number">{{ step.number }}</div>
-              <h2 class="step-title">{{ step.title }}</h2>
-              <p class="step-description">{{ step.description }}</p>
+              <h2 class="step-title">{{ step.titleKey | translate }}</h2>
+              <p class="step-description">{{ step.descriptionKey | translate }}</p>
               <ul class="step-details">
-                @for (detail of step.details; track detail) {
+                @for (detailKey of step.detailKeys; track detailKey) {
                   <li>
                     <span class="material-icons-outlined">check_circle</span>
-                    {{ detail }}
+                    {{ detailKey | translate }}
                   </li>
                 }
               </ul>
@@ -51,32 +48,32 @@
   <section class="membership-section">
     <div class="section-container">
       <div class="section-header">
-        <span class="section-label">Membership Tiers</span>
-        <h2 class="section-title">Choose Your Experience</h2>
+        <span class="section-label">{{ 'HOW_IT_WORKS.MEMBERSHIP.LABEL' | translate }}</span>
+        <h2 class="section-title">{{ 'HOW_IT_WORKS.MEMBERSHIP.TITLE' | translate }}</h2>
         <p class="section-description">
-          Start free and upgrade when you're ready to connect.
+          {{ 'HOW_IT_WORKS.MEMBERSHIP.DESCRIPTION' | translate }}
         </p>
       </div>
 
       <div class="tiers-grid">
-        @for (tier of tiers; track tier.name) {
+        @for (tier of tiers; track tier.nameKey) {
           <div class="tier-card" [class.highlighted]="tier.highlighted">
             @if (tier.highlighted) {
-              <div class="tier-badge">Most Popular</div>
+              <div class="tier-badge">{{ 'HOW_IT_WORKS.MEMBERSHIP.MOST_POPULAR' | translate }}</div>
             }
-            <h3 class="tier-name">{{ tier.name }}</h3>
-            <div class="tier-price">{{ tier.price }}</div>
-            <p class="tier-description">{{ tier.description }}</p>
+            <h3 class="tier-name">{{ tier.nameKey | translate }}</h3>
+            <div class="tier-price">{{ tier.priceKey | translate }}</div>
+            <p class="tier-description">{{ tier.descriptionKey | translate }}</p>
             <ul class="tier-features">
-              @for (feature of tier.features; track feature) {
+              @for (featureKey of tier.featureKeys; track featureKey) {
                 <li>
                   <span class="material-icons-outlined">check</span>
-                  {{ feature }}
+                  {{ featureKey | translate }}
                 </li>
               }
             </ul>
             <a routerLink="/" class="tier-btn" [class.primary]="tier.highlighted">
-              {{ tier.highlighted ? 'Get Started' : 'Learn More' }}
+              {{ (tier.highlighted ? 'HOW_IT_WORKS.MEMBERSHIP.GET_STARTED' : 'HOW_IT_WORKS.MEMBERSHIP.LEARN_MORE') | translate }}
             </a>
           </div>
         }
@@ -89,40 +86,39 @@
     <div class="section-container">
       <div class="trust-content">
         <div class="trust-info">
-          <span class="section-label">Build Your Reputation</span>
-          <h2 class="section-title">The Reputation System</h2>
+          <span class="section-label">{{ 'HOW_IT_WORKS.REPUTATION.LABEL' | translate }}</span>
+          <h2 class="section-title">{{ 'HOW_IT_WORKS.REPUTATION.TITLE' | translate }}</h2>
           <p class="trust-description">
-            Your reputation tier reflects your engagement and behavior on Gylde. 
-            Higher tiers unlock more features and show others you're a quality member.
+            {{ 'HOW_IT_WORKS.REPUTATION.DESCRIPTION' | translate }}
           </p>
           
           <div class="trust-factors">
             <div class="trust-factor">
               <span class="material-icons-outlined">photo_camera</span>
               <div>
-                <h4>Complete Profile</h4>
-                <p>Add photos, write a bio, and fill out your preferences</p>
+                <h4>{{ 'HOW_IT_WORKS.REPUTATION.FACTORS.COMPLETE_PROFILE.TITLE' | translate }}</h4>
+                <p>{{ 'HOW_IT_WORKS.REPUTATION.FACTORS.COMPLETE_PROFILE.DESCRIPTION' | translate }}</p>
               </div>
             </div>
             <div class="trust-factor">
               <span class="material-icons-outlined">verified</span>
               <div>
-                <h4>Identity Verification</h4>
-                <p>Verify your ID to build reputation faster</p>
+                <h4>{{ 'HOW_IT_WORKS.REPUTATION.FACTORS.IDENTITY_VERIFICATION.TITLE' | translate }}</h4>
+                <p>{{ 'HOW_IT_WORKS.REPUTATION.FACTORS.IDENTITY_VERIFICATION.DESCRIPTION' | translate }}</p>
               </div>
             </div>
             <div class="trust-factor">
               <span class="material-icons-outlined">forum</span>
               <div>
-                <h4>Quality Conversations</h4>
-                <p>Engage respectfully and respond to messages</p>
+                <h4>{{ 'HOW_IT_WORKS.REPUTATION.FACTORS.QUALITY_CONVERSATIONS.TITLE' | translate }}</h4>
+                <p>{{ 'HOW_IT_WORKS.REPUTATION.FACTORS.QUALITY_CONVERSATIONS.DESCRIPTION' | translate }}</p>
               </div>
             </div>
             <div class="trust-factor">
               <span class="material-icons-outlined">trending_up</span>
               <div>
-                <h4>Consistent Activity</h4>
-                <p>Stay active to maintain and grow your tier</p>
+                <h4>{{ 'HOW_IT_WORKS.REPUTATION.FACTORS.CONSISTENT_ACTIVITY.TITLE' | translate }}</h4>
+                <p>{{ 'HOW_IT_WORKS.REPUTATION.FACTORS.CONSISTENT_ACTIVITY.DESCRIPTION' | translate }}</p>
               </div>
             </div>
           </div>
@@ -130,22 +126,22 @@
         <div class="trust-visual">
           <div class="reputation-tiers">
             <div class="tier-badge-item">
-              <span class="tier-label new">New</span>
+              <span class="tier-label new">{{ 'HOW_IT_WORKS.REPUTATION.TIERS.NEW' | translate }}</span>
             </div>
             <div class="tier-badge-item">
-              <span class="tier-label active">Active</span>
+              <span class="tier-label active">{{ 'HOW_IT_WORKS.REPUTATION.TIERS.ACTIVE' | translate }}</span>
             </div>
             <div class="tier-badge-item">
-              <span class="tier-label established">Established</span>
+              <span class="tier-label established">{{ 'HOW_IT_WORKS.REPUTATION.TIERS.ESTABLISHED' | translate }}</span>
             </div>
             <div class="tier-badge-item">
-              <span class="tier-label trusted">Trusted</span>
+              <span class="tier-label trusted">{{ 'HOW_IT_WORKS.REPUTATION.TIERS.TRUSTED' | translate }}</span>
             </div>
             <div class="tier-badge-item">
-              <span class="tier-label distinguished">Distinguished</span>
+              <span class="tier-label distinguished">{{ 'HOW_IT_WORKS.REPUTATION.TIERS.DISTINGUISHED' | translate }}</span>
             </div>
           </div>
-          <span class="trust-caption">Reputation Tiers</span>
+          <span class="trust-caption">{{ 'HOW_IT_WORKS.REPUTATION.CAPTION' | translate }}</span>
         </div>
       </div>
     </div>
@@ -155,21 +151,21 @@
   <section class="faq-section">
     <div class="section-container">
       <div class="section-header">
-        <span class="section-label">FAQ</span>
-        <h2 class="section-title">Common Questions</h2>
+        <span class="section-label">{{ 'HOW_IT_WORKS.FAQ.LABEL' | translate }}</span>
+        <h2 class="section-title">{{ 'HOW_IT_WORKS.FAQ.TITLE' | translate }}</h2>
       </div>
 
       <div class="faq-list">
-        @for (faq of faqs; track faq.question; let i = $index) {
+        @for (faq of faqs; track faq.questionKey; let i = $index) {
           <div class="faq-item" [class.expanded]="expandedFaq === i">
             <button class="faq-question" (click)="toggleFaq(i)">
-              <span>{{ faq.question }}</span>
+              <span>{{ faq.questionKey | translate }}</span>
               <span class="material-icons-outlined">
                 {{ expandedFaq === i ? 'expand_less' : 'expand_more' }}
               </span>
             </button>
             <div class="faq-answer">
-              <p>{{ faq.answer }}</p>
+              <p>{{ faq.answerKey | translate }}</p>
             </div>
           </div>
         }
@@ -181,11 +177,11 @@
   <section class="cta-section">
     <div class="section-container">
       <div class="cta-content">
-        <h2 class="cta-title">Ready to Find Your <span class="text-accent">Connection</span>?</h2>
+        <h2 class="cta-title">{{ 'HOW_IT_WORKS.CTA.TITLE' | translate }} <span class="text-accent">{{ 'HOW_IT_WORKS.CTA.TITLE_ACCENT' | translate }}</span>?</h2>
         <p class="cta-description">
-          Join Gylde today and experience dating with intention.
+          {{ 'HOW_IT_WORKS.CTA.DESCRIPTION' | translate }}
         </p>
-        <a routerLink="/" class="btn-primary btn-large">Create Your Profile</a>
+        <a routerLink="/" class="btn-primary btn-large">{{ 'HOW_IT_WORKS.CTA.BUTTON' | translate }}</a>
       </div>
     </div>
   </section>

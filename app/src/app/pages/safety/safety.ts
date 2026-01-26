@@ -1,13 +1,14 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { TranslateModule } from '@ngx-translate/core';
 import { PublicHeaderComponent } from '../../components/public-header/public-header';
 import { PublicFooterComponent } from '../../components/public-footer/public-footer';
 
 @Component({
   selector: 'app-safety',
   standalone: true,
-  imports: [CommonModule, PublicHeaderComponent, PublicFooterComponent],
+  imports: [CommonModule, TranslateModule, PublicHeaderComponent, PublicFooterComponent],
   templateUrl: './safety.html',
   styleUrl: './safety.css',
 })
@@ -20,60 +21,60 @@ export class SafetyComponent {
   readonly tips = [
     {
       icon: 'chat',
-      title: 'Keep Conversations on Gylde',
-      description: 'Use our messaging system until you feel comfortable. It\'s monitored for safety and gives you easy access to blocking and reporting tools.'
+      titleKey: 'SAFETY.TIPS.T1.TITLE',
+      descriptionKey: 'SAFETY.TIPS.T1.DESCRIPTION',
     },
     {
       icon: 'verified_user',
-      title: 'Look for Verified Profiles',
-      description: 'Verified members have confirmed their identity. While not a guarantee of character, it means they are who they claim to be.'
+      titleKey: 'SAFETY.TIPS.T2.TITLE',
+      descriptionKey: 'SAFETY.TIPS.T2.DESCRIPTION',
     },
     {
       icon: 'schedule',
-      title: 'Take Your Time',
-      description: 'Don\'t rush into sharing personal information or meeting in person. Genuine connections can develop at a comfortable pace.'
+      titleKey: 'SAFETY.TIPS.T3.TITLE',
+      descriptionKey: 'SAFETY.TIPS.T3.DESCRIPTION',
     },
     {
       icon: 'videocam',
-      title: 'Video Chat First',
-      description: 'Before meeting in person, consider a video call. It confirms they look like their photos and helps you gauge chemistry.'
+      titleKey: 'SAFETY.TIPS.T4.TITLE',
+      descriptionKey: 'SAFETY.TIPS.T4.DESCRIPTION',
     },
     {
       icon: 'place',
-      title: 'Meet in Public',
-      description: 'For first meetings, choose busy, public places. Coffee shops, restaurants, and popular venues are great options.'
+      titleKey: 'SAFETY.TIPS.T5.TITLE',
+      descriptionKey: 'SAFETY.TIPS.T5.DESCRIPTION',
     },
     {
       icon: 'people',
-      title: 'Tell Someone Your Plans',
-      description: 'Let a friend or family member know where you\'re going, who you\'re meeting, and when you expect to be back.'
+      titleKey: 'SAFETY.TIPS.T6.TITLE',
+      descriptionKey: 'SAFETY.TIPS.T6.DESCRIPTION',
     }
   ];
 
-  readonly redFlags = [
-    'Asks for money or financial help',
-    'Refuses to video chat or meet in public',
-    'Gets angry when you set boundaries',
-    'Pressures you to share personal information quickly',
-    'Has inconsistent stories or profile details',
-    'Wants to move off Gylde immediately',
-    'Sends unsolicited explicit content',
-    'Makes you feel uncomfortable or unsafe'
+  readonly redFlagKeys = [
+    'SAFETY.RED_FLAGS.F1',
+    'SAFETY.RED_FLAGS.F2',
+    'SAFETY.RED_FLAGS.F3',
+    'SAFETY.RED_FLAGS.F4',
+    'SAFETY.RED_FLAGS.F5',
+    'SAFETY.RED_FLAGS.F6',
+    'SAFETY.RED_FLAGS.F7',
+    'SAFETY.RED_FLAGS.F8',
   ];
 
   readonly resources = [
     {
-      name: 'National Domestic Violence Hotline',
+      nameKey: 'SAFETY.RESOURCES.R1.NAME',
       phone: '1-800-799-7233',
       url: 'https://www.thehotline.org'
     },
     {
-      name: 'RAINN (Sexual Assault)',
+      nameKey: 'SAFETY.RESOURCES.R2.NAME',
       phone: '1-800-656-4673',
       url: 'https://www.rainn.org'
     },
     {
-      name: 'Crisis Text Line',
+      nameKey: 'SAFETY.RESOURCES.R3.NAME',
       phone: 'Text HOME to 741741',
       url: 'https://www.crisistextline.org'
     }

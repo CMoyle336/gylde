@@ -1,13 +1,14 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { TranslateModule } from '@ngx-translate/core';
 import { PublicHeaderComponent } from '../../components/public-header/public-header';
 import { PublicFooterComponent } from '../../components/public-footer/public-footer';
 
 @Component({
   selector: 'app-guidelines',
   standalone: true,
-  imports: [CommonModule, PublicHeaderComponent, PublicFooterComponent],
+  imports: [CommonModule, TranslateModule, PublicHeaderComponent, PublicFooterComponent],
   templateUrl: './guidelines.html',
   styleUrl: './guidelines.css',
 })
