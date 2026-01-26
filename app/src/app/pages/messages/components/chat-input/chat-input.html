@@ -5,8 +5,8 @@
       <div class="image-previews">
         @for (image of selectedImages(); track image.url; let i = $index) {
           <div class="preview-item">
-            <img [src]="image.url" alt="Selected image">
-            <button type="button" class="remove-preview" (click)="removeImage(i)" aria-label="Remove image">
+            <img [src]="image.url" [attr.alt]="'MESSAGES.CHAT_INPUT.SELECTED_IMAGE_ALT' | translate">
+            <button type="button" class="remove-preview" (click)="removeImage(i)" [attr.aria-label]="'MESSAGES.CHAT_INPUT.REMOVE_IMAGE_ARIA' | translate">
               <span class="material-icons-outlined">close</span>
             </button>
           </div>
@@ -18,14 +18,14 @@
           <span class="material-icons-outlined timer-icon" [class.active]="imageTimer() !== null">timer</span>
           <select [value]="imageTimer() ?? ''" (change)="onTimerChange($event)">
             @for (option of timerOptions; track option.value) {
-              <option [value]="option.value ?? ''">{{ option.label }}</option>
+              <option [value]="option.value ?? ''">{{ option.label | translate }}</option>
             }
           </select>
         </div>
         @if (selectedImages().length > 1) {
           <button type="button" class="clear-all-btn" (click)="clearImages()">
             <span class="material-icons-outlined">close</span>
-            Clear all
+            {{ 'MESSAGES.CHAT_INPUT.CLEAR_ALL_BUTTON' | translate }}
           </button>
         }
       </div>
@@ -36,7 +36,7 @@
   @if (isBlocked) {
     <div class="blocked-notice">
       <span class="material-icons-outlined">block</span>
-      <span>You cannot send messages to this user</span>
+      <span>{{ 'MESSAGES.CHAT_INPUT.BLOCKED_NOTICE' | translate }}</span>
     </div>
   } @else {
     <div class="chat-input">
@@ -56,7 +56,7 @@
         [class.active]="isAiPanelOpen"
         [class.has-access]="hasAiAccess"
         (click)="toggleAiAssist()"
-        aria-label="AI Assist">
+        [attr.aria-label]="'MESSAGES.CHAT_INPUT.AI_ASSIST_ARIA' | translate">
         <span class="material-icons-outlined">auto_awesome</span>
       </button>
       
@@ -65,14 +65,14 @@
         type="button" 
         class="attach-btn"
         (click)="openImagePicker()"
-        aria-label="Attach images">
+        [attr.aria-label]="'MESSAGES.CHAT_INPUT.ATTACH_IMAGES_ARIA' | translate">
         <span class="material-icons-outlined">image</span>
       </button>
 
       <input
         #messageInputEl
         type="text"
-        placeholder="Type a message..."
+        [placeholder]="'MESSAGES.CHAT_INPUT.MESSAGE_PLACEHOLDER' | translate"
         enterkeyhint="send"
         [value]="messageInput()"
         (input)="messageInput.set($any($event.target).value); onInput()"

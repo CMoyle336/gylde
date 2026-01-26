@@ -205,18 +205,18 @@ export class MatchesComponent implements OnInit {
     return this.favoritedUserIds().has(userId);
   }
 
-  protected getEmptyMessage(): string {
+  protected getEmptyMessageKey(): string {
     switch (this.activeTab()) {
       case 'my-matches':
-        return "You don't have any matches yet. When someone you favorite also favorites you, they'll appear here!";
+        return 'MATCHES.EMPTY.NO_MATCHES';
       case 'favorited-me':
-        return 'No one has favorited you yet. Keep your profile active!';
+        return 'MATCHES.EMPTY.NO_FAVORITES_RECEIVED';
       case 'viewed-me':
-        return 'No one has viewed your profile yet.';
+        return 'MATCHES.EMPTY.NO_VIEWS';
       case 'my-favorites':
-        return "You haven't favorited anyone yet. Explore profiles to find your match!";
+        return 'MATCHES.EMPTY.NO_FAVORITES_SENT';
       case 'my-views':
-        return "You haven't viewed any profiles yet.";
+        return 'MATCHES.EMPTY.NO_PROFILES_VIEWED';
     }
   }
 

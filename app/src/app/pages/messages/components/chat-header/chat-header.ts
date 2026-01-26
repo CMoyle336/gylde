@@ -3,11 +3,13 @@ import {
   Component,
   EventEmitter,
   Input,
+  inject,
   Output,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatDividerModule } from '@angular/material/divider';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ConversationDisplay } from '../../../../core/interfaces';
 
 export interface UserStatus {
@@ -20,9 +22,10 @@ export interface UserStatus {
   templateUrl: './chat-header.html',
   styleUrl: './chat-header.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, MatMenuModule, MatDividerModule],
+  imports: [CommonModule, MatMenuModule, MatDividerModule, TranslateModule],
 })
 export class ChatHeaderComponent {
+  private readonly translate = inject(TranslateService);
   @Input() conversation: ConversationDisplay | null = null;
   @Input() otherUserStatus: UserStatus | null = null;
   @Input() isTyping = false;
@@ -42,7 +45,7 @@ export class ChatHeaderComponent {
     if (!status) return '';
     
     if (status.isOnline) {
-      return 'Active now';
+      return this.translate.instant('MESSAGES.CHAT_HEADER.STATUS.ACTIVE_NOW');
     }
     
     if (status.lastActiveAt != null) {
@@ -59,12 +62,12 @@ export class ChatHeaderComponent {
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
 
-    if (minutes < 1) return 'Active just now';
-    if (minutes < 60) return `Active ${minutes}m ago`;
-    if (hours < 24) return `Active ${hours}h ago`;
-    if (days === 1) return 'Active yesterday';
-    if (days < 7) return `Active ${days}d ago`;
-    return `Active ${date.toLocaleDateString()}`;
+    if (minutes < 1) return this.translate.instant('MESSAGES.CHAT_HEADER.STATUS.ACTIVE_JUST_NOW');
+    if (minutes < 60) return this.translate.instant('MESSAGES.CHAT_HEADER.STATUS.ACTIVE_MINUTES_AGO', { minutes });
+    if (hours < 24) return this.translate.instant('MESSAGES.CHAT_HEADER.STATUS.ACTIVE_HOURS_AGO', { hours });
+    if (days === 1) return this.translate.instant('MESSAGES.CHAT_HEADER.STATUS.ACTIVE_YESTERDAY');
+    if (days < 7) return this.translate.instant('MESSAGES.CHAT_HEADER.STATUS.ACTIVE_DAYS_AGO', { days });
+    return this.translate.instant('MESSAGES.CHAT_HEADER.STATUS.ACTIVE_DATE', { date: date.toLocaleDateString() });
   }
 
   protected onBackClick(): void {

@@ -6,8 +6,8 @@
           <mat-icon>bookmark</mat-icon>
         </div>
         <div class="dialog-header-text">
-          <h3>Saved Views</h3>
-          <p>Manage your saved filter configurations</p>
+          <h3>{{ 'DISCOVER.MANAGE_VIEWS.TITLE' | translate }}</h3>
+          <p>{{ 'DISCOVER.MANAGE_VIEWS.DESCRIPTION' | translate }}</p>
         </div>
         <button mat-icon-button class="dialog-close-btn" (click)="onClose()">
           <mat-icon>close</mat-icon>
@@ -24,17 +24,17 @@
               <div class="view-details">
                 <span class="view-name">{{ view.name }}</span>
                 @if (view.isDefault) {
-                  <span class="view-badge">Default</span>
+                  <span class="view-badge">{{ 'DISCOVER.MANAGE_VIEWS.DEFAULT_BADGE' | translate }}</span>
                 }
               </div>
             </div>
             <div class="view-actions">
               @if (!view.isDefault) {
-                <button mat-icon-button class="default-btn" (click)="onSetDefault(view.id)" matTooltip="Set as default">
+                <button mat-icon-button class="default-btn" (click)="onSetDefault(view.id)" [matTooltip]="'DISCOVER.MANAGE_VIEWS.SET_DEFAULT_TOOLTIP' | translate">
                   <mat-icon>star_outline</mat-icon>
                 </button>
               }
-              <button mat-icon-button class="delete-btn" (click)="onDelete(view.id)" matTooltip="Delete view">
+              <button mat-icon-button class="delete-btn" (click)="onDelete(view.id)" [matTooltip]="'DISCOVER.MANAGE_VIEWS.DELETE_TOOLTIP' | translate">
                 <mat-icon>delete_outline</mat-icon>
               </button>
             </div>
@@ -42,14 +42,14 @@
         } @empty {
           <div class="empty-views">
             <mat-icon>bookmarks</mat-icon>
-            <p>No saved views yet</p>
-            <span>Save your current filters to quickly apply them later</span>
+            <p>{{ 'DISCOVER.MANAGE_VIEWS.EMPTY_TITLE' | translate }}</p>
+            <span>{{ 'DISCOVER.MANAGE_VIEWS.EMPTY_DESCRIPTION' | translate }}</span>
           </div>
         }
       </div>
 
       <div class="dialog-footer">
-        <button mat-stroked-button (click)="onClose()">Done</button>
+        <button mat-stroked-button (click)="onClose()">{{ 'DISCOVER.MANAGE_VIEWS.DONE_BUTTON' | translate }}</button>
       </div>
     </div>
   </div>

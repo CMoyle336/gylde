@@ -14,6 +14,7 @@ import {
 } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { TranslateModule } from '@ngx-translate/core';
 
 export interface ImagePreview {
   file: File;
@@ -36,7 +37,7 @@ export interface SendMessageEvent {
   templateUrl: './chat-input.html',
   styleUrl: './chat-input.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TranslateModule],
 })
 export class ChatInputComponent implements OnInit, OnDestroy {
   private readonly platformId = inject(PLATFORM_ID);
@@ -50,11 +51,11 @@ export class ChatInputComponent implements OnInit, OnDestroy {
   @Input() isAiPanelOpen = false;
   @Input() hasAiAccess = false;
   @Input() timerOptions: TimerOption[] = [
-    { label: 'No timer', value: null },
-    { label: '5 sec', value: 5 },
-    { label: '10 sec', value: 10 },
-    { label: '30 sec', value: 30 },
-    { label: '1 min', value: 60 },
+    { label: 'MESSAGES.TIMER.NONE', value: null },
+    { label: 'MESSAGES.TIMER.FIVE_SEC', value: 5 },
+    { label: 'MESSAGES.TIMER.TEN_SEC', value: 10 },
+    { label: 'MESSAGES.TIMER.THIRTY_SEC', value: 30 },
+    { label: 'MESSAGES.TIMER.ONE_MIN', value: 60 },
   ];
 
   @Output() messageSent = new EventEmitter<SendMessageEvent>();

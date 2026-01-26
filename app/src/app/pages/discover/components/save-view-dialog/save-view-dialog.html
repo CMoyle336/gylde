@@ -1,22 +1,22 @@
 @if (isOpen()) {
   <div class="dialog-overlay" (click)="onOverlayClick()">
     <div class="dialog" (click)="stopPropagation($event)">
-      <h3>Save Current View</h3>
-      <p>Give your filter settings a name so you can quickly apply them later.</p>
+      <h3>{{ 'DISCOVER.SAVE_VIEW.TITLE' | translate }}</h3>
+      <p>{{ 'DISCOVER.SAVE_VIEW.DESCRIPTION' | translate }}</p>
       
       <mat-form-field appearance="outline" class="full-width">
-        <mat-label>View name</mat-label>
-        <input matInput [(ngModel)]="viewName" placeholder="e.g., Local Women">
+        <mat-label>{{ 'DISCOVER.SAVE_VIEW.NAME_LABEL' | translate }}</mat-label>
+        <input matInput [(ngModel)]="viewName" [placeholder]="'DISCOVER.SAVE_VIEW.NAME_PLACEHOLDER' | translate">
       </mat-form-field>
 
       <mat-slide-toggle [(ngModel)]="isDefault">
-        Set as default view
+        {{ 'DISCOVER.SAVE_VIEW.SET_DEFAULT' | translate }}
       </mat-slide-toggle>
 
       <div class="dialog-actions">
-        <button mat-button (click)="onClose()">Cancel</button>
+        <button mat-button (click)="onClose()">{{ 'DISCOVER.SAVE_VIEW.CANCEL' | translate }}</button>
         <button mat-flat-button color="primary" (click)="onSave()" [disabled]="!viewName.trim()">
-          Save View
+          {{ 'DISCOVER.SAVE_VIEW.SAVE_BUTTON' | translate }}
         </button>
       </div>
     </div>

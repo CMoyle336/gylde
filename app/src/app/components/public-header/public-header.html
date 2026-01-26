@@ -2,12 +2,12 @@
   <div class="header-container">
     <a routerLink="/" class="header-logo">Gylde</a>
     
-    <nav class="header-nav" aria-label="Main navigation">
+    <nav class="header-nav" [attr.aria-label]="'HOME.NAV.ARIA_LABEL' | translate">
       @if (isAuthenticated()) {
         <button type="button" class="nav-link" (click)="logout()">
           {{ 'HOME.NAV.LOGOUT' | translate }}
         </button>
-        <a routerLink="/discover" class="btn-primary-sm">Launch</a>
+        <a routerLink="/discover" class="btn-primary-sm">{{ 'HOME.NAV.LAUNCH' | translate }}</a>
       } @else {
         <button type="button" class="nav-link" (click)="onSignIn()">
           {{ 'HOME.NAV.SIGN_IN' | translate }}
@@ -21,7 +21,7 @@
       <button 
         type="button" 
         class="theme-toggle"
-        [attr.aria-label]="themeService.isDarkMode() ? 'Switch to light mode' : 'Switch to dark mode'"
+        [attr.aria-label]="(themeService.isDarkMode() ? 'HOME.NAV.SWITCH_TO_LIGHT_ARIA' : 'HOME.NAV.SWITCH_TO_DARK_ARIA') | translate"
         (click)="themeService.toggleTheme()">
         <span class="material-icons-outlined">
           {{ themeService.isDarkMode() ? 'light_mode' : 'dark_mode' }}
@@ -33,7 +33,7 @@
     <button 
       type="button" 
       class="mobile-menu-btn" 
-      aria-label="Open menu"
+      [attr.aria-label]="'HOME.NAV.OPEN_MENU_ARIA' | translate"
       (click)="toggleMobileMenu()">
       <span class="material-icons-outlined">{{ mobileMenuOpen() ? 'close' : 'menu' }}</span>
     </button>
@@ -47,7 +47,7 @@
           <button type="button" class="mobile-nav-link" (click)="logout()">
             {{ 'HOME.NAV.LOGOUT' | translate }}
           </button>
-          <a routerLink="/discover" class="btn-primary mobile-btn" (click)="closeMobileMenu()">Launch</a>
+          <a routerLink="/discover" class="btn-primary mobile-btn" (click)="closeMobileMenu()">{{ 'HOME.NAV.LAUNCH' | translate }}</a>
         } @else {
           <button type="button" class="mobile-nav-link" (click)="onSignIn()">
             {{ 'HOME.NAV.SIGN_IN' | translate }}
@@ -65,7 +65,7 @@
           <span class="material-icons-outlined">
             {{ themeService.isDarkMode() ? 'light_mode' : 'dark_mode' }}
           </span>
-          {{ themeService.isDarkMode() ? 'Light Mode' : 'Dark Mode' }}
+          {{ themeService.isDarkMode() ? ('HOME.NAV.LIGHT_MODE' | translate) : ('HOME.NAV.DARK_MODE' | translate) }}
         </button>
       </nav>
     </div>

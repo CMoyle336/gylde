@@ -12,6 +12,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog } from '@angular/material/dialog';
 import { Functions, httpsCallable } from '@angular/fire/functions';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { UserProfileService } from '../../core/services/user-profile.service';
 import { ImageUploadService } from '../../core/services/image-upload.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -84,6 +85,7 @@ interface UploadingPhoto {
     MatIconModule,
     MatProgressSpinnerModule,
     MatTooltipModule,
+    TranslateModule,
     ReputationBadgeComponent,
     FounderBadgeComponent,
   ],
@@ -97,6 +99,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
   protected readonly subscriptionService = inject(SubscriptionService);
   private readonly remoteConfig = inject(RemoteConfigService);
   private readonly analytics = inject(AnalyticsService);
+  private readonly translate = inject(TranslateService);
   
   // Show US-only notice when the only allowed region is 'us'
   protected readonly showUsOnlyNotice = computed(() => {
@@ -173,18 +176,29 @@ export class ProfileComponent implements OnInit, OnDestroy {
     return this.profile()?.settings?.messaging?.minReputationTierToMessageMe ?? 'new';
   });
 
-  protected readonly minReputationTierOptions: { value: ReputationTier; label: string }[] = [
-    { value: 'new', label: 'Anyone' },
-    { value: 'active', label: 'Active+' },
-    { value: 'established', label: 'Established+' },
-    { value: 'trusted', label: 'Trusted+' },
-    { value: 'distinguished', label: 'Distinguished' },
+  protected readonly minReputationTierOptions: { value: ReputationTier; labelKey: string }[] = [
+    { value: 'new', labelKey: 'ANYONE' },
+    { value: 'active', labelKey: 'ACTIVE_PLUS' },
+    { value: 'established', labelKey: 'ESTABLISHED_PLUS' },
+    { value: 'trusted', labelKey: 'TRUSTED_PLUS' },
+    { value: 'distinguished', labelKey: 'DISTINGUISHED' },
   ];
 
-  protected formatMinTierLabel(tier: ReputationTier): string {
-    if (tier === 'new') return 'Anyone';
-    if (tier === 'distinguished') return TIER_DISPLAY[tier].label;
-    return `${TIER_DISPLAY[tier].label}+`;
+  protected minReputationTierLabelKey(tier: ReputationTier): string {
+    switch (tier) {
+      case 'new':
+        return 'PROFILE.MESSAGING_TIER.ANYONE';
+      case 'active':
+        return 'PROFILE.MESSAGING_TIER.ACTIVE_PLUS';
+      case 'established':
+        return 'PROFILE.MESSAGING_TIER.ESTABLISHED_PLUS';
+      case 'trusted':
+        return 'PROFILE.MESSAGING_TIER.TRUSTED_PLUS';
+      case 'distinguished':
+        return 'PROFILE.MESSAGING_TIER.DISTINGUISHED';
+      default:
+        return 'PROFILE.MESSAGING_TIER.ANYONE';
+    }
   }
 
   // Higher-tier conversation limits (based on reputation tier, not subscription)
@@ -391,9 +405,9 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   // Options for form fields (values must match onboarding data)
   protected readonly genderOptions = [
-    { value: 'women', label: 'Women' },
-    { value: 'men', label: 'Men' },
-    { value: 'nonbinary', label: 'Non-binary' },
+    { value: 'women', labelKey: 'ONBOARDING.STEP_2.INTERESTED_WOMEN' },
+    { value: 'men', labelKey: 'ONBOARDING.STEP_2.INTERESTED_MEN' },
+    { value: 'nonbinary', labelKey: 'ONBOARDING.STEP_2.INTERESTED_NONBINARY' },
   ];
 
   protected readonly connectionTypeOptions = ALL_CONNECTION_TYPES;
@@ -867,7 +881,10 @@ export class ProfileComponent implements OnInit, OnDestroy {
   }
 
   formatSupportOrientation(value: string | undefined): string {
-    return getSupportOrientationLabel(value);
+    if (!value) return this.translate.instant('PROFILE.NOT_SET');
+    const option = SUPPORT_ORIENTATION_OPTIONS.find(o => o.value === value);
+    if (!option) return value;
+    return this.translate.instant(`ONBOARDING.STEP_4.${option.labelKey}`);
   }
 
   // Formatting helpers
@@ -888,22 +905,46 @@ export class ProfileComponent implements OnInit, OnDestroy {
   }
 
   formatGender(gender?: string): string {
-    if (!gender) return 'Not set';
-    return gender.charAt(0).toUpperCase() + gender.slice(1);
+    if (!gender) return this.translate.instant('PROFILE.NOT_SET');
+    switch (gender) {
+      case 'woman':
+        return this.translate.instant('ONBOARDING.STEP_2.IDENTITY_WOMAN');
+      case 'man':
+        return this.translate.instant('ONBOARDING.STEP_2.IDENTITY_MAN');
+      case 'nonbinary':
+        return this.translate.instant('ONBOARDING.STEP_2.IDENTITY_NONBINARY');
+      case 'self-describe':
+        return this.translate.instant('ONBOARDING.STEP_2.IDENTITY_SELF_DESCRIBE');
+      default:
+        return gender.charAt(0).toUpperCase() + gender.slice(1);
+    }
   }
 
   formatInterests(interests?: string[]): string {
-    if (!interests || interests.length === 0) return 'Not set';
-    return interests.map(i => this.formatGender(i)).join(', ');
+    if (!interests || interests.length === 0) return this.translate.instant('PROFILE.NOT_SET');
+    return interests.map(i => {
+      switch (i) {
+        case 'women':
+          return this.translate.instant('ONBOARDING.STEP_2.INTERESTED_WOMEN');
+        case 'men':
+          return this.translate.instant('ONBOARDING.STEP_2.INTERESTED_MEN');
+        case 'nonbinary':
+          return this.translate.instant('ONBOARDING.STEP_2.INTERESTED_NONBINARY');
+        default:
+          return i.charAt(0).toUpperCase() + i.slice(1);
+      }
+    }).join(', ');
   }
 
   formatConnectionTypes(types?: string[]): string {
-    if (!types || types.length === 0) return 'Not set';
-    return types.map(t => getConnectionTypeLabel(t)).join(', ');
+    if (!types || types.length === 0) return this.translate.instant('PROFILE.NOT_SET');
+    return types.map(t => this.getConnectionTypeLabel(t)).join(', ');
   }
 
   protected getConnectionTypeLabel(type: string): string {
-    return getConnectionTypeLabel(type);
+    const option = ALL_CONNECTION_TYPES.find(o => o.value === type);
+    if (!option) return type;
+    return this.translate.instant(`ONBOARDING.STEP_3.${option.labelKey}`);
   }
 
   // ============================================

@@ -1,22 +1,22 @@
 <div class="profile-page">
   <!-- Header -->
   <header class="profile-header">
-    <h1>My Profile</h1>
+    <h1>{{ 'PROFILE.TITLE' | translate }}</h1>
     @if (!isEditing()) {
       <button mat-stroked-button (click)="startEditing()">
         <mat-icon>edit</mat-icon>
-        Edit Profile
+        {{ 'PROFILE.EDIT_BUTTON' | translate }}
       </button>
     } @else {
       <div class="header-actions">
-        <button mat-button (click)="cancelEditing()">Cancel</button>
+        <button mat-button (click)="cancelEditing()">{{ 'PROFILE.CANCEL_BUTTON' | translate }}</button>
         <button mat-flat-button color="primary" (click)="saveProfile()" [disabled]="saving()">
           @if (saving()) {
             <mat-spinner diameter="18"></mat-spinner>
           } @else {
             <mat-icon>check</mat-icon>
           }
-          Save
+          {{ 'PROFILE.SAVE_BUTTON' | translate }}
         </button>
       </div>
     }
@@ -35,26 +35,25 @@
           </div>
           <div class="reputation-details">
             <div class="reputation-header">
-              <h2>Your Reputation Status</h2>
+              <h2>{{ 'PROFILE.REPUTATION_STATUS_TITLE' | translate }}</h2>
               <button 
                 mat-icon-button 
                 class="info-btn" 
                 (click)="openReputationInfo()"
-                matTooltip="Learn how reputation works">
+                [matTooltip]="'PROFILE.REPUTATION_INFO_TOOLTIP' | translate">
                 <mat-icon>info_outline</mat-icon>
               </button>
             </div>
             <p class="reputation-description">
-              Your reputation reflects your behavior on the platform. 
-              Higher tiers unlock more reach to higher-tier members.
+              {{ 'PROFILE.REPUTATION_DESCRIPTION' | translate }}
             </p>
             <div class="messaging-status">
               <span class="status-item">
                 <mat-icon class="status-icon">forum</mat-icon>
                 @if (higherTierConversationStatus().isUnlimited) {
-                  <strong>Unlimited</strong> higher tier conversations
+                  <strong>{{ 'PROFILE.UNLIMITED' | translate }}</strong> {{ 'PROFILE.HIGHER_TIER_CONVERSATIONS' | translate }}
                 } @else {
-                  <strong>{{ higherTierConversationStatus().remaining }}/{{ higherTierConversationStatus().dailyLimit }}</strong> higher tier conversations
+                  <strong>{{ higherTierConversationStatus().remaining }}/{{ higherTierConversationStatus().dailyLimit }}</strong> {{ 'PROFILE.HIGHER_TIER_CONVERSATIONS' | translate }}
                 }
               </span>
             </div>
@@ -63,7 +62,7 @@
               <div class="messaging-gate__row">
                 <div class="messaging-gate__label">
                   <mat-icon>shield</mat-icon>
-                  <span>Who can message you</span>
+                  <span>{{ 'PROFILE.MESSAGING_GATE_LABEL' | translate }}</span>
                 </div>
                 @if (isEditing()) {
                   <div class="messaging-gate__dropdown">
@@ -71,17 +70,17 @@
                       [(ngModel)]="editForm.minReputationTierToMessageMe"
                       class="messaging-gate__native-select">
                       @for (opt of minReputationTierOptions; track opt.value) {
-                        <option [value]="opt.value">{{ opt.label }}</option>
+                        <option [value]="opt.value">{{ ('PROFILE.MESSAGING_TIER.' + opt.labelKey) | translate }}</option>
                       }
                     </select>
                     <mat-icon class="messaging-gate__dropdown-icon">expand_more</mat-icon>
                   </div>
                 } @else {
-                  <span class="messaging-gate__chip">{{ formatMinTierLabel(minReputationTierToMessageMe()) }}</span>
+                  <span class="messaging-gate__chip">{{ minReputationTierLabelKey(minReputationTierToMessageMe()) | translate }}</span>
                 }
               </div>
               <p class="messaging-gate__hint">
-                Only members at this reputation tier or above can start new conversations with you.
+                {{ 'PROFILE.MESSAGING_GATE_HINT' | translate }}
               </p>
             </div>
             <!-- Dev-only refresh button -->
@@ -90,13 +89,13 @@
                 class="dev-refresh-btn" 
                 (click)="refreshReputation()" 
                 [disabled]="refreshingReputation()"
-                title="Recalculate reputation (dev only)">
+                [attr.title]="'PROFILE.DEV_REFRESH_TOOLTIP' | translate">
                 @if (refreshingReputation()) {
                   <mat-spinner diameter="16"></mat-spinner>
                 } @else {
                   <mat-icon>refresh</mat-icon>
                 }
-                Refresh Reputation
+                {{ 'PROFILE.DEV_REFRESH_BUTTON' | translate }}
               </button>
             }
           </div>
@@ -106,10 +105,10 @@
       <!-- Photos Section -->
       <section class="photos-section">
         <div class="section-header">
-          <h2>Photos</h2>
+          <h2>{{ 'PROFILE.PHOTOS_TITLE' | translate }}</h2>
           <span class="photo-count">{{ editablePhotos().length }} / {{ maxPhotos() }}</span>
         </div>
-        <p class="section-hint">Click the star to set as profile photo. You can upload up to {{ maxPhotos() }} photos.</p>
+        <p class="section-hint">{{ 'PROFILE.PHOTOS_HINT' | translate:{ max: maxPhotos() } }}</p>
         
         @if (uploadError()) {
           <div class="upload-error">
@@ -127,13 +126,13 @@
                  [class.is-private]="photoItem.isPrivate"
                  [class.is-draggable]="!photoItem.isProfilePhoto">
               <div class="photo-drag-placeholder" *cdkDragPlaceholder></div>
-              <img [src]="photoItem.url" alt="Profile photo {{ i + 1 }}" draggable="false">
+              <img [src]="photoItem.url" [attr.alt]="'PROFILE.PHOTO_ALT' | translate:{ index: i + 1 }" draggable="false">
               <div class="photo-overlay">
                 @if (!photoItem.isPrivate) {
                   <button mat-icon-button 
                           [class.active]="photoItem.isProfilePhoto"
                           (click)="setAsProfilePhoto(photoItem.url)"
-                          matTooltip="Set as profile photo">
+                          [matTooltip]="'PROFILE.SET_PROFILE_PHOTO_TOOLTIP' | translate">
                     <mat-icon>{{ photoItem.isProfilePhoto ? 'star' : 'star_outline' }}</mat-icon>
                   </button>
                 }
@@ -141,13 +140,13 @@
                   <button mat-icon-button 
                           [class.active]="photoItem.isPrivate"
                           (click)="togglePhotoPrivacy(photoItem.url)"
-                          [matTooltip]="photoItem.isPrivate ? 'Make public' : 'Make private'">
+                          [matTooltip]="(photoItem.isPrivate ? 'PROFILE.MAKE_PUBLIC_TOOLTIP' : 'PROFILE.MAKE_PRIVATE_TOOLTIP') | translate">
                     <mat-icon>{{ photoItem.isPrivate ? 'lock' : 'lock_open' }}</mat-icon>
                   </button>
                   <button mat-icon-button 
                           class="remove-btn"
                           (click)="removePhoto(photoItem.url)"
-                          matTooltip="Remove photo">
+                          [matTooltip]="'PROFILE.REMOVE_PHOTO_TOOLTIP' | translate">
                     <mat-icon>delete</mat-icon>
                   </button>
                 }
@@ -155,7 +154,7 @@
               @if (photoItem.isProfilePhoto) {
                 <div class="profile-badge">
                   <mat-icon>lock</mat-icon>
-                  Profile
+                  {{ 'PROFILE.PROFILE_BADGE' | translate }}
                 </div>
               }
               @if (photoItem.isPrivate) {
@@ -174,14 +173,14 @@
           <!-- Uploading photos with individual loading states -->
           @for (uploading of uploadingPhotos(); track uploading.id) {
             <div class="photo-item uploading-item" [class.error]="uploading.status === 'error'">
-              <img [src]="uploading.preview" alt="Uploading photo" class="uploading-preview">
+              <img [src]="uploading.preview" [attr.alt]="'PROFILE.UPLOADING_PHOTO_ALT' | translate" class="uploading-preview">
               <div class="upload-overlay">
                 @if (uploading.status === 'uploading') {
                   <div class="upload-spinner-overlay"></div>
-                  <span class="upload-status">Uploading...</span>
+                  <span class="upload-status">{{ 'PROFILE.UPLOADING_STATUS' | translate }}</span>
                 } @else if (uploading.status === 'error') {
                   <mat-icon class="error-icon">error</mat-icon>
-                  <span class="upload-status error">{{ uploading.error || 'Failed' }}</span>
+                  <span class="upload-status error">{{ uploading.error || ('PROFILE.UPLOAD_FAILED' | translate) }}</span>
                 }
               </div>
             </div>
@@ -191,7 +190,7 @@
           @if (editablePhotos().length + uploadingPhotos().length < maxPhotos()) {
             <button type="button" class="add-photo-btn" (click)="openPhotoPicker()">
               <mat-icon>add_photo_alternate</mat-icon>
-              <span>Add Photo</span>
+              <span>{{ 'PROFILE.ADD_PHOTO_BUTTON' | translate }}</span>
             </button>
           }
         </div>
@@ -202,7 +201,7 @@
           <div class="manage-access-section">
             <button mat-stroked-button class="manage-access-btn" (click)="openAccessDialog()">
               <mat-icon>lock</mat-icon>
-              Manage Private Photo Access
+              {{ 'PROFILE.MANAGE_PHOTO_ACCESS_BUTTON' | translate }}
               @if (pendingRequestsCount() > 0) {
                 <span class="request-badge">{{ pendingRequestsCount() }}</span>
               }
@@ -213,15 +212,15 @@
 
       <!-- Basic Info Section -->
       <section class="info-section">
-        <h2>Basic Info</h2>
+        <h2>{{ 'PROFILE.BASIC_INFO_TITLE' | translate }}</h2>
         
         <div class="info-grid">
           <div class="info-item full-width">
-            <label class="field-label">Tagline</label>
+            <label class="field-label">{{ 'PROFILE.TAGLINE_LABEL' | translate }}</label>
             @if (isEditing()) {
               <div class="input-with-ai">
                 <mat-form-field appearance="outline" class="full-width-field">
-                  <input matInput [(ngModel)]="editForm.tagline" placeholder="A short phrase about you..." maxlength="100">
+                  <input matInput [(ngModel)]="editForm.tagline" [placeholder]="'PROFILE.TAGLINE_PLACEHOLDER' | translate" maxlength="100">
                   <mat-hint align="end">{{ editForm.tagline.length }}/100</mat-hint>
                 </mat-form-field>
                 @if (isPremium() && editForm.tagline.length >= 3) {
@@ -230,7 +229,7 @@
                           [class.loading]="polishingField() === 'tagline'"
                           [disabled]="polishingField() !== null"
                           (click)="polishText('tagline')"
-                          matTooltip="Polish with AI">
+                          [matTooltip]="'PROFILE.AI_POLISH_TOOLTIP' | translate">
                     @if (polishingField() === 'tagline') {
                       <span class="ai-spinner"></span>
                     } @else {
@@ -243,7 +242,7 @@
                 <div class="ai-suggestions">
                   <div class="suggestion-header">
                     <mat-icon>auto_awesome</mat-icon>
-                    <span>AI Suggestions</span>
+                    <span>{{ 'PROFILE.AI_SUGGESTIONS_TITLE' | translate }}</span>
                     <button class="close-btn" (click)="dismissPolishSuggestions()">
                       <mat-icon>close</mat-icon>
                     </button>
@@ -262,31 +261,31 @@
               }
             } @else {
               <span class="info-value tagline-value" [class.empty]="!profile.onboarding?.tagline">
-                {{ profile.onboarding?.tagline || 'Not set' }}
+                {{ profile.onboarding?.tagline || ('PROFILE.NOT_SET' | translate) }}
               </span>
             }
           </div>
 
           <div class="info-item">
-            <label class="field-label">Display Name</label>
+            <label class="field-label">{{ 'PROFILE.DISPLAY_NAME_LABEL' | translate }}</label>
             @if (isEditing()) {
               <mat-form-field appearance="outline">
-                <input matInput [(ngModel)]="editForm.displayName" placeholder="Your display name">
+                <input matInput [(ngModel)]="editForm.displayName" [placeholder]="'PROFILE.DISPLAY_NAME_PLACEHOLDER' | translate">
               </mat-form-field>
             } @else {
-              <span class="info-value">{{ profile.displayName || 'Not set' }}</span>
+              <span class="info-value">{{ profile.displayName || ('PROFILE.NOT_SET' | translate) }}</span>
             }
           </div>
 
           <div class="info-item">
-            <label class="field-label">Location</label>
+            <label class="field-label">{{ 'PROFILE.LOCATION_LABEL' | translate }}</label>
             @if (isEditing()) {
               <div class="location-autocomplete-wrapper">
                 <!-- Region Restriction Notice (only shown when US is the only allowed region) -->
                 @if (showUsOnlyNotice()) {
                   <div class="region-notice">
                     <mat-icon>public</mat-icon>
-                    <span>Gylde is currently available in the United States only.</span>
+                    <span>{{ 'PROFILE.US_ONLY_NOTICE' | translate }}</span>
                   </div>
                 }
                 
@@ -313,7 +312,7 @@
                         type="text"
                         class="location-input"
                         [class.searching]="isSearchingLocation()"
-                        placeholder="Start typing a city..."
+                        [placeholder]="'PROFILE.CITY_PLACEHOLDER' | translate"
                         [value]="cityInputValue()"
                         (input)="onLocationInputChange($any($event.target).value)"
                         (keydown)="onLocationKeyDown($event)"
@@ -357,7 +356,7 @@
                     [class.detecting]="locationStatus() === 'detecting'"
                     [disabled]="locationStatus() === 'detecting'"
                     (click)="requestGeolocation()"
-                    matTooltip="Use my current location">
+                    [matTooltip]="'PROFILE.USE_GPS_TOOLTIP' | translate">
                     @if (locationStatus() === 'detecting') {
                       <span class="btn-spinner"></span>
                     } @else {
@@ -372,22 +371,22 @@
                   @if (onboarding.city) {
                     {{ onboarding.city }}, {{ onboarding.country }}
                   } @else {
-                    Not set
+                    {{ 'PROFILE.NOT_SET' | translate }}
                   }
                 } @else {
-                  Not set
+                  {{ 'PROFILE.NOT_SET' | translate }}
                 }
               </span>
             }
           </div>
 
           <div class="info-item">
-            <label class="field-label">Birthday</label>
+            <label class="field-label">{{ 'PROFILE.BIRTHDAY_LABEL' | translate }}</label>
             <span class="info-value">
               @if (profile.onboarding?.birthDate; as birthDate) {
-                {{ formatBirthDate(birthDate) }} ({{ calculateAge(birthDate) }} years old)
+                {{ formatBirthDate(birthDate) }} ({{ 'PROFILE.YEARS_OLD' | translate:{ age: calculateAge(birthDate) } }})
               } @else {
-                Not set
+                {{ 'PROFILE.NOT_SET' | translate }}
               }
             </span>
           </div>
@@ -397,19 +396,19 @@
 
       <!-- Dating Preferences Section -->
       <section class="info-section">
-        <h2>Dating Preferences</h2>
+        <h2>{{ 'PROFILE.DATING_PREFERENCES_TITLE' | translate }}</h2>
         
         <div class="info-grid">
           <!-- Row 1: Identity and Age Range -->
           <div class="info-item">
-            <label class="field-label">I identify as</label>
+            <label class="field-label">{{ 'PROFILE.GENDER_IDENTITY_LABEL' | translate }}</label>
             @if (isEditing()) {
               <mat-form-field appearance="outline">
                 <mat-select [(ngModel)]="editForm.genderIdentity">
-                  <mat-option value="woman">Woman</mat-option>
-                  <mat-option value="man">Man</mat-option>
-                  <mat-option value="nonbinary">Non-binary</mat-option>
-                  <mat-option value="self-describe">Other</mat-option>
+                  <mat-option value="woman">{{ 'ONBOARDING.STEP_2.IDENTITY_WOMAN' | translate }}</mat-option>
+                  <mat-option value="man">{{ 'ONBOARDING.STEP_2.IDENTITY_MAN' | translate }}</mat-option>
+                  <mat-option value="nonbinary">{{ 'ONBOARDING.STEP_2.IDENTITY_NONBINARY' | translate }}</mat-option>
+                  <mat-option value="self-describe">{{ 'ONBOARDING.STEP_2.IDENTITY_SELF_DESCRIBE' | translate }}</mat-option>
                 </mat-select>
               </mat-form-field>
             } @else {
@@ -418,16 +417,16 @@
           </div>
 
           <div class="info-item">
-            <label class="field-label">Age Range</label>
+            <label class="field-label">{{ 'PROFILE.AGE_RANGE_LABEL' | translate }}</label>
             @if (isEditing()) {
               <div class="range-inputs">
                 <mat-form-field appearance="outline" class="age-field">
-                  <mat-label>Min</mat-label>
+                  <mat-label>{{ 'PROFILE.AGE_MIN_LABEL' | translate }}</mat-label>
                   <input matInput type="number" [(ngModel)]="editForm.ageRangeMin" min="18" max="99">
                 </mat-form-field>
-                <span class="range-separator">to</span>
+                <span class="range-separator">{{ 'PROFILE.AGE_RANGE_SEPARATOR' | translate }}</span>
                 <mat-form-field appearance="outline" class="age-field">
-                  <mat-label>Max</mat-label>
+                  <mat-label>{{ 'PROFILE.AGE_MAX_LABEL' | translate }}</mat-label>
                   <input matInput type="number" [(ngModel)]="editForm.ageRangeMax" min="18" max="99">
                 </mat-form-field>
               </div>
@@ -437,10 +436,10 @@
                   @if (onboarding.ageRangeMin) {
                     {{ onboarding.ageRangeMin }} - {{ onboarding.ageRangeMax }}
                   } @else {
-                    Not set
+                    {{ 'PROFILE.NOT_SET' | translate }}
                   }
                 } @else {
-                  Not set
+                  {{ 'PROFILE.NOT_SET' | translate }}
                 }
               </span>
             }
@@ -448,7 +447,7 @@
 
           <!-- Row 2: Interested in - full width for horizontal chips -->
           <div class="info-item full-width">
-            <label class="field-label">Interested in</label>
+            <label class="field-label">{{ 'PROFILE.INTERESTED_IN_LABEL' | translate }}</label>
             @if (isEditing()) {
               <div class="chip-group">
                 @for (option of genderOptions; track option.value) {
@@ -456,7 +455,7 @@
                           mat-stroked-button
                           [class.selected]="editForm.interestedIn.includes(option.value)"
                           (click)="toggleInterest(option.value)">
-                    {{ option.label }}
+                    {{ option.labelKey | translate }}
                   </button>
                 }
               </div>
@@ -467,7 +466,7 @@
 
           <!-- Row 3: Support orientation - full width for horizontal chips -->
           <div class="info-item full-width">
-            <label class="field-label">Support orientation</label>
+            <label class="field-label">{{ 'PROFILE.SUPPORT_ORIENTATION_LABEL' | translate }}</label>
             @if (isEditing()) {
               <div class="chip-group">
                 @for (option of supportOrientationOptions; track option.value) {
@@ -475,7 +474,7 @@
                           mat-stroked-button
                           [class.selected]="editForm.supportOrientation === option.value"
                           (click)="selectSupportOrientation(option.value)">
-                    {{ option.label }}
+                    {{ ('ONBOARDING.STEP_4.' + option.labelKey) | translate }}
                   </button>
                 }
               </div>
@@ -485,7 +484,7 @@
                   <span class="tag">{{ formatSupportOrientation(profile.onboarding?.supportOrientation) }}</span>
                 </div>
               } @else {
-                <span class="info-value empty">Not set</span>
+                <span class="info-value empty">{{ 'PROFILE.NOT_SET' | translate }}</span>
               }
             }
           </div>
@@ -494,11 +493,11 @@
 
       <!-- About Me Section -->
       <section class="info-section">
-        <h2>About Me</h2>
+        <h2>{{ 'PROFILE.ABOUT_ME_TITLE' | translate }}</h2>
         
         <div class="info-grid full-width">
           <div class="info-item">
-            <label class="field-label">Looking for</label>
+            <label class="field-label">{{ 'PROFILE.LOOKING_FOR_LABEL' | translate }}</label>
             @if (isEditing()) {
               <div class="chip-group">
                 @for (option of connectionTypeOptions; track option.value) {
@@ -506,7 +505,7 @@
                           mat-stroked-button
                           [class.selected]="editForm.connectionTypes.includes(option.value)"
                           (click)="toggleConnectionType(option.value)">
-                    {{ option.label }}
+                    {{ ('ONBOARDING.STEP_3.' + option.labelKey) | translate }}
                   </button>
                 }
               </div>
@@ -518,19 +517,19 @@
                   }
                 </div>
               } @else {
-                <span class="info-value empty">Not set</span>
+                <span class="info-value empty">{{ 'PROFILE.NOT_SET' | translate }}</span>
               }
             }
           </div>
 
           <div class="info-item">
-            <label class="field-label">My ideal relationship</label>
+            <label class="field-label">{{ 'PROFILE.IDEAL_RELATIONSHIP_LABEL' | translate }}</label>
             @if (isEditing()) {
               <div class="input-with-ai">
                 <mat-form-field appearance="outline" class="full-width-field">
                   <textarea matInput 
                             [(ngModel)]="editForm.idealRelationship" 
-                            placeholder="Describe your ideal relationship..."
+                            [placeholder]="'PROFILE.IDEAL_RELATIONSHIP_PLACEHOLDER' | translate"
                             rows="3"></textarea>
                 </mat-form-field>
                 @if (isPremium() && editForm.idealRelationship.length >= 10) {
@@ -539,7 +538,7 @@
                           [class.loading]="polishingField() === 'idealRelationship'"
                           [disabled]="polishingField() !== null"
                           (click)="polishText('idealRelationship')"
-                          matTooltip="Polish with AI">
+                          [matTooltip]="'PROFILE.AI_POLISH_TOOLTIP' | translate">
                     @if (polishingField() === 'idealRelationship') {
                       <span class="ai-spinner"></span>
                     } @else {
@@ -552,7 +551,7 @@
                 <div class="ai-suggestions">
                   <div class="suggestion-header">
                     <mat-icon>auto_awesome</mat-icon>
-                    <span>AI Suggestions</span>
+                    <span>{{ 'PROFILE.AI_SUGGESTIONS_TITLE' | translate }}</span>
                     <button class="close-btn" (click)="dismissPolishSuggestions()">
                       <mat-icon>close</mat-icon>
                     </button>
@@ -570,18 +569,18 @@
                 </div>
               }
             } @else {
-              <span class="info-value multiline">{{ profile.onboarding?.idealRelationship || 'Not set' }}</span>
+              <span class="info-value multiline">{{ profile.onboarding?.idealRelationship || ('PROFILE.NOT_SET' | translate) }}</span>
             }
           </div>
 
           <div class="info-item">
-            <label class="field-label">What support means to me</label>
+            <label class="field-label">{{ 'PROFILE.SUPPORT_MEANING_LABEL' | translate }}</label>
             @if (isEditing()) {
               <div class="input-with-ai">
                 <mat-form-field appearance="outline" class="full-width-field">
                   <textarea matInput 
                             [(ngModel)]="editForm.supportMeaning" 
-                            placeholder="What does support mean to you?"
+                            [placeholder]="'PROFILE.SUPPORT_MEANING_PLACEHOLDER' | translate"
                             rows="3"></textarea>
                 </mat-form-field>
                 @if (isPremium() && editForm.supportMeaning.length >= 10) {
@@ -590,7 +589,7 @@
                           [class.loading]="polishingField() === 'supportMeaning'"
                           [disabled]="polishingField() !== null"
                           (click)="polishText('supportMeaning')"
-                          matTooltip="Polish with AI">
+                          [matTooltip]="'PROFILE.AI_POLISH_TOOLTIP' | translate">
                     @if (polishingField() === 'supportMeaning') {
                       <span class="ai-spinner"></span>
                     } @else {
@@ -603,7 +602,7 @@
                 <div class="ai-suggestions">
                   <div class="suggestion-header">
                     <mat-icon>auto_awesome</mat-icon>
-                    <span>AI Suggestions</span>
+                    <span>{{ 'PROFILE.AI_SUGGESTIONS_TITLE' | translate }}</span>
                     <button class="close-btn" (click)="dismissPolishSuggestions()">
                       <mat-icon>close</mat-icon>
                     </button>
@@ -621,7 +620,7 @@
                 </div>
               }
             } @else {
-              <span class="info-value multiline">{{ profile.onboarding?.supportMeaning || 'Not set' }}</span>
+              <span class="info-value multiline">{{ profile.onboarding?.supportMeaning || ('PROFILE.NOT_SET' | translate) }}</span>
             }
           </div>
         </div>
@@ -629,151 +628,151 @@
 
       <!-- Personal Details Section -->
       <section class="info-section">
-        <h2>Personal Details</h2>
+        <h2>{{ 'PROFILE.PERSONAL_DETAILS_TITLE' | translate }}</h2>
         
         <div class="info-grid">
           <div class="info-item">
-            <label class="field-label">Height</label>
+            <label class="field-label">{{ 'PROFILE.HEIGHT_LABEL' | translate }}</label>
             @if (isEditing()) {
               <mat-form-field appearance="outline">
-                <input matInput [(ngModel)]="editForm.height" placeholder="e.g., 5'10&quot; or 178 cm">
+                <input matInput [(ngModel)]="editForm.height" [placeholder]="'PROFILE.HEIGHT_PLACEHOLDER' | translate">
               </mat-form-field>
             } @else {
-              <span class="info-value">{{ profile.onboarding?.height || 'Not set' }}</span>
+              <span class="info-value">{{ profile.onboarding?.height || ('PROFILE.NOT_SET' | translate) }}</span>
             }
           </div>
 
           <div class="info-item">
-            <label class="field-label">Weight</label>
+            <label class="field-label">{{ 'PROFILE.WEIGHT_LABEL' | translate }}</label>
             @if (isEditing()) {
               <mat-form-field appearance="outline">
-                <input matInput [(ngModel)]="editForm.weight" placeholder="e.g., 170 lbs or 77 kg">
+                <input matInput [(ngModel)]="editForm.weight" [placeholder]="'PROFILE.WEIGHT_PLACEHOLDER' | translate">
               </mat-form-field>
             } @else {
-              <span class="info-value">{{ profile.onboarding?.weight || 'Not set' }}</span>
+              <span class="info-value">{{ profile.onboarding?.weight || ('PROFILE.NOT_SET' | translate) }}</span>
             }
           </div>
 
           <div class="info-item">
-            <label class="field-label">Ethnicity</label>
+            <label class="field-label">{{ 'PROFILE.ETHNICITY_LABEL' | translate }}</label>
             @if (isEditing()) {
               <mat-form-field appearance="outline">
-                <mat-select [(ngModel)]="editForm.ethnicity" placeholder="Select...">
-                  <mat-option value="">Not specified</mat-option>
+                <mat-select [(ngModel)]="editForm.ethnicity" [placeholder]="'PROFILE.SELECT_PLACEHOLDER' | translate">
+                  <mat-option value="">{{ 'PROFILE.NOT_SPECIFIED' | translate }}</mat-option>
                   @for (option of ethnicityOptions; track option) {
                     <mat-option [value]="option">{{ option }}</mat-option>
                   }
                 </mat-select>
               </mat-form-field>
             } @else {
-              <span class="info-value">{{ profile.onboarding?.ethnicity || 'Not set' }}</span>
+              <span class="info-value">{{ profile.onboarding?.ethnicity || ('PROFILE.NOT_SET' | translate) }}</span>
             }
           </div>
 
           <div class="info-item">
-            <label class="field-label">Relationship Status</label>
+            <label class="field-label">{{ 'PROFILE.RELATIONSHIP_STATUS_LABEL' | translate }}</label>
             @if (isEditing()) {
               <mat-form-field appearance="outline">
-                <mat-select [(ngModel)]="editForm.relationshipStatus" placeholder="Select...">
-                  <mat-option value="">Not specified</mat-option>
+                <mat-select [(ngModel)]="editForm.relationshipStatus" [placeholder]="'PROFILE.SELECT_PLACEHOLDER' | translate">
+                  <mat-option value="">{{ 'PROFILE.NOT_SPECIFIED' | translate }}</mat-option>
                   @for (option of relationshipStatusOptions; track option) {
                     <mat-option [value]="option">{{ option }}</mat-option>
                   }
                 </mat-select>
               </mat-form-field>
             } @else {
-              <span class="info-value">{{ profile.onboarding?.relationshipStatus || 'Not set' }}</span>
+              <span class="info-value">{{ profile.onboarding?.relationshipStatus || ('PROFILE.NOT_SET' | translate) }}</span>
             }
           </div>
 
           <div class="info-item">
-            <label class="field-label">Children</label>
+            <label class="field-label">{{ 'PROFILE.CHILDREN_LABEL' | translate }}</label>
             @if (isEditing()) {
               <mat-form-field appearance="outline">
-                <mat-select [(ngModel)]="editForm.children" placeholder="Select...">
-                  <mat-option value="">Not specified</mat-option>
+                <mat-select [(ngModel)]="editForm.children" [placeholder]="'PROFILE.SELECT_PLACEHOLDER' | translate">
+                  <mat-option value="">{{ 'PROFILE.NOT_SPECIFIED' | translate }}</mat-option>
                   @for (option of childrenOptions; track option) {
                     <mat-option [value]="option">{{ option }}</mat-option>
                   }
                 </mat-select>
               </mat-form-field>
             } @else {
-              <span class="info-value">{{ profile.onboarding?.children || 'Not set' }}</span>
+              <span class="info-value">{{ profile.onboarding?.children || ('PROFILE.NOT_SET' | translate) }}</span>
             }
           </div>
 
           <div class="info-item">
-            <label class="field-label">Smoking</label>
+            <label class="field-label">{{ 'PROFILE.SMOKING_LABEL' | translate }}</label>
             @if (isEditing()) {
               <mat-form-field appearance="outline">
-                <mat-select [(ngModel)]="editForm.smoker" placeholder="Select...">
-                  <mat-option value="">Not specified</mat-option>
+                <mat-select [(ngModel)]="editForm.smoker" [placeholder]="'PROFILE.SELECT_PLACEHOLDER' | translate">
+                  <mat-option value="">{{ 'PROFILE.NOT_SPECIFIED' | translate }}</mat-option>
                   @for (option of smokerOptions; track option) {
                     <mat-option [value]="option">{{ option }}</mat-option>
                   }
                 </mat-select>
               </mat-form-field>
             } @else {
-              <span class="info-value">{{ profile.onboarding?.smoker || 'Not set' }}</span>
+              <span class="info-value">{{ profile.onboarding?.smoker || ('PROFILE.NOT_SET' | translate) }}</span>
             }
           </div>
 
           <div class="info-item">
-            <label class="field-label">Drinking</label>
+            <label class="field-label">{{ 'PROFILE.DRINKING_LABEL' | translate }}</label>
             @if (isEditing()) {
               <mat-form-field appearance="outline">
-                <mat-select [(ngModel)]="editForm.drinker" placeholder="Select...">
-                  <mat-option value="">Not specified</mat-option>
+                <mat-select [(ngModel)]="editForm.drinker" [placeholder]="'PROFILE.SELECT_PLACEHOLDER' | translate">
+                  <mat-option value="">{{ 'PROFILE.NOT_SPECIFIED' | translate }}</mat-option>
                   @for (option of drinkerOptions; track option) {
                     <mat-option [value]="option">{{ option }}</mat-option>
                   }
                 </mat-select>
               </mat-form-field>
             } @else {
-              <span class="info-value">{{ profile.onboarding?.drinker || 'Not set' }}</span>
+              <span class="info-value">{{ profile.onboarding?.drinker || ('PROFILE.NOT_SET' | translate) }}</span>
             }
           </div>
 
           <div class="info-item">
-            <label class="field-label">Education</label>
+            <label class="field-label">{{ 'PROFILE.EDUCATION_LABEL' | translate }}</label>
             @if (isEditing()) {
               <mat-form-field appearance="outline">
-                <mat-select [(ngModel)]="editForm.education" placeholder="Select...">
-                  <mat-option value="">Not specified</mat-option>
+                <mat-select [(ngModel)]="editForm.education" [placeholder]="'PROFILE.SELECT_PLACEHOLDER' | translate">
+                  <mat-option value="">{{ 'PROFILE.NOT_SPECIFIED' | translate }}</mat-option>
                   @for (option of educationOptions; track option) {
                     <mat-option [value]="option">{{ option }}</mat-option>
                   }
                 </mat-select>
               </mat-form-field>
             } @else {
-              <span class="info-value">{{ profile.onboarding?.education || 'Not set' }}</span>
+              <span class="info-value">{{ profile.onboarding?.education || ('PROFILE.NOT_SET' | translate) }}</span>
             }
           </div>
 
           <div class="info-item">
-            <label class="field-label">Occupation</label>
+            <label class="field-label">{{ 'PROFILE.OCCUPATION_LABEL' | translate }}</label>
             @if (isEditing()) {
               <mat-form-field appearance="outline">
-                <input matInput [(ngModel)]="editForm.occupation" placeholder="What do you do?">
+                <input matInput [(ngModel)]="editForm.occupation" [placeholder]="'PROFILE.OCCUPATION_PLACEHOLDER' | translate">
               </mat-form-field>
             } @else {
-              <span class="info-value">{{ profile.onboarding?.occupation || 'Not set' }}</span>
+              <span class="info-value">{{ profile.onboarding?.occupation || ('PROFILE.NOT_SET' | translate) }}</span>
             }
           </div>
 
           <div class="info-item">
-            <label class="field-label">Income</label>
+            <label class="field-label">{{ 'PROFILE.INCOME_LABEL' | translate }}</label>
             @if (isEditing()) {
               <mat-form-field appearance="outline">
-                <mat-select [(ngModel)]="editForm.income" placeholder="Select...">
-                  <mat-option value="">Not specified</mat-option>
+                <mat-select [(ngModel)]="editForm.income" [placeholder]="'PROFILE.SELECT_PLACEHOLDER' | translate">
+                  <mat-option value="">{{ 'PROFILE.NOT_SPECIFIED' | translate }}</mat-option>
                   @for (option of incomeOptions; track option) {
                     <mat-option [value]="option">{{ option }}</mat-option>
                   }
                 </mat-select>
               </mat-form-field>
             } @else {
-              <span class="info-value">{{ profile.onboarding?.income || 'Not set' }}</span>
+              <span class="info-value">{{ profile.onboarding?.income || ('PROFILE.NOT_SET' | translate) }}</span>
             }
           </div>
         </div>
@@ -783,7 +782,7 @@
   } @else {
     <div class="loading-state">
       <mat-spinner diameter="40"></mat-spinner>
-      <p>Loading profile...</p>
+      <p>{{ 'PROFILE.LOADING' | translate }}</p>
     </div>
   }
 </div>

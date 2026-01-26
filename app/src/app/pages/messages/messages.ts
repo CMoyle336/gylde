@@ -19,6 +19,7 @@ import { Firestore, doc, getDoc, updateDoc } from '@angular/fire/firestore';
 import { Functions, httpsCallable } from '@angular/fire/functions';
 import { Auth } from '@angular/fire/auth';
 import { MatDialog } from '@angular/material/dialog';
+import { TranslateModule } from '@ngx-translate/core';
 import { ReportDialogComponent, ReportDialogData } from '../../components/report-dialog';
 import { BlockConfirmDialogComponent, BlockConfirmDialogData } from '../../components/block-confirm-dialog';
 import { MessageService, ConversationFilter, ReputationFilter } from '../../core/services/message.service';
@@ -51,6 +52,7 @@ import {
   imports: [
     CommonModule,
     UiScrollModule,
+    TranslateModule,
     AiAssistPanelComponent,
     ConversationListComponent,
     ChatHeaderComponent,

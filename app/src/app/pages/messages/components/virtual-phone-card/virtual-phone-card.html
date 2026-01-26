@@ -5,7 +5,7 @@
       <div class="vp-info">
         <span class="material-icons-outlined vp-icon">phone_android</span>
         <div class="vp-details">
-          <span class="vp-label">Your Private Number</span>
+          <span class="vp-label">{{ 'MESSAGES.VIRTUAL_PHONE.LABEL' | translate }}</span>
           <span class="vp-number">{{ formatPhoneNumber(virtualPhone.number) }}</span>
         </div>
       </div>
@@ -14,14 +14,14 @@
           type="button"
           class="vp-action-btn"
           (click)="onCopyNumber()"
-          [title]="copiedNumber() ? 'Copied!' : 'Copy number'">
+          [title]="(copiedNumber() ? 'MESSAGES.VIRTUAL_PHONE.COPIED_TOOLTIP' : 'MESSAGES.VIRTUAL_PHONE.COPY_TOOLTIP') | translate">
           <span class="material-icons-outlined">{{ copiedNumber() ? 'check' : 'content_copy' }}</span>
         </button>
         <button 
           type="button"
           class="vp-action-btn"
           (click)="onOpenSettings()"
-          title="Settings">
+          [title]="'MESSAGES.VIRTUAL_PHONE.SETTINGS_TOOLTIP' | translate">
           <span class="material-icons-outlined">settings</span>
         </button>
       </div>
@@ -30,18 +30,18 @@
     <!-- Premium user, loading -->
     <div class="vp-loading">
       <div class="loading-spinner small"></div>
-      <span>Loading...</span>
+      <span>{{ 'MESSAGES.VIRTUAL_PHONE.LOADING' | translate }}</span>
     </div>
   } @else if (isPremium && !hasVerifiedPhone) {
     <!-- Premium user, need to verify phone first -->
     <div class="vp-promo vp-needs-phone">
       <div class="vp-promo-text">
         <span class="material-icons-outlined">phone_locked</span>
-        <span>Verify your phone number first to get a private number for sharing with connections</span>
+        <span>{{ 'MESSAGES.VIRTUAL_PHONE.NEEDS_VERIFICATION' | translate }}</span>
       </div>
       <a routerLink="/settings" class="vp-verify-btn">
         <span class="material-icons-outlined">verified_user</span>
-        <span>Verify Phone in Settings</span>
+        <span>{{ 'MESSAGES.VIRTUAL_PHONE.VERIFY_BUTTON' | translate }}</span>
       </a>
     </div>
   } @else {
@@ -49,12 +49,12 @@
     <div class="vp-promo">
       <div class="vp-promo-text">
         <span class="material-icons-outlined">shield</span>
-        <span>Share a number with connections without revealing your real one</span>
+        <span>{{ 'MESSAGES.VIRTUAL_PHONE.COMING_SOON_DESC' | translate }}</span>
       </div>
       <button type="button" class="vp-get-number-btn vp-coming-soon" disabled>
         <span class="material-icons-outlined">add_call</span>
-        <span>Get Private Number</span>
-        <span class="coming-soon-badge">Coming Soon</span>
+        <span>{{ 'MESSAGES.VIRTUAL_PHONE.GET_NUMBER_BUTTON' | translate }}</span>
+        <span class="coming-soon-badge">{{ 'MESSAGES.VIRTUAL_PHONE.COMING_SOON_BADGE' | translate }}</span>
       </button>
     </div>
   }
