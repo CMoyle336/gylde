@@ -25,12 +25,12 @@
             <span class="plan-status">
               @if (subscriptionService.isPremium()) {
                 @if (subscriptionService.pendingCancellation(); as cancellation) {
-                  Cancels {{ cancellation.formattedDate }}
+                  {{ 'SETTINGS.SUBSCRIPTION.CANCELS' | translate:{ date: cancellation.formattedDate } }}
                 } @else {
-                  Active subscription
+                  {{ 'SETTINGS.SUBSCRIPTION.ACTIVE' | translate }}
                 }
               } @else {
-                Free plan
+                {{ 'SETTINGS.SUBSCRIPTION.FREE_PLAN' | translate }}
               }
             </span>
           </div>
@@ -39,9 +39,9 @@
             (click)="handleSubscriptionAction()"
             [class.upgrade]="!subscriptionService.isPremium()">
             @if (subscriptionService.isPremium()) {
-              Manage Plan
+              {{ 'SETTINGS.SUBSCRIPTION.MANAGE_PLAN' | translate }}
             } @else {
-              Upgrade
+              {{ 'SETTINGS.SUBSCRIPTION.UPGRADE' | translate }}
             }
             <mat-icon>arrow_forward</mat-icon>
           </button>
@@ -195,9 +195,9 @@
             <mat-select
               [value]="settings().preferences?.language ?? 'en'"
               (selectionChange)="updateSetting('preferences', 'language', $event.value)">
-              <mat-option value="en">English</mat-option>
-              <mat-option value="nl">Nederlands</mat-option>
-              <mat-option value="de">Deutsch</mat-option>
+              <mat-option value="en">{{ 'SETTINGS.PREFERENCES.LANGUAGE_EN' | translate }}</mat-option>
+              <mat-option value="es">{{ 'SETTINGS.PREFERENCES.LANGUAGE_ES' | translate }}</mat-option>
+              <mat-option value="de">{{ 'SETTINGS.PREFERENCES.LANGUAGE_DE' | translate }}</mat-option>
             </mat-select>
           </mat-form-field>
         </div>
@@ -382,7 +382,7 @@
         
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>{{ 'SETTINGS.DIALOGS.NEW_EMAIL' | translate }}</mat-label>
-          <input matInput type="email" [(ngModel)]="newEmail" placeholder="you@example.com">
+          <input matInput type="email" [(ngModel)]="newEmail" [placeholder]="'SETTINGS.DIALOGS.EMAIL_PLACEHOLDER' | translate">
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="full-width">
@@ -458,26 +458,28 @@
       <div class="warning-box danger">
         <mat-icon>warning</mat-icon>
         <div class="delete-warning-content">
-          <strong>This action is permanent and cannot be undone.</strong>
+          <strong>{{ 'SETTINGS.DIALOGS.DELETE_WARNING_PERMANENT' | translate }}</strong>
           <ul class="delete-list">
-            <li>Your profile and all photos will be deleted</li>
-            <li>All your messages and conversations will be deleted</li>
-            <li>Your matches and favorites will be removed</li>
-            <li>Your account will be permanently removed</li>
+            <li>{{ 'SETTINGS.DIALOGS.DELETE_WARNING_PROFILE' | translate }}</li>
+            <li>{{ 'SETTINGS.DIALOGS.DELETE_WARNING_MESSAGES' | translate }}</li>
+            <li>{{ 'SETTINGS.DIALOGS.DELETE_WARNING_MATCHES' | translate }}</li>
+            <li>{{ 'SETTINGS.DIALOGS.DELETE_WARNING_ACCOUNT' | translate }}</li>
             @if (subscriptionService.isPremium()) {
-              <li><strong>Your premium subscription will be canceled immediately</strong></li>
+              <li><strong>{{ 'SETTINGS.DIALOGS.DELETE_WARNING_SUBSCRIPTION' | translate }}</strong></li>
             }
           </ul>
         </div>
       </div>
 
       <p class="delete-confirm-instruction">
-        Type <strong>DELETE MY ACCOUNT</strong> to confirm:
+        {{ 'SETTINGS.DIALOGS.DELETE_CONFIRM_INSTRUCTION_PREFIX' | translate }}
+        <strong>{{ 'SETTINGS.DIALOGS.DELETE_CONFIRM_PHRASE' | translate }}</strong>
+        {{ 'SETTINGS.DIALOGS.DELETE_CONFIRM_INSTRUCTION_SUFFIX' | translate }}
       </p>
 
       <mat-form-field appearance="outline" class="full-width">
-        <mat-label>Type confirmation</mat-label>
-        <input matInput [(ngModel)]="deleteConfirmation" placeholder="DELETE MY ACCOUNT" autocomplete="off">
+        <mat-label>{{ 'SETTINGS.DIALOGS.DELETE_CONFIRM_LABEL' | translate }}</mat-label>
+        <input matInput [(ngModel)]="deleteConfirmation" [placeholder]="'SETTINGS.DIALOGS.DELETE_CONFIRM_PLACEHOLDER' | translate" autocomplete="off">
       </mat-form-field>
 
       @if (dialogError()) {
@@ -514,8 +516,7 @@
       @if (subscriptionService.isPremium()) {
         <div class="warning-box warning">
           <mat-icon>credit_card</mat-icon>
-          <span>Your premium subscription will be canceled at the end of your current billing period. 
-            If you re-enable your account before then, your subscription will remain active.</span>
+          <span>{{ 'SETTINGS.DIALOGS.DISABLE_SUBSCRIPTION_WARNING' | translate }}</span>
         </div>
       }
 
@@ -658,7 +659,7 @@
         @if (phoneVerificationStep() === 'verify' && dialogLoading()) {
           <div class="verifying-indicator">
             <mat-spinner diameter="20"></mat-spinner>
-            <span>Verifying...</span>
+            <span>{{ 'SETTINGS.DIALOGS.VERIFYING' | translate }}</span>
           </div>
         }
       </div>

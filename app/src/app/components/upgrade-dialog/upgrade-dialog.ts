@@ -7,65 +7,68 @@ import { Functions, httpsCallable } from '@angular/fire/functions';
 import { SubscriptionCapabilities, PREMIUM_FEATURES } from '../../core/interfaces';
 import { SubscriptionService } from '../../core/services/subscription.service';
 import { AnalyticsService } from '../../core/services/analytics.service';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 interface UpgradeDialogData {
   feature?: keyof SubscriptionCapabilities;
 }
 
-const FEATURE_MESSAGES: Partial<Record<keyof SubscriptionCapabilities, { title: string; description: string; icon: string }>> = {
+const FEATURE_MESSAGES: Partial<
+  Record<keyof SubscriptionCapabilities, { titleKey: string; descriptionKey: string; icon: string }>
+> = {
   unlimitedMessaging: {
-    title: 'Unlimited Conversations',
-    description: 'Start unlimited conversations with members of any tier without daily limits.',
+    titleKey: 'UPGRADE_DIALOG.FEATURE_MESSAGES.UNLIMITED_MESSAGING.TITLE',
+    descriptionKey: 'UPGRADE_DIALOG.FEATURE_MESSAGES.UNLIMITED_MESSAGING.DESCRIPTION',
     icon: 'forum',
   },
   canMessageAnyTier: {
-    title: 'No Tier Restrictions',
-    description: 'Start conversations with any member regardless of their reputation tier.',
+    titleKey: 'UPGRADE_DIALOG.FEATURE_MESSAGES.CAN_MESSAGE_ANY_TIER.TITLE',
+    descriptionKey: 'UPGRADE_DIALOG.FEATURE_MESSAGES.CAN_MESSAGE_ANY_TIER.DESCRIPTION',
     icon: 'forum',
   },
   hasAIAssistant: {
-    title: 'AI Assistant',
-    description: 'Get an AI assistant that helps craft your profile and suggests conversation starters.',
+    titleKey: 'UPGRADE_DIALOG.FEATURE_MESSAGES.HAS_AI_ASSISTANT.TITLE',
+    descriptionKey: 'UPGRADE_DIALOG.FEATURE_MESSAGES.HAS_AI_ASSISTANT.DESCRIPTION',
     icon: 'auto_awesome',
   },
   hasVirtualPhone: {
-    title: 'Virtual Phone Number',
-    description: 'Get a private virtual phone number to protect your real number while dating.',
+    titleKey: 'UPGRADE_DIALOG.FEATURE_MESSAGES.HAS_VIRTUAL_PHONE.TITLE',
+    descriptionKey: 'UPGRADE_DIALOG.FEATURE_MESSAGES.HAS_VIRTUAL_PHONE.DESCRIPTION',
     icon: 'phone_android',
   },
   priorityVisibility: {
-    title: 'Priority Visibility',
-    description: 'Appear first in search results and get more matches.',
+    titleKey: 'UPGRADE_DIALOG.FEATURE_MESSAGES.PRIORITY_VISIBILITY.TITLE',
+    descriptionKey: 'UPGRADE_DIALOG.FEATURE_MESSAGES.PRIORITY_VISIBILITY.DESCRIPTION',
     icon: 'trending_up',
   },
   canSeeWhoViewedProfile: {
-    title: 'See Who Viewed You',
-    description: 'See who has been viewing your profile.',
+    titleKey: 'UPGRADE_DIALOG.FEATURE_MESSAGES.CAN_SEE_WHO_VIEWED_PROFILE.TITLE',
+    descriptionKey: 'UPGRADE_DIALOG.FEATURE_MESSAGES.CAN_SEE_WHO_VIEWED_PROFILE.DESCRIPTION',
     icon: 'visibility',
   },
   canSeeWhoFavorited: {
-    title: 'See Who Favorited You',
-    description: 'See who has added you to their favorites.',
+    titleKey: 'UPGRADE_DIALOG.FEATURE_MESSAGES.CAN_SEE_WHO_FAVORITED.TITLE',
+    descriptionKey: 'UPGRADE_DIALOG.FEATURE_MESSAGES.CAN_SEE_WHO_FAVORITED.DESCRIPTION',
     icon: 'favorite',
   },
   maxPhotos: {
-    title: 'Upload More Photos',
-    description: 'Upload up to 20 photos to showcase more of yourself.',
+    titleKey: 'UPGRADE_DIALOG.FEATURE_MESSAGES.MAX_PHOTOS.TITLE',
+    descriptionKey: 'UPGRADE_DIALOG.FEATURE_MESSAGES.MAX_PHOTOS.DESCRIPTION',
     icon: 'photo_library',
   },
   canAccessPrivatePhotos: {
-    title: 'Access Private Photos',
-    description: 'Request and share private photos with your connections.',
+    titleKey: 'UPGRADE_DIALOG.FEATURE_MESSAGES.CAN_ACCESS_PRIVATE_PHOTOS.TITLE',
+    descriptionKey: 'UPGRADE_DIALOG.FEATURE_MESSAGES.CAN_ACCESS_PRIVATE_PHOTOS.DESCRIPTION',
     icon: 'lock_open',
   },
   advancedFilters: {
-    title: 'Advanced Filters',
-    description: 'Use advanced filters like income, education, and more to find your perfect match.',
+    titleKey: 'UPGRADE_DIALOG.FEATURE_MESSAGES.ADVANCED_FILTERS.TITLE',
+    descriptionKey: 'UPGRADE_DIALOG.FEATURE_MESSAGES.ADVANCED_FILTERS.DESCRIPTION',
     icon: 'tune',
   },
   readReceipts: {
-    title: 'Read Receipts',
-    description: 'Know when your messages have been read.',
+    titleKey: 'UPGRADE_DIALOG.FEATURE_MESSAGES.READ_RECEIPTS.TITLE',
+    descriptionKey: 'UPGRADE_DIALOG.FEATURE_MESSAGES.READ_RECEIPTS.DESCRIPTION',
     icon: 'done_all',
   },
 };
@@ -79,6 +82,7 @@ const FEATURE_MESSAGES: Partial<Record<keyof SubscriptionCapabilities, { title: 
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
+    TranslateModule,
   ],
 })
 export class UpgradeDialogComponent {
@@ -87,6 +91,7 @@ export class UpgradeDialogComponent {
   private readonly subscriptionService = inject(SubscriptionService);
   private readonly analytics = inject(AnalyticsService);
   private readonly data = inject<UpgradeDialogData>(MAT_DIALOG_DATA, { optional: true });
+  private readonly translate = inject(TranslateService);
 
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -95,10 +100,10 @@ export class UpgradeDialogComponent {
   protected readonly priceFormatted = computed(() => `$${(this.price().monthly / 100).toFixed(2)}`);
   protected readonly features = PREMIUM_FEATURES;
   
-  protected readonly featureInfo: { title: string; description: string; icon: string } = 
+  protected readonly featureInfo: { titleKey: string; descriptionKey: string; icon: string } = 
     (this.data?.feature && FEATURE_MESSAGES[this.data.feature]) ?? {
-      title: 'Upgrade to Premium',
-      description: 'Unlock all premium features for the best Gylde experience.',
+      titleKey: 'UPGRADE_DIALOG.FEATURE_MESSAGES.GENERAL.TITLE',
+      descriptionKey: 'UPGRADE_DIALOG.FEATURE_MESSAGES.GENERAL.DESCRIPTION',
       icon: 'star',
     };
 
@@ -145,9 +150,9 @@ export class UpgradeDialogComponent {
       console.error('Error creating checkout:', err);
       const error = err as { code?: string; message?: string };
       if (error.code === 'already-exists') {
-        this.error.set(error.message || 'You are already a premium subscriber.');
+        this.error.set(this.translate.instant('UPGRADE_DIALOG.ERRORS.ALREADY_PREMIUM'));
       } else {
-        this.error.set('Failed to start checkout. Please try again.');
+        this.error.set(this.translate.instant('UPGRADE_DIALOG.ERRORS.CHECKOUT_FAILED'));
       }
       this.loading.set(false);
     }

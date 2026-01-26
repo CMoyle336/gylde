@@ -124,7 +124,14 @@ export class MatchesComponent implements OnInit {
       const permission = await this.messageService.canStartConversation(profile.uid);
       
       if (!permission.allowed) {
-        if (permission.reason === 'higher_tier_limit_reached') {
+        if (permission.reason === 'recipient_min_tier_not_met') {
+          const tierLabel = permission.recipientMinTierLabel || 'a higher';
+          this.snackBar.open(
+            `This member accepts messages from ${tierLabel} reputation and above.`,
+            'OK',
+            { duration: 5000, panelClass: 'info-snackbar' }
+          );
+        } else if (permission.reason === 'higher_tier_limit_reached') {
           const tierDisplay = permission.recipientTier 
             ? permission.recipientTier.charAt(0).toUpperCase() + permission.recipientTier.slice(1)
             : 'higher tier';
@@ -198,18 +205,18 @@ export class MatchesComponent implements OnInit {
     return this.favoritedUserIds().has(userId);
   }
 
-  protected getEmptyMessage(): string {
+  protected getEmptyMessageKey(): string {
     switch (this.activeTab()) {
       case 'my-matches':
-        return "You don't have any matches yet. When someone you favorite also favorites you, they'll appear here!";
+        return 'MATCHES.EMPTY.NO_MATCHES';
       case 'favorited-me':
-        return 'No one has favorited you yet. Keep your profile active!';
+        return 'MATCHES.EMPTY.NO_FAVORITES_RECEIVED';
       case 'viewed-me':
-        return 'No one has viewed your profile yet.';
+        return 'MATCHES.EMPTY.NO_VIEWS';
       case 'my-favorites':
-        return "You haven't favorited anyone yet. Explore profiles to find your match!";
+        return 'MATCHES.EMPTY.NO_FAVORITES_SENT';
       case 'my-views':
-        return "You haven't viewed any profiles yet.";
+        return 'MATCHES.EMPTY.NO_PROFILES_VIEWED';
     }
   }
 

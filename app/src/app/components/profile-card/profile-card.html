@@ -1,7 +1,7 @@
 <article class="profile-card" (click)="onView()">
   <div class="card-photo">
     @if (photoUrl) {
-      <img [src]="photoUrl" [alt]="profile().displayName || 'Profile'" class="profile-image" loading="lazy">
+      <img [src]="photoUrl" [attr.alt]="profile().displayName || ('PROFILE_CARD.PHOTO_ALT' | translate)" class="profile-image" loading="lazy">
     } @else {
       <div class="photo-placeholder">
         <mat-icon>person</mat-icon>
@@ -12,19 +12,19 @@
     @if (profile().isOnline) {
       <span class="activity-badge online">
         <span class="activity-dot"></span>
-        Online
+        {{ 'PROFILE_CARD.ONLINE_BADGE' | translate }}
       </span>
     } @else if (profile().showLastActive !== false && profile().lastActiveAt) {
       <span class="activity-badge">
         <span class="activity-dot"></span>
-        {{ formatLastActive(profile().lastActiveAt) }}
+        {{ lastActiveKey(profile().lastActiveAt) | translate:lastActiveParams(profile().lastActiveAt) }}
       </span>
     }
 
     <!-- Interaction Time (for matches page) -->
     @if (showInteractionTime() && profile().interactionDate) {
       <span class="interaction-time">
-        {{ formatLastActive(profile().interactionDate) }}
+        {{ lastActiveKey(profile().interactionDate) | translate:lastActiveParams(profile().interactionDate) }}
       </span>
     }
   </div>
@@ -32,7 +32,7 @@
   <div class="card-content">
     <div class="card-header">
       <h3 class="card-name">
-        {{ profile().displayName || 'Anonymous' }}
+        {{ profile().displayName || ('PROFILE_CARD.ANONYMOUS_NAME' | translate) }}
         @if (profile().age) {
           <span class="card-age">, {{ profile().age }}</span>
         }
@@ -40,7 +40,7 @@
           <app-founder-badge size="small" [iconOnly]="true" />
         }
         @if (isVerified) {
-          <mat-icon class="verified-icon" title="Identity verified">verified</mat-icon>
+          <mat-icon class="verified-icon" [attr.title]="'PROFILE_CARD.IDENTITY_VERIFIED_TOOLTIP' | translate">verified</mat-icon>
         }
         @if (showReputationBadge()) {
           <app-reputation-badge [tier]="reputationTier()" mode="icon" size="small" />
@@ -63,7 +63,7 @@
     @if (profile().connectionTypes?.length) {
       <div class="card-tags">
         @for (type of profile().connectionTypes!.slice(0, 2); track type) {
-          <span class="tag">{{ formatConnectionType(type) }}</span>
+          <span class="tag">{{ ('CONNECTION_TYPES.' + connectionTypeKey(type)) | translate }}</span>
         }
       </div>
     }
@@ -74,7 +74,7 @@
         class="action-btn message"
         [disabled]="messagingLoading()"
         (click)="onMessage(); $event.stopPropagation()"
-        [matTooltip]="'Message ' + (profile().displayName || 'user')">
+        [matTooltip]="'PROFILE_CARD.MESSAGE_TOOLTIP' | translate:{ name: (profile().displayName || ('PROFILE_CARD.USER_FALLBACK' | translate)) }">
         @if (messagingLoading()) {
           <mat-spinner diameter="18"></mat-spinner>
         } @else {
@@ -85,7 +85,7 @@
         type="button" 
         class="action-btn view"
         (click)="onView(); $event.stopPropagation()"
-        matTooltip="View profile">
+        [matTooltip]="'PROFILE_CARD.VIEW_PROFILE_TOOLTIP' | translate">
         <mat-icon>visibility</mat-icon>
       </button>
       <button 
@@ -93,7 +93,7 @@
         class="action-btn favorite"
         [class.favorited]="isFavorited()"
         (click)="onFavorite(); $event.stopPropagation()"
-        [matTooltip]="isFavorited() ? 'Remove from favorites' : 'Add to favorites'">
+        [matTooltip]="(isFavorited() ? 'PROFILE_CARD.REMOVE_FAVORITE_TOOLTIP' : 'PROFILE_CARD.ADD_FAVORITE_TOOLTIP') | translate">
         <mat-icon>{{ isFavorited() ? 'favorite' : 'favorite_border' }}</mat-icon>
       </button>
     </div>

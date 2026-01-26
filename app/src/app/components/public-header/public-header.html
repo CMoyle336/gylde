@@ -2,12 +2,12 @@
   <div class="header-container">
     <a routerLink="/" class="header-logo">Gylde</a>
     
-    <nav class="header-nav" aria-label="Main navigation">
+    <nav class="header-nav" [attr.aria-label]="'HOME.NAV.ARIA_LABEL' | translate">
       @if (isAuthenticated()) {
         <button type="button" class="nav-link" (click)="logout()">
           {{ 'HOME.NAV.LOGOUT' | translate }}
         </button>
-        <a routerLink="/discover" class="btn-primary-sm">Launch</a>
+        <a routerLink="/discover" class="btn-primary-sm">{{ 'HOME.NAV.LAUNCH' | translate }}</a>
       } @else {
         <button type="button" class="nav-link" (click)="onSignIn()">
           {{ 'HOME.NAV.SIGN_IN' | translate }}
@@ -17,11 +17,43 @@
         </button>
       }
 
+      <!-- Language Picker -->
+      <div class="language-picker">
+        <button 
+          type="button" 
+          class="language-toggle"
+          [attr.aria-label]="'HOME.NAV.CHANGE_LANGUAGE_ARIA' | translate"
+          [attr.aria-expanded]="languageDropdownOpen()"
+          (click)="toggleLanguageDropdown()">
+          <span class="material-icons-outlined">language</span>
+          <span class="language-code">{{ languageService.currentLanguage() | uppercase }}</span>
+          <span class="material-icons-outlined dropdown-arrow">
+            {{ languageDropdownOpen() ? 'expand_less' : 'expand_more' }}
+          </span>
+        </button>
+        @if (languageDropdownOpen()) {
+          <div class="language-dropdown">
+            @for (lang of languageService.languages; track lang.code) {
+              <button 
+                type="button" 
+                class="language-option"
+                [class.active]="lang.code === languageService.currentLanguage()"
+                (click)="selectLanguage(lang.code)">
+                <span class="language-native">{{ lang.nativeName }}</span>
+                @if (lang.code === languageService.currentLanguage()) {
+                  <span class="material-icons-outlined check-icon">check</span>
+                }
+              </button>
+            }
+          </div>
+        }
+      </div>
+
       <!-- Theme Toggle -->
       <button 
         type="button" 
         class="theme-toggle"
-        [attr.aria-label]="themeService.isDarkMode() ? 'Switch to light mode' : 'Switch to dark mode'"
+        [attr.aria-label]="(themeService.isDarkMode() ? 'HOME.NAV.SWITCH_TO_LIGHT_ARIA' : 'HOME.NAV.SWITCH_TO_DARK_ARIA') | translate"
         (click)="themeService.toggleTheme()">
         <span class="material-icons-outlined">
           {{ themeService.isDarkMode() ? 'light_mode' : 'dark_mode' }}
@@ -33,7 +65,7 @@
     <button 
       type="button" 
       class="mobile-menu-btn" 
-      aria-label="Open menu"
+      [attr.aria-label]="'HOME.NAV.OPEN_MENU_ARIA' | translate"
       (click)="toggleMobileMenu()">
       <span class="material-icons-outlined">{{ mobileMenuOpen() ? 'close' : 'menu' }}</span>
     </button>
@@ -47,7 +79,7 @@
           <button type="button" class="mobile-nav-link" (click)="logout()">
             {{ 'HOME.NAV.LOGOUT' | translate }}
           </button>
-          <a routerLink="/discover" class="btn-primary mobile-btn" (click)="closeMobileMenu()">Launch</a>
+          <a routerLink="/discover" class="btn-primary mobile-btn" (click)="closeMobileMenu()">{{ 'HOME.NAV.LAUNCH' | translate }}</a>
         } @else {
           <button type="button" class="mobile-nav-link" (click)="onSignIn()">
             {{ 'HOME.NAV.SIGN_IN' | translate }}
@@ -57,6 +89,22 @@
           </button>
         }
 
+        <!-- Mobile Language Picker -->
+        <div class="mobile-language-picker">
+          <span class="mobile-picker-label">{{ 'HOME.NAV.LANGUAGE' | translate }}</span>
+          <div class="mobile-language-options">
+            @for (lang of languageService.languages; track lang.code) {
+              <button 
+                type="button" 
+                class="mobile-language-option"
+                [class.active]="lang.code === languageService.currentLanguage()"
+                (click)="selectLanguage(lang.code)">
+                {{ lang.nativeName }}
+              </button>
+            }
+          </div>
+        </div>
+
         <!-- Mobile Theme Toggle -->
         <button 
           type="button" 
@@ -65,7 +113,7 @@
           <span class="material-icons-outlined">
             {{ themeService.isDarkMode() ? 'light_mode' : 'dark_mode' }}
           </span>
-          {{ themeService.isDarkMode() ? 'Light Mode' : 'Dark Mode' }}
+          {{ themeService.isDarkMode() ? ('HOME.NAV.LIGHT_MODE' | translate) : ('HOME.NAV.DARK_MODE' | translate) }}
         </button>
       </nav>
     </div>

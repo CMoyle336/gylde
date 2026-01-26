@@ -9,7 +9,7 @@
   @if (!message.isOwn) {
     <div class="message-avatar">
       @if (message.senderPhoto) {
-        <img [src]="message.senderPhoto" [alt]="message.senderName || 'User'" class="avatar-img">
+        <img [src]="message.senderPhoto" [attr.alt]="message.senderName || ('MESSAGES.BUBBLE.USER_ALT' | translate)" class="avatar-img">
       } @else {
         <div class="avatar-placeholder">
           <span class="material-icons-outlined">person</span>
@@ -23,13 +23,13 @@
     @if (message.isDeletedForMe) {
       <div class="bubble deleted-bubble">
         <span class="material-icons-outlined deleted-icon">block</span>
-        <span class="deleted-text">You deleted this message</span>
+        <span class="deleted-text">{{ 'MESSAGES.BUBBLE.DELETED_BY_ME' | translate }}</span>
       </div>
     }
     @else if (message.isDeletedForAll) {
       <div class="bubble deleted-bubble">
         <span class="material-icons-outlined deleted-icon">block</span>
-        <span class="deleted-text">{{ message.isOwn ? 'You deleted this message' : 'This message was deleted' }}</span>
+        <span class="deleted-text">{{ message.isOwn ? ('MESSAGES.BUBBLE.DELETED_BY_ME' | translate) : ('MESSAGES.BUBBLE.DELETED_BY_OTHER' | translate) }}</span>
       </div>
     }
     <!-- Image message -->
@@ -45,7 +45,7 @@
           @if (isTimedImageExpired()) {
             <div class="expired-image-placeholder">
               <span class="material-icons-outlined">timer_off</span>
-              <span>Image expired</span>
+              <span>{{ 'MESSAGES.BUBBLE.IMAGE_EXPIRED' | translate }}</span>
             </div>
           }
           <!-- Timed image - show placeholder instead of thumbnail -->
@@ -55,8 +55,8 @@
                 <span class="material-icons-outlined">photo_camera</span>
                 <span class="material-icons-outlined timer-overlay">timer</span>
               </div>
-              <span class="tap-to-view">Tap to view</span>
-              <span class="timer-duration">{{ message.imageTimer }}s</span>
+              <span class="tap-to-view">{{ 'MESSAGES.BUBBLE.TAP_TO_VIEW' | translate }}</span>
+              <span class="timer-duration">{{ message.imageTimer }}{{ 'MESSAGES.BUBBLE.SECONDS_SUFFIX' | translate }}</span>
             </button>
           }
           <!-- Sender's timed image - show thumbnail with status -->
@@ -64,7 +64,7 @@
             <div class="sender-timed-image">
               <div class="image-grid single">
                 <button type="button" class="image-item" (click)="onOpenGallery(message.imageUrls!, 0, $event)">
-                  <img [src]="message.imageUrls![0]" alt="Shared image" width="400" height="300" loading="lazy">
+                  <img [src]="message.imageUrls![0]" [attr.alt]="'MESSAGES.BUBBLE.SHARED_IMAGE_ALT' | translate" width="400" height="300" loading="lazy">
                   <!-- Status overlay -->
                   <div class="sender-status-overlay" 
                        [class.waiting]="!message.recipientViewedAt"
@@ -72,15 +72,15 @@
                        [class.viewed]="message.recipientViewedAt && isExpiredNow()">
                     @if (!message.recipientViewedAt) {
                       <span class="material-icons-outlined">visibility_off</span>
-                      <span>Not opened</span>
+                      <span>{{ 'MESSAGES.BUBBLE.NOT_OPENED' | translate }}</span>
                     }
                     @else if (message.isRecipientViewing && !isExpiredNow()) {
                       <span class="material-icons-outlined">visibility</span>
-                      <span class="countdown-live">{{ senderCountdown }}s</span>
+                      <span class="countdown-live">{{ senderCountdown }}{{ 'MESSAGES.BUBBLE.SECONDS_SUFFIX' | translate }}</span>
                     }
                     @else if (message.recipientViewedAt && isExpiredNow()) {
                       <span class="material-icons-outlined">done_all</span>
-                      <span>Opened {{ formatMessageTime(message.recipientViewedAt!) }}</span>
+                      <span>{{ 'MESSAGES.BUBBLE.OPENED_TIME' | translate:{ time: formatMessageTime(message.recipientViewedAt!) } }}</span>
                     }
                   </div>
                 </button>
@@ -92,7 +92,7 @@
             <div class="image-grid" [class.single]="message.imageUrls!.length === 1" [class.grid-2]="message.imageUrls!.length === 2" [class.grid-many]="message.imageUrls!.length > 2">
               @for (imageUrl of message.imageUrls; track imageUrl; let idx = $index) {
                 <button type="button" class="image-item" (click)="onOpenGallery(message.imageUrls!, idx, $event)">
-                  <img [src]="imageUrl" alt="Shared image" [width]="message.imageUrls!.length === 1 ? 400 : 200" [height]="message.imageUrls!.length === 1 ? 300 : 150" loading="lazy">
+                  <img [src]="imageUrl" [attr.alt]="'MESSAGES.BUBBLE.SHARED_IMAGE_ALT' | translate" [width]="message.imageUrls!.length === 1 ? 400 : 200" [height]="message.imageUrls!.length === 1 ? 300 : 150" loading="lazy">
                 </button>
               }
             </div>
@@ -119,12 +119,12 @@
         <mat-menu #messageMenu="matMenu" class="message-actions-menu">
           <button mat-menu-item (click)="onDeleteForMe()">
             <span class="material-icons-outlined">delete</span>
-            <span>Delete for me</span>
+            <span>{{ 'MESSAGES.BUBBLE.DELETE_FOR_ME' | translate }}</span>
           </button>
           @if (message.isOwn) {
             <button mat-menu-item (click)="onDeleteForEveryone()" class="delete-everyone">
               <span class="material-icons-outlined">delete_forever</span>
-              <span>Delete for everyone</span>
+              <span>{{ 'MESSAGES.BUBBLE.DELETE_FOR_EVERYONE' | translate }}</span>
             </button>
           }
         </mat-menu>
@@ -157,12 +157,12 @@
         <mat-menu #messageMenu="matMenu" class="message-actions-menu">
           <button mat-menu-item (click)="onDeleteForMe()">
             <span class="material-icons-outlined">delete</span>
-            <span>Delete for me</span>
+            <span>{{ 'MESSAGES.BUBBLE.DELETE_FOR_ME' | translate }}</span>
           </button>
           @if (message.isOwn) {
             <button mat-menu-item (click)="onDeleteForEveryone()" class="delete-everyone">
               <span class="material-icons-outlined">delete_forever</span>
-              <span>Delete for everyone</span>
+              <span>{{ 'MESSAGES.BUBBLE.DELETE_FOR_EVERYONE' | translate }}</span>
             </button>
           }
         </mat-menu>

@@ -115,6 +115,15 @@ export interface UserSettings {
     theme?: 'light' | 'dark' | 'system'; // App theme
   };
 
+  // Messaging preferences
+  messaging?: {
+    /**
+     * Minimum reputation tier required for someone to start a conversation with you.
+     * This does not affect existing conversations.
+     */
+    minReputationTierToMessageMe?: ReputationTier;
+  };
+
   // Account status
   account?: {
     disabled?: boolean; // Account is temporarily disabled

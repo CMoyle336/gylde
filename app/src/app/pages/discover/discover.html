@@ -8,7 +8,7 @@
         [class.active]="showFilters()"
         (click)="toggleFilters()">
         <mat-icon>tune</mat-icon>
-        <span>Filters</span>
+        <span>{{ 'DISCOVER.FILTERS_BUTTON' | translate }}</span>
         @if (activeFilterCount() > 0) {
           <span class="filter-count">{{ activeFilterCount() }}</span>
         }
@@ -20,16 +20,16 @@
         class="sort-btn"
         [matMenuTriggerFor]="sortMenu">
         <mat-icon>sort</mat-icon>
-        <span>{{ getSortLabel() }}</span>
+        <span>{{ getSortLabelKey() | translate }}</span>
         <mat-icon class="dropdown-icon">expand_more</mat-icon>
       </button>
       <mat-menu #sortMenu="matMenu">
-        @for (option of sortOptions; track option.label) {
+        @for (option of sortOptions; track option.labelKey) {
           <button 
             mat-menu-item 
             (click)="setSort(option.value)"
             [class.selected]="isSortActive(option.value)">
-            {{ option.label }}
+            {{ option.labelKey | translate }}
             @if (isSortActive(option.value)) {
               <mat-icon>check</mat-icon>
             }
@@ -45,7 +45,7 @@
         class="refresh-btn"
         (click)="refresh()"
         [disabled]="loading()"
-        matTooltip="Refresh results">
+        [matTooltip]="'DISCOVER.REFRESH_TOOLTIP' | translate">
         <mat-icon [class.spinning]="loading()">refresh</mat-icon>
       </button>
 
@@ -55,7 +55,7 @@
         class="views-btn"
         [matMenuTriggerFor]="viewsMenu">
         <mat-icon>bookmark</mat-icon>
-        <span class="views-label">{{ activeView()?.name || 'Views' }}</span>
+        <span class="views-label">{{ activeView()?.name || ('DISCOVER.VIEWS_LABEL' | translate) }}</span>
         <mat-icon class="dropdown-icon">expand_more</mat-icon>
       </button>
       <mat-menu #viewsMenu="matMenu">
@@ -70,19 +70,19 @@
         }
         <button mat-menu-item (click)="openSaveViewDialog()">
           <mat-icon>add</mat-icon>
-          Save Current View
+          {{ 'DISCOVER.SAVE_VIEW_MENU' | translate }}
         </button>
         @if (savedViews().length > 0) {
           <button mat-menu-item (click)="openManageViewsDialog()">
             <mat-icon>settings</mat-icon>
-            Manage Views
+            {{ 'DISCOVER.MANAGE_VIEWS_MENU' | translate }}
           </button>
         }
       </mat-menu>
 
       <span class="results-count">
         @if (totalEstimate()) {
-          {{ totalEstimate() }} results
+          {{ 'DISCOVER.RESULTS_COUNT' | translate:{ count: totalEstimate() } }}
         }
       </span>
     </div>
@@ -123,11 +123,11 @@
     <!-- Empty State (only shown after initialization) -->
     <div class="empty-state">
       <mat-icon class="empty-icon">search_off</mat-icon>
-      <h3>No profiles found</h3>
-      <p>Try adjusting your filters or check back later.</p>
+      <h3>{{ 'DISCOVER.EMPTY_TITLE' | translate }}</h3>
+      <p>{{ 'DISCOVER.EMPTY_SUBTITLE' | translate }}</p>
       <button mat-stroked-button color="primary" (click)="resetFilters(); applyFilters()">
         <mat-icon>refresh</mat-icon>
-        Reset Filters
+        {{ 'DISCOVER.RESET_FILTERS_BUTTON' | translate }}
       </button>
     </div>
   } @else {
@@ -151,7 +151,7 @@
           @if (loading()) {
             <mat-spinner diameter="20"></mat-spinner>
           } @else {
-            Load More
+            {{ 'DISCOVER.LOAD_MORE' | translate }}
           }
         </button>
       </div>

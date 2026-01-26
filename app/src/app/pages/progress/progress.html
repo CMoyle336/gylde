@@ -33,30 +33,29 @@
           </svg>
           <div class="score-content">
             <span class="score-value">{{ profileProgress() }}%</span>
-            <span class="score-label">Complete</span>
+            <span class="score-label">{{ 'PROGRESS_PAGE.SCORE_LABEL' | translate }}</span>
           </div>
         </div>
 
         <div class="hero-info">
-          <h1 class="hero-title">Profile Progress</h1>
+          <h1 class="hero-title">{{ 'PROGRESS_PAGE.TITLE' | translate }}</h1>
           <div class="trust-level" [style.color]="progressLevel().color">
             <span class="material-icons-outlined">{{ 
               profileProgress() >= 80 ? 'verified' : 
               profileProgress() >= 50 ? 'trending_up' : 'edit_note' 
             }}</span>
-            {{ progressLevel().label }}
+            {{ progressLevel().labelKey | translate }}
           </div>
           <p class="hero-description">
             @if (isPremium()) {
-              As a Premium member, you have access to AI assistance for your profile and conversations, plus a private virtual phone number.
+              {{ 'PROGRESS_PAGE.DESCRIPTION.PREMIUM' | translate }}
             } @else {
-              Complete your profile to stand out and make meaningful connections. 
-              A complete profile helps others know you're serious about dating.
+              {{ 'PROGRESS_PAGE.DESCRIPTION.FREE' | translate }}
             }
           </p>
           <div class="progress-summary">
             <span class="material-icons-outlined">task_alt</span>
-            <span>{{ completedTasks() }} of {{ totalTasks() }} items completed</span>
+            <span>{{ 'PROGRESS_PAGE.SUMMARY.COMPLETED' | translate:{ completed: completedTasks(), total: totalTasks() } }}</span>
           </div>
         </div>
       </div>
@@ -71,7 +70,7 @@
               <span class="material-icons-outlined">{{ category.icon }}</span>
             </div>
             <div class="category-info">
-              <h2 class="category-title">{{ category.name }}</h2>
+              <h2 class="category-title">{{ category.name | translate }}</h2>
               <div class="category-progress">
                 <div class="progress-bar">
                   <div 
@@ -79,7 +78,9 @@
                     [style.width.%]="(category.earnedPoints / category.maxPoints) * 100"
                   ></div>
                 </div>
-                <span class="progress-text">{{ category.earnedPoints }}/{{ category.maxPoints }} pts</span>
+                <span class="progress-text">
+                  {{ 'PROGRESS_PAGE.POINTS.CATEGORY' | translate:{ earned: category.earnedPoints, max: category.maxPoints } }}
+                </span>
               </div>
             </div>
           </div>
@@ -95,18 +96,18 @@
                   }
                 </div>
                 <div class="task-content">
-                  <span class="task-title">{{ task.name }}</span>
-                  <p class="task-description">{{ task.description }}</p>
+                  <span class="task-title">{{ task.name | translate }}</span>
+                  <p class="task-description">{{ task.description | translate }}</p>
                 </div>
                 <div class="task-actions">
                   <span class="task-points" [class.earned]="task.completed">
-                    +{{ task.points }} pts
+                    {{ 'PROGRESS_PAGE.POINTS.TASK' | translate:{ points: task.points } }}
                   </span>
                   @if (!task.completed && task.action) {
                     <button 
                       class="task-action-btn"
                       (click)="onTaskAction(task)">
-                      {{ task.action }}
+                      {{ task.action | translate }}
                     </button>
                   }
                 </div>
@@ -122,11 +123,9 @@
       <div class="info-card">
         <span class="material-icons-outlined info-icon">info</span>
         <div class="info-content">
-          <h3>Why Complete Your Profile?</h3>
+          <h3>{{ 'PROGRESS_PAGE.INFO.TITLE' | translate }}</h3>
           <p>
-            A complete profile helps you stand out and shows others you're serious 
-            about making real connections. Verified members with detailed profiles 
-            are more likely to receive messages and get quality matches.
+            {{ 'PROGRESS_PAGE.INFO.BODY' | translate }}
           </p>
         </div>
       </div>

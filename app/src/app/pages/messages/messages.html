@@ -47,11 +47,11 @@
         <div class="upgrade-prompt">
           <div class="upgrade-content">
             <span class="material-icons-outlined upgrade-icon">lock</span>
-            <h3>Upgrade to Message</h3>
-            <p>You've received a message! Upgrade your plan to read and reply to messages.</p>
+            <h3>{{ 'MESSAGES.UPGRADE_TITLE' | translate }}</h3>
+            <p>{{ 'MESSAGES.UPGRADE_DESCRIPTION' | translate }}</p>
             <button class="upgrade-btn" (click)="onUpgradeClicked()">
               <span class="material-icons-outlined">arrow_upward</span>
-              View Plans
+              {{ 'MESSAGES.VIEW_PLANS_BUTTON' | translate }}
             </button>
           </div>
         </div>
@@ -61,7 +61,7 @@
           <div class="messages-scroll empty-state">
             <div class="start-chat">
               <span class="material-icons-outlined">waving_hand</span>
-              <p>Start the conversation!</p>
+              <p>{{ 'MESSAGES.START_CONVERSATION' | translate }}</p>
             </div>
           </div>
         } @else {
@@ -70,12 +70,12 @@
           @if (loadingOlderMessages()) {
             <div class="loading-older">
               <div class="loading-spinner small"></div>
-              <span>Loading older messages...</span>
+              <span>{{ 'MESSAGES.LOADING_OLDER' | translate }}</span>
             </div>
           } @else if (hasOlderMessages()) {
             <div class="load-more-hint">
               <span class="material-icons-outlined">expand_less</span>
-              <span>Scroll up for more</span>
+              <span>{{ 'MESSAGES.SCROLL_UP_HINT' | translate }}</span>
             </div>
           }
           
@@ -123,20 +123,20 @@
             <div class="alert-content">
               @switch (blocked.reason) {
                 @case ('daily_limit_reached') {
-                  <h4>Daily Limit Reached</h4>
-                  <p>You've used all your messages for today. Your limit resets at midnight.</p>
+                  <h4>{{ 'MESSAGES.RESTRICTION.DAILY_LIMIT_TITLE' | translate }}</h4>
+                  <p>{{ 'MESSAGES.RESTRICTION.DAILY_LIMIT_DESC' | translate }}</p>
                 }
                 @case ('tier_restriction') {
-                  <h4>Improve Your Reputation</h4>
-                  <p>Build your reputation to unlock messaging with this user. Complete your profile and verify your identity to get started.</p>
+                  <h4>{{ 'MESSAGES.RESTRICTION.TIER_TITLE' | translate }}</h4>
+                  <p>{{ 'MESSAGES.RESTRICTION.TIER_DESC' | translate }}</p>
                 }
                 @case ('blocked') {
-                  <h4>Cannot Message</h4>
-                  <p>You cannot exchange messages with this user.</p>
+                  <h4>{{ 'MESSAGES.RESTRICTION.BLOCKED_TITLE' | translate }}</h4>
+                  <p>{{ 'MESSAGES.RESTRICTION.BLOCKED_DESC' | translate }}</p>
                 }
                 @default {
-                  <h4>Unable to Send</h4>
-                  <p>Unable to send messages at this time.</p>
+                  <h4>{{ 'MESSAGES.RESTRICTION.DEFAULT_TITLE' | translate }}</h4>
+                  <p>{{ 'MESSAGES.RESTRICTION.DEFAULT_DESC' | translate }}</p>
                 }
               }
             </div>
@@ -148,7 +148,7 @@
             @if (remaining > 0 && remaining <= 3) {
               <div class="message-limit-warning">
                 <span class="material-icons-outlined">info</span>
-                <span>{{ remaining }} message{{ remaining === 1 ? '' : 's' }} remaining today</span>
+                <span>{{ 'MESSAGES.REMAINING_MESSAGES' | translate:{ count: remaining } }}</span>
               </div>
             }
           }
@@ -169,8 +169,8 @@
       <!-- No chat selected (desktop only) -->
       <div class="no-chat">
         <span class="material-icons-outlined">forum</span>
-        <h3>Select a conversation</h3>
-        <p>Choose someone to chat with</p>
+        <h3>{{ 'MESSAGES.NO_CHAT_SELECTED_TITLE' | translate }}</h3>
+        <p>{{ 'MESSAGES.NO_CHAT_SELECTED_SUBTITLE' | translate }}</p>
       </div>
     }
   </main>

@@ -2,7 +2,7 @@
   <!-- Unified Header with Filters -->
   <div class="list-header">
     <div class="header-row">
-      <h2>Chats</h2>
+      <h2>{{ 'MESSAGES.CONVERSATION_LIST.CHATS_TITLE' | translate }}</h2>
       @if (totalUnreadCount > 0) {
         <span class="header-badge">{{ totalUnreadCount }}</span>
       }
@@ -16,18 +16,18 @@
           panelClass="chat-filter-panel">
           <mat-option value="all">
             <mat-icon>chat_bubble_outline</mat-icon>
-            <span>All chats</span>
+            <span>{{ 'MESSAGES.CONVERSATION_LIST.ALL_CHATS' | translate }}</span>
           </mat-option>
           <mat-option value="unread">
             <mat-icon>mark_email_unread</mat-icon>
-            <span>Unread</span>
+            <span>{{ 'MESSAGES.CONVERSATION_LIST.UNREAD' | translate }}</span>
             @if (totalUnreadCount > 0) {
               <span class="option-badge">{{ totalUnreadCount }}</span>
             }
           </mat-option>
           <mat-option value="archived">
             <mat-icon>inventory_2</mat-icon>
-            <span>Archived</span>
+            <span>{{ 'MESSAGES.CONVERSATION_LIST.ARCHIVED' | translate }}</span>
             @if (archivedCount > 0) {
               <span class="option-badge muted">{{ archivedCount }}</span>
             }
@@ -42,13 +42,13 @@
           panelClass="chat-filter-panel reputation-filter-panel">
           <mat-option value="">
             <mat-icon>people</mat-icon>
-            <span>Any member</span>
+            <span>{{ 'MESSAGES.CONVERSATION_LIST.ANY_MEMBER' | translate }}</span>
           </mat-option>
           @for (tier of tierFilterOptions; track tier.value) {
             @if (tier.value) {
               <mat-option [value]="tier.value">
                 <mat-icon [style.color]="tier.color">{{ tier.icon }}</mat-icon>
-                <span>{{ tier.label }}</span>
+                <span>{{ tier.label | translate }}</span>
               </mat-option>
             }
           }
@@ -62,16 +62,16 @@
     @if (loading) {
       <div class="loading-state">
         <div class="loading-spinner"></div>
-        <span>Loading...</span>
+        <span>{{ 'MESSAGES.CONVERSATION_LIST.LOADING' | translate }}</span>
       </div>
     } @else if (conversations.length === 0) {
       <div class="empty-state">
         <span class="material-icons-outlined">{{ getStatusIcon() }}</span>
         @if (reputationFilter || conversationFilter !== 'all') {
-          <p>No chats match your filters</p>
-          <button type="button" class="show-all-btn" (click)="clearFilters()">Clear filters</button>
+          <p>{{ 'MESSAGES.CONVERSATION_LIST.NO_MATCHES' | translate }}</p>
+          <button type="button" class="show-all-btn" (click)="clearFilters()">{{ 'MESSAGES.CONVERSATION_LIST.CLEAR_FILTERS_BUTTON' | translate }}</button>
         } @else {
-          <p>No conversations yet</p>
+          <p>{{ 'MESSAGES.CONVERSATION_LIST.EMPTY_STATE' | translate }}</p>
         }
       </div>
     } @else {
@@ -85,12 +85,12 @@
           (click)="onConversationClick(conversation)">
           <div class="conversation-avatar">
             @if (conversation.otherUser.photoURL) {
-              <img [src]="conversation.otherUser.photoURL" [alt]="conversation.otherUser.displayName || 'User'" class="avatar-image">
+              <img [src]="conversation.otherUser.photoURL" [attr.alt]="conversation.otherUser.displayName || ('MESSAGES.CONVERSATION_LIST.USER_ALT' | translate)" class="avatar-image">
             } @else {
               <span class="material-icons-outlined avatar-placeholder">person</span>
             }
             @if (conversation.isBlocked) {
-              <span class="blocked-indicator" title="Blocked">
+              <span class="blocked-indicator" [attr.title]="'MESSAGES.CONVERSATION_LIST.BLOCKED_TOOLTIP' | translate">
                 <span class="material-icons-outlined">block</span>
               </span>
             } @else if (conversation.unreadCount > 0) {
@@ -99,16 +99,16 @@
           </div>
           <div class="conversation-info">
             <div class="conversation-name-row">
-              <span class="conversation-name">{{ conversation.otherUser.displayName || 'Unknown' }}</span>
+              <span class="conversation-name">{{ conversation.otherUser.displayName || ('MESSAGES.CONVERSATION_LIST.UNKNOWN_USER' | translate) }}</span>
               @if (shouldShowBadge(conversation.otherUser.reputationTier)) {
                 <app-reputation-badge [tier]="getReputationTier(conversation.otherUser.reputationTier)" mode="icon" size="small"></app-reputation-badge>
               }
             </div>
             <span class="conversation-preview">
               @if (conversation.isBlocked) {
-                <span class="blocked-text">Blocked</span>
+                <span class="blocked-text">{{ 'MESSAGES.CONVERSATION_LIST.BLOCKED_TEXT' | translate }}</span>
               } @else {
-                {{ conversation.lastMessage || 'New chat' }}
+                {{ conversation.lastMessage || ('MESSAGES.CONVERSATION_LIST.NEW_CHAT' | translate) }}
               }
             </span>
           </div>

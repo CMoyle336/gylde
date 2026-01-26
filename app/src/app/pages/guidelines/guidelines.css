@@ -55,7 +55,8 @@
 /* Hero Section */
 .hero-section {
   background-color: var(--color-bg-secondary);
-  padding: 4rem 2rem;
+  /* Offset for fixed `app-public-header` */
+  padding: 10rem 2rem 6rem;
   text-align: center;
 }
 
@@ -395,7 +396,8 @@
   }
 
   .hero-section {
-    padding: 3rem 1rem;
+    /* Keep content clear of fixed header on mobile */
+    padding: 7.5rem 1rem 3rem;
   }
 
   .hero-title {

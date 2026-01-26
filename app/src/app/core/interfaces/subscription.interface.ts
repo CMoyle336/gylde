@@ -113,11 +113,11 @@ export const SUBSCRIPTION_PRICE = {
  * Premium features list for display
  */
 export const PREMIUM_FEATURES = [
-  { id: 'private-photos', label: 'Request & view private photos', icon: 'lock_open' },
-  { id: 'advanced-filters', label: 'Advanced discovery filters', icon: 'tune' },
-  { id: 'who-viewed', label: 'See who viewed your profile', icon: 'visibility' },
-  { id: 'who-favorited', label: 'See who favorited you', icon: 'favorite' },
-  { id: 'ai', label: 'AI assistant for profile & chat', icon: 'auto_awesome' },
-  { id: 'phone', label: 'Virtual phone number', icon: 'phone_android' },
-  { id: 'read-receipts', label: 'Read receipts', icon: 'done_all' },
+  { id: 'private-photos', labelKey: 'UPGRADE_DIALOG.PREMIUM_FEATURES.PRIVATE_PHOTOS', icon: 'lock_open' },
+  { id: 'advanced-filters', labelKey: 'UPGRADE_DIALOG.PREMIUM_FEATURES.ADVANCED_FILTERS', icon: 'tune' },
+  { id: 'who-viewed', labelKey: 'UPGRADE_DIALOG.PREMIUM_FEATURES.WHO_VIEWED', icon: 'visibility' },
+  { id: 'who-favorited', labelKey: 'UPGRADE_DIALOG.PREMIUM_FEATURES.WHO_FAVORITED', icon: 'favorite' },
+  { id: 'ai', labelKey: 'UPGRADE_DIALOG.PREMIUM_FEATURES.AI', icon: 'auto_awesome' },
+  { id: 'phone', labelKey: 'UPGRADE_DIALOG.PREMIUM_FEATURES.PHONE', icon: 'phone_android' },
+  { id: 'read-receipts', labelKey: 'UPGRADE_DIALOG.PREMIUM_FEATURES.READ_RECEIPTS', icon: 'done_all' },
 ] as const;

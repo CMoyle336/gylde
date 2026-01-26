@@ -436,28 +436,28 @@ export class DiscoveryService {
   ];
 
   readonly distanceOptions = [
-    { value: 10, label: 'Within 10 mi' },
-    { value: 25, label: 'Within 25 mi' },
-    { value: 50, label: 'Within 50 mi' },
-    { value: 100, label: 'Within 100 mi' },
-    { value: 250, label: 'Within 250 mi' },
-    { value: null, label: 'Any distance' },
+    { value: 10, labelKey: 'DISCOVER.FILTER_PANEL.DISTANCE.WITHIN_MI', labelParams: { miles: 10 } },
+    { value: 25, labelKey: 'DISCOVER.FILTER_PANEL.DISTANCE.WITHIN_MI', labelParams: { miles: 25 } },
+    { value: 50, labelKey: 'DISCOVER.FILTER_PANEL.DISTANCE.WITHIN_MI', labelParams: { miles: 50 } },
+    { value: 100, labelKey: 'DISCOVER.FILTER_PANEL.DISTANCE.WITHIN_MI', labelParams: { miles: 100 } },
+    { value: 250, labelKey: 'DISCOVER.FILTER_PANEL.DISTANCE.WITHIN_MI', labelParams: { miles: 250 } },
+    { value: null, labelKey: 'DISCOVER.FILTER_PANEL.DISTANCE.ANY', labelParams: {} },
   ];
 
-  readonly sortOptions: { value: DiscoverySort; label: string }[] = [
-    { value: { field: 'lastActive', direction: 'desc' }, label: 'Recently Active' },
-    { value: { field: 'distance', direction: 'asc' }, label: 'Nearest' },
-    { value: { field: 'newest', direction: 'desc' }, label: 'Newest Profiles' },
-    { value: { field: 'reputation', direction: 'desc' }, label: 'Prioritize Trusted' },
-    { value: { field: 'age', direction: 'asc' }, label: 'Age (Youngest)' },
-    { value: { field: 'age', direction: 'desc' }, label: 'Age (Oldest)' },
+  readonly sortOptions: { value: DiscoverySort; labelKey: string }[] = [
+    { value: { field: 'lastActive', direction: 'desc' }, labelKey: 'DISCOVER.SORT_OPTIONS.RECENTLY_ACTIVE' },
+    { value: { field: 'distance', direction: 'asc' }, labelKey: 'DISCOVER.SORT_OPTIONS.NEAREST' },
+    { value: { field: 'newest', direction: 'desc' }, labelKey: 'DISCOVER.SORT_OPTIONS.NEWEST' },
+    { value: { field: 'reputation', direction: 'desc' }, labelKey: 'DISCOVER.SORT_OPTIONS.PRIORITIZE_TRUSTED' },
+    { value: { field: 'age', direction: 'asc' }, labelKey: 'DISCOVER.SORT_OPTIONS.AGE_YOUNGEST' },
+    { value: { field: 'age', direction: 'desc' }, labelKey: 'DISCOVER.SORT_OPTIONS.AGE_OLDEST' },
   ];
 
   // Reputation filter options - "X and above" style, not exclusion
-  readonly reputationTierOptions: { value: string | null; label: string }[] = [
-    { value: null, label: 'All members' },
-    { value: 'active', label: 'Active and above' },
-    { value: 'established', label: 'Established and above' },
-    { value: 'trusted', label: 'Trusted and above' },
+  readonly reputationTierOptions: { value: string | null; labelKey: string }[] = [
+    { value: null, labelKey: 'DISCOVER.FILTER_PANEL.REPUTATION_TIERS.ALL_MEMBERS' },
+    { value: 'active', labelKey: 'DISCOVER.FILTER_PANEL.REPUTATION_TIERS.ACTIVE_PLUS' },
+    { value: 'established', labelKey: 'DISCOVER.FILTER_PANEL.REPUTATION_TIERS.ESTABLISHED_PLUS' },
+    { value: 'trusted', labelKey: 'DISCOVER.FILTER_PANEL.REPUTATION_TIERS.TRUSTED_PLUS' },
   ];
 }

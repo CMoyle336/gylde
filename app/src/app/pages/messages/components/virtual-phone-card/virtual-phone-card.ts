@@ -8,6 +8,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { TranslateModule } from '@ngx-translate/core';
 import { VirtualPhone } from '../../../../core/interfaces';
 
 @Component({
@@ -15,7 +16,7 @@ import { VirtualPhone } from '../../../../core/interfaces';
   templateUrl: './virtual-phone-card.html',
   styleUrl: './virtual-phone-card.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, TranslateModule],
 })
 export class VirtualPhoneCardComponent {
   @Input() virtualPhone: VirtualPhone | null = null;

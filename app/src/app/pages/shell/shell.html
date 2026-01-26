@@ -24,18 +24,18 @@
         routerLink="/progress"
         class="sidebar-profile"
         (click)="onNavItemClick({ id: 'progress', path: '/progress' })"
-        [matTooltip]="'Profile Progress'"
+        [matTooltip]="'DASHBOARD.SIDEBAR.PROFILE_PROGRESS' | translate"
         [matTooltipDisabled]="sidenavExpanded()"
         matTooltipPosition="right">
         <div class="profile-avatar">
           @if (userPhotoURL()) {
-            <img [src]="userPhotoURL()" alt="Your profile" class="avatar-image">
+            <img [src]="userPhotoURL()" [attr.alt]="'DASHBOARD.SIDEBAR.YOUR_PROFILE_ALT' | translate" class="avatar-image">
           } @else {
             <span class="material-icons-outlined">person</span>
           }
         </div>
         <div class="profile-info">
-          <span class="profile-name">{{ currentUser()?.displayName || 'Your Profile' }}</span>
+          <span class="profile-name">{{ currentUser()?.displayName || ('DASHBOARD.SIDEBAR.YOUR_PROFILE' | translate) }}</span>
           <div class="profile-completion-mini">
             <div class="completion-bar-mini">
               <div class="completion-fill-mini" [style.width.%]="profileProgress()"></div>
@@ -66,7 +66,7 @@
             } @else if (item.id === 'matches' && matchesBadgeCount() > 0) {
               <span class="nav-badge">{{ matchesBadgeCount() }}</span>
             } @else if (item.badge === 'soon') {
-              <span class="nav-badge coming-soon">Soon</span>
+              <span class="nav-badge coming-soon">{{ 'DASHBOARD.SIDEBAR.SOON_BADGE' | translate }}</span>
             }
           </a>
         }
@@ -119,13 +119,13 @@
               <div class="activity-content">
                 <span class="activity-text">
                   @switch (activity.type) {
-                    @case ('match') { Matched with {{ activity.name }} }
-                    @case ('message') { {{ activity.name }} messaged you }
-                    @case ('favorite') { {{ activity.name }} favorited you }
-                    @case ('view') { {{ activity.name }} viewed your profile }
-                    @case ('photo_access_request') { {{ activity.name }} requested access to your private photos }
-                    @case ('photo_access_granted') { {{ activity.name }} granted you access to their private photos }
-                    @case ('photo_access_denied') { {{ activity.name }} denied your photo access request }
+                    @case ('match') { {{ 'DASHBOARD.ACTIVITY.MATCH' | translate:{ name: activity.name } }} }
+                    @case ('message') { {{ 'DASHBOARD.ACTIVITY.MESSAGE' | translate:{ name: activity.name } }} }
+                    @case ('favorite') { {{ 'DASHBOARD.ACTIVITY.FAVORITE' | translate:{ name: activity.name } }} }
+                    @case ('view') { {{ 'DASHBOARD.ACTIVITY.VIEW' | translate:{ name: activity.name } }} }
+                    @case ('photo_access_request') { {{ 'DASHBOARD.ACTIVITY.PHOTO_ACCESS_REQUEST' | translate:{ name: activity.name } }} }
+                    @case ('photo_access_granted') { {{ 'DASHBOARD.ACTIVITY.PHOTO_ACCESS_GRANTED' | translate:{ name: activity.name } }} }
+                    @case ('photo_access_denied') { {{ 'DASHBOARD.ACTIVITY.PHOTO_ACCESS_DENIED' | translate:{ name: activity.name } }} }
                   }
                 </span>
                 <span class="activity-time">{{ activity.timeAgo }}</span>
@@ -133,11 +133,11 @@
             </button>
           } @empty {
             <li class="activity-empty"
-              matTooltip="No activity"
+              [matTooltip]="'DASHBOARD.SIDEBAR.NO_ACTIVITY_TOOLTIP' | translate"
               [matTooltipDisabled]="sidenavExpanded()"
               matTooltipPosition="right">
               <span class="material-icons-outlined">notifications_none</span>
-              <span class="activity-empty-text">No activity yet</span>
+              <span class="activity-empty-text">{{ 'DASHBOARD.SIDEBAR.NO_ACTIVITY_YET' | translate }}</span>
             </li>
           }
         </ul>
@@ -149,7 +149,7 @@
               class="mark-all-read-btn"
               (click)="markAllActivitiesAsRead()">
               <span class="material-icons-outlined">done_all</span>
-              <span class="mark-all-text">Mark all read</span>
+              <span class="mark-all-text">{{ 'DASHBOARD.SIDEBAR.MARK_ALL_READ' | translate }}</span>
             </button>
           </div>
         }
@@ -164,11 +164,11 @@
           type="button" 
           class="founder-feedback-btn" 
           (click)="openFounderIssueDialog()"
-          [matTooltip]="'Report an issue'"
+          [matTooltip]="'DASHBOARD.SIDEBAR.REPORT_ISSUE_TOOLTIP' | translate"
           [matTooltipDisabled]="sidenavExpanded()"
           matTooltipPosition="right">
           <span class="material-icons-outlined">bug_report</span>
-          <span class="feedback-label">Report Issue</span>
+          <span class="feedback-label">{{ 'DASHBOARD.SIDEBAR.REPORT_ISSUE' | translate }}</span>
         </button>
       }
 
@@ -177,11 +177,11 @@
         type="button" 
         class="collapse-btn" 
         (click)="isMobile() ? toggleSidenav() : toggleSidenavExpanded()"
-        [matTooltip]="sidenavExpanded() ? 'Collapse sidebar' : 'Expand sidebar'"
+        [matTooltip]="(sidenavExpanded() ? 'DASHBOARD.SIDEBAR.COLLAPSE_TOOLTIP' : 'DASHBOARD.SIDEBAR.EXPAND_TOOLTIP') | translate"
         [matTooltipDisabled]="isMobile() || sidenavExpanded()"
         matTooltipPosition="right">
         <span class="material-icons-outlined">{{ (isMobile() || sidenavExpanded()) ? 'chevron_left' : 'chevron_right' }}</span>
-        <span class="collapse-label">{{ sidenavExpanded() ? 'Collapse' : 'Expand' }}</span>
+        <span class="collapse-label">{{ (sidenavExpanded() ? 'DASHBOARD.SIDEBAR.COLLAPSE' : 'DASHBOARD.SIDEBAR.EXPAND') | translate }}</span>
       </button>
     </div>
   </mat-sidenav>
@@ -191,13 +191,13 @@
     <!-- Mobile Header Bar (hidden when in active chat) -->
     @if (isMobile() && !isMessagesWithActiveChat()) {
       <div class="mobile-nav-bar">
-        <button type="button" class="mobile-nav-toggle" (click)="toggleSidenav()" aria-label="Open menu">
+        <button type="button" class="mobile-nav-toggle" (click)="toggleSidenav()" [attr.aria-label]="'DASHBOARD.SIDEBAR.OPEN_MENU_ARIA' | translate">
           <span class="material-icons-outlined">{{ sidenavOpen() ? 'close' : 'menu' }}</span>
         </button>
         <span class="mobile-logo">Gylde</span>
         <button type="button" class="mobile-profile-btn" routerLink="/progress" (click)="onNavItemClick({ id: 'progress', path: '/progress' })">
           @if (userPhotoURL()) {
-            <img [src]="userPhotoURL()" alt="Profile" class="mobile-avatar">
+            <img [src]="userPhotoURL()" [attr.alt]="'DASHBOARD.SIDEBAR.PROFILE_ALT' | translate" class="mobile-avatar">
           } @else {
             <span class="material-icons-outlined">person</span>
           }

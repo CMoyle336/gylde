@@ -8,12 +8,9 @@
   <section class="about-hero">
     <div class="hero-backdrop"></div>
     <div class="hero-content">
-      <span class="hero-badge">About Us</span>
-      <h1 class="hero-title">Dating With <span class="text-accent">Purpose</span></h1>
-      <p class="hero-description">
-        Gylde isn't just another dating app. We're building a community where clarity, 
-        intention, and genuine connection come first.
-      </p>
+      <span class="hero-badge">{{ 'ABOUT.HERO.BADGE' | translate }}</span>
+      <h1 class="hero-title">{{ 'ABOUT.HERO.TITLE' | translate }} <span class="text-accent">{{ 'ABOUT.HERO.TITLE_ACCENT' | translate }}</span></h1>
+      <p class="hero-description">{{ 'ABOUT.HERO.DESCRIPTION' | translate }}</p>
     </div>
   </section>
 
@@ -21,27 +18,16 @@
   <section class="mission-section">
     <div class="section-container">
       <div class="mission-content">
-        <span class="section-label">Our Mission</span>
-        <h2 class="section-title">Structure That Empowers</h2>
-        <p class="mission-text">
-          Modern dating is exhausting. Endless swiping, mixed signals, and profiles that 
-          don't reflect reality. We built Gylde to change that.
-        </p>
-        <p class="mission-text">
-          Our platform provides the structure for meaningful connections—where people are 
-          upfront about their intentions, verified to be who they say they are, and supported 
-          by tools that make dating feel less like a game and more like a genuine pursuit of 
-          partnership.
-        </p>
-        <p class="mission-text">
-          Whether you're looking for companionship, mentorship, or a life partner, Gylde 
-          gives you the framework to find it—on your terms.
-        </p>
+        <span class="section-label">{{ 'ABOUT.MISSION.LABEL' | translate }}</span>
+        <h2 class="section-title">{{ 'ABOUT.MISSION.TITLE' | translate }}</h2>
+        <p class="mission-text">{{ 'ABOUT.MISSION.P1' | translate }}</p>
+        <p class="mission-text">{{ 'ABOUT.MISSION.P2' | translate }}</p>
+        <p class="mission-text">{{ 'ABOUT.MISSION.P3' | translate }}</p>
       </div>
       <div class="mission-visual">
         <div class="visual-card">
           <span class="material-icons-outlined">favorite</span>
-          <span>Intentional Connections</span>
+          <span>{{ 'ABOUT.MISSION.VISUAL' | translate }}</span>
         </div>
       </div>
     </div>
@@ -51,10 +37,10 @@
   <section class="stats-section">
     <div class="section-container">
       <div class="stats-grid">
-        @for (stat of stats; track stat.label) {
+        @for (stat of stats; track stat.labelKey) {
           <div class="stat-item">
             <span class="stat-value">{{ stat.value }}</span>
-            <span class="stat-label">{{ stat.label }}</span>
+            <span class="stat-label">{{ stat.labelKey | translate }}</span>
           </div>
         }
       </div>
@@ -65,21 +51,19 @@
   <section class="values-section">
     <div class="section-container">
       <div class="values-header">
-        <span class="section-label">Our Values</span>
-        <h2 class="section-title">What We Stand For</h2>
-        <p class="section-description">
-          These principles guide everything we build and every decision we make.
-        </p>
+        <span class="section-label">{{ 'ABOUT.VALUES.LABEL' | translate }}</span>
+        <h2 class="section-title">{{ 'ABOUT.VALUES.HEADER_TITLE' | translate }}</h2>
+        <p class="section-description">{{ 'ABOUT.VALUES.HEADER_DESCRIPTION' | translate }}</p>
       </div>
 
       <div class="values-grid">
-        @for (value of values; track value.title) {
+        @for (value of values; track value.titleKey) {
           <div class="value-card">
             <div class="value-icon">
               <span class="material-icons-outlined">{{ value.icon }}</span>
             </div>
-            <h3 class="value-title">{{ value.title }}</h3>
-            <p class="value-description">{{ value.description }}</p>
+            <h3 class="value-title">{{ value.titleKey | translate }}</h3>
+            <p class="value-description">{{ value.descriptionKey | translate }}</p>
           </div>
         }
       </div>
@@ -90,24 +74,12 @@
   <section class="story-section">
     <div class="section-container">
       <div class="story-content">
-        <span class="section-label">Our Story</span>
-        <h2 class="section-title">Built by People Who Get It</h2>
+        <span class="section-label">{{ 'ABOUT.STORY.LABEL' | translate }}</span>
+        <h2 class="section-title">{{ 'ABOUT.STORY.TITLE' | translate }}</h2>
         <div class="story-text">
-          <p>
-            Gylde was founded by people who had experienced the frustrations of modern dating 
-            firsthand. The endless profiles with no substance. The matches that went nowhere. 
-            The uncertainty of not knowing if someone was even who they claimed to be.
-          </p>
-          <p>
-            We envisioned a platform where intentions are clear from the start. Where a lifestyle 
-            preference isn't something to hide but something to match on. Where verification 
-            isn't optional—it's the foundation of trust.
-          </p>
-          <p>
-            Today, Gylde serves thousands of members who share our belief that dating should be 
-            intentional, respectful, and rewarding. We're not trying to be the biggest dating 
-            platform. We're trying to be the most meaningful one.
-          </p>
+          <p>{{ 'ABOUT.STORY.P1' | translate }}</p>
+          <p>{{ 'ABOUT.STORY.P2' | translate }}</p>
+          <p>{{ 'ABOUT.STORY.P3' | translate }}</p>
         </div>
       </div>
     </div>
@@ -117,8 +89,8 @@
   <section class="difference-section">
     <div class="section-container">
       <div class="difference-header">
-        <span class="section-label">The Gylde Difference</span>
-        <h2 class="section-title">Why People Choose Us</h2>
+        <span class="section-label">{{ 'ABOUT.DIFFERENCE.LABEL' | translate }}</span>
+        <h2 class="section-title">{{ 'ABOUT.DIFFERENCE.TITLE' | translate }}</h2>
       </div>
 
       <div class="difference-grid">
@@ -126,43 +98,43 @@
           <div class="difference-icon">
             <span class="material-icons-outlined">verified_user</span>
           </div>
-          <h3>Identity Verification</h3>
-          <p>Every profile can be verified with government ID, so you know who you're talking to.</p>
+          <h3>{{ 'ABOUT.DIFFERENCE.ITEMS.IDENTITY_VERIFICATION.TITLE' | translate }}</h3>
+          <p>{{ 'ABOUT.DIFFERENCE.ITEMS.IDENTITY_VERIFICATION.DESCRIPTION' | translate }}</p>
         </div>
         <div class="difference-item">
           <div class="difference-icon">
             <span class="material-icons-outlined">psychology</span>
           </div>
-          <h3>AI-Powered Assistance</h3>
-          <p>Premium members get AI help crafting messages and perfecting their profiles.</p>
+          <h3>{{ 'ABOUT.DIFFERENCE.ITEMS.AI_ASSISTANCE.TITLE' | translate }}</h3>
+          <p>{{ 'ABOUT.DIFFERENCE.ITEMS.AI_ASSISTANCE.DESCRIPTION' | translate }}</p>
         </div>
         <div class="difference-item">
           <div class="difference-icon">
             <span class="material-icons-outlined">phone_android</span>
           </div>
-          <h3>Virtual Phone Numbers</h3>
-          <p>Share a number without sharing your real one. Privacy meets convenience.</p>
+          <h3>{{ 'ABOUT.DIFFERENCE.ITEMS.VIRTUAL_PHONE.TITLE' | translate }}</h3>
+          <p>{{ 'ABOUT.DIFFERENCE.ITEMS.VIRTUAL_PHONE.DESCRIPTION' | translate }}</p>
         </div>
         <div class="difference-item">
           <div class="difference-icon">
             <span class="material-icons-outlined">visibility</span>
           </div>
-          <h3>Clear Intentions</h3>
-          <p>Know what someone is looking for before you match. No surprises, no wasted time.</p>
+          <h3>{{ 'ABOUT.DIFFERENCE.ITEMS.CLEAR_INTENTIONS.TITLE' | translate }}</h3>
+          <p>{{ 'ABOUT.DIFFERENCE.ITEMS.CLEAR_INTENTIONS.DESCRIPTION' | translate }}</p>
         </div>
         <div class="difference-item">
           <div class="difference-icon">
             <span class="material-icons-outlined">lock</span>
           </div>
-          <h3>Private Photo Control</h3>
-          <p>Share private photos only with people you choose. You control access.</p>
+          <h3>{{ 'ABOUT.DIFFERENCE.ITEMS.PRIVATE_PHOTOS.TITLE' | translate }}</h3>
+          <p>{{ 'ABOUT.DIFFERENCE.ITEMS.PRIVATE_PHOTOS.DESCRIPTION' | translate }}</p>
         </div>
         <div class="difference-item">
           <div class="difference-icon">
             <span class="material-icons-outlined">star</span>
           </div>
-          <h3>Trust Score System</h3>
-          <p>Build credibility over time. Complete your profile, verify your identity, earn trust.</p>
+          <h3>{{ 'ABOUT.DIFFERENCE.ITEMS.TRUST_SCORE.TITLE' | translate }}</h3>
+          <p>{{ 'ABOUT.DIFFERENCE.ITEMS.TRUST_SCORE.DESCRIPTION' | translate }}</p>
         </div>
       </div>
     </div>
@@ -172,11 +144,9 @@
   <section class="cta-section">
     <div class="section-container">
       <div class="cta-content">
-        <h2 class="cta-title">Ready to Experience <span class="text-accent">Intentional Dating</span>?</h2>
-        <p class="cta-description">
-          Join thousands of members who've chosen clarity over chaos.
-        </p>
-        <a routerLink="/" class="btn-primary btn-large">Create Your Profile</a>
+        <h2 class="cta-title">{{ 'ABOUT.CTA.TITLE' | translate }} <span class="text-accent">{{ 'ABOUT.CTA.TITLE_ACCENT' | translate }}</span>?</h2>
+        <p class="cta-description">{{ 'ABOUT.CTA.DESCRIPTION' | translate }}</p>
+        <a routerLink="/" class="btn-primary btn-large">{{ 'ABOUT.CTA.BUTTON' | translate }}</a>
       </div>
     </div>
   </section>

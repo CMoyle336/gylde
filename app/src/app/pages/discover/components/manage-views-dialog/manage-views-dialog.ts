@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { TranslateModule } from '@ngx-translate/core';
 import { SavedView } from '../../../../core/interfaces';
 
 @Component({
@@ -9,7 +10,7 @@ import { SavedView } from '../../../../core/interfaces';
   templateUrl: './manage-views-dialog.html',
   styleUrl: './manage-views-dialog.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatIconModule, MatButtonModule, MatTooltipModule],
+  imports: [MatIconModule, MatButtonModule, MatTooltipModule, TranslateModule],
 })
 export class ManageViewsDialogComponent {
   // Inputs

@@ -52,6 +52,10 @@ export interface MessagePermissionResult {
   higherTierLimit?: number; // -1 for unlimited
   higherTierConversationsToday?: number;
   higherTierRemaining?: number; // -1 for unlimited
+  /** If reason is 'recipient_min_tier_not_met', this is the minimum tier required */
+  recipientMinTier?: ReputationTier;
+  /** Formatted label for display (e.g. "Active", "Trusted") */
+  recipientMinTierLabel?: string;
 }
 
 export type ConversationFilter = 'all' | 'unread' | 'archived';

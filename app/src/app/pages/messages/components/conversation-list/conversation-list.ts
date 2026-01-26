@@ -4,12 +4,14 @@ import {
   EventEmitter,
   Input,
   Output,
+  inject,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ConversationDisplay, VirtualPhone } from '../../../../core/interfaces';
 import { ConversationFilter, ReputationFilter } from '../../../../core/services/message.service';
 import { VirtualPhoneCardComponent } from '../virtual-phone-card';
@@ -18,10 +20,10 @@ import { shouldShowPublicBadge, ReputationTier } from '../../../../core/interfac
 
 // Tier configuration for the visual filter
 const TIER_FILTER_OPTIONS = [
-  { value: null, label: 'All', icon: 'people', color: 'var(--color-text-muted)' },
-  { value: 'active', label: 'Active+', icon: 'trending_up', color: '#3b82f6' },
-  { value: 'established', label: 'Established+', icon: 'star_half', color: '#c9a962' },
-  { value: 'trusted', label: 'Trusted+', icon: 'star', color: '#f59e0b' },
+  { value: null, label: 'MESSAGES.CONVERSATION_LIST.REPUTATION_ALL', icon: 'people', color: 'var(--color-text-muted)' },
+  { value: 'active', label: 'MESSAGES.CONVERSATION_LIST.REPUTATION_ACTIVE_PLUS', icon: 'trending_up', color: '#3b82f6' },
+  { value: 'established', label: 'MESSAGES.CONVERSATION_LIST.REPUTATION_ESTABLISHED_PLUS', icon: 'star_half', color: '#c9a962' },
+  { value: 'trusted', label: 'MESSAGES.CONVERSATION_LIST.REPUTATION_TRUSTED_PLUS', icon: 'star', color: '#f59e0b' },
 ];
 
 @Component({
@@ -29,9 +31,10 @@ const TIER_FILTER_OPTIONS = [
   templateUrl: './conversation-list.html',
   styleUrl: './conversation-list.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, MatIconModule, MatTooltipModule, MatSelectModule, MatFormFieldModule, VirtualPhoneCardComponent, ReputationBadgeComponent],
+  imports: [CommonModule, MatIconModule, MatTooltipModule, MatSelectModule, MatFormFieldModule, VirtualPhoneCardComponent, ReputationBadgeComponent, TranslateModule],
 })
 export class ConversationListComponent {
+  private readonly translate = inject(TranslateService);
   @Input() conversations: ConversationDisplay[] = [];
   @Input() activeConversation: ConversationDisplay | null = null;
   @Input() loading = false;
@@ -71,7 +74,7 @@ export class ConversationListComponent {
     if (days === 0) {
       return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     } else if (days === 1) {
-      return 'Yesterday';
+      return this.translate.instant('TIME.YESTERDAY');
     } else if (days < 7) {
       return date.toLocaleDateString([], { weekday: 'short' });
     } else {

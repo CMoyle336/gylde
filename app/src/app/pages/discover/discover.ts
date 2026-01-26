@@ -8,6 +8,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { DiscoveryService } from '../../core/services/discovery.service';
 import { FavoriteService } from '../../core/services/favorite.service';
 import { MessageService } from '../../core/services/message.service';
@@ -33,6 +34,7 @@ import {
     MatProgressSpinnerModule,
     MatTooltipModule,
     MatDividerModule,
+    TranslateModule,
     ProfileCardComponent,
     ProfileCardSkeletonComponent,
     DiscoverFiltersComponent,
@@ -47,6 +49,7 @@ export class DiscoverComponent implements OnInit {
   private readonly messageService = inject(MessageService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly analytics = inject(AnalyticsService);
+  private readonly translate = inject(TranslateService);
 
   // UI state
   protected readonly showFilters = signal(false);
@@ -133,12 +136,12 @@ export class DiscoverComponent implements OnInit {
     this.discoveryService.searchProfiles(false, true); // Force refresh to show loading
   }
 
-  protected getSortLabel(): string {
+  protected getSortLabelKey(): string {
     const currentSort = this.sort();
     const option = this.sortOptions.find(
       o => o.value.field === currentSort.field && o.value.direction === currentSort.direction
     );
-    return option?.label || 'Sort';
+    return option?.labelKey || 'DISCOVER.SORT_LABEL';
   }
 
   protected isSortActive(sort: DiscoverySort): boolean {
@@ -220,7 +223,14 @@ export class DiscoverComponent implements OnInit {
       const permission = await this.messageService.canStartConversation(profile.uid);
       
       if (!permission.allowed) {
-        if (permission.reason === 'higher_tier_limit_reached') {
+        if (permission.reason === 'recipient_min_tier_not_met') {
+          const tierLabel = permission.recipientMinTierLabel || 'a higher';
+          this.snackBar.open(
+            `This member accepts messages from ${tierLabel} reputation and above.`,
+            'OK',
+            { duration: 5000, panelClass: 'info-snackbar' }
+          );
+        } else if (permission.reason === 'higher_tier_limit_reached') {
           const tierDisplay = permission.recipientTier 
             ? permission.recipientTier.charAt(0).toUpperCase() + permission.recipientTier.slice(1)
             : 'higher tier';

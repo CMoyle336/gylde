@@ -10,10 +10,10 @@
       <span class="tab-icon-wrapper">
         <span class="material-icons-outlined">favorite</span>
         @if (matchesCount() > 0) {
-          <span class="tab-badge">{{ matchesCount() > 99 ? '99+' : matchesCount() }}</span>
+          <span class="tab-badge">{{ matchesCount() > 99 ? ('MATCHES.BADGE_MAX' | translate) : matchesCount() }}</span>
         }
       </span>
-      <span class="tab-label">My Matches</span>
+      <span class="tab-label">{{ 'MATCHES.TAB_MY_MATCHES' | translate }}</span>
     </button>
     <button
       type="button"
@@ -21,7 +21,7 @@
       [class.active]="activeTab() === 'my-favorites'"
       (click)="setTab('my-favorites')">
       <span class="material-icons-outlined">star</span>
-      <span class="tab-label">My Favorites</span>
+      <span class="tab-label">{{ 'MATCHES.TAB_MY_FAVORITES' | translate }}</span>
     </button>
     <button
       type="button"
@@ -29,7 +29,7 @@
       [class.active]="activeTab() === 'my-views'"
       (click)="setTab('my-views')">
       <span class="material-icons-outlined">history</span>
-      <span class="tab-label">Recently Viewed</span>
+      <span class="tab-label">{{ 'MATCHES.TAB_RECENTLY_VIEWED' | translate }}</span>
     </button>
 
     <!-- Premium Tabs -->
@@ -45,13 +45,13 @@
         } @else {
           <span class="material-icons-outlined">volunteer_activism</span>
           @if (favoritedMeCount() > 0) {
-            <span class="tab-badge">{{ favoritedMeCount() > 99 ? '99+' : favoritedMeCount() }}</span>
+            <span class="tab-badge">{{ favoritedMeCount() > 99 ? ('MATCHES.BADGE_MAX' | translate) : favoritedMeCount() }}</span>
           }
         }
       </span>
-      <span class="tab-label">Favorited Me</span>
+      <span class="tab-label">{{ 'MATCHES.TAB_FAVORITED_ME' | translate }}</span>
       @if (!isPremium()) {
-        <span class="premium-badge">Premium</span>
+        <span class="premium-badge">{{ 'MATCHES.PREMIUM_BADGE' | translate }}</span>
       }
     </button>
     <button
@@ -66,13 +66,13 @@
         } @else {
           <span class="material-icons-outlined">visibility</span>
           @if (viewedMeCount() > 0) {
-            <span class="tab-badge">{{ viewedMeCount() > 99 ? '99+' : viewedMeCount() }}</span>
+            <span class="tab-badge">{{ viewedMeCount() > 99 ? ('MATCHES.BADGE_MAX' | translate) : viewedMeCount() }}</span>
           }
         }
       </span>
-      <span class="tab-label">Viewed Me</span>
+      <span class="tab-label">{{ 'MATCHES.TAB_VIEWED_ME' | translate }}</span>
       @if (!isPremium()) {
-        <span class="premium-badge">Premium</span>
+        <span class="premium-badge">{{ 'MATCHES.PREMIUM_BADGE' | translate }}</span>
       }
     </button>
   </div>
@@ -90,11 +90,11 @@
       <!-- Empty State (only shown after initialization) -->
       <div class="empty-state">
         <span class="material-icons-outlined empty-icon">{{ getEmptyIcon() }}</span>
-        <p class="empty-message">{{ getEmptyMessage() }}</p>
+        <p class="empty-message">{{ getEmptyMessageKey() | translate }}</p>
         @if (activeTab() === 'my-favorites' || activeTab() === 'my-views') {
           <button mat-flat-button color="primary" routerLink="/discover">
             <mat-icon>explore</mat-icon>
-            Explore Profiles
+            {{ 'MATCHES.EXPLORE_PROFILES_BUTTON' | translate }}
           </button>
         }
       </div>

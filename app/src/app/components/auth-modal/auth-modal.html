@@ -12,7 +12,7 @@
         type="button" 
         class="modal-close" 
         (click)="onClose()"
-        aria-label="Close modal">
+        [attr.aria-label]="'AUTH.MODAL.CLOSE_ARIA' | translate">
         <span class="material-icons-outlined">close</span>
       </button>
 
@@ -121,7 +121,7 @@
                   [ngModel]="phoneNumber()"
                   (ngModelChange)="phoneNumber.set($event)"
                   name="phoneNumber"
-                  placeholder="+1 555 123 4567"
+                  [placeholder]="'AUTH.PHONE.PLACEHOLDER' | translate"
                   autocomplete="tel"
                 />
                 <span class="field-hint">{{ 'AUTH.FIELDS.PHONE_HINT' | translate }}</span>
@@ -160,7 +160,7 @@
                   [ngModel]="verificationCode()"
                   (ngModelChange)="verificationCode.set($event)"
                   name="verificationCode"
-                  placeholder="123456"
+                  [placeholder]="'AUTH.PHONE.CODE_PLACEHOLDER' | translate"
                   maxlength="6"
                   autocomplete="one-time-code"
                 />

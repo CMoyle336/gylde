@@ -1,6 +1,7 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { PublicHeaderComponent } from '../../components/public-header/public-header';
 import { PublicFooterComponent } from '../../components/public-footer/public-footer';
 import { SeoService } from '../../core/services/seo.service';
@@ -8,13 +9,14 @@ import { SeoService } from '../../core/services/seo.service';
 @Component({
   selector: 'app-how-it-works',
   standalone: true,
-  imports: [CommonModule, RouterLink, PublicHeaderComponent, PublicFooterComponent],
+  imports: [CommonModule, RouterLink, TranslateModule, PublicHeaderComponent, PublicFooterComponent],
   templateUrl: './how-it-works.html',
   styleUrl: './how-it-works.css',
 })
 export class HowItWorksComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly seoService = inject(SeoService);
+  private readonly translate = inject(TranslateService);
 
   protected navigateToAuth(): void {
     this.router.navigate(['/']);
@@ -23,93 +25,93 @@ export class HowItWorksComponent implements OnInit {
   readonly steps = [
     {
       number: '01',
-      title: 'Create Your Profile',
-      description: 'Tell us about yourself—your lifestyle, what you\'re looking for, and what makes you unique. Upload photos that show the real you.',
+      titleKey: 'HOW_IT_WORKS.STEPS.S1.TITLE',
+      descriptionKey: 'HOW_IT_WORKS.STEPS.S1.DESCRIPTION',
       icon: 'person_add',
-      details: [
-        'Choose your lifestyle and relationship preferences',
-        'Upload up to 10 photos (including private albums)',
-        'Write a bio that captures your personality',
-        'Set your location and distance preferences'
-      ]
+      detailKeys: [
+        'HOW_IT_WORKS.STEPS.S1.DETAILS.D1',
+        'HOW_IT_WORKS.STEPS.S1.DETAILS.D2',
+        'HOW_IT_WORKS.STEPS.S1.DETAILS.D3',
+        'HOW_IT_WORKS.STEPS.S1.DETAILS.D4',
+      ],
     },
     {
       number: '02',
-      title: 'Verify Your Identity',
-      description: 'Build trust from the start. Our quick verification process confirms you\'re really you—and shows others you\'re serious.',
+      titleKey: 'HOW_IT_WORKS.STEPS.S2.TITLE',
+      descriptionKey: 'HOW_IT_WORKS.STEPS.S2.DESCRIPTION',
       icon: 'verified_user',
-      details: [
-        'Quick ID verification with Veriff',
-        'Photo matching ensures profile authenticity',
-        'Earn a verification badge on your profile',
-        'Stand out and build trust with connections'
-      ]
+      detailKeys: [
+        'HOW_IT_WORKS.STEPS.S2.DETAILS.D1',
+        'HOW_IT_WORKS.STEPS.S2.DETAILS.D2',
+        'HOW_IT_WORKS.STEPS.S2.DETAILS.D3',
+        'HOW_IT_WORKS.STEPS.S2.DETAILS.D4',
+      ],
     },
     {
       number: '03',
-      title: 'Discover Compatible Matches',
-      description: 'Browse profiles filtered by what matters to you. Our matching considers lifestyle, intentions, and compatibility—not just photos.',
+      titleKey: 'HOW_IT_WORKS.STEPS.S3.TITLE',
+      descriptionKey: 'HOW_IT_WORKS.STEPS.S3.DESCRIPTION',
       icon: 'explore',
-      details: [
-        'Filter by lifestyle, values, and intentions',
-        'See reputation tiers to gauge member quality',
-        'Save favorites for later',
-        'View who\'s interested in you (Premium)'
-      ]
+      detailKeys: [
+        'HOW_IT_WORKS.STEPS.S3.DETAILS.D1',
+        'HOW_IT_WORKS.STEPS.S3.DETAILS.D2',
+        'HOW_IT_WORKS.STEPS.S3.DETAILS.D3',
+        'HOW_IT_WORKS.STEPS.S3.DETAILS.D4',
+      ],
     },
     {
       number: '04',
-      title: 'Start Meaningful Conversations',
-      description: 'When you find someone intriguing, reach out. Our messaging features help you connect genuinely and safely.',
+      titleKey: 'HOW_IT_WORKS.STEPS.S4.TITLE',
+      descriptionKey: 'HOW_IT_WORKS.STEPS.S4.DESCRIPTION',
       icon: 'chat_bubble',
-      details: [
-        'AI-powered message suggestions',
-        'Request access to private photos',
-        'Virtual phone numbers for safety'
-      ]
+      detailKeys: [
+        'HOW_IT_WORKS.STEPS.S4.DETAILS.D1',
+        'HOW_IT_WORKS.STEPS.S4.DETAILS.D2',
+        'HOW_IT_WORKS.STEPS.S4.DETAILS.D3',
+      ],
     },
     {
       number: '05',
-      title: 'Build Real Connections',
-      description: 'Take your connection offline when you\'re ready. We provide the structure—you define the relationship.',
+      titleKey: 'HOW_IT_WORKS.STEPS.S5.TITLE',
+      descriptionKey: 'HOW_IT_WORKS.STEPS.S5.DESCRIPTION',
       icon: 'favorite',
-      details: [
-        'Match when there\'s mutual interest',
-        'Exchange contact info on your terms',
-        'Use virtual numbers to stay private',
-        'Meet up with confidence'
-      ]
+      detailKeys: [
+        'HOW_IT_WORKS.STEPS.S5.DETAILS.D1',
+        'HOW_IT_WORKS.STEPS.S5.DETAILS.D2',
+        'HOW_IT_WORKS.STEPS.S5.DETAILS.D3',
+        'HOW_IT_WORKS.STEPS.S5.DETAILS.D4',
+      ],
     }
   ];
 
   readonly tiers = [
     {
-      name: 'Free',
-      price: 'Free',
-      description: 'Browse and discover',
-      features: [
-        'Create your profile',
-        'Browse unlimited profiles',
-        'Save favorites',
-        'Up to 5 photos',
-        'Verify your identity',
-        'Reputation-based conversation limits'
+      nameKey: 'HOW_IT_WORKS.MEMBERSHIP.TIERS.FREE.NAME',
+      priceKey: 'HOW_IT_WORKS.MEMBERSHIP.TIERS.FREE.PRICE',
+      descriptionKey: 'HOW_IT_WORKS.MEMBERSHIP.TIERS.FREE.DESCRIPTION',
+      featureKeys: [
+        'HOW_IT_WORKS.MEMBERSHIP.TIERS.FREE.FEATURES.F1',
+        'HOW_IT_WORKS.MEMBERSHIP.TIERS.FREE.FEATURES.F2',
+        'HOW_IT_WORKS.MEMBERSHIP.TIERS.FREE.FEATURES.F3',
+        'HOW_IT_WORKS.MEMBERSHIP.TIERS.FREE.FEATURES.F4',
+        'HOW_IT_WORKS.MEMBERSHIP.TIERS.FREE.FEATURES.F5',
+        'HOW_IT_WORKS.MEMBERSHIP.TIERS.FREE.FEATURES.F6',
       ],
       highlighted: false
     },
     {
-      name: 'Premium',
-      price: '$49.99/mo',
-      description: 'The full experience',
-      features: [
-        'Up to 20 photos',
-        'Request & view private photos',
-        'Advanced discovery filters',
-        'See who viewed & favorited you',
-        'Priority in search results',
-        'AI message assistant',
-        'AI profile polish',
-        'Virtual phone number'
+      nameKey: 'HOW_IT_WORKS.MEMBERSHIP.TIERS.PREMIUM.NAME',
+      priceKey: 'HOW_IT_WORKS.MEMBERSHIP.TIERS.PREMIUM.PRICE',
+      descriptionKey: 'HOW_IT_WORKS.MEMBERSHIP.TIERS.PREMIUM.DESCRIPTION',
+      featureKeys: [
+        'HOW_IT_WORKS.MEMBERSHIP.TIERS.PREMIUM.FEATURES.F1',
+        'HOW_IT_WORKS.MEMBERSHIP.TIERS.PREMIUM.FEATURES.F2',
+        'HOW_IT_WORKS.MEMBERSHIP.TIERS.PREMIUM.FEATURES.F3',
+        'HOW_IT_WORKS.MEMBERSHIP.TIERS.PREMIUM.FEATURES.F4',
+        'HOW_IT_WORKS.MEMBERSHIP.TIERS.PREMIUM.FEATURES.F5',
+        'HOW_IT_WORKS.MEMBERSHIP.TIERS.PREMIUM.FEATURES.F6',
+        'HOW_IT_WORKS.MEMBERSHIP.TIERS.PREMIUM.FEATURES.F7',
+        'HOW_IT_WORKS.MEMBERSHIP.TIERS.PREMIUM.FEATURES.F8',
       ],
       highlighted: true
     }
@@ -117,28 +119,28 @@ export class HowItWorksComponent implements OnInit {
 
   readonly faqs = [
     {
-      question: 'How is Gylde different from other dating apps?',
-      answer: 'Gylde is built for intentional connections. We focus on clear communication of relationship goals, robust identity verification, and a reputation system that rewards quality members. No endless swiping—just meaningful matches.'
+      questionKey: 'HOW_IT_WORKS.FAQ.Q1.QUESTION',
+      answerKey: 'HOW_IT_WORKS.FAQ.Q1.ANSWER',
     },
     {
-      question: 'Is identity verification required?',
-      answer: 'Verification is optional but highly encouraged. Verified profiles earn a badge and build reputation faster, making them more likely to receive responses. It\'s a quick process that takes just a few minutes.'
+      questionKey: 'HOW_IT_WORKS.FAQ.Q2.QUESTION',
+      answerKey: 'HOW_IT_WORKS.FAQ.Q2.ANSWER',
     },
     {
-      question: 'How does the reputation system work?',
-      answer: 'Your reputation tier (New, Active, Established, Trusted, Distinguished) reflects your engagement and behavior on the platform. Higher tiers unlock the ability to start more conversations with higher-tier members each day. Build your reputation by completing your profile, staying active, and being respectful to others.'
+      questionKey: 'HOW_IT_WORKS.FAQ.Q3.QUESTION',
+      answerKey: 'HOW_IT_WORKS.FAQ.Q3.ANSWER',
     },
     {
-      question: 'What are private photos?',
-      answer: 'Private photos are images only visible to people you approve. When someone requests access, you can accept or decline. This gives you control over who sees your more personal content. Private photos are a Premium feature.'
+      questionKey: 'HOW_IT_WORKS.FAQ.Q4.QUESTION',
+      answerKey: 'HOW_IT_WORKS.FAQ.Q4.ANSWER',
     },
     {
-      question: 'How does the virtual phone number work?',
-      answer: 'Premium members get a dedicated virtual phone number. You can share it with matches instead of your real number. Calls and texts are forwarded to you, keeping your actual number private.'
+      questionKey: 'HOW_IT_WORKS.FAQ.Q5.QUESTION',
+      answerKey: 'HOW_IT_WORKS.FAQ.Q5.ANSWER',
     },
     {
-      question: 'Can I cancel my subscription anytime?',
-      answer: 'Yes, you can cancel anytime. You\'ll keep your premium features until the end of your current billing period. No long-term commitments required.'
+      questionKey: 'HOW_IT_WORKS.FAQ.Q6.QUESTION',
+      answerKey: 'HOW_IT_WORKS.FAQ.Q6.ANSWER',
     }
   ];
 
@@ -146,7 +148,11 @@ export class HowItWorksComponent implements OnInit {
 
   ngOnInit(): void {
     // Add FAQ structured data for rich snippets in search results
-    this.seoService.addStructuredData(this.seoService.generateFaqData(this.faqs));
+    const translatedFaqs = this.faqs.map((faq) => ({
+      question: this.translate.instant(faq.questionKey),
+      answer: this.translate.instant(faq.answerKey),
+    }));
+    this.seoService.addStructuredData(this.seoService.generateFaqData(translatedFaqs));
   }
 
   toggleFaq(index: number): void {

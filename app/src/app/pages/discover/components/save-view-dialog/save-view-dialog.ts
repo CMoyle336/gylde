@@ -4,6 +4,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatButtonModule } from '@angular/material/button';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-save-view-dialog',
@@ -16,6 +17,7 @@ import { MatButtonModule } from '@angular/material/button';
     MatInputModule,
     MatSlideToggleModule,
     MatButtonModule,
+    TranslateModule,
   ],
 })
 export class SaveViewDialogComponent {

@@ -1,109 +1,1808 @@
 {
+  "LANGUAGE": {
+    "EN": "Englisch",
+    "DE": "Deutsch",
+    "ES": "Spanisch"
+  },
   "HOME": {
+    "NAV": {
+      "FEATURES": "Funktionen",
+      "HOW_IT_WORKS": "Wie es funktioniert",
+      "SIGN_IN": "Anmelden",
+      "GET_STARTED": "Loslegen",
+      "DASHBOARD": "Dashboard",
+      "LOGOUT": "Abmelden",
+      "ARIA_LABEL": "Hauptnavigation",
+      "LAUNCH": "Starten",
+      "SWITCH_TO_LIGHT_ARIA": "Zum Light-Modus wechseln",
+      "SWITCH_TO_DARK_ARIA": "Zum Dark-Modus wechseln",
+      "OPEN_MENU_ARIA": "Menü öffnen",
+      "LIGHT_MODE": "Lichtmodus",
+      "DARK_MODE": "Dunkelmodus",
+      "LANGUAGE": "Sprache",
+      "CHANGE_LANGUAGE_ARIA": "Sprache ändern"
+    },
+    "LANDING": {
+      "HERO": {
+        "TITLE": "Eine vertrauenswürdigere Art zu",
+        "TITLE_ACCENT": "verbinden",
+        "DESCRIPTION": "Gylde belohnt Respekt, Konsistenz und echte Absicht – sodass die richtigen Menschen an die Spitze kommen.",
+        "CTA_SECONDARY": "Wie Reputation funktioniert",
+        "FLOATING": {
+          "REPUTATION_VERIFIED": "Ruf verifiziert",
+          "TRUST_EARNED": "Vertrauen erworben",
+          "QUALITY_PROTECTED": "Qualität geschützt"
+        }
+      },
+      "PROBLEM": {
+        "LABEL": "Das Problem",
+        "TITLE": "Warum bestehende Plattformen fehlerhaft wirken",
+        "STATEMENTS": {
+          "S1": "Sichtbarkeit sollte nichts sein, das man kauft.",
+          "S2": "Vertrauen sollte nicht jedes Mal zurückgesetzt werden, wenn Sie sich anmelden.",
+          "S3": "Gutes Verhalten sollte sich summieren – nicht vergraben werden.",
+          "S4": "Endloses Messaging mit wenig Signal ist erschöpfend.",
+          "S5": "Geld sollte nicht darüber entscheiden, wie jemand Sie behandelt."
+        }
+      },
+      "PROMISE": {
+        "LABEL": "Der Gylde Unterschied",
+        "TITLE": "Was wir stattdessen tun",
+        "DESCRIPTION": "Ein anderer sozialer Vertrag. Keine Alternative – eine Wahl.",
+        "PILLARS": {
+          "P1": {
+            "TITLE": "Ruf vor Reichweite",
+            "POINTS": {
+              "P1": "Verhalten bestimmt Sichtbarkeit",
+              "P2": "Konsistenz schlägt Volumen",
+              "P3": "Respekt kumuliert über die Zeit"
+            }
+          },
+          "P2": {
+            "TITLE": "Schutz für Qualität",
+            "POINTS": {
+              "P1": "Durchdachte Limits für Interaktionen",
+              "P2": "Ruhigere, fokussiertere Posteingänge",
+              "P3": "Weniger, bessere Gespräche"
+            }
+          },
+          "P3": {
+            "TITLE": "Vertrauen, das nicht gekauft werden kann",
+            "POINTS": {
+              "P1": "Zahlungen verbessern das Erlebnis, nicht die Glaubwürdigkeit",
+              "P2": "Keine Abkürzungen beim Ruf",
+              "P3": "Jeder verdient seinen Stand"
+            }
+          }
+        }
+      },
+      "REPUTATION": {
+        "LABEL": "Das Erlebnis",
+        "TITLE": "Was sich ändert, wenn Sie beitreten",
+        "DESCRIPTION": "Wir fokussieren uns auf Ergebnisse, nicht auf Mechaniken. So fühlt sich eine rufbasierte Verbindung an.",
+        "EXPERIENCES": {
+          "E1": "Menschen reagieren mehr.",
+          "E2": "Sie werden von ernsthafteren Mitgliedern gesehen.",
+          "E3": "Gespräche wirken intentional.",
+          "E4": "Schlechte Akteure verschwinden schnell.",
+          "E5": "Ihr Einsatz wird anerkannt und belohnt."
+        },
+        "CARD": {
+          "TITLE": "Ruf kumuliert"
+        }
+      },
+      "AUDIENCE": {
+        "LABEL": "Ein kultureller Filter",
+        "TITLE": "Gylde ist für manche Menschen – nicht für alle",
+        "FOR_TITLE": "Gylde ist für Menschen, die",
+        "NOT_TITLE": "Gylde ist nicht für",
+        "FOR": {
+          "I1": "Diskretion und Respekt schätzen",
+          "I2": "Qualität über Menge bevorzugen",
+          "I3": "Wollen, dass Vertrauen zählt",
+          "I4": "Sind müde von transaktionalen Dynamiken"
+        },
+        "NOT": {
+          "I1": "Massen-Messaging",
+          "I2": "Kurzfristige Ausbeutung",
+          "I3": "Aufmerksamkeit kaufen",
+          "I4": "Niedrig Aufwand Verhalten"
+        }
+      },
+      "EARLY_ACCESS": {
+        "LABEL": "Früher Zugang",
+        "TITLE": "Mit Absicht gebaut, nicht hastig",
+        "DESCRIPTION": "Wir öffnen Gylde durchdacht. Frühe Mitglieder helfen, die Plattform zu formen und die Kultur zu etablieren, die sie funktionieren lässt.",
+        "POINTS": {
+          "P1": "Derzeit in begrenzten Regionen verfügbar",
+          "P2": "Gründungsmitglieder helfen, die Plattform zu gestalten",
+          "P3": "Früher Zugang priorisiert verifizierte Profile",
+          "P4": "Qualität vor Geschwindigkeit – immer"
+        },
+        "CARD": {
+          "BADGE": "Gründungsmitglied",
+          "TEXT": "Gestalte die Community"
+        }
+      },
+      "CTA": {
+        "TITLE": "Tritt dem",
+        "TITLE_ACCENT": "richtigen Weg",
+        "DESCRIPTION": "Gylde geht nicht darum, sich schnell anzumelden. Es geht darum, einer Gemeinschaft beizutreten, in der Vertrauen verdient und Qualität geschützt wird.",
+        "BUTTON": "Frühen Zugang anfordern"
+      }
+    },
     "HERO": {
-      "TAGLINE": "Dating für bewusste, unterstützte Beziehungen",
+      "TAGLINE": "Dating für absichtsvolle, unterstützte Beziehungen",
       "TITLE": "Finde dein",
       "TITLE_ACCENT": "Gylde",
       "DESCRIPTION": "Kein lockeres Dating. Kein Rätselraten. Ein strukturierter Raum, in dem Klarheit auf Verbindung trifft und Beziehungen mit Absicht aufgebaut werden.",
-      "CTA_PRIMARY": "Starte deine Reise",
-      "CTA_SECONDARY": "Mehr erfahren",
-      "VERIFIED_MEMBER": "Verifiziertes Mitglied",
+      "CTA_PRIMARY": "Beginne deine Reise",
+      "CTA_SECONDARY": "Erfahre mehr",
+      "VERIFIED_MEMBER": "Verifizierter Benutzer",
       "PREMIUM_MEMBER": "Premium-Mitglied",
       "ITS_A_MATCH": "Es ist ein Match!"
     },
     "STATS": {
       "ACTIVE_MEMBERS": "Aktive Mitglieder",
-      "CONNECTIONS_MADE": "Verbindungen hergestellt",
+      "CONNECTIONS_MADE": "Hergestellte Verbindungen",
       "SATISFACTION_RATE": "Zufriedenheitsrate"
     },
     "FEATURES": {
       "LABEL": "Warum Gylde",
       "TITLE": "Klarheit, kein Rätselraten",
-      "DESCRIPTION": "Unsere Mitglieder treten bei, weil sie Struktur bei dem wollen, was am wichtigsten ist – Lebensstil, Ehrgeiz, Großzügigkeit und Absicht.",
+      "DESCRIPTION": "Unsere Mitglieder treten bei, weil sie Struktur um das Wichtigste wollen – Lebensstil, Ehrgeiz, Großzügigkeit und Absicht.",
       "LIFESTYLE": {
-        "TITLE": "Lifestyle-Erwartungen",
-        "DESCRIPTION": "Sei offen darüber, wie du lebst und was du erwartest. Keine Mehrdeutigkeit – nur abgestimmte Lebensstile von Anfang an."
+        "TITLE": "Erwartungen an den Lebensstil",
+        "DESCRIPTION": "Seien Sie offen darüber, wie Sie leben und was Sie erwarten. Keine Mehrdeutigkeit – nur abgestimmte Lebensstile von Anfang an."
       },
       "AMBITION": {
         "TITLE": "Ehrgeiz & Wachstum",
-        "DESCRIPTION": "Verbinde dich mit Mitgliedern, die persönliche Entwicklung, Karriereziele und das Streben nach Größerem schätzen."
+        "DESCRIPTION": "Verbinden Sie sich mit Mitgliedern, die persönliche Entwicklung, Karriereziel und das Streben nach etwas Größerem schätzen."
       },
       "GENEROSITY": {
         "TITLE": "Großzügigkeit & Unterstützung",
-        "DESCRIPTION": "Ein Raum für diejenigen, die offen für Geben und Empfangen von Unterstützung sind. Klar in den Absichten, respektvoll im Umgang."
+        "DESCRIPTION": "Ein Raum für jene, die bereit sind zu geben und zu empfangen. Klar über Absichten, respektvoll im Ansatz."
       },
       "INTENTION": {
         "TITLE": "Mit Absicht gebaut",
-        "DESCRIPTION": "Jede Beziehung hier beginnt mit einem Ziel. Keine Spielchen, keine Unsicherheit – nur echte, absichtliche Verbindungen."
+        "DESCRIPTION": "Jede Beziehung hier beginnt mit Zweck. Keine Spiele, keine Unsicherheit – nur echte, absichtsvolle Verbindungen."
       },
       "VERIFIED": {
         "TITLE": "Verifizierte Mitglieder",
-        "DESCRIPTION": "Jedes Profil ist verifiziert. Wisse, dass die Person, mit der du dich verbindest, echt, ernst und authentisch ist."
+        "DESCRIPTION": "Jedes Profil ist verifiziert. Wissen Sie, dass die Person, mit der Sie sich verbinden, echt, ernsthaft und authentisch ist."
       },
       "PRIVACY": {
         "TITLE": "Privatsphäre & Diskretion",
-        "DESCRIPTION": "Deine Privatsphäre ist wichtig. Teile nach deinen Bedingungen mit robusten Kontrollen für deinen Seelenfrieden."
+        "DESCRIPTION": "Ihre Privatsphäre zählt. Teilen Sie nach Ihren Bedingungen mit robusten Kontrollen, die für Ihre Ruhe entwickelt wurden."
       }
     },
     "HOW_IT_WORKS": {
       "LABEL": "Die Reise",
       "TITLE": "Drei Schritte zur Verbindung",
       "STEP_1": {
-        "TITLE": "Definiere, was du willst",
-        "DESCRIPTION": "Unser strukturiertes Profil führt dich durch Lebensstil, Ambitionen und Beziehungserwartungen. Kein Raten – nur Klarheit."
+        "TITLE": "Definieren Sie, was Sie wollen",
+        "DESCRIPTION": "Unser strukturiertes Profil führt Sie durch Lebensstil, Ambitionen und Beziehungserwartungen. Kein Rätselraten – nur Klarheit."
       },
       "STEP_2": {
-        "TITLE": "Finde passende Matches",
-        "DESCRIPTION": "Durchsuche verifizierte Mitglieder, die deine Absichten teilen. Filtere nach dem, was zählt: Lebensstil, Ziele und Offenheit für Unterstützung."
+        "TITLE": "Finden Sie passende Übereinstimmungen",
+        "DESCRIPTION": "Durchsuchen Sie verifizierte Mitglieder, die Ihre Absichten teilen. Filtern Sie nach dem, was zählt: Lebensstil, Ziele und Offenheit für Unterstützung."
       },
       "STEP_3": {
-        "TITLE": "Verbinde dich mit Zweck",
-        "DESCRIPTION": "Beginne Gespräche mit dem Wissen, dass ihr beide auf derselben Seite seid. Baue Beziehungen auf, die auf gegenseitigem Respekt und klaren Absichten beruhen."
+        "TITLE": "Verbinden Sie sich mit Ziel",
+        "DESCRIPTION": "Beginnen Sie Gespräche, in dem Wissen, dass Sie beide auf derselben Seite stehen. Bauen Sie Beziehungen auf, die auf gegenseitigem Respekt und klaren Absichten basieren."
       }
     },
     "VALUES": {
       "LABEL": "Unser Versprechen",
       "TITLE": "Struktur, die funktioniert",
-      "DESCRIPTION": "Wir haben Gylde gebaut, weil Dating nicht das Entschlüsseln gemischter Signale erfordern sollte. Unsere Plattform gibt dir die Struktur, um klar zu sagen, was du willst – und andere zu finden, die dasselbe wollen.",
-      "INTENTIONAL_CONNECTIONS": "Absichtliche Verbindungen",
+      "DESCRIPTION": "Wir haben Gylde gebaut, weil Dating nicht das Entschlüsseln gemischter Signale erfordern sollte. Unsere Plattform gibt Ihnen die Struktur, um klar zu sein, was Sie wollen – und andere zu finden, die dasselbe wollen.",
+      "INTENTIONAL_CONNECTIONS": "Absichtsvolle Verbindungen",
       "LIST": {
-        "CLEAR_EXPECTATIONS": "Klare Erwartungen von der ersten Nachricht an",
+        "CLEAR_EXPECTATIONS": "Klare Erwartungen bereits in der ersten Nachricht",
         "VERIFIED_IDENTITY": "Verifizierte Identität für jedes Mitglied",
-        "ZERO_TOLERANCE": "Null Toleranz für Unehrlichkeit oder Spielchen",
-        "STRUCTURED_PROFILES": "Strukturierte Profile, die das Wesentliche zeigen",
-        "MUTUAL_RESPECT": "Eine Gemeinschaft, die auf gegenseitigem Respekt aufgebaut ist"
+        "ZERO_TOLERANCE": "Nulltoleranz für Unehrlichkeit oder Spielchen",
+        "STRUCTURED_PROFILES": "Strukturierte Profile, die das Wesentliche hervorheben",
+        "MUTUAL_RESPECT": "Eine Community, die auf gegenseitigem Respekt basiert"
       }
     },
     "CTA": {
-      "TITLE": "Wir bieten die",
+      "TITLE": "Wir bieten das",
       "TITLE_ACCENT": "Struktur",
-      "DESCRIPTION": "Du definierst die Verbindung. Tritt einer Gemeinschaft bei, die auf Klarheit, Absicht und gegenseitigem Respekt aufgebaut ist.",
-      "BUTTON": "Erstelle dein Profil"
+      "DESCRIPTION": "Sie definieren die Verbindung. Treten Sie einer Community bei, die auf Klarheit, Absicht und gegenseitigem Respekt basiert.",
+      "BUTTON": "Erstellen Sie Ihr Profil"
     },
     "FOOTER": {
-      "TAGLINE": "Wir bieten die Struktur. Du definierst die Verbindung.",
+      "TAGLINE": "Wir bieten die Struktur. Sie definieren die Verbindung.",
+      "ARIA_LABEL": "Footer-Navigation",
       "PLATFORM": {
         "TITLE": "Plattform",
         "ABOUT": "Über uns",
-        "HOW_IT_WORKS": "So funktioniert's",
+        "HOW_IT_WORKS": "Wie es funktioniert",
         "MEMBERSHIP": "Mitgliedschaft",
         "SUCCESS_STORIES": "Erfolgsgeschichten"
       },
       "SUPPORT": {
         "TITLE": "Support",
-        "HELP": "Hilfecenter",
+        "HELP": "Hilfe-Center",
         "SAFETY": "Sicherheitstipps",
         "GUIDELINES": "Community-Richtlinien",
         "CONTACT": "Kontakt"
       },
       "LEGAL": {
-        "TITLE": "Rechtliches",
+        "TITLE": "Rechtlich",
         "PRIVACY": "Datenschutzrichtlinie",
         "TERMS": "Nutzungsbedingungen",
         "COOKIES": "Cookie-Richtlinie"
       },
-      "COPYRIGHT": "Gylde. Alle Rechte vorbehalten.",
-      "DISCLAIMER": "Gylde ist eine Dating-Plattform. Wir unterstützen oder dulden keine Form illegaler Aktivitäten."
+      "COPYRIGHT": "© {{year}} Gylde. Alle Rechte vorbehalten.",
+      "DISCLAIMER": "Gylde ist eine Dating-Plattform. Wir unterstützen oder billigen keine Form von illegaler Aktivität."
     }
+  },
+  "ONBOARDING": {
+    "PROGRESS": "Schritt {{current}} von {{total}}",
+    "NEXT": "Weiter",
+    "BACK": "Zurück",
+    "SKIP": "Jetzt überspringen",
+    "FINISH": "Profil vervollständigen",
+    "SAVING": "Speichern...",
+    "REQUIRED": "Erforderlich",
+    "STEP_1": {
+      "TITLE": "Los geht's",
+      "SUBTITLE": "Zuerst ein paar Grundlagen, um sicherzustellen, dass Gylde zu dir passt.",
+      "BIRTHDAY_QUESTION": "Wann hast du Geburtstag?",
+      "BIRTHDAY_HINT": "Wir verwenden das, um dein Alter zu verifizieren und es in deinem Profil anzuzeigen.",
+      "BIRTHDAY_LABEL": "Geburtsdatum",
+      "AGE_VERIFIED": "Du bist {{age}} Jahre alt",
+      "AGE_REQUIRED": "Du musst mindestens 18 Jahre alt sein, um Gylde beizutreten.",
+      "LOCATION_QUESTION": "Wo befindest du dich?",
+      "CITY_AUTOCOMPLETE_PLACEHOLDER": "Beginne, deine Stadt einzugeben...",
+      "LOCATION_DETECTING": "Deinen Standort ermitteln...",
+      "LOCATION_SUCCESS": "Standort für bessere Übereinstimmungen erkannt",
+      "LOCATION_CONFIRMED": "Entfernungsmatching aktiviert",
+      "LOCATION_RETRY": "Erneut versuchen",
+      "LOCATION_USE_GPS": "GPS nutzen"
+    },
+    "STEP_2": {
+      "TITLE": "Über dich",
+      "SUBTITLE": "Hilf uns zu verstehen, wer du bist und wen du treffen möchtest.",
+      "IDENTITY_QUESTION": "Wie identifizierst du dich?",
+      "IDENTITY_MAN": "Mann",
+      "IDENTITY_WOMAN": "Frau",
+      "IDENTITY_NONBINARY": "Nicht‑binär",
+      "IDENTITY_SELF_DESCRIBE": "Bevorzuge Eigenbeschreibung",
+      "IDENTITY_CUSTOM_LABEL": "Wie würdest du dich beschreiben?",
+      "INTERESTED_QUESTION": "An wem bist du interessiert?",
+      "INTERESTED_HINT": "Wähle alle zutreffenden Optionen",
+      "INTERESTED_MEN": "Männer",
+      "INTERESTED_WOMEN": "Frauen",
+      "INTERESTED_NONBINARY": "Nicht‑binäre Personen",
+      "AGE_RANGE_QUESTION": "Welchen Altersbereich suchst du?",
+      "AGE_RANGE_MIN": "Mindestalter",
+      "AGE_RANGE_MAX": "Höchstalter"
+    },
+    "STEP_3": {
+      "TITLE": "Was suchst du?",
+      "SUBTITLE": "Wähle alles aus, was dich interessiert. Das hilft uns, ideale Matches zu finden.",
+      "GOALS_QUESTION": "Beziehungsziele",
+      "GOALS_HINT": "Welche Art von Verbindung suchst du?",
+      "LONG_TERM": "Langfristig",
+      "LONG_TERM_DESC": "Etwas Dauerhaftes aufbauen",
+      "MARRIAGE_MINDED": "Heiratsorientiert",
+      "MARRIAGE_MINDED_DESC": "Auf der Suche nach einem Lebenspartner",
+      "ROMANCE": "Romantik",
+      "ROMANCE_DESC": "Dating und romantische Verbindung",
+      "FRIENDS_FIRST": "Freunde zuerst",
+      "FRIENDS_FIRST_DESC": "Als Freunde starten, schauen, wohin es führt",
+      "CASUAL": "Unverbindlich",
+      "CASUAL_DESC": "Keine Verpflichtungen",
+      "TRAVEL_PARTNER": "Reisepartner",
+      "TRAVEL_PARTNER_DESC": "Jemand zum Entdecken der Welt",
+      "MENTORSHIP": "Mentorschaft",
+      "MENTORSHIP_DESC": "Gemeinsam lernen und wachsen",
+      "STYLE_QUESTION": "Beziehungsstil",
+      "STYLE_HINT": "Wie gehst du Beziehungen an?",
+      "MONOGAMOUS": "Monogam",
+      "MONOGAMOUS_DESC": "Exklusive Beziehung",
+      "NON_MONOGAMOUS": "Nicht‑monogam",
+      "NON_MONOGAMOUS_DESC": "Offen für mehrere Verbindungen",
+      "OPEN_RELATIONSHIP": "Offene Beziehung",
+      "OPEN_RELATIONSHIP_DESC": "In Partnerschaft, aber offen für andere",
+      "DISCRETION": "Diskretion",
+      "DISCRETION_DESC": "Privatsphäre ist wichtig",
+      "LIFESTYLE_QUESTION": "Lebensstil",
+      "LIFESTYLE_HINT": "Wie würdest du deinen Lebensstil beschreiben?",
+      "LUXURY_LIFESTYLE": "Luxuriöser Lebensstil",
+      "LUXURY_LIFESTYLE_DESC": "Premium‑Leben und Erlebnisse",
+      "ACTIVE_LIFESTYLE": "Aktiver Lebensstil",
+      "ACTIVE_LIFESTYLE_DESC": "Fitness und Outdoor‑Aktivitäten",
+      "JET_SETTER": "Weltreisender",
+      "JET_SETTER_DESC": "Häufiger Reisender",
+      "FOODIE": "Feinschmecker",
+      "FOODIE_DESC": "Genießer gehobener Küche",
+      "NIGHTLIFE": "Nachtleben",
+      "NIGHTLIFE_DESC": "Clubs, Bars, soziales Szene",
+      "CULTURAL": "Kulturell",
+      "CULTURAL_DESC": "Kunst, Theater, Museen",
+      "HOMEBODY": "Zuhausebleibend",
+      "HOMEBODY_DESC": "Gemütliche Abende zu Hause",
+      "ADVENTUROUS": "Abenteuerlustig",
+      "ADVENTUROUS_DESC": "Spontan, thrill‑suchend",
+      "HEALTH_CONSCIOUS": "Gesundheitsbewusst",
+      "HEALTH_CONSCIOUS_DESC": "Fokus auf Wellness",
+      "CAREER_DRIVEN": "Karriereorientiert",
+      "CAREER_DRIVEN_DESC": "Ambitionierter Profi",
+      "LAID_BACK": "Entspannt",
+      "LAID_BACK_DESC": "Locker, easy‑going",
+      "SOCIAL_BUTTERFLY": "Sozialer Schmetterling",
+      "SOCIAL_BUTTERFLY_DESC": "Liebt Events und Zusammenkünfte"
+    },
+    "STEP_4": {
+      "TITLE": "Unterstützungs‑Orientierung",
+      "SUBTITLE": "Beziehungen beinhalten verschiedene Dynamiken. Das hilft uns zu verstehen, was für dich richtig ist.",
+      "SUPPORT_QUESTION": "Wie würdest du dich in einer Beziehung beschreiben?",
+      "SUPPORT_HINT": "Wähle alle zutreffenden Optionen. Optional.",
+      "PROVIDING": "Bereit, Unterstützung zu geben",
+      "RECEIVING": "Bereit, Unterstützung zu erhalten",
+      "EITHER": "Offen für beides, je nach Verbindung",
+      "PRIVATE": "Bevorzuge, dies privat zu halten"
+    },
+    "STEP_5": {
+      "TITLE": "In deinen eigenen Worten",
+      "SUBTITLE": "Hilf anderen zu verstehen, was du suchst. Sei authentisch – das führt zu besseren Verbindungen.",
+      "TAGLINE_QUESTION": "Wie lautet dein Slogan?",
+      "TAGLINE_PLACEHOLDER": "Ein kurzer Satz, der dich beschreibt...",
+      "TAGLINE_HINT": "Wird prominent auf deiner Profilkarte angezeigt.",
+      "IDEAL_QUESTION": "Wie sieht für dich eine ideale Beziehung aus? (Optional)",
+      "IDEAL_PLACEHOLDER": "Beschreibe die Beziehung, die du aufbauen möchtest...",
+      "IDEAL_HINT": "Optional, aber spezifisch zu sein hilft, bessere Matches anzuziehen.",
+      "SUPPORT_QUESTION": "Was bedeutet es für dich, in einer Beziehung unterstützt zu werden? (Optional)",
+      "SUPPORT_PLACEHOLDER": "Teile, was Unterstützung für dich bedeutet...",
+      "SUPPORT_HINT": "Optional, aber hilft Matches, deine Perspektive zu verstehen.",
+      "CHAR_COUNT": "{{count}} / {{max}} Zeichen"
+    },
+    "STEP_6": {
+      "TITLE": "Füge deine Fotos hinzu",
+      "SUBTITLE": "Zeige das echte Ich. Profile mit authentischen Fotos erhalten deutlich mehr bedeutungsvolle Matches.",
+      "PHOTO_REQUIREMENTS": "Fotoanforderungen",
+      "PHOTO_REQ_1": "Mindestens ein aktuelles Foto",
+      "PHOTO_REQ_2": "Klares Gesicht sichtbar",
+      "PHOTO_REQ_3": "Keine Nacktheit oder expliziter Inhalt",
+      "PHOTO_REQ_4": "Lebensstil‑ oder Porträtfotos erwünscht",
+      "PRIMARY_PHOTO": "Primärfoto",
+      "PROFILE_PHOTO": "Profilfoto",
+      "ADDITIONAL_PHOTOS": "Weitere Fotos",
+      "ADD_PHOTO": "Foto hinzufügen",
+      "UPLOAD_HINT": "Ziehen und ablegen oder klicken zum Hochladen",
+      "SUPPORTED_FORMATS": "JPG, PNG bis zu 10 MB"
+    },
+    "STEP_7": {
+      "TITLE": "Vertrauen aufbauen",
+      "SUBTITLE": "Verifizierte Profile erhalten mehr Matches und bauen schneller Vertrauen auf. Du kannst das später immer noch erledigen.",
+      "VERIFY_QUESTION": "Möchtest du dein Profil verifizieren?",
+      "IDENTITY_VERIFY": "Identitätsverifikation",
+      "IDENTITY_VERIFY_DESC": "Bestätige deine Identität mit einem amtlichen Ausweis",
+      "PHOTO_VERIFY": "Foto‑Verifizierung",
+      "PHOTO_VERIFY_DESC": "Mache ein kurzes Selfie, um zu bestätigen, dass du deinen Fotos entspricht",
+      "SKIP_FOR_NOW": "Mache ich später",
+      "BENEFITS_TITLE": "Vorteile der Verifizierung",
+      "BENEFIT_1": "Verifiziertes Abzeichen im Profil",
+      "BENEFIT_2": "Höhere Sichtbarkeit in Suchergebnissen",
+      "BENEFIT_3": "Mehr Vertrauen von potenziellen Matches",
+      "BENEFIT_4": "Zugriff auf exklusive Funktionen"
+    },
+    "COMPLETE": {
+      "TITLE": "Willkommen bei Gylde",
+      "SUBTITLE": "Dein Profil ist fertig. Beginne, absichtsvolle Verbindungen zu erkunden.",
+      "CTA": "Jetzt erkunden"
+    }
+  },
+  "ABOUT": {
+    "HERO": {
+      "BADGE": "Über uns",
+      "TITLE": "Dating mit",
+      "TITLE_ACCENT": "Zweck",
+      "DESCRIPTION": "Gylde ist nicht nur eine weitere Dating‑App. Wir bauen eine Gemeinschaft, in der Klarheit, Absicht und echte Verbindung an erster Stelle stehen."
+    },
+    "MISSION": {
+      "LABEL": "Unsere Mission",
+      "TITLE": "Struktur, die befähigt",
+      "P1": "Modernes Dating ist erschöpfend. Endloses Swipen, gemischte Signale und Profile, die nicht der Realität entsprechen. Wir haben Gylde gebaut, um das zu ändern.",
+      "P2": "Unsere Plattform bietet die Struktur für bedeutungsvolle Verbindungen – wo Menschen offen über ihre Absichten sprechen, verifiziert sind und Werkzeuge haben, die Dating weniger wie ein Spiel und mehr wie die echte Suche nach Partnerschaft fühlen lassen.",
+      "P3": "Egal, ob du nach Gesellschaft, Mentorschaft oder einem Lebenspartner suchst, Gylde gibt dir das Framework, um es zu finden – zu deinen Bedingungen.",
+      "VISUAL": "Absichtsvolle Verbindungen"
+    },
+    "STATS": {
+      "ACTIVE_MEMBERS": "Aktive Mitglieder",
+      "SUCCESSFUL_MATCHES": "Erfolgreiche Matches",
+      "VERIFIED_PROFILES": "Verifizierte Profile",
+      "APP_STORE_RATING": "App‑Store‑Bewertung"
+    },
+    "VALUES": {
+      "LABEL": "Unsere Werte",
+      "HEADER_TITLE": "Wofür wir stehen",
+      "HEADER_DESCRIPTION": "Diese Prinzipien leiten alles, was wir bauen, und jede Entscheidung, die wir treffen.",
+      "AUTHENTICITY": {
+        "TITLE": "Authentizität",
+        "DESCRIPTION": "Wir glauben, echte Verbindungen beginnen mit echten Menschen. Unsere Verifizierungssysteme stellen sicher, dass du triffst, wen du erwartest zu treffen."
+      },
+      "INTENTIONALITY": {
+        "TITLE": "Absichtlichkeit",
+        "DESCRIPTION": "Keine Spiele, kein Rätselraten. Gylde ist für Menschen, die wissen, was sie wollen, und nicht Angst haben, das offen zu sagen."
+      },
+      "SAFETY": {
+        "TITLE": "Sicherheit",
+        "DESCRIPTION": "Deine Sicherheit hat Priorität. Von Identitätsverifizierung bis privater Nachrichten bauen wir Sicherheit in jedes Feature ein."
+      },
+      "RESPECT": {
+        "TITLE": "Respekt",
+        "DESCRIPTION": "Jedes Mitglied verdient Respekt. Unsere Community‑Richtlinien sorgen für ein einladendes Umfeld für alle."
+      }
+    },
+    "STORY": {
+      "LABEL": "Unsere Geschichte",
+      "TITLE": "Gebaut von Menschen, die es verstehen",
+      "P1": "Gylde wurde von Menschen gegründet, die die Frustrationen des modernen Datings aus erster Hand erlebt haben. Die endlosen Profile ohne Substanz. Die Matches, die nirgendwo hinführten. Die Unsicherheit, ob jemand wirklich die Person ist, die er vorgibt zu sein.",
+      "P2": "Wir stellten uns eine Plattform vor, bei der Absichten von Anfang an klar sind. Bei der ein Lebensstil‑Präferenz nichts ist, das man versteckt, sondern etwas, worauf man matchen kann. Bei der Verifizierung nicht optional ist – sie ist das Fundament des Vertrauens.",
+      "P3": "Heute dient Gylde Tausenden von Mitgliedern, die unsere Überzeugung teilen, dass Dating absichtlich, respektvoll und lohnend sein sollte. Wir versuchen nicht, die größte Dating‑Plattform zu werden. Wir wollen die bedeutungsvollste sein.",
+      "CARD": {
+        "TITLE": "Die Vision",
+        "SUBTITLE": "Warum wir Gylde gebaut haben",
+        "DESCRIPTION": "Wir sahen eine Lücke in der Dating‑Welt – Plattformen, die entweder oberflächliches Swipen förderten oder keinen Aufwand betrieben, um zu verifizieren, wer wirklich hinter dem Profil steckt. Gylde entstand aus dem Glauben, dass Dating absichtlich, transparent und sicher sein sollte."
+      }
+    },
+    "DIFFERENCE": {
+      "LABEL": "Der Gylde‑Unterschied",
+      "TITLE": "Warum Menschen uns wählen",
+      "ITEMS": {
+        "IDENTITY_VERIFICATION": {
+          "TITLE": "Identitätsverifizierung",
+          "DESCRIPTION": "Jedes Profil kann mit einem amtlichen Ausweis verifiziert werden, sodass du weißt, mit wem du sprichst."
+        },
+        "AI_ASSISTANCE": {
+          "TITLE": "KI‑gestützte Unterstützung",
+          "DESCRIPTION": "Premium‑Mitglieder erhalten KI‑Hilfe beim Verfassen von Nachrichten und beim Polieren ihrer Profile."
+        },
+        "VIRTUAL_PHONE": {
+          "TITLE": "Virtuelle Telefonnummern",
+          "DESCRIPTION": "Teile eine Nummer, ohne deine echte Nummer preiszugeben. Datenschutz trifft Komfort."
+        },
+        "CLEAR_INTENTIONS": {
+          "TITLE": "Klare Absichten",
+          "DESCRIPTION": "Du weißt, was jemand sucht, bevor du matchst. Keine Überraschungen, keine verschwendete Zeit."
+        },
+        "PRIVATE_PHOTOS": {
+          "TITLE": "Private Fotokontrolle",
+          "DESCRIPTION": "Teile private Fotos nur mit Personen deiner Wahl. Du kontrollierst den Zugriff."
+        },
+        "TRUST_SCORE": {
+          "TITLE": "Vertrauens‑Score‑System",
+          "DESCRIPTION": "Baue im Laufe der Zeit Glaubwürdigkeit auf. Vervollständige dein Profil, verifiziere deine Identität, erwerbe Vertrauen."
+        }
+      }
+    },
+    "CTA": {
+      "TITLE": "Bereit für",
+      "TITLE_ACCENT": "absichtliches Dating",
+      "DESCRIPTION": "Tritt tausenden Mitgliedern bei, die Klarheit über Chaos gestellt haben.",
+      "BUTTON": "Erstelle dein Profil"
+    }
+  },
+  "HOW_IT_WORKS": {
+    "HERO": {
+      "BADGE": "Wie es funktioniert",
+      "TITLE": "Deine Reise zu",
+      "TITLE_ACCENT": "Verbindung",
+      "DESCRIPTION": "Von der Erstellung deines Profils bis zum Aufbau bedeutungsvoller Beziehungen – so macht Gylde absichtliches Dating einfach."
+    },
+    "STEPS": {
+      "S1": {
+        "TITLE": "Erstelle dein Profil",
+        "DESCRIPTION": "Erzähle uns von dir – deinen Lebensstil, was du suchst und was dich einzigartig macht. Lade Fotos hoch, die das echte Ich zeigen.",
+        "DETAILS": {
+          "D1": "Wähle deinen Lebensstil und Beziehungsvorlieben",
+          "D2": "Lade bis zu 10 Fotos hoch (inkl. privater Alben)",
+          "D3": "Schreibe eine Bio, die deine Persönlichkeit einfängt",
+          "D4": "Lege Standort‑ und Entfernungspräferenzen fest"
+        }
+      },
+      "S2": {
+        "TITLE": "Verifiziere deine Identität",
+        "DESCRIPTION": "Baue von Anfang an Vertrauen auf. Unser schneller Verifizierungsprozess bestätigt, dass du wirklich du bist – und zeigt anderen, dass du es ernst meinst.",
+        "DETAILS": {
+          "D1": "Schnelle ID‑Verifizierung mit Veriff",
+          "D2": "Foto‑Abgleich garantiert Profilauthentizität",
+          "D3": "Erhalte ein Verifizierungs‑Badge im Profil",
+          "D4": "Hebe dich hervor und baue Vertrauen bei Verbindungen auf"
+        }
+      },
+      "S3": {
+        "TITLE": "Entdecke passende Matches",
+        "DESCRIPTION": "Durchsuche Profile, gefiltert nach dem, was dir wichtig ist. Unser Matching berücksichtigt Lebensstil, Absichten und Kompatibilität – nicht nur Fotos.",
+        "DETAILS": {
+          "D1": "Filter nach Lebensstil, Werten und Absichten",
+          "D2": "Sieh Reputation‑Stufen, um die Qualität der Mitglieder zu beurteilen",
+          "D3": "Speichere Favoriten für später",
+          "D4": "Sieh, wer an dir interessiert ist (Premium)"
+        }
+      },
+      "S4": {
+        "TITLE": "Beginne bedeutungsvolle Gespräche",
+        "DESCRIPTION": "Wenn du jemanden Interessantes gefunden hast, melde dich. Unsere Messaging‑Features helfen dir, authentisch und sicher zu verbinden.",
+        "DETAILS": {
+          "D1": "KI‑gestützte Nachrichten‑Vorschläge",
+          "D2": "Anfrage für private Fotos",
+          "D3": "Virtuelle Telefonnummern für Sicherheit"
+        }
+      },
+      "S5": {
+        "TITLE": "Baue echte Verbindungen auf",
+        "DESCRIPTION": "Nimm deine Verbindung offline, wenn du bereit bist. Wir liefern die Struktur – du definierst die Beziehung.",
+        "DETAILS": {
+          "D1": "Match, wenn gegenseitiges Interesse besteht",
+          "D2": "Austausch von Kontaktdaten zu deinen Bedingungen",
+          "D3": "Nutze virtuelle Nummern, um privat zu bleiben",
+          "D4": "Treffe dich mit Selbstvertrauen"
+        }
+      }
+    },
+    "MEMBERSHIP": {
+      "LABEL": "Mitgliedschaftsstufen",
+      "TITLE": "Wähle dein Erlebnis",
+      "DESCRIPTION": "Starte kostenlos und upgrade, wenn du bereit bist zu verbinden.",
+      "MOST_POPULAR": "Beliebteste",
+      "GET_STARTED": "Loslegen",
+      "LEARN_MORE": "Mehr erfahren",
+      "TIERS": {
+        "FREE": {
+          "NAME": "Kostenlos",
+          "PRICE": "Kostenlos",
+          "DESCRIPTION": "Durchsuchen und entdecken",
+          "FEATURES": {
+            "F1": "Erstelle dein Profil",
+            "F2": "Durchsuche unbegrenzt Profile",
+            "F3": "Speichere Favoriten",
+            "F4": "Bis zu 5 Fotos",
+            "F5": "Verifiziere deine Identität",
+            "F6": "Reputationsbasierte Gesprächs‑Limits"
+          }
+        },
+        "PREMIUM": {
+          "NAME": "Premium",
+          "PRICE": "$49.99/Monat",
+          "DESCRIPTION": "Das volle Erlebnis",
+          "FEATURES": {
+            "F1": "Bis zu 20 Fotos",
+            "F2": "Anfrage & Ansicht privater Fotos",
+            "F3": "Erweiterte Entdeckungs‑Filter",
+            "F4": "Sieh, wer dich angesehen & favorisiert hat",
+            "F5": "Priorität in Suchergebnissen",
+            "F6": "KI‑Nachrichtenassistent",
+            "F7": "KI‑Profilpolitur",
+            "F8": "Virtuelle Telefonnummer"
+          }
+        }
+      }
+    },
+    "REPUTATION": {
+      "LABEL": "Baue deine Reputation auf",
+      "TITLE": "Das Reputation‑System",
+      "DESCRIPTION": "Deine Reputation‑Stufe spiegelt dein Engagement und Verhalten auf Gylde wider. Höhere Stufen schalten mehr Features frei und zeigen anderen, dass du ein Qualitäts‑Mitglied bist.",
+      "FACTORS": {
+        "COMPLETE_PROFILE": {
+          "TITLE": "Vollständiges Profil",
+          "DESCRIPTION": "Füge Fotos hinzu, schreibe eine Bio und fülle deine Präferenzen aus"
+        },
+        "IDENTITY_VERIFICATION": {
+          "TITLE": "Identitätsverifizierung",
+          "DESCRIPTION": "Verifiziere deinen Ausweis, um Reputation schneller aufzubauen"
+        },
+        "QUALITY_CONVERSATIONS": {
+          "TITLE": "Qualitäts‑Gespräche",
+          "DESCRIPTION": "Führe respektvolle Unterhaltungen und antworte auf Nachrichten"
+        },
+        "CONSISTENT_ACTIVITY": {
+          "TITLE": "Konstante Aktivität",
+          "DESCRIPTION": "Bleib aktiv, um deine Stufe zu halten und zu steigern"
+        }
+      },
+      "TIERS": {
+        "NEW": "Neu",
+        "ACTIVE": "Aktiv",
+        "ESTABLISHED": "Etabliert",
+        "TRUSTED": "Vertrauenswürdig",
+        "DISTINGUISHED": "Herausragend"
+      },
+      "CAPTION": "Reputation‑Stufen"
+    },
+    "FAQ": {
+      "LABEL": "FAQ",
+      "TITLE": "Häufige Fragen",
+      "Q1": {
+        "QUESTION": "Wie unterscheidet sich Gylde von anderen Dating‑Apps?",
+        "ANSWER": "Gylde ist für intentionale Verbindungen gebaut. Wir fokussieren klare Kommunikation von Beziehungszielen, robuste Identitätsverifizierung und ein Reputation‑System, das Qualitäts‑Mitglieder belohnt. Kein endloses Swipen – nur bedeutungsvolle Matches."
+      },
+      "Q2": {
+        "QUESTION": "Ist die Identitätsverifizierung verpflichtend?",
+        "ANSWER": "Die Verifizierung ist optional, wird jedoch stark empfohlen. Verifizierte Profile erhalten ein Badge und bauen schneller Reputation auf, wodurch sie wahrscheinlicher Antworten erhalten. Der Vorgang dauert nur wenige Minuten."
+      },
+      "Q3": {
+        "QUESTION": "Wie funktioniert das Reputation‑System?",
+        "ANSWER": "Deine Reputation‑Stufe (Neu, Aktiv, Etabliert, Vertrauenswürdig, Hervorragend) spiegelt dein Engagement und Verhalten auf der Plattform wider. Höhere Stufen ermöglichen es dir, mehr Gespräche mit Mitgliedern höherer Stufen pro Tag zu starten. Baue deine Reputation auf, indem du dein Profil vervollständigst, aktiv bleibst und respektvoll mit anderen umgehst."
+      },
+      "Q4": {
+        "QUESTION": "Was sind private Fotos?",
+        "ANSWER": "Private Fotos sind Bilder, die nur für Personen sichtbar sind, die du genehmigt hast. Wenn jemand Zugriff anfordert, kannst du akzeptieren oder ablehnen. Das gibt dir Kontrolle darüber, wer deine persönlicheren Inhalte sieht. Private Fotos sind ein Premium‑Feature."
+      },
+      "Q5": {
+        "QUESTION": "Wie funktioniert die virtuelle Telefonnummer?",
+        "ANSWER": "Premium‑Mitglieder erhalten eine dedizierte virtuelle Telefonnummer. Du kannst sie mit Matches teilen, anstatt deine echte Nummer preiszugeben. Anrufe und Nachrichten werden zu dir weitergeleitet, während deine echte Nummer privat bleibt."
+      },
+      "Q6": {
+        "QUESTION": "Kann ich mein Abonnement jederzeit kündigen?",
+        "ANSWER": "Ja, du kannst jederzeit kündigen. Du behältst deine Premium‑Features bis zum Ende deines aktuellen Abrechnungszeitraums. Keine langfristigen Verpflichtungen."
+      }
+    },
+    "CTA": {
+      "TITLE": "Bereit, deine",
+      "TITLE_ACCENT": "Verbindung",
+      "DESCRIPTION": "Tritt Gylde noch heute bei und erlebe Dating mit Absicht.",
+      "BUTTON": "Erstelle dein Profil"
+    }
+  },
+  "SAFETY": {
+    "HERO": {
+      "BADGE": "Deine Sicherheit zählt",
+      "TITLE": "Sicherheitstipps",
+      "DESCRIPTION": "Neue Menschen zu treffen sollte aufregend, nicht stressig sein. Befolge diese Tipps, um dich zu schützen, während du bedeutungsvolle Verbindungen eingehst."
+    },
+    "TIPS_SECTION": {
+      "LABEL": "Best Practices",
+      "TITLE": "Online & Offline sicher bleiben"
+    },
+    "TIPS": {
+      "T1": {
+        "TITLE": "Unterhaltungen auf Gylde führen",
+        "DESCRIPTION": "Nutze unser Nachrichtensystem, bis du dich wohl fühlst. Es wird auf Sicherheit überwacht und bietet dir einfache Zugriffsmöglichkeiten für Blockieren und Melden."
+      },
+      "T2": {
+        "TITLE": "Auf verifizierte Profile achten",
+        "DESCRIPTION": "Verifizierte Mitglieder haben ihre Identität bestätigt. Das garantiert nicht den Charakter, aber zeigt, dass sie sind, wer sie vorgeben zu sein."
+      },
+      "T3": {
+        "TITLE": "Lass dir Zeit",
+        "DESCRIPTION": "Eile nicht, persönliche Informationen zu teilen oder dich persönlich zu treffen. Echte Verbindungen können in einem angenehmen Tempo entstehen."
+      },
+      "T4": {
+        "TITLE": "Erst Video‑Chat",
+        "DESCRIPTION": "Bevor du dich persönlich triffst, erwäge einen Video‑Call. Das bestätigt, dass sie wie ihre Fotos aussehen und hilft, die Chemie zu beurteilen."
+      },
+      "T5": {
+        "TITLE": "Treffe dich an öffentlichen Orten",
+        "DESCRIPTION": "Für erste Treffen wähle belebte, öffentliche Plätze. Cafés, Restaurants und beliebte Locations sind gute Optionen."
+      },
+      "T6": {
+        "TITLE": "Sag jemandem deine Pläne",
+        "DESCRIPTION": "Informiere einen Freund oder ein Familienmitglied, wo du hingehst, wen du triffst und wann du zurück sein willst."
+      }
+    },
+    "RED_FLAGS_SECTION": {
+      "TITLE": "Warnsignale",
+      "DESCRIPTION": "Vertraue deinem Instinkt. Wenn etwas seltsam wirkt, ist es das wahrscheinlich auch. Hier sind Anzeichen, auf die du achten solltest:",
+      "ACTION": "Wenn du eines dieser Verhaltensweisen bemerkst, breche die Kommunikation sofort ab und melde den Nutzer über unsere App."
+    },
+    "RED_FLAGS": {
+      "F1": "Fragt nach Geld oder finanzieller Hilfe",
+      "F2": "Lehnt Video‑Chat oder Treffen an öffentlichen Orten ab",
+      "F3": "Wird wütend, wenn du Grenzen setzt",
+      "F4": "Druckt dich, schnell persönliche Informationen zu teilen",
+      "F5": "Hat inkonsistente Geschichten oder Profildetails",
+      "F6": "Will sofort von Gylde wegziehen",
+      "F7": "Sendet unaufgefordert expliziten Inhalt",
+      "F8": "Lässt dich unwohl oder unsicher fühlen"
+    },
+    "MEETING_SECTION": {
+      "LABEL": "Erstes Date – Sicherheit",
+      "TITLE": "Persönliches Treffen",
+      "DESCRIPTION": "Wenn du bereit bist, die Verbindung offline zu bringen, befolge diese Vorsichtsmaßnahmen.",
+      "CARDS": {
+        "C1": {
+          "TITLE": "Wähle den Ort",
+          "DESCRIPTION": "Wähle einen öffentlichen Ort, den du kennst – ein belebtes Café, Restaurant oder beliebtes Lokal. Lass sie nicht den ersten Ort wählen."
+        },
+        "C2": {
+          "TITLE": "Organisiere deine eigene Anreise",
+          "DESCRIPTION": "Fahre selbst oder nutze ein Ride‑Sharing. Verlasse dich nicht auf die Fahrt deines Dates, besonders bei den ersten Treffen. So behältst du die Kontrolle über deine Abreise."
+        },
+        "C3": {
+          "TITLE": "Sag einem Freund Bescheid",
+          "DESCRIPTION": "Teile deine Pläne mit jemandem, dem du vertraust: wo du hingehst, wen du triffst und wann du zurück sein willst. Erwäge, deinen Live‑Standort zu teilen."
+        },
+        "C4": {
+          "TITLE": "Bleib nüchtern",
+          "DESCRIPTION": "Behalte einen klaren Kopf. Begrenze den Alkoholkonsum und lass dein Getränk nie unbeaufsichtigt. Wachsamkeit hilft dir, gute Entscheidungen zu treffen."
+        },
+        "C5": {
+          "TITLE": "Vertraue deinem Bauchgefühl",
+          "DESCRIPTION": "Wenn etwas falsch erscheint, geh. Du musst niemandem eine Erklärung geben. Deine Sicherheit ist wichtiger als Höflichkeit."
+        },
+        "C6": {
+          "TITLE": "Check‑In",
+          "DESCRIPTION": "Richte ein Check‑In‑System mit einem Freund ein. Eine Text‑ oder Anrufnachricht zu einer festgelegten Zeit lässt ihn wissen, dass du okay bist – oder dass du Hilfe brauchst."
+        }
+      }
+    },
+    "FINANCIAL_SECTION": {
+      "TITLE": "Schütze deine Finanzen",
+      "STRONG": "Sende niemals Geld an jemanden, den du nicht persönlich getroffen hast.",
+      "P1_REST": "Betrüger bauen oft emotionale Verbindungen auf, bevor sie um finanzielle Hilfe bitten. Egal wie überzeugend die Geschichte ist, sende keinem Geld, Geschenkkarten oder Finanzinformationen zu jemandem auf Gylde.",
+      "P2": "Häufige Betrugsmaschen: medizinische Notfälle, Reisekosten, Geschäfts­investitionen und Krypto‑Schemen. Wenn jemand nach Geld fragt, melde ihn sofort."
+    },
+    "FEATURES_SECTION": {
+      "LABEL": "Integrierter Schutz",
+      "TITLE": "Gylde‑Sicherheitsfeatures",
+      "DESCRIPTION": "Wir haben Sicherheit in unsere Plattform eingebaut. So schützen wir dich:",
+      "ITEMS": {
+        "IDENTITY_VERIFICATION": {
+          "TITLE": "Identitätsverifizierung",
+          "DESCRIPTION": "Unsere ID‑Verifizierung bestätigt, dass Mitglieder das sind, wer sie vorgeben zu sein."
+        },
+        "VIRTUAL_PHONE": {
+          "TITLE": "Virtuelle Telefonnummern",
+          "DESCRIPTION": "Premium‑Mitglieder können eine Nummer teilen, ohne ihre echte Nummer preiszugeben."
+        },
+        "BLOCKING": {
+          "TITLE": "Einfaches Blockieren",
+          "DESCRIPTION": "Blockiere jeden sofort. Sie können dich nicht kontaktieren oder dein Profil sehen."
+        },
+        "REPORT": {
+          "TITLE": "Meldefunktion",
+          "DESCRIPTION": "Melde problematisches Verhalten direkt aus Profilen oder Unterhaltungen."
+        },
+        "PRIVATE_PHOTOS": {
+          "TITLE": "Private Fotos",
+          "DESCRIPTION": "Steuere, wer deine privaten Fotos sehen kann, mit genehmigungsbasiertem Zugriff."
+        },
+        "TRUST_SCORE": {
+          "TITLE": "Vertrauens‑Score",
+          "DESCRIPTION": "Sieh auf einen Blick, wie vollständig und verifiziert das Profil einer Person ist."
+        }
+      }
+    },
+    "RESOURCES_SECTION": {
+      "LABEL": "Hilfe holen",
+      "TITLE": "Sicherheitsressourcen",
+      "DESCRIPTION": "Bist du in einer unsicheren Situation oder brauchst Unterstützung, können diese Ressourcen helfen.",
+      "VISIT_WEBSITE": "Website besuchen",
+      "EMERGENCY": "Im Notfall ruf sofort 911 (oder deine lokale Notrufnummer) an."
+    },
+    "RESOURCES": {
+      "R1": { "NAME": "National Domestic Violence Hotline" },
+      "R2": { "NAME": "RAINN (Sexual Assault)" },
+      "R3": { "NAME": "Crisis Text Line" }
+    },
+    "REPORT_SECTION": {
+      "TITLE": "Ein Problem melden",
+      "DESCRIPTION": "Wenn du Belästigung, Missbrauch oder anderes problematisches Verhalten auf Gylde erlebt hast, melde es bitte. Deine Meldungen helfen uns, die Gemeinschaft sicher zu halten.",
+      "METHODS": {
+        "IN_APP": {
+          "TITLE": "In der App",
+          "DESCRIPTION": "Nutze den Melde‑Button in jedem Profil oder jeder Unterhaltung"
+        },
+        "EMAIL": {
+          "TITLE": "E‑Mail"
+        }
+      }
+    }
+  },
+  "GUIDELINES": {
+    "HERO": {
+      "BADGE": "Community",
+      "TITLE": "Community‑Richtlinien",
+      "DESCRIPTION": "Unsere Community basiert auf Respekt, Ehrlichkeit und echter Verbindung. Diese Richtlinien helfen uns, ein sicheres und einladendes Umfeld für alle zu erhalten.",
+      "LAST_UPDATED_LABEL": "Zuletzt aktualisiert:"
+    },
+    "INTRO": {
+      "P1": "Gylde ist eine Gemeinschaft von Menschen, die bedeutungsvolle Verbindungen suchen. Damit jeder eine positive Erfahrung hat, bitten wir alle Mitglieder, diese Richtlinien zu befolgen. Verstöße können zu Warnungen, temporären Sperren oder dauerhaftem Ausschluss von der Plattform führen."
+    },
+    "CORE_VALUES": {
+      "TITLE": "Unsere Kernwerte",
+      "AUTHENTICITY": {
+        "TITLE": "Authentizität",
+        "DESCRIPTION": "Sei echt. Nutze echte Fotos. Teile ehrliche Informationen über dich."
+      },
+      "RESPECT": {
+        "TITLE": "Respekt",
+        "DESCRIPTION": "Behandle jedes Mitglied mit Würde, unabhängig davon, ob du an ihm interessiert bist."
+      },
+      "INTEGRITY": {
+        "TITLE": "Integrität",
+        "DESCRIPTION": "Sei klar über deine Absichten. Täusche andere nicht und manipuliere sie nicht."
+      },
+      "SAFETY": {
+        "TITLE": "Sicherheit",
+        "DESCRIPTION": "Schütze dich und andere. Melde problematisches Verhalten umgehend."
+      }
+    },
+    "COMMON": {
+      "DO": "Do:",
+      "DONT": "Don't:"
+    },
+    "SECTIONS": {
+      "AUTHENTIC": {
+        "TITLE": "Sei authentisch",
+        "DO": {
+          "D1": "Verwende aktuelle Fotos, die genau zeigen, wie du heute aussiehst",
+          "D2": "Gib wahre Angaben zu Alter, Standort und Beziehungsstatus",
+          "D3": "Sei ehrlich über deine Absichten und was du suchst",
+          "D4": "Vervollständige die Identitätsverifizierung, um Vertrauen aufzubauen",
+          "D5": "Aktualisiere dein Profil, wenn sich deine Umstände ändern"
+        },
+        "DONT": {
+          "D1": "Verwende Fotos anderer Personen oder stark gefilterte/bearbeitete Bilder",
+          "D2": "Erstelle falsche Profile oder gib dich als jemand anderen aus",
+          "D3": "Falschdarstellung deiner Identität, Beruf oder Lebensstil",
+          "D4": "Unterhalte mehrere Konten",
+          "D5": "Nutze die Plattform, wenn du rechtlich nicht berechtigt bist (unter 18)"
+        }
+      },
+      "RESPECT": {
+        "TITLE": "Sei respektvoll",
+        "DO": {
+          "D1": "Kommuniziere höflich, selbst wenn du kein Interesse hast",
+          "D2": "Akzeptiere ein \"Nein\" freundlich und ziehe weiter",
+          "D3": "Respektiere die Zeit und Grenzen anderer",
+          "D4": "Schätze, dass jeder unterschiedliche Vorlieben hat",
+          "D5": "Gib durchdachte Antworten auf Nachrichten"
+        },
+        "DONT": {
+          "D1": "Sende unaufgeforderte explizite Nachrichten oder Fotos",
+          "D2": "Belästige, mobbe, stalke oder bedrohe jemanden",
+          "D3": "Verwende hasserfüllte, diskriminierende oder beleidigende Sprache",
+          "D4": "Kontaktiere jemanden weiter, der dich blockiert hat oder dich gebeten hat, aufzuhören",
+          "D5": "Beschäme oder verspottet andere Nutzer öffentlich oder privat"
+        }
+      },
+      "LEGAL": {
+        "TITLE": "Halte dich an das Gesetz",
+        "PROHIBITED_TITLE": "Verbotene Aktivitäten:",
+        "PROHIBITED": {
+          "P1": "Anbieten oder Anfordern von Prostitution oder Begleitdiensten",
+          "P2": "Geld, Geschenke oder finanzielle Unterstützung verlangen",
+          "P3": "Illegale Substanzen oder Aktivitäten bewerben",
+          "P4": "Menschenhandel oder Ausbeutung jeglicher Art",
+          "P5": "Urheberrechtlich geschützte Inhalte ohne Erlaubnis teilen",
+          "P6": "Gylde für kommerzielle Zwecke oder Werbung nutzen",
+          "P7": "Versuch, die Plattform zu hacken, zu scrapen oder zu kompromittieren"
+        },
+        "WARNING": "Wir melden illegale Aktivitäten an die Strafverfolgungsbehörden, wenn erforderlich oder angemessen."
+      },
+      "PRIVACY": {
+        "TITLE": "Privatsphäre schützen",
+        "DO": {
+          "D1": "Halte persönliche Informationen privat, bis du Vertrauen aufgebaut hast",
+          "D2": "Nutze unsere In‑App‑Nachrichten, bis du bereit bist, Kontaktdaten zu teilen",
+          "D3": "Melde jeden, der unangemessen nach sensiblen Informationen fragt",
+          "D4": "Respektiere, dass private Fotos nur mit Erlaubnis angezeigt werden dürfen"
+        },
+        "DONT": {
+          "D1": "Teile Screenshots oder Inhalte aus privaten Unterhaltungen öffentlich",
+          "D2": "Teile persönliche Informationen anderer Nutzer ohne Zustimmung",
+          "D3": "Nimm Video‑ oder Sprachanrufe ohne Erlaubnis auf",
+          "D4": "Erstelle Inhalte mit anderen Nutzern ohne deren Zustimmung"
+        }
+      },
+      "CONTENT_STANDARDS": {
+        "TITLE": "Inhaltsstandards",
+        "PHOTO_MUST_TITLE": "Profilfotos müssen:",
+        "PHOTO_MUST": {
+          "D1": "Dein Gesicht klar zeigen (mindestens ein Foto)",
+          "D2": "Für alle Zielgruppen in öffentlichen Bereichen geeignet sein",
+          "D3": "Fotos, die du rechtmäßig verwenden darfst",
+          "D4": "Keine Kontaktinformationen oder Social‑Media‑Handles enthalten"
+        },
+        "PROHIBITED_TITLE": "Verbotene Inhalte:",
+        "PROHIBITED": {
+          "P1": "Nacktheit oder sexuell expliziter Inhalt in öffentlichen Profilbereichen",
+          "P2": "Gewalt, Blut oder grafische Darstellungen",
+          "P3": "Hasserfüllte Symbole oder Bilder",
+          "P4": "Bilder von Minderjährigen (Kinder dürfen nicht in deinen Fotos erscheinen)",
+          "P5": "Waffen prominent dargestellt",
+          "P6": "Spam, Werbung oder werbliche Inhalte"
+        },
+        "NOTE": "Private Fotos haben mehr Flexibilität, dürfen aber keinen illegalen Inhalt enthalten."
+      }
+    },
+    "REPORTING": {
+      "TITLE": "Verstöße melden",
+      "P1": "Wenn du Verhalten feststellst, das gegen diese Richtlinien verstößt, melde es bitte sofort. Du kannst Nutzer direkt aus ihrem Profil oder der Unterhaltung melden.",
+      "WHAT_HAPPENS_TITLE": "Was passiert, wenn du meldest:",
+      "WHAT_HAPPENS": {
+        "L1": "Deine Meldung wird von unserem Trust & Safety‑Team geprüft",
+        "L2": "Der gemeldete Nutzer wird nicht darüber informiert, wer die Meldung abgegeben hat",
+        "L3": "Entsprechende Maßnahmen werden je nach Schwere des Verstoßes ergriffen",
+        "L4": "Wiederholte oder schwere Verstöße führen zu permanenten Sperren"
+      },
+      "CONTACT_PREFIX": "Für dringende Sicherheitsanliegen kontaktiere uns direkt unter"
+    },
+    "CONSEQUENCES": {
+      "TITLE": "Konsequenzen",
+      "P1": "Verstöße gegen diese Richtlinien führen zu Maßnahmen, die dem Vergehen entsprechen:",
+      "LEVELS": {
+        "WARNING": {
+          "TITLE": "Warnung",
+          "DESCRIPTION": "Leichte Erstverstöße können zu einer Warnung und Entfernung des Inhalts führen."
+        },
+        "SUSPENSION": {
+          "TITLE": "Temporäre Sperre",
+          "DESCRIPTION": "Wiederholte Verstöße oder mittelschwere Verstöße können zu einer temporären Sperre führen."
+        },
+        "BAN": {
+          "TITLE": "Permanenter Bann",
+          "DESCRIPTION": "Schwere Verstöße oder fortgesetztes Fehlverhalten führen zu einem dauerhaften Ausschluss."
+        }
+      },
+      "NOTE": "Banns sind in der Regel nicht umkehrbar. Wir nehmen die Sicherheit unserer Community ernst."
+    },
+    "CLOSING": {
+      "TITLE": "Danke",
+      "P1": "Indem du diese Richtlinien befolgst, hilfst du, eine Community zu schaffen, in der echte Verbindungen gedeihen können. Danke, dass du Teil von Gylde bist und deine Mitnutzer mit dem Respekt behandelst, den sie verdienen.",
+      "P2_PREFIX": "Fragen zu diesen Richtlinien? Kontaktiere uns unter"
+    }
+  },
+  "DASHBOARD": {
+    "NAV": {
+      "DISCOVER": "Entdecken",
+      "MATCHES": "Matches",
+      "MESSAGES": "Nachrichten",
+      "FEED": "Feed",
+      "PROFILE": "Profil",
+      "SETTINGS": "Einstellungen"
+    },
+    "LOGOUT": "Abmelden",
+    "WELCOME": "Willkommen zurück",
+    "WELCOME_SUB": "Deine nächste bedeutungsvolle Verbindung wartet.",
+    "PROFILE_COMPLETE": "Profil vollständig",
+    "DISCOVER_TITLE": "Mitglieder entdecken",
+    "DISCOVER_SUB": "Durchsuche verifizierte Profile, die mit deinen Absichten übereinstimmen.",
+    "FILTERS": {
+      "ALL": "Alle",
+      "VERIFIED": "Verifiziert",
+      "ONLINE": "Jetzt online",
+      "NEW": "Neue Mitglieder",
+      "DISTANCE": "Entfernung",
+      "WITHIN_MILES": "Innerhalb von {{distance}} Meilen",
+      "NEARBY": "In der Nähe",
+      "MILES_AWAY": "{{distance}} Meilen entfernt"
+    },
+    "MATCHES_TITLE": "Deine Matches",
+    "MATCHES_EMPTY": "Wenn du mit jemandem ein Match hast, erscheint er hier.",
+    "MESSAGES_TITLE": "Nachrichten",
+    "MESSAGES_EMPTY": "Beginne ein Gespräch mit einem deiner Matches.",
+    "PROFILE_TITLE": "Dein Profil",
+    "PROFILE_SUB": "Verwalte dein Profil und deine Präferenzen.",
+    "SETTINGS_TITLE": "Einstellungen",
+    "SETTINGS_SUB": "Verwalte dein Konto und deine Präferenzen.",
+    "SETTINGS_EMPTY": "Einstellungsseite kommt bald.",
+    "SIDEBAR": {
+      "PROFILE_PROGRESS": "Profilfortschritt",
+      "YOUR_PROFILE_ALT": "Dein Profil",
+      "YOUR_PROFILE": "Dein Profil",
+      "SOON_BADGE": "Bald",
+      "NO_ACTIVITY_TOOLTIP": "Keine Aktivität",
+      "NO_ACTIVITY_YET": "Noch keine Aktivität",
+      "MARK_ALL_READ": "Alle als gelesen markieren",
+      "REPORT_ISSUE_TOOLTIP": "Problem melden",
+      "REPORT_ISSUE": "Problem melden",
+      "COLLAPSE_TOOLTIP": "Seitenleiste einklappen",
+      "EXPAND_TOOLTIP": "Seitenleiste erweitern",
+      "COLLAPSE": "Einklappen",
+      "EXPAND": "Erweitern",
+      "OPEN_MENU_ARIA": "Menü öffnen",
+      "PROFILE_ALT": "Profil"
+    },
+    "ACTIVITY_TITLE": "Kürzliche Aktivität",
+    "ACTIVITY": {
+      "MATCH": "Du hast ein Match mit {{name}}",
+      "MESSAGE": "{{name}} hat dir geschrieben",
+      "FAVORITE": "{{name}} hat dein Profil favorisiert",
+      "VIEW": "{{name}} hat dein Profil angesehen",
+      "PHOTO_ACCESS_REQUEST": "{{name}} hat Zugriff auf deine privaten Fotos angefordert",
+      "PHOTO_ACCESS_GRANTED": "{{name}} hat dir Zugriff auf seine privaten Fotos gewährt",
+      "PHOTO_ACCESS_DENIED": "{{name}} hat deine Anfrage für private Fotos abgelehnt"
+    },
+    "STATS_TITLE": "Diese Woche",
+    "STATS": {
+      "VIEWS": "Profilaufrufe",
+      "FAVORITES": "Favoriten",
+      "MATCHES": "Matches"
+    }
+  },
+  "PROGRESS_PAGE": {
+    "TITLE": "Profilfortschritt",
+    "SCORE_LABEL": "Abgeschlossen",
+    "DESCRIPTION": {
+      "PREMIUM": "Als Premium‑Mitglied hast du Zugriff auf KI‑Unterstützung für dein Profil und deine Gespräche sowie auf eine private virtuelle Telefonnummer.",
+      "FREE": "Vervollständige dein Profil, um herauszustechen und sinnvolle Verbindungen zu knüpfen. Ein vollständiges Profil zeigt anderen, dass du es mit Dating ernst meinst."
+    },
+    "SUMMARY": {
+      "COMPLETED": "{{completed}} von {{total}} Elementen abgeschlossen"
+    },
+    "POINTS": {
+      "CATEGORY": "{{earned}}/{{max}} Pkt.",
+      "TASK": "+{{points}} Pkt."
+    },
+    "LEVELS": {
+      "COMPLETE": "Abgeschlossen",
+      "ALMOST_THERE": "Fast geschafft",
+      "GOOD_PROGRESS": "Gute Fortschritte",
+      "GETTING_STARTED": "Erste Schritte",
+      "JUST_BEGINNING": "Ganz am Anfang"
+    },
+    "INFO": {
+      "TITLE": "Warum dein Profil vervollständigen?",
+      "BODY": "Ein vollständiges Profil hilft dir, herauszustechen, und zeigt anderen, dass du es mit echten Verbindungen ernst meinst. Verifizierte Mitglieder mit detaillierten Profilen erhalten eher Nachrichten und bessere Matches."
+    },
+    "ACTIONS": {
+      "VERIFY_NOW": "Jetzt verifizieren",
+      "VERIFY_EMAIL": "E‑Mail verifizieren",
+      "ADD_PHONE": "Telefonnummer hinzufügen",
+      "ADD_PHOTO": "Foto hinzufügen",
+      "ADD_PHOTOS": "Fotos hinzufügen",
+      "ADD_TAGLINE": "Slogan hinzufügen",
+      "EDIT_PREFERENCES": "Präferenzen bearbeiten",
+      "EDIT_PROFILE": "Profil bearbeiten",
+      "ADD_DETAILS": "Details hinzufügen",
+      "DISCOVER": "Entdecken",
+      "MESSAGES": "Nachrichten",
+      "SETTINGS": "Einstellungen"
+    },
+    "CATEGORIES": {
+      "VERIFICATION": {
+        "NAME": "Verifizierung",
+        "DESCRIPTION": "Verifiziere deine Identität, um Vertrauen aufzubauen"
+      },
+      "PHOTOS": {
+        "NAME": "Fotos",
+        "DESCRIPTION": "Füge Fotos zu deinem Profil hinzu"
+      },
+      "PROFILE": {
+        "NAME": "Profil",
+        "DESCRIPTION": "Vervollständige deine Profilinformationen"
+      },
+      "ACTIVITY": {
+        "NAME": "Aktivität",
+        "DESCRIPTION": "Bleib auf der Plattform aktiv"
+      }
+    },
+    "TASKS": {
+      "IDENTITY_VERIFIED": {
+        "NAME": "Identität verifizieren",
+        "DESCRIPTION": "Schließe die Identitätsverifizierung ab, um zu bestätigen, dass du die Person bist, die du vorgibst zu sein"
+      },
+      "EMAIL_CONFIRMED": {
+        "NAME": "E‑Mail bestätigen",
+        "DESCRIPTION": "Verifiziere deine E‑Mail‑Adresse"
+      },
+      "PHONE_VERIFIED": {
+        "NAME": "Telefon verifizieren",
+        "DESCRIPTION": "Füge deine Telefonnummer hinzu und verifiziere sie"
+      },
+      "PROFILE_PHOTO": {
+        "NAME": "Profilfoto hinzufügen",
+        "DESCRIPTION": "Lade dein Haupt‑Profilfoto hoch"
+      },
+      "MULTIPLE_PHOTOS": {
+        "NAME": "Mehrere Fotos hinzufügen",
+        "DESCRIPTION": "Lade mindestens 3 Fotos in dein Profil hoch"
+      },
+      "COMPLETE_GALLERY": {
+        "NAME": "Fotogalerie vervollständigen",
+        "DESCRIPTION": "Lade 5 oder mehr Fotos für ein vollständiges Profil hoch"
+      },
+      "TAGLINE_ADDED": {
+        "NAME": "Slogan hinzufügen",
+        "DESCRIPTION": "Schreibe einen kurzen Slogan, der dich beschreibt"
+      },
+      "DATING_PREFERENCES": {
+        "NAME": "Dating‑Präferenzen festlegen",
+        "DESCRIPTION": "Lege fest, wen du kennenlernen möchtest"
+      },
+      "ABOUT_WRITTEN": {
+        "NAME": "Über dich schreiben",
+        "DESCRIPTION": "Teile mit, wonach du suchst (mindestens 50 Zeichen)"
+      },
+      "PERSONAL_DETAILS": {
+        "NAME": "Persönliche Details vervollständigen",
+        "DESCRIPTION": "Fülle mindestens 3 Details aus (Beruf, Bildung usw.)"
+      },
+      "CONNECTION_TYPES": {
+        "NAME": "Verbindungsarten festlegen",
+        "DESCRIPTION": "Gib an, welche Arten von Verbindungen du suchst"
+      },
+      "RECENTLY_ACTIVE": {
+        "NAME": "Aktiv bleiben",
+        "DESCRIPTION": "Melde dich innerhalb der letzten 3 Tage an"
+      },
+      "HAS_FAVORITES": {
+        "NAME": "Mit Profilen interagieren",
+        "DESCRIPTION": "Markiere mindestens 3 Profile als Favoriten"
+      },
+      "RECENT_CONVERSATIONS": {
+        "NAME": "Gespräche starten",
+        "DESCRIPTION": "Führe mindestens ein Gespräch mit aktueller Aktivität"
+      },
+      "PROFILE_VISIBLE": {
+        "NAME": "Profil sichtbar",
+        "DESCRIPTION": "Halte dein Profil sichtbar, damit du gefunden wirst"
+      }
+    }
+  },
+  "SETTINGS": {
+    "TITLE": "Einstellungen",
+    "SUBTITLE": "Verwalte dein Konto, deine Privatsphäre und deine Präferenzen",
+    "SUBSCRIPTION": {
+      "TITLE": "Abonnement",
+      "SUBTITLE": "Verwalte deinen Plan und die Abrechnung",
+      "CANCELS": "Kündigt {{date}}",
+      "ACTIVE": "Aktives Abonnement",
+      "FREE_PLAN": "Kostenloser Plan",
+      "MANAGE_PLAN": "Plan verwalten",
+      "UPGRADE": "Upgrade"
+    },
+    "ACTIVITY": {
+      "TITLE": "Aktivitäts‑Einstellungen",
+      "SUBTITLE": "Steuere, welche Aktivitäten mit anderen Nutzern geteilt werden",
+      "VIEW_NOTIFICATIONS": "Benachrichtigungen bei Profilaufruf",
+      "VIEW_NOTIFICATIONS_DESC": "Andere sehen, wenn du ihr Profil ansiehst",
+      "FAVORITE_NOTIFICATIONS": "Favoriten‑Benachrichtigungen",
+      "FAVORITE_NOTIFICATIONS_DESC": "Andere sehen, wenn du ihr Profil favorisierst",
+      "MESSAGE_NOTIFICATIONS": "Nachrichten‑Benachrichtigungen",
+      "MESSAGE_NOTIFICATIONS_DESC": "Andere sehen Aktivität, wenn du ihnen eine Nachricht sendest"
+    },
+    "PRIVACY": {
+      "TITLE": "Privatsphäre",
+      "SUBTITLE": "Steuere, wer deine Informationen sehen kann",
+      "ONLINE_STATUS": "Online‑Status anzeigen",
+      "ONLINE_STATUS_DESC": "Lass andere sehen, wann du online bist",
+      "LAST_ACTIVE": "Zuletzt aktiv anzeigen",
+      "LAST_ACTIVE_DESC": "Zeige an, wann du zuletzt aktiv warst",
+      "PROFILE_VISIBILITY": "Profil‑Sichtbarkeit",
+      "PROFILE_VISIBILITY_DESC": "Mache dein Profil in der Entdeckung sichtbar",
+      "SHOW_LOCATION": "Standort anzeigen",
+      "SHOW_LOCATION_DESC": "Zeige Stadt und Land in deinem Profil an"
+    },
+    "NOTIFICATIONS": {
+      "TITLE": "Benachrichtigungen",
+      "SUBTITLE": "Verwalte, wie du Updates erhältst",
+      "EMAIL_MATCHES": "E‑Mail für Matches",
+      "EMAIL_MATCHES_DESC": "Erhalte eine Benachrichtigung, wenn du ein Match hast",
+      "EMAIL_MESSAGES": "E‑Mail für Nachrichten",
+      "EMAIL_MESSAGES_DESC": "Erhalte eine Benachrichtigung, wenn du eine Nachricht bekommst",
+      "EMAIL_FAVORITES": "E‑Mail für Favoriten",
+      "EMAIL_FAVORITES_DESC": "Erhalte eine Benachrichtigung, wenn dich jemand favorisiert",
+      "PUSH": "Push‑Benachrichtigungen",
+      "PUSH_DESC": "Erhalte Push‑Benachrichtigungen auf deinem Gerät"
+    },
+    "PREFERENCES": {
+      "TITLE": "Präferenzen",
+      "SUBTITLE": "Passe dein Erlebnis an",
+      "LANGUAGE": "Sprache",
+      "LANGUAGE_DESC": "Wähle deine bevorzugte Sprache",
+      "LANGUAGE_EN": "Englisch",
+      "LANGUAGE_ES": "Spanisch",
+      "LANGUAGE_DE": "Deutsch",
+      "DARK_MODE": "Dunkler Modus",
+      "DARK_MODE_DESC": "Zwischen hellem und dunklem Thema wechseln"
+    },
+    "ACCOUNT": {
+      "TITLE": "Konto",
+      "SUBTITLE": "Verwalte deine Kontoeinstellungen",
+      "EMAIL": "E‑Mail‑Adresse",
+      "UNVERIFIED": "Unbestätigt",
+      "NOT_SET": "Nicht gesetzt",
+      "VERIFY_EMAIL": "E‑Mail verifizieren",
+      "VERIFY_EMAIL_DESC": "Bestätige deine E‑Mail‑Adresse, um dein Konto zu sichern",
+      "PASSWORD": "Passwort",
+      "PASSWORD_DESC": "Passwort ändern",
+      "PHONE": "Telefonnummer",
+      "PHONE_DESC": "Telefonnummer hinzufügen und verifizieren",
+      "LOGOUT": "Abmelden",
+      "LOGOUT_DESC": "Von deinem Konto abmelden"
+    },
+    "BLOCKED": {
+      "TITLE": "Blockierte Nutzer",
+      "SUBTITLE": "Verwalte Nutzer, die du blockiert hast",
+      "MANAGE": "Blockierte Nutzer verwalten",
+      "MANAGE_DESC": "Sieh und entblockiere Nutzer, die du blockiert hast",
+      "EMPTY": "Du hast niemanden blockiert",
+      "UNBLOCK": "Entblocken"
+    },
+    "DANGER": {
+      "TITLE": "Gefahrenzone",
+      "SUBTITLE": "Unumkehrbare Kontohandlungen",
+      "DISABLE": "Konto deaktivieren",
+      "DISABLE_DESC": "Dein Profil vorübergehend vor anderen Nutzern verbergen",
+      "DISABLED": "Konto deaktiviert",
+      "DISABLED_DESC": "Dein Konto ist aktuell für andere Nutzer verborgen",
+      "ENABLE": "Konto aktivieren",
+      "DELETE": "Konto löschen",
+      "DELETE_DESC": "Dein Konto und alle Daten dauerhaft löschen"
+    },
+    "SAVING": "Speichern...",
+    "DIALOGS": {
+      "CHANGE_EMAIL_TITLE": "E‑Mail-Adresse ändern",
+      "CHANGE_EMAIL_DESC": "Gib deine neue E‑Mail-Adresse ein. Du musst sie verifizieren, bevor die Änderung wirksam wird.",
+      "NEW_EMAIL": "Neue E‑Mail-Adresse",
+      "EMAIL_PLACEHOLDER": "du@beispiel.de",
+      "CURRENT_PASSWORD": "Aktuelles Passwort",
+      "RESET_PASSWORD_TITLE": "Passwort zurücksetzen",
+      "RESET_PASSWORD_DESC": "Wir senden einen Link zum Zurücksetzen des Passworts an deine E‑Mail.",
+      "RESET_PASSWORD_SUCCESS": "Passwort‑Reset‑E‑Mail gesendet! Sieh in deinem Posteingang nach.",
+      "DISABLE_TITLE": "Konto deaktivieren",
+      "DISABLE_DESC": "Dein Profil wird für andere Nutzer verborgen und du wirst abgemeldet.",
+      "DISABLE_INFO": "Du kannst dein Konto jederzeit wieder aktivieren, indem du dich erneut anmeldest.",
+      "DISABLE_SUBSCRIPTION_WARNING": "Dein Premium‑Abonnement wird zum Ende deines aktuellen Abrechnungszeitraums gekündigt. Wenn du dein Konto vorher wieder aktivierst, bleibt das Abonnement aktiv.",
+      "DISABLE_BUTTON": "Konto deaktivieren",
+      "DELETE_TITLE": "Konto löschen",
+      "DELETE_DESC": "Diese Aktion ist dauerhaft und kann nicht rückgängig gemacht werden. Alle deine Daten, Matches und Unterhaltungen werden gelöscht.",
+      "DELETE_WARNING_PERMANENT": "Diese Aktion ist dauerhaft und kann nicht rückgängig gemacht werden.",
+      "DELETE_WARNING_PROFILE": "Dein Profil und alle Fotos werden gelöscht",
+      "DELETE_WARNING_MESSAGES": "Alle deine Nachrichten und Unterhaltungen werden gelöscht",
+      "DELETE_WARNING_MATCHES": "Deine Matches und Favoriten werden entfernt",
+      "DELETE_WARNING_ACCOUNT": "Dein Konto wird dauerhaft entfernt",
+      "DELETE_WARNING_SUBSCRIPTION": "Dein Premium‑Abonnement wird sofort gekündigt",
+      "DELETE_CONFIRM_INSTRUCTION_PREFIX": "Tippe",
+      "DELETE_CONFIRM_PHRASE": "DELETE MY ACCOUNT",
+      "DELETE_CONFIRM_INSTRUCTION_SUFFIX": "zur Bestätigung:",
+      "DELETE_CONFIRM_LABEL": "Bestätigung eingeben",
+      "DELETE_CONFIRM_PLACEHOLDER": "DELETE MY ACCOUNT",
+      "VERIFYING": "Verifizieren...",
+      "DELETE_CONFIRM": "Tippe DELETE zur Bestätigung",
+      "CANCEL": "Abbrechen",
+      "CLOSE": "Schließen",
+      "CHANGE_EMAIL": "E‑Mail ändern",
+      "SEND_RESET": "Reset‑Link senden",
+      "DELETE_BUTTON": "Konto löschen",
+      "LOGOUT_TITLE": "Abmelden",
+      "LOGOUT_DESC": "Möchtest du dich wirklich abmelden?",
+      "LOGOUT_BUTTON": "Abmelden",
+      "PHONE_TITLE": "Telefonnummer hinzufügen",
+      "PHONE_PRIVACY": "Deine Telefonnummer ist privat und wird niemals mit anderen Mitgliedern geteilt oder in deinem Profil angezeigt.",
+      "PHONE_BENEFIT": "Durch das Hinzufügen deiner Telefonnummer kannst du dich nur mit deiner Nummer anmelden – kein Passwort nötig.",
+      "PHONE_LABEL": "Telefonnummer",
+      "PHONE_HINT": "Ländervorwahl einschließen (z. B. +49 für DE)",
+      "SEND_CODE": "Code senden",
+      "CODE_SENT": "Wir haben einen 6‑stelligen Code gesendet an",
+      "VERIFICATION_CODE": "Verifizierungscode",
+      "VERIFY": "Verifizieren",
+      "RESEND_CODE": "Nicht erhalten? Code erneut senden",
+      "PHONE_VERIFIED": "Deine Telefonnummer wurde verifiziert!",
+      "VERIFY_EMAIL_TITLE": "E‑Mail-Adresse verifizieren",
+      "VERIFY_EMAIL_DESC": "Wir senden einen Verifizierungslink an deine E‑Mail. Klicke den Link, um deine E‑Mail zu verifizieren.",
+      "SEND_VERIFICATION": "Verifizierungs‑E‑Mail senden",
+      "CHECK_VERIFICATION": "Ich habe verifiziert",
+      "VERIFY_EMAIL_SENT": "Verifizierungs‑E‑Mail gesendet! Sieh in deinem Posteingang nach und klicke den Link, um zu verifizieren.",
+      "EMAIL_VERIFIED_SUCCESS": "Deine E‑Mail wurde verifiziert!",
+      "EMAIL_NOT_YET_VERIFIED": "E‑Mail noch nicht verifiziert. Bitte klicke den Link in der E‑Mail, die wir dir gesendet haben.",
+      "TOO_MANY_REQUESTS": "Zu viele Anfragen. Bitte warte ein paar Minuten, bevor du es erneut versuchst."
+    }
+  },
+  "AUTH": {
+    "LOGIN": {
+      "TITLE": "Willkommen zurück",
+      "SUBTITLE": "Melde dich an, um deine Reise fortzusetzen.",
+      "SUBMIT": "Anmelden",
+      "FORGOT_PASSWORD": "Passwort vergessen?",
+      "NO_ACCOUNT": "Du hast noch kein Konto?",
+      "SIGNUP_LINK": "Jetzt erstellen"
+    },
+    "SIGNUP": {
+      "TITLE": "Gylde beitreten",
+      "SUBTITLE": "Erstelle dein Konto und fange an zu verbinden.",
+      "SUBMIT": "Konto erstellen",
+      "HAS_ACCOUNT": "Du hast bereits ein Konto?",
+      "LOGIN_LINK": "Anmelden"
+    },
+    "RESET": {
+      "TITLE": "Passwort zurücksetzen",
+      "SUBTITLE": "Gib deine E‑Mail ein, wir senden dir einen Reset‑Link.",
+      "SUBMIT": "Reset‑Link senden",
+      "SUCCESS": "Sieh in deinem Posteingang nach dem Link zum Zurücksetzen deines Passworts.",
+      "BACK_TO_LOGIN": "Zurück zum Anmelden"
+    },
+    "FIELDS": {
+      "NAME": "Anzeigename",
+      "NAME_PLACEHOLDER": "Wie sollen wir dich nennen?",
+      "EMAIL": "E‑Mail",
+      "EMAIL_PLACEHOLDER": "du@beispiel.de",
+      "PASSWORD": "Passwort",
+      "PASSWORD_PLACEHOLDER": "Mindestens 6 Zeichen",
+      "CONFIRM_PASSWORD": "Passwort bestätigen",
+      "CONFIRM_PASSWORD_PLACEHOLDER": "Passwort erneut eingeben",
+      "PHONE": "Telefonnummer",
+      "PHONE_HINT": "Ländervorwahl einschließen (z. B. +49 für DE)",
+      "VERIFICATION_CODE": "Verifizierungscode"
+    },
+    "METHOD": {
+      "EMAIL": "E‑Mail",
+      "PHONE": "Telefon"
+    },
+    "PHONE": {
+      "SEND_CODE": "Code senden",
+      "CODE_SENT": "Wir haben einen Code gesendet an",
+      "VERIFY": "Verifizieren & Anmelden",
+      "RESEND": "Nicht erhalten? Code erneut senden",
+      "EMULATOR_HINT": "Entwicklermodus: Code 123456 verwenden",
+      "PLACEHOLDER": "+49 151 12345678",
+      "CODE_PLACEHOLDER": "123456"
+    },
+    "MODAL": {
+      "CLOSE_ARIA": "Modal schließen"
+    },
+    "DISABLED": {
+      "TITLE": "Konto deaktiviert",
+      "MESSAGE": "Dein Konto wurde deaktiviert.",
+      "INFO": "Möchtest du dein Konto wieder aktivieren und dein Profil wiederherstellen?",
+      "ENABLE": "Konto re‑aktivieren",
+      "CANCEL": "Abmelden"
+    },
+    "OR": "oder",
+    "GOOGLE": "Weiter mit Google"
+  },
+  "DISCOVER": {
+    "FILTERS_BUTTON": "Filter",
+    "REFRESH_TOOLTIP": "Ergebnisse aktualisieren",
+    "VIEWS_LABEL": "Ansichten",
+    "SAVE_VIEW_MENU": "Aktuelle Ansicht speichern",
+    "MANAGE_VIEWS_MENU": "Ansichten verwalten",
+    "SORT_LABEL": "Sortieren",
+    "SORT_OPTIONS": {
+      "RECENTLY_ACTIVE": "Kürzlich aktiv",
+      "NEAREST": "Nächste",
+      "NEWEST": "Neueste Profile",
+      "PRIORITIZE_TRUSTED": "Vertrauenswürdige priorisieren",
+      "AGE_YOUNGEST": "Alter (jüngste)",
+      "AGE_OLDEST": "Alter (älteste)"
+    },
+    "FILTER_PANEL": {
+      "MEMBER_STATUS_LABEL": "Mitgliederstatus",
+      "MEMBER_STATUS_HINT": "Nach Reputationsstufe filtern",
+      "REPUTATION_TIERS": {
+        "ALL": "Alle",
+        "ALL_MEMBERS": "Alle Mitglieder",
+        "ACTIVE_PLUS": "Aktiv+",
+        "ESTABLISHED_PLUS": "Etabliert+",
+        "TRUSTED_PLUS": "Vertrauenswürdig+"
+      },
+      "REPUTATION_TIERS_DESC": {
+        "ALL": "Alle Mitglieder anzeigen",
+        "ACTIVE_PLUS": "Engagierte Mitglieder, die aktiv teilnehmen",
+        "ESTABLISHED_PLUS": "Langjährige Mitglieder mit konstanter Aktivität",
+        "TRUSTED_PLUS": "Sehr vertrauenswürdige Mitglieder mit hervorragender Bilanz"
+      },
+      "QUICK_FILTERS_LABEL": "Schnellfilter",
+      "QUICK_FILTERS": {
+        "VERIFIED_ONLY": "Nur verifiziert",
+        "ONLINE_NOW": "Jetzt online",
+        "ACTIVE_24H": "Aktiv in 24 Std"
+      },
+      "DISTANCE_LABEL": "Entfernung",
+      "DISTANCE": {
+        "WITHIN_MI": "Innerhalb von {{miles}} mi",
+        "ANY": "Beliebige Entfernung"
+      },
+      "LOOKING_FOR_LABEL": "Ich suche",
+      "MORE_FILTERS": "Mehr Filter",
+      "LESS_FILTERS": "Weniger Filter",
+      "PREMIUM_BADGE": "Premium",
+      "ADVANCED": {
+        "SUPPORT_STYLE": "Support‑Stil",
+        "HEIGHT": "Größe",
+        "INCOME": "Einkommen",
+        "ETHNICITY": "Ethnie",
+        "RELATIONSHIP_STATUS": "Beziehungsstatus",
+        "CHILDREN": "Kinder",
+        "SMOKING": "Rauchen",
+        "DRINKING": "Alkohol",
+        "EDUCATION": "Bildung"
+      },
+      "ACTIONS": {
+        "RESET_ALL": "Alles zurücksetzen",
+        "APPLY_FILTERS": "Filter anwenden"
+      },
+      "SUPPORT_ORIENTATION": {
+        "PROVIDER": "Gebend",
+        "RECEIVER": "Empfangend",
+        "FLEXIBLE": "Flexibel"
+      }
+    },
+    "RESULTS_COUNT": "{{count}} Ergebnisse",
+    "EMPTY_TITLE": "Keine Profile gefunden",
+    "EMPTY_SUBTITLE": "Versuche, deine Filter anzupassen oder schau später wieder vorbei.",
+    "RESET_FILTERS_BUTTON": "Filter zurücksetzen",
+    "LOAD_MORE": "Mehr laden",
+    "SAVE_VIEW": {
+      "TITLE": "Aktuelle Ansicht speichern",
+      "DESCRIPTION": "Gib deiner Filtereinstellung einen Namen, damit du sie später schnell anwenden kannst.",
+      "NAME_LABEL": "Ansichtsname",
+      "NAME_PLACEHOLDER": "z. B. Lokale Frauen",
+      "SET_DEFAULT": "Als Standardansicht festlegen",
+      "CANCEL": "Abbrechen",
+      "SAVE_BUTTON": "Ansicht speichern"
+    },
+    "MANAGE_VIEWS": {
+      "TITLE": "Gespeicherte Ansichten",
+      "DESCRIPTION": "Verwalte deine gespeicherten Filterkonfigurationen",
+      "DEFAULT_BADGE": "Standard",
+      "SET_DEFAULT_TOOLTIP": "Als Standard festlegen",
+      "DELETE_TOOLTIP": "Ansicht löschen",
+      "EMPTY_TITLE": "Noch keine gespeicherten Ansichten",
+      "EMPTY_DESCRIPTION": "Speichere deine aktuellen Filter, um sie später schnell anzuwenden",
+      "DONE_BUTTON": "Fertig"
+    }
+  },
+  "UPGRADE_DIALOG": {
+    "CLOSE_ARIA": "Dialog schließen",
+    "PER_MONTH": "/Monat",
+    "MAYBE_LATER": "Vielleicht später",
+    "LOADING": "Lädt...",
+    "SUBSCRIBE_NOW": "Jetzt abonnieren",
+    "TRUST_MESSAGE": "Jederzeit kündbar. Sichere Zahlung über Stripe.",
+    "ERRORS": {
+      "ALREADY_PREMIUM": "Du bist bereits Premium‑Abonnent.",
+      "CHECKOUT_FAILED": "Checkout konnte nicht gestartet werden. Bitte versuche es erneut."
+    },
+    "FEATURE_MESSAGES": {
+      "GENERAL": {
+        "TITLE": "Upgrade auf Premium",
+        "DESCRIPTION": "Schalte alle Premium‑Funktionen frei für das beste Gylde‑Erlebnis."
+      },
+      "UNLIMITED_MESSAGING": {
+        "TITLE": "Unbegrenzte Gespräche",
+        "DESCRIPTION": "Starte unbegrenzt Gespräche mit Mitgliedern jeder Stufe – ohne Tageslimits."
+      },
+      "CAN_MESSAGE_ANY_TIER": {
+        "TITLE": "Keine Tier‑Beschränkungen",
+        "DESCRIPTION": "Starte Gespräche mit jedem Mitglied – unabhängig von dessen Reputationsstufe."
+      },
+      "HAS_AI_ASSISTANT": {
+        "TITLE": "KI‑Assistent",
+        "DESCRIPTION": "Erhalte einen KI‑Assistenten, der dein Profil optimiert und Gesprächsstarter vorschlägt."
+      },
+      "HAS_VIRTUAL_PHONE": {
+        "TITLE": "Virtuelle Telefonnummer",
+        "DESCRIPTION": "Erhalte eine private virtuelle Nummer, um deine echte Nummer beim Dating zu schützen."
+      },
+      "PRIORITY_VISIBILITY": {
+        "TITLE": "Priorisierte Sichtbarkeit",
+        "DESCRIPTION": "Erscheine zuerst in den Suchergebnissen und erhalte mehr Matches."
+      },
+      "CAN_SEE_WHO_VIEWED_PROFILE": {
+        "TITLE": "Sieh, wer dich angesehen hat",
+        "DESCRIPTION": "Sieh, wer dein Profil angesehen hat."
+      },
+      "CAN_SEE_WHO_FAVORITED": {
+        "TITLE": "Sieh, wer dich favorisiert hat",
+        "DESCRIPTION": "Sieh, wer dich zu den Favoriten hinzugefügt hat."
+      },
+      "MAX_PHOTOS": {
+        "TITLE": "Mehr Fotos hochladen",
+        "DESCRIPTION": "Lade bis zu 20 Fotos hoch, um mehr von dir zu zeigen."
+      },
+      "CAN_ACCESS_PRIVATE_PHOTOS": {
+        "TITLE": "Private Fotos ansehen",
+        "DESCRIPTION": "Private Fotos bei deinen Verbindungen anfordern und teilen."
+      },
+      "ADVANCED_FILTERS": {
+        "TITLE": "Erweiterte Filter",
+        "DESCRIPTION": "Nutze erweiterte Filter wie Einkommen, Bildung und mehr, um dein perfektes Match zu finden."
+      },
+      "READ_RECEIPTS": {
+        "TITLE": "Lesebestätigungen",
+        "DESCRIPTION": "Sieh, wann deine Nachrichten gelesen wurden."
+      }
+    },
+    "PREMIUM_FEATURES": {
+      "PRIVATE_PHOTOS": "Private Fotos anfordern & ansehen",
+      "ADVANCED_FILTERS": "Erweiterte Suchfilter",
+      "WHO_VIEWED": "Sieh, wer dein Profil angesehen hat",
+      "WHO_FAVORITED": "Sieh, wer dich favorisiert hat",
+      "AI": "KI‑Assistent für Profil & Chat",
+      "PHONE": "Virtuelle Telefonnummer",
+      "READ_RECEIPTS": "Lesebestätigungen"
+    }
+  },
+  "MATCHES": {
+    "TAB_MY_MATCHES": "Meine Matches",
+    "TAB_MY_FAVORITES": "Meine Favoriten",
+    "TAB_RECENTLY_VIEWED": "Kürzlich angesehen",
+    "TAB_FAVORITED_ME": "Favorisiert von mir",
+    "TAB_VIEWED_ME": "Von mir angesehen",
+    "PREMIUM_BADGE": "Premium",
+    "EXPLORE_PROFILES_BUTTON": "Profile entdecken",
+    "BADGE_MAX": "99+",
+    "EMPTY": {
+      "NO_MATCHES": "Du hast noch keine Matches. Wenn jemand, den du favorisiert hast, dich ebenfalls favorisiert, erscheint er hier!",
+      "NO_FAVORITES_RECEIVED": "Noch hat dich niemand favorisiert. Halte dein Profil aktiv!",
+      "NO_VIEWS": "Noch hat niemand dein Profil angesehen.",
+      "NO_FAVORITES_SENT": "Du hast noch niemanden favorisiert. Durchsuche Profile, um deinen Match zu finden!",
+      "NO_PROFILES_VIEWED": "Du hast noch keine Profile angesehen."
+    }
+  },
+  "MESSAGES": {
+    "UPGRADE_TITLE": "Upgrade zum Nachrichten‑Senden",
+    "UPGRADE_DESCRIPTION": "Du hast eine Nachricht erhalten! Upgrade deinen Plan, um Nachrichten zu lesen und zu beantworten.",
+    "VIEW_PLANS_BUTTON": "Pläne ansehen",
+    "START_CONVERSATION": "Starte das Gespräch!",
+    "LOADING_OLDER": "Lade ältere Nachrichten...",
+    "SCROLL_UP_HINT": "Nach oben scrollen für mehr",
+    "TIMER": {
+      "NONE": "Kein Timer",
+      "FIVE_SEC": "5 s",
+      "TEN_SEC": "10 s",
+      "THIRTY_SEC": "30 s",
+      "ONE_MIN": "1 min"
+    },
+    "RESTRICTION": {
+      "DAILY_LIMIT_TITLE": "Tageslimit erreicht",
+      "DAILY_LIMIT_DESC": "Du hast dein Nachrichtenlimit für heute verbraucht. Dein Limit wird um Mitternacht zurückgesetzt.",
+      "TIER_TITLE": "Verbessere deine Reputation",
+      "TIER_DESC": "Baue deine Reputation auf, um Nachrichten mit diesem Nutzer zu senden. Vervollständige dein Profil und verifiziere deine Identität, um zu starten.",
+      "BLOCKED_TITLE": "Nachrichten nicht möglich",
+      "BLOCKED_DESC": "Du kannst mit diesem Nutzer nicht Nachrichten austauschen.",
+      "DEFAULT_TITLE": "Nachricht nicht möglich",
+      "DEFAULT_DESC": "Zurzeit können keine Nachrichten gesendet werden."
+    },
+    "REMAINING_MESSAGES": "{{count}} Nachricht{{count === 1 ? '' : 'en'}} heute verbleibend",
+    "NO_CHAT_SELECTED_TITLE": "Wähle ein Gespräch",
+    "NO_CHAT_SELECTED_SUBTITLE": "Wähle jemanden zum Chatten aus",
+    "CHAT_HEADER": {
+      "BACK_ARIA": "Zurück",
+      "UNKNOWN_USER": "Unbekannt",
+      "TYPING_STATUS": "tippt...",
+      "OPTIONS_ARIA": "Optionen",
+      "VIEW_PROFILE_MENU": "Profil ansehen",
+      "SHARE_NUMBER_MENU": "Meine Nummer teilen",
+      "UNARCHIVE_MENU": "Chat entarchivieren",
+      "ARCHIVE_MENU": "Chat archivieren",
+      "BLOCK_USER_MENU": "Nutzer blockieren",
+      "REPORT_USER_MENU": "Nutzer melden",
+      "STATUS": {
+        "ACTIVE_NOW": "Jetzt aktiv",
+        "ACTIVE_JUST_NOW": "Gerade eben aktiv",
+        "ACTIVE_MINUTES_AGO": "Aktiv vor {{minutes}} Min",
+        "ACTIVE_HOURS_AGO": "Aktiv vor {{hours}} Std",
+        "ACTIVE_YESTERDAY": "Gestern aktiv",
+        "ACTIVE_DAYS_AGO": "Aktiv vor {{days}} Tagen",
+        "ACTIVE_DATE": "Aktiv am {{date}}"
+      }
+    },
+    "CHAT_INPUT": {
+      "SELECTED_IMAGE_ALT": "Ausgewähltes Bild",
+      "REMOVE_IMAGE_ARIA": "Bild entfernen",
+      "CLEAR_ALL_BUTTON": "Alle löschen",
+      "BLOCKED_NOTICE": "Du kannst diesem Nutzer keine Nachrichten senden",
+      "AI_ASSIST_ARIA": "KI‑Assistenz",
+      "ATTACH_IMAGES_ARIA": "Bilder anhängen",
+      "MESSAGE_PLACEHOLDER": "Nachricht eingeben..."
+    },
+    "CONVERSATION_LIST": {
+      "CHATS_TITLE": "Chats",
+      "ALL_CHATS": "Alle Chats",
+      "UNREAD": "Ungelesen",
+      "ARCHIVED": "Archiviert",
+      "ANY_MEMBER": "Beliebiges Mitglied",
+      "REPUTATION_ALL": "Alle",
+      "REPUTATION_ACTIVE_PLUS": "Aktiv+",
+      "REPUTATION_ESTABLISHED_PLUS": "Etabliert+",
+      "REPUTATION_TRUSTED_PLUS": "Vertrauenswürdig+",
+      "LOADING": "Laden...",
+      "NO_MATCHES": "Keine Chats entsprechen deinen Filtern",
+      "CLEAR_FILTERS_BUTTON": "Filter zurücksetzen",
+      "EMPTY_STATE": "Noch keine Unterhaltungen",
+      "USER_ALT": "Nutzer",
+      "BLOCKED_TOOLTIP": "Blockiert",
+      "UNKNOWN_USER": "Unbekannt",
+      "BLOCKED_TEXT": "Blockiert",
+      "NEW_CHAT": "Neuer Chat"
+    },
+    "BUBBLE": {
+      "USER_ALT": "Nutzer",
+      "DELETED_BY_ME": "Du hast diese Nachricht gelöscht",
+      "DELETED_BY_OTHER": "Diese Nachricht wurde gelöscht",
+      "IMAGE_EXPIRED": "Bild abgelaufen",
+      "TAP_TO_VIEW": "Tippen zum Ansehen",
+      "SHARED_IMAGE_ALT": "Geteiltes Bild",
+      "NOT_OPENED": "Nicht geöffnet",
+      "SECONDS_SUFFIX": "s",
+      "OPENED_TIME": "Geöffnet {{time}}",
+      "DELETE_FOR_ME": "Für mich löschen",
+      "DELETE_FOR_EVERYONE": "Für alle löschen"
+    },
+    "VIRTUAL_PHONE": {
+      "LABEL": "Deine private Nummer",
+      "COPIED_TOOLTIP": "Kopiert!",
+      "COPY_TOOLTIP": "Nummer kopieren",
+      "SETTINGS_TOOLTIP": "Einstellungen",
+      "LOADING": "Laden...",
+      "NEEDS_VERIFICATION": "Verifiziere zuerst deine Telefonnummer, um eine private Nummer zum Teilen zu erhalten",
+      "VERIFY_BUTTON": "Telefon in den Einstellungen verifizieren",
+      "COMING_SOON_DESC": "Teile eine Nummer mit Verbindungen, ohne deine echte Nummer preiszugeben",
+      "GET_NUMBER_BUTTON": "Private Nummer erhalten",
+      "COMING_SOON_BADGE": "Kommt bald"
+    }
+  },
+  "PROFILE_CARD": {
+    "PHOTO_ALT": "Profil",
+    "ONLINE_BADGE": "Online",
+    "ANONYMOUS_NAME": "Anonym",
+    "IDENTITY_VERIFIED_TOOLTIP": "Identität verifiziert",
+    "USER_FALLBACK": "Nutzer",
+    "MESSAGE_TOOLTIP": "Nachricht an {{name}}",
+    "VIEW_PROFILE_TOOLTIP": "Profil ansehen",
+    "ADD_FAVORITE_TOOLTIP": "Zu Favoriten hinzufügen",
+    "REMOVE_FAVORITE_TOOLTIP": "Aus Favoriten entfernen"
+  },
+  "PROFILE": {
+    "TITLE": "Mein Profil",
+    "EDIT_BUTTON": "Profil bearbeiten",
+    "CANCEL_BUTTON": "Abbrechen",
+    "SAVE_BUTTON": "Speichern",
+    "REPUTATION_STATUS_TITLE": "Dein Reputations‑Status",
+    "REPUTATION_INFO_TOOLTIP": "Erfahre, wie Reputation funktioniert",
+    "REPUTATION_DESCRIPTION": "Deine Reputation spiegelt dein Verhalten auf der Plattform wider. Höhere Stufen schalten mehr Reichweite zu höherstufigen Mitgliedern frei.",
+    "UNLIMITED": "Unbegrenzt",
+    "HIGHER_TIER_CONVERSATIONS": "Gespräche mit höherer Stufe",
+    "MESSAGING_GATE_LABEL": "Wer kann dir schreiben",
+    "MESSAGING_GATE_HINT": "Nur Mitglieder dieser Reputation‑Stufe oder höher können neue Unterhaltungen mit dir beginnen.",
+    "DEV_REFRESH_TOOLTIP": "Reputation neu berechnen (nur Entwicklung)",
+    "DEV_REFRESH_BUTTON": "Reputation aktualisieren",
+    "PHOTOS_TITLE": "Fotos",
+    "PHOTOS_HINT": "Klicke den Stern, um das Profilfoto festzulegen. Du kannst bis zu {{max}} Fotos hochladen.",
+    "PHOTO_ALT": "Profilfoto {{index}}",
+    "SET_PROFILE_PHOTO_TOOLTIP": "Als Profilfoto festlegen",
+    "MAKE_PUBLIC_TOOLTIP": "Öffentlich machen",
+    "MAKE_PRIVATE_TOOLTIP": "Privat machen",
+    "REMOVE_PHOTO_TOOLTIP": "Foto entfernen",
+    "PROFILE_BADGE": "Profil",
+    "UPLOADING_PHOTO_ALT": "Foto wird hochgeladen",
+    "UPLOADING_STATUS": "Wird hochgeladen...",
+    "UPLOAD_FAILED": "Fehlgeschlagen",
+    "ADD_PHOTO_BUTTON": "Foto hinzufügen",
+    "MANAGE_PHOTO_ACCESS_BUTTON": "Privaten Foto‑Zugriff verwalten",
+    "BASIC_INFO_TITLE": "Grundlegende Infos",
+    "TAGLINE_LABEL": "Slogan",
+    "TAGLINE_PLACEHOLDER": "Ein kurzer Satz über dich...",
+    "AI_POLISH_TOOLTIP": "Mit KI polieren",
+    "AI_SUGGESTIONS_TITLE": "KI‑Vorschläge",
+    "NOT_SET": "Nicht gesetzt",
+    "DISPLAY_NAME_LABEL": "Anzeigename",
+    "DISPLAY_NAME_PLACEHOLDER": "Dein Anzeigename",
+    "LOCATION_LABEL": "Standort",
+    "US_ONLY_NOTICE": "Gylde ist derzeit nur in den USA verfügbar.",
+    "CITY_PLACEHOLDER": "Beginne, eine Stadt einzugeben...",
+    "USE_GPS_TOOLTIP": "Meine aktuelle Position nutzen",
+    "BIRTHDAY_LABEL": "Geburtstag",
+    "YEARS_OLD": "{{age}} Jahre alt",
+    "DATING_PREFERENCES_TITLE": "Dating‑Präferenzen",
+    "GENDER_IDENTITY_LABEL": "Ich identifiziere mich als",
+    "AGE_RANGE_LABEL": "Altersbereich",
+    "AGE_MIN_LABEL": "Min",
+    "AGE_RANGE_SEPARATOR": "bis",
+    "AGE_MAX_LABEL": "Max",
+    "INTERESTED_IN_LABEL": "Interessiert an",
+    "SUPPORT_ORIENTATION_LABEL": "Unterstützungs‑Orientierung",
+    "ABOUT_ME_TITLE": "Über mich",
+    "LOOKING_FOR_LABEL": "Suche nach",
+    "IDEAL_RELATIONSHIP_LABEL": "Meine ideale Beziehung",
+    "IDEAL_RELATIONSHIP_PLACEHOLDER": "Beschreibe deine ideale Beziehung...",
+    "SUPPORT_MEANING_LABEL": "Was Unterstützung für mich bedeutet",
+    "SUPPORT_MEANING_PLACEHOLDER": "Was bedeutet Unterstützung für dich?",
+    "PERSONAL_DETAILS_TITLE": "Persönliche Details",
+    "HEIGHT_LABEL": "Größe",
+    "HEIGHT_PLACEHOLDER": "z. B. 5'10\" oder 178 cm",
+    "WEIGHT_LABEL": "Gewicht",
+    "WEIGHT_PLACEHOLDER": "z. B. 170 lb oder 77 kg",
+    "ETHNICITY_LABEL": "Ethnizität",
+    "SELECT_PLACEHOLDER": "Auswählen...",
+    "NOT_SPECIFIED": "Nicht angegeben",
+    "RELATIONSHIP_STATUS_LABEL": "Beziehungsstatus",
+    "CHILDREN_LABEL": "Kinder",
+    "SMOKING_LABEL": "Rauchen",
+    "DRINKING_LABEL": "Alkoholkonsum",
+    "EDUCATION_LABEL": "Bildung",
+    "OCCUPATION_LABEL": "Beruf",
+    "OCCUPATION_PLACEHOLDER": "Was machst du?",
+    "INCOME_LABEL": "Einkommen",
+    "LOADING": "Lade Profil...",
+    "MESSAGING_TIER": {
+      "ANYONE": "Jeder",
+      "ACTIVE_PLUS": "Aktiv+",
+      "ESTABLISHED_PLUS": "Etabliert+",
+      "TRUSTED_PLUS": "Vertrauenswürdig+",
+      "DISTINGUISHED": "Herausragend"
+    }
+  },
+  "CONNECTION_TYPES": {
+    "INTENTIONAL_DATING": "Absichtliches Dating",
+    "LONG_TERM": "Langfristig",
+    "MENTORSHIP": "Mentorschaft",
+    "LIFESTYLE_ALIGNED": "Lebensstil‑abgestimmt",
+    "EXPLORING": "Entdeckung",
+    "OTHER": "Andere"
+  },
+  "TIME": {
+    "YESTERDAY": "Gestern",
+    "JUST_NOW": "gerade eben",
+    "MINUTES_AGO_SHORT": "vor {{minutes}} m",
+    "HOURS_AGO_SHORT": "vor {{hours}} h",
+    "DAYS_AGO_SHORT": "vor {{days}} d",
+    "WEEKS_AGO_SHORT": "vor {{weeks}} w",
+    "TODAY": "Heute",
+    "DAYS_AGO": "vor {{days}} Tagen",
+    "WEEKS_AGO": "vor {{weeks}} Wochen",
+    "MONTHS_AGO": "vor {{months}} Monat{{months === 1 ? '' : 'en'}}",
+    "YEARS_AGO": "vor {{years}} Jahr{{years === 1 ? '' : 'en'}}"
+  },
+  "COMMON": {
+    "OK": "OK"
+  },
+  "USER_PROFILE": {
+    "ERROR_HINT": "Dieses Profil ist eventuell privat oder existiert nicht mehr.",
+    "PROFILE_PHOTO_ALT": "Profilfoto",
+    "PHOTO_ALT": "Foto {{index}}",
+    "PRIVATE_BADGE": "Privat",
+    "PRIVATE_PHOTO": "privates Foto",
+    "PRIVATE_PHOTOS": "private Fotos",
+    "REQUEST_ACCESS_HINT": "Zugriff anfordern, um zu sehen",
+    "REQUEST_ACCESS_BUTTON": "Zugriff anfordern",
+    "CANCEL_REQUEST_BUTTON": "Anfrage abbrechen",
+    "REQUEST_AGAIN_BUTTON": "Erneut anfragen",
+    "VIEWED_YOUR_PROFILE": "Hat dein Profil angesehen",
+    "LAST_ACTIVE_LABEL": "Zuletzt aktiv",
+    "ONLINE_NOW": "Jetzt online",
+    "UNKNOWN": "Unbekannt",
+    "MEMBER_SINCE_LABEL": "Mitglied seit",
+    "VERIFICATION_LABEL": "Verifizierung",
+    "VERIFIED": "Verifiziert",
+    "NOT_VERIFIED": "Nicht verifiziert",
+    "ANONYMOUS_NAME": "Anonym",
+    "IDENTITY_VERIFIED_TOOLTIP": "Identität verifiziert",
+    "MESSAGE_BUTTON": "Nachricht",
+    "ADD_FAVORITE_TOOLTIP": "Zu Favoriten hinzufügen",
+    "REMOVE_FAVORITE_TOOLTIP": "Aus Favoriten entfernen",
+    "MORE_OPTIONS_TOOLTIP": "Mehr Optionen",
+    "REPORT_USER_MENU": "Nutzer melden",
+    "BLOCK_USER_MENU": "Nutzer blockieren",
+    "IDEAL_RELATIONSHIP_TITLE": "Meine ideale Beziehung",
+    "SUPPORT_MEANING_TITLE": "Was Unterstützung für mich bedeutet",
+    "LOOKING_FOR_TITLE": "Suche nach",
+    "SUPPORT_ORIENTATION_TITLE": "Unterstützungs‑Orientierung",
+    "DETAILS_TITLE": "Details",
+    "NOT_SPECIFIED": "Nicht angegeben",
+    "DETAIL": {
+      "GENDER": "Geschlecht",
+      "HEIGHT": "Größe",
+      "WEIGHT": "Gewicht",
+      "ETHNICITY": "Ethnizität",
+      "RELATIONSHIP_STATUS": "Beziehungsstatus",
+      "CHILDREN": "Kinder",
+      "EDUCATION": "Bildung",
+      "OCCUPATION": "Beruf",
+      "INCOME": "Einkommen",
+      "SMOKING": "Rauchen",
+      "DRINKING": "Alkoholkonsum"
+    },
+    "ERROR": {
+      "USER_NOT_FOUND": "Nutzer nicht gefunden",
+      "PROFILE_UNAVAILABLE": "Dieses Profil ist nicht verfügbar",
+      "LOAD_FAILED": "Laden des Profils fehlgeschlagen"
+    },
+    "MESSAGE": {
+      "TIER_REQUIREMENT": "Dieses Mitglied akzeptiert Nachrichten von Reputation {{tier}} und höher.",
+      "TIER_LIMIT_REACHED": "Du hast dein tägliches Limit für das Starten von Unterhaltungen mit Mitgliedern der Stufe {{tier}} erreicht. Versuche es morgen erneut oder upgrade deine Reputation.",
+      "BLOCKED": "Du kannst diesem Nutzer nicht schreiben."
+    },
+    "THIS_USER": "Dieser Nutzer"
   }
 }

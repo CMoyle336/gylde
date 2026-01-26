@@ -4,8 +4,8 @@
   } @else if (error()) {
     <div class="error-state">
       <mat-icon class="error-icon">person_off</mat-icon>
-      <h2>{{ error() }}</h2>
-      <p class="error-hint">This profile may be private or no longer exists.</p>
+      <h2>{{ error() | translate }}</h2>
+      <p class="error-hint">{{ 'USER_PROFILE.ERROR_HINT' | translate }}</p>
     </div>
   } @else if (profile(); as profile) {
     <div class="profile-content">
@@ -15,11 +15,11 @@
         <section class="photo-section">
         <div class="main-photo">
           @if (profilePhoto()) {
-            <img [src]="profilePhoto()" [alt]="profile.displayName || 'Profile photo'">
+            <img [src]="profilePhoto()" [attr.alt]="profile.displayName || ('USER_PROFILE.PROFILE_PHOTO_ALT' | translate)">
             @if (isCurrentPhotoPrivate() && photoAccess().hasAccess) {
               <div class="private-photo-badge">
                 <mat-icon>lock</mat-icon>
-                <span>Private</span>
+                <span>{{ 'USER_PROFILE.PRIVATE_BADGE' | translate }}</span>
               </div>
             }
           } @else {
@@ -60,7 +60,7 @@
                 [class.active]="i === selectedPhotoIndex()"
                 [class.is-private]="isPhotoPrivate(photo) && photoAccess().hasAccess"
                 (click)="selectPhoto(i)">
-                <img [src]="photo" [alt]="'Photo ' + (i + 1)" loading="lazy">
+                <img [src]="photo" [attr.alt]="'USER_PROFILE.PHOTO_ALT' | translate:{ index: i + 1 }" loading="lazy">
                 @if (isPhotoPrivate(photo) && photoAccess().hasAccess) {
                   <div class="thumbnail-private-badge">
                     <mat-icon>lock</mat-icon>
@@ -77,11 +77,14 @@
             <div class="notice-content">
               <mat-icon>lock</mat-icon>
               <div class="notice-text">
-                <span class="notice-title">{{ privatePhotoCount() }} private photo{{ privatePhotoCount() > 1 ? 's' : '' }}</span>
+                <span class="notice-title">
+                  {{ privatePhotoCount() }}
+                  {{ (privatePhotoCount() === 1 ? 'USER_PROFILE.PRIVATE_PHOTO' : 'USER_PROFILE.PRIVATE_PHOTOS') | translate }}
+                </span>
                 @if (getAccessStatusText()) {
                   <span class="notice-status">{{ getAccessStatusText() }}</span>
                 } @else {
-                  <span class="notice-hint">Request access to view</span>
+                  <span class="notice-hint">{{ 'USER_PROFILE.REQUEST_ACCESS_HINT' | translate }}</span>
                 }
               </div>
             </div>
@@ -97,7 +100,7 @@
                 } @else {
                   <ng-container>
                     <mat-icon>vpn_key</mat-icon>
-                    Request Access
+                    {{ 'USER_PROFILE.REQUEST_ACCESS_BUTTON' | translate }}
                   </ng-container>
                 }
               </button>
@@ -110,7 +113,7 @@
                 @if (requestingAccess()) {
                   <mat-spinner diameter="18"></mat-spinner>
                 } @else {
-                  Cancel Request
+                  {{ 'USER_PROFILE.CANCEL_REQUEST_BUTTON' | translate }}
                 }
               </button>
             } @else if (photoAccess().requestStatus === 'denied') {
@@ -124,7 +127,7 @@
                 } @else {
                   <ng-container>
                     <mat-icon>refresh</mat-icon>
-                    Request Again
+                    {{ 'USER_PROFILE.REQUEST_AGAIN_BUTTON' | translate }}
                   </ng-container>
                 }
               </button>
@@ -140,7 +143,7 @@
             <div class="stat-item highlight">
               <mat-icon>visibility</mat-icon>
               <div class="stat-content">
-                <span class="stat-label">Viewed your profile</span>
+                <span class="stat-label">{{ 'USER_PROFILE.VIEWED_YOUR_PROFILE' | translate }}</span>
                 <span class="stat-value">{{ formatLastViewedMe() }}</span>
               </div>
             </div>
@@ -148,14 +151,14 @@
           <div class="stat-item">
             <mat-icon>schedule</mat-icon>
             <div class="stat-content">
-              <span class="stat-label">Last active</span>
+              <span class="stat-label">{{ 'USER_PROFILE.LAST_ACTIVE_LABEL' | translate }}</span>
               <span class="stat-value" [class.online]="isOnline()">
                 @if (isOnline()) {
-                  Online now
+                  {{ 'USER_PROFILE.ONLINE_NOW' | translate }}
                 } @else if (getLastActive()) {
                   {{ getLastActive() }}
                 } @else {
-                  Unknown
+                  {{ 'USER_PROFILE.UNKNOWN' | translate }}
                 }
               </span>
             </div>
@@ -163,15 +166,15 @@
           <div class="stat-item">
             <mat-icon>cake</mat-icon>
             <div class="stat-content">
-              <span class="stat-label">Member since</span>
+              <span class="stat-label">{{ 'USER_PROFILE.MEMBER_SINCE_LABEL' | translate }}</span>
               <span class="stat-value">{{ formatProfileAge() }}</span>
             </div>
           </div>
           <div class="stat-item" [class.verified]="profile.identityVerified">
             <mat-icon>{{ profile.identityVerified ? 'verified' : 'shield' }}</mat-icon>
             <div class="stat-content">
-              <span class="stat-label">Verification</span>
-              <span class="stat-value">{{ profile.identityVerified ? 'Verified' : 'Not verified' }}</span>
+              <span class="stat-label">{{ 'USER_PROFILE.VERIFICATION_LABEL' | translate }}</span>
+              <span class="stat-value">{{ profile.identityVerified ? ('USER_PROFILE.VERIFIED' | translate) : ('USER_PROFILE.NOT_VERIFIED' | translate) }}</span>
             </div>
           </div>
         </div>
@@ -185,7 +188,7 @@
           <div class="name-location">
             <div class="name-row">
               <h1 class="profile-name">
-                {{ profile.displayName || 'Anonymous' }}
+                {{ profile.displayName || ('USER_PROFILE.ANONYMOUS_NAME' | translate) }}
                 @if (age()) {
                   <span class="age">, {{ age() }}</span>
                 }
@@ -196,7 +199,7 @@
                   <app-founder-badge [city]="profile.founderCity" size="medium" />
                 }
                 @if (profile.identityVerified) {
-                  <span class="verified-badge" matTooltip="Identity verified">
+                  <span class="verified-badge" [matTooltip]="'USER_PROFILE.IDENTITY_VERIFIED_TOOLTIP' | translate">
                     <mat-icon>verified</mat-icon>
                   </span>
                 }
@@ -233,26 +236,26 @@
               } @else {
                 <mat-icon>chat_bubble</mat-icon>
               }
-              Message
+              {{ 'USER_PROFILE.MESSAGE_BUTTON' | translate }}
             </button>
             <button 
               class="icon-btn favorite-btn"
               [class.favorited]="isFavorited()"
               (click)="onFavorite()"
-              [matTooltip]="isFavorited() ? 'Remove from favorites' : 'Add to favorites'">
+              [matTooltip]="(isFavorited() ? 'USER_PROFILE.REMOVE_FAVORITE_TOOLTIP' : 'USER_PROFILE.ADD_FAVORITE_TOOLTIP') | translate">
               <mat-icon>{{ isFavorited() ? 'favorite' : 'favorite_border' }}</mat-icon>
             </button>
-            <button class="icon-btn" [matMenuTriggerFor]="moreMenu" matTooltip="More options">
+            <button class="icon-btn" [matMenuTriggerFor]="moreMenu" [matTooltip]="'USER_PROFILE.MORE_OPTIONS_TOOLTIP' | translate">
               <mat-icon>more_vert</mat-icon>
             </button>
             <mat-menu #moreMenu="matMenu">
               <button mat-menu-item (click)="onReport()">
                 <mat-icon>flag</mat-icon>
-                Report User
+                {{ 'USER_PROFILE.REPORT_USER_MENU' | translate }}
               </button>
               <button mat-menu-item (click)="openBlockDialog()">
                 <mat-icon>block</mat-icon>
-                Block User
+                {{ 'USER_PROFILE.BLOCK_USER_MENU' | translate }}
               </button>
             </mat-menu>
           </div>
@@ -260,27 +263,27 @@
 
         <!-- My Ideal Relationship -->
         <div class="profile-block">
-          <h3>My Ideal Relationship</h3>
+          <h3>{{ 'USER_PROFILE.IDEAL_RELATIONSHIP_TITLE' | translate }}</h3>
           @if (profile.onboarding?.idealRelationship) {
             <p class="about-text">{{ profile.onboarding?.idealRelationship }}</p>
           } @else {
-            <p class="empty-placeholder">Not specified</p>
+            <p class="empty-placeholder">{{ 'USER_PROFILE.NOT_SPECIFIED' | translate }}</p>
           }
         </div>
 
         <!-- What Support Means -->
         <div class="profile-block">
-          <h3>What Support Means to Me</h3>
+          <h3>{{ 'USER_PROFILE.SUPPORT_MEANING_TITLE' | translate }}</h3>
           @if (profile.onboarding?.supportMeaning) {
             <p class="about-text">{{ profile.onboarding?.supportMeaning }}</p>
           } @else {
-            <p class="empty-placeholder">Not specified</p>
+            <p class="empty-placeholder">{{ 'USER_PROFILE.NOT_SPECIFIED' | translate }}</p>
           }
         </div>
 
         <!-- Looking For -->
         <div class="profile-block">
-          <h3>Looking For</h3>
+          <h3>{{ 'USER_PROFILE.LOOKING_FOR_TITLE' | translate }}</h3>
           @if (profile.onboarding?.connectionTypes?.length) {
             <div class="tag-list">
               @for (type of profile.onboarding?.connectionTypes || []; track type) {
@@ -288,90 +291,90 @@
               }
             </div>
           } @else {
-            <p class="empty-placeholder">Not specified</p>
+            <p class="empty-placeholder">{{ 'USER_PROFILE.NOT_SPECIFIED' | translate }}</p>
           }
         </div>
 
         <!-- Support Orientation -->
         <div class="profile-block">
-          <h3>Support Orientation</h3>
+          <h3>{{ 'USER_PROFILE.SUPPORT_ORIENTATION_TITLE' | translate }}</h3>
           @if (profile.onboarding?.supportOrientation) {
             <div class="tag-list">
               <span class="tag">{{ formatSupportOrientation(profile.onboarding?.supportOrientation) }}</span>
             </div>
           } @else {
-            <p class="empty-placeholder">Not specified</p>
+            <p class="empty-placeholder">{{ 'USER_PROFILE.NOT_SPECIFIED' | translate }}</p>
           }
         </div>
 
         <!-- Personal Details -->
         <div class="profile-block details-grid">
-          <h3>Details</h3>
+          <h3>{{ 'USER_PROFILE.DETAILS_TITLE' | translate }}</h3>
           <div class="details">
             <div class="detail-item">
-              <span class="detail-label">Gender</span>
+              <span class="detail-label">{{ 'USER_PROFILE.DETAIL.GENDER' | translate }}</span>
               <span class="detail-value" [class.empty]="!profile.onboarding?.genderIdentity">
-                {{ formatGender(profile.onboarding?.genderIdentity) || 'Not specified' }}
+                {{ formatGender(profile.onboarding?.genderIdentity) || ('USER_PROFILE.NOT_SPECIFIED' | translate) }}
               </span>
             </div>
             <div class="detail-item">
-              <span class="detail-label">Height</span>
+              <span class="detail-label">{{ 'USER_PROFILE.DETAIL.HEIGHT' | translate }}</span>
               <span class="detail-value" [class.empty]="!profile.onboarding?.height">
-                {{ profile.onboarding?.height || 'Not specified' }}
+                {{ profile.onboarding?.height || ('USER_PROFILE.NOT_SPECIFIED' | translate) }}
               </span>
             </div>
             <div class="detail-item">
-              <span class="detail-label">Weight</span>
+              <span class="detail-label">{{ 'USER_PROFILE.DETAIL.WEIGHT' | translate }}</span>
               <span class="detail-value" [class.empty]="!profile.onboarding?.weight">
-                {{ profile.onboarding?.weight || 'Not specified' }}
+                {{ profile.onboarding?.weight || ('USER_PROFILE.NOT_SPECIFIED' | translate) }}
               </span>
             </div>
             <div class="detail-item">
-              <span class="detail-label">Ethnicity</span>
+              <span class="detail-label">{{ 'USER_PROFILE.DETAIL.ETHNICITY' | translate }}</span>
               <span class="detail-value" [class.empty]="!profile.onboarding?.ethnicity">
-                {{ profile.onboarding?.ethnicity || 'Not specified' }}
+                {{ profile.onboarding?.ethnicity || ('USER_PROFILE.NOT_SPECIFIED' | translate) }}
               </span>
             </div>
             <div class="detail-item">
-              <span class="detail-label">Relationship Status</span>
+              <span class="detail-label">{{ 'USER_PROFILE.DETAIL.RELATIONSHIP_STATUS' | translate }}</span>
               <span class="detail-value" [class.empty]="!profile.onboarding?.relationshipStatus">
-                {{ profile.onboarding?.relationshipStatus || 'Not specified' }}
+                {{ profile.onboarding?.relationshipStatus || ('USER_PROFILE.NOT_SPECIFIED' | translate) }}
               </span>
             </div>
             <div class="detail-item">
-              <span class="detail-label">Children</span>
+              <span class="detail-label">{{ 'USER_PROFILE.DETAIL.CHILDREN' | translate }}</span>
               <span class="detail-value" [class.empty]="!profile.onboarding?.children">
-                {{ profile.onboarding?.children || 'Not specified' }}
+                {{ profile.onboarding?.children || ('USER_PROFILE.NOT_SPECIFIED' | translate) }}
               </span>
             </div>
             <div class="detail-item">
-              <span class="detail-label">Education</span>
+              <span class="detail-label">{{ 'USER_PROFILE.DETAIL.EDUCATION' | translate }}</span>
               <span class="detail-value" [class.empty]="!profile.onboarding?.education">
-                {{ profile.onboarding?.education || 'Not specified' }}
+                {{ profile.onboarding?.education || ('USER_PROFILE.NOT_SPECIFIED' | translate) }}
               </span>
             </div>
             <div class="detail-item">
-              <span class="detail-label">Occupation</span>
+              <span class="detail-label">{{ 'USER_PROFILE.DETAIL.OCCUPATION' | translate }}</span>
               <span class="detail-value" [class.empty]="!profile.onboarding?.occupation">
-                {{ profile.onboarding?.occupation || 'Not specified' }}
+                {{ profile.onboarding?.occupation || ('USER_PROFILE.NOT_SPECIFIED' | translate) }}
               </span>
             </div>
             <div class="detail-item">
-              <span class="detail-label">Income</span>
+              <span class="detail-label">{{ 'USER_PROFILE.DETAIL.INCOME' | translate }}</span>
               <span class="detail-value" [class.empty]="!profile.onboarding?.income">
-                {{ profile.onboarding?.income || 'Not specified' }}
+                {{ profile.onboarding?.income || ('USER_PROFILE.NOT_SPECIFIED' | translate) }}
               </span>
             </div>
             <div class="detail-item">
-              <span class="detail-label">Smoking</span>
+              <span class="detail-label">{{ 'USER_PROFILE.DETAIL.SMOKING' | translate }}</span>
               <span class="detail-value" [class.empty]="!profile.onboarding?.smoker">
-                {{ profile.onboarding?.smoker || 'Not specified' }}
+                {{ profile.onboarding?.smoker || ('USER_PROFILE.NOT_SPECIFIED' | translate) }}
               </span>
             </div>
             <div class="detail-item">
-              <span class="detail-label">Drinking</span>
+              <span class="detail-label">{{ 'USER_PROFILE.DETAIL.DRINKING' | translate }}</span>
               <span class="detail-value" [class.empty]="!profile.onboarding?.drinker">
-                {{ profile.onboarding?.drinker || 'Not specified' }}
+                {{ profile.onboarding?.drinker || ('USER_PROFILE.NOT_SPECIFIED' | translate) }}
               </span>
             </div>
           </div>

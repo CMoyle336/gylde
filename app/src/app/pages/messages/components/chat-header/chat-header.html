@@ -1,6 +1,6 @@
 @if (conversation) {
   <header class="chat-header">
-    <button type="button" class="back-btn" (click)="onBackClick()" aria-label="Back">
+    <button type="button" class="back-btn" (click)="onBackClick()" [attr.aria-label]="'MESSAGES.CHAT_HEADER.BACK_ARIA' | translate">
       <span class="material-icons-outlined">arrow_back</span>
     </button>
     <div class="chat-user">
@@ -17,9 +17,9 @@
         }
       </div>
       <div class="chat-user-info">
-        <span class="chat-user-name">{{ conversation.otherUser.displayName || 'Unknown' }}</span>
+        <span class="chat-user-name">{{ conversation.otherUser.displayName || ('MESSAGES.CHAT_HEADER.UNKNOWN_USER' | translate) }}</span>
         @if (isTyping) {
-          <span class="chat-user-status typing">typing...</span>
+          <span class="chat-user-status typing">{{ 'MESSAGES.CHAT_HEADER.TYPING_STATUS' | translate }}</span>
         } @else if (getStatusText() && !conversation.isBlocked && !isBlocked) {
           <span class="chat-user-status" [class.online]="otherUserStatus?.isOnline">
             {{ getStatusText() }}
@@ -27,39 +27,39 @@
         }
       </div>
     </div>
-    <button type="button" class="options-btn" [matMenuTriggerFor]="chatOptionsMenu" aria-label="Options">
+    <button type="button" class="options-btn" [matMenuTriggerFor]="chatOptionsMenu" [attr.aria-label]="'MESSAGES.CHAT_HEADER.OPTIONS_ARIA' | translate">
       <span class="material-icons-outlined">more_vert</span>
     </button>
     <mat-menu #chatOptionsMenu="matMenu">
       <button mat-menu-item (click)="onViewProfile()">
         <span class="material-icons-outlined">person</span>
-        <span>View profile</span>
+        <span>{{ 'MESSAGES.CHAT_HEADER.VIEW_PROFILE_MENU' | translate }}</span>
       </button>
       @if (hasVirtualPhone) {
         <button mat-menu-item (click)="onShareNumber()">
           <span class="material-icons-outlined">phone_forwarded</span>
-          <span>Share my number</span>
+          <span>{{ 'MESSAGES.CHAT_HEADER.SHARE_NUMBER_MENU' | translate }}</span>
         </button>
       }
       @if (conversation.isArchived) {
         <button mat-menu-item (click)="onUnarchiveChat()">
           <span class="material-icons-outlined">unarchive</span>
-          <span>Unarchive chat</span>
+          <span>{{ 'MESSAGES.CHAT_HEADER.UNARCHIVE_MENU' | translate }}</span>
         </button>
       } @else {
         <button mat-menu-item (click)="onArchiveChat()">
           <span class="material-icons-outlined">archive</span>
-          <span>Archive chat</span>
+          <span>{{ 'MESSAGES.CHAT_HEADER.ARCHIVE_MENU' | translate }}</span>
         </button>
       }
       <mat-divider></mat-divider>
       <button mat-menu-item (click)="onBlockUser()">
         <span class="material-icons-outlined">block</span>
-        <span>Block user</span>
+        <span>{{ 'MESSAGES.CHAT_HEADER.BLOCK_USER_MENU' | translate }}</span>
       </button>
       <button mat-menu-item (click)="onReportUser()" class="report-btn">
         <span class="material-icons-outlined">flag</span>
-        <span>Report user</span>
+        <span>{{ 'MESSAGES.CHAT_HEADER.REPORT_USER_MENU' | translate }}</span>
       </button>
     </mat-menu>
   </header>
