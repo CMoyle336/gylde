@@ -12,18 +12,18 @@
     
     <div class="hero-content">
       <h1 id="hero-heading" class="hero-title">
-        A more trustworthy way to <span class="text-accent">connect</span>
+        {{ 'HOME.LANDING.HERO.TITLE' | translate }} <span class="text-accent">{{ 'HOME.LANDING.HERO.TITLE_ACCENT' | translate }}</span>
       </h1>
       <p class="hero-description">
-        Gylde rewards respect, consistency, and real intent—so the right people rise to the top.
+        {{ 'HOME.LANDING.HERO.DESCRIPTION' | translate }}
       </p>
       
       <div class="hero-cta">
         <button class="btn-primary" type="button" (click)="beginJourney()">
-          Request Early Access
+          {{ 'HOME.LANDING.CTA.BUTTON' | translate }}
         </button>
         <a class="btn-secondary" href="#how-reputation-works">
-          How Reputation Works
+          {{ 'HOME.LANDING.HERO.CTA_SECONDARY' | translate }}
         </a>
       </div>
     </div>
@@ -31,15 +31,15 @@
     <div class="hero-visual" aria-hidden="true">
       <div class="floating-card card-1">
         <span class="material-icons-outlined">verified</span>
-        <span>Reputation verified</span>
+        <span>{{ 'HOME.LANDING.HERO.FLOATING.REPUTATION_VERIFIED' | translate }}</span>
       </div>
       <div class="floating-card card-2">
         <span class="material-icons-outlined">trending_up</span>
-        <span>Trust earned</span>
+        <span>{{ 'HOME.LANDING.HERO.FLOATING.TRUST_EARNED' | translate }}</span>
       </div>
       <div class="floating-card card-3">
         <span class="material-icons-outlined">shield</span>
-        <span>Quality protected</span>
+        <span>{{ 'HOME.LANDING.HERO.FLOATING.QUALITY_PROTECTED' | translate }}</span>
       </div>
     </div>
   </section>
@@ -48,9 +48,9 @@
   <section class="problem" aria-labelledby="problem-heading">
     <div class="problem-container">
       <div class="problem-header">
-        <span class="section-label">The Problem</span>
+        <span class="section-label">{{ 'HOME.LANDING.PROBLEM.LABEL' | translate }}</span>
         <h2 id="problem-heading" class="section-title">
-          Why existing platforms feel broken
+          {{ 'HOME.LANDING.PROBLEM.TITLE' | translate }}
         </h2>
       </div>
 
@@ -58,7 +58,7 @@
         @for (statement of problemStatements(); track statement) {
           <li class="problem-statement" role="listitem">
             <span class="problem-quote">"</span>
-            <span>{{ statement }}</span>
+            <span>{{ statement | translate }}</span>
           </li>
         }
       </ul>
@@ -69,25 +69,25 @@
   <section id="promise" class="promise" aria-labelledby="promise-heading">
     <div class="promise-container">
       <div class="promise-header">
-        <span class="section-label">The Gylde Difference</span>
+        <span class="section-label">{{ 'HOME.LANDING.PROMISE.LABEL' | translate }}</span>
         <h2 id="promise-heading" class="section-title">
-          What we do instead
+          {{ 'HOME.LANDING.PROMISE.TITLE' | translate }}
         </h2>
         <p class="section-description">
-          A different social contract. Not an alternative—a choice.
+          {{ 'HOME.LANDING.PROMISE.DESCRIPTION' | translate }}
         </p>
       </div>
 
       <ul class="pillars-grid" role="list">
-        @for (pillar of pillars(); track pillar.title) {
+        @for (pillar of pillars(); track pillar.titleKey) {
           <li class="pillar-card" role="listitem">
             <div class="pillar-icon-wrapper">
               <span class="material-icons-outlined pillar-icon">{{ pillar.icon }}</span>
             </div>
-            <h3 class="pillar-title">{{ pillar.title }}</h3>
+            <h3 class="pillar-title">{{ pillar.titleKey | translate }}</h3>
             <ul class="pillar-points">
-              @for (point of pillar.points; track point) {
-                <li>{{ point }}</li>
+              @for (pointKey of pillar.pointKeys; track pointKey) {
+                <li>{{ pointKey | translate }}</li>
               }
             </ul>
           </li>
@@ -100,20 +100,19 @@
   <section id="how-reputation-works" class="reputation" aria-labelledby="reputation-heading">
     <div class="reputation-container">
       <div class="reputation-content">
-        <span class="section-label">The Experience</span>
+        <span class="section-label">{{ 'HOME.LANDING.REPUTATION.LABEL' | translate }}</span>
         <h2 id="reputation-heading" class="section-title">
-          What changes when you join
+          {{ 'HOME.LANDING.REPUTATION.TITLE' | translate }}
         </h2>
         <p class="reputation-description">
-          We focus on outcomes, not mechanics. Here's what reputation-driven 
-          connection actually feels like.
+          {{ 'HOME.LANDING.REPUTATION.DESCRIPTION' | translate }}
         </p>
 
         <ul class="experience-list" role="list">
           @for (experience of experiences(); track experience) {
             <li class="experience-item" role="listitem">
               <span class="material-icons-outlined experience-check">check_circle</span>
-              <span>{{ experience }}</span>
+              <span>{{ experience | translate }}</span>
             </li>
           }
         </ul>
@@ -123,7 +122,7 @@
         <div class="reputation-card">
           <div class="reputation-card-inner">
             <span class="material-icons-outlined">trending_up</span>
-            <span>Reputation Compounds</span>
+            <span>{{ 'HOME.LANDING.REPUTATION.CARD.TITLE' | translate }}</span>
           </div>
         </div>
       </div>
@@ -134,32 +133,32 @@
   <section class="audience" aria-labelledby="audience-heading">
     <div class="audience-container">
       <div class="audience-header">
-        <span class="section-label">A Cultural Filter</span>
+        <span class="section-label">{{ 'HOME.LANDING.AUDIENCE.LABEL' | translate }}</span>
         <h2 id="audience-heading" class="section-title">
-          Gylde is for some people—not everyone
+          {{ 'HOME.LANDING.AUDIENCE.TITLE' | translate }}
         </h2>
       </div>
 
       <div class="audience-grid">
         <div class="audience-card audience-for">
-          <h3 class="audience-card-title">Gylde is for people who</h3>
+          <h3 class="audience-card-title">{{ 'HOME.LANDING.AUDIENCE.FOR_TITLE' | translate }}</h3>
           <ul class="audience-list" role="list">
             @for (item of audienceFor(); track item) {
               <li class="audience-item audience-item-positive" role="listitem">
                 <span class="material-icons-outlined">check</span>
-                <span>{{ item }}</span>
+                <span>{{ item | translate }}</span>
               </li>
             }
           </ul>
         </div>
 
         <div class="audience-card audience-not">
-          <h3 class="audience-card-title">Gylde is not for</h3>
+          <h3 class="audience-card-title">{{ 'HOME.LANDING.AUDIENCE.NOT_TITLE' | translate }}</h3>
           <ul class="audience-list" role="list">
             @for (item of audienceNot(); track item) {
               <li class="audience-item audience-item-negative" role="listitem">
                 <span class="material-icons-outlined">close</span>
-                <span>{{ item }}</span>
+                <span>{{ item | translate }}</span>
               </li>
             }
           </ul>
@@ -172,20 +171,19 @@
   <section class="early-access" aria-labelledby="early-access-heading">
     <div class="early-access-container">
       <div class="early-access-content">
-        <span class="section-label">Early Access</span>
+        <span class="section-label">{{ 'HOME.LANDING.EARLY_ACCESS.LABEL' | translate }}</span>
         <h2 id="early-access-heading" class="section-title">
-          Built with intention, not haste
+          {{ 'HOME.LANDING.EARLY_ACCESS.TITLE' | translate }}
         </h2>
         <p class="early-access-description">
-          We're opening Gylde thoughtfully. Early members help shape the platform 
-          and establish the culture that makes it work.
+          {{ 'HOME.LANDING.EARLY_ACCESS.DESCRIPTION' | translate }}
         </p>
 
         <ul class="early-access-list" role="list">
           @for (point of earlyAccessPoints(); track point) {
             <li class="early-access-item" role="listitem">
               <span class="material-icons-outlined">arrow_forward</span>
-              <span>{{ point }}</span>
+              <span>{{ point | translate }}</span>
             </li>
           }
         </ul>
@@ -193,10 +191,10 @@
       
       <div class="early-access-visual" aria-hidden="true">
         <div class="early-access-card">
-          <div class="early-access-badge">Founding Member</div>
+          <div class="early-access-badge">{{ 'HOME.LANDING.EARLY_ACCESS.CARD.BADGE' | translate }}</div>
           <div class="early-access-card-inner">
             <span class="material-icons-outlined">groups</span>
-            <span>Shape the community</span>
+            <span>{{ 'HOME.LANDING.EARLY_ACCESS.CARD.TEXT' | translate }}</span>
           </div>
         </div>
       </div>
@@ -208,14 +206,13 @@
     <div class="cta-container">
       <div class="cta-glow" aria-hidden="true"></div>
       <h2 id="cta-heading" class="cta-title">
-        Join the <span class="text-accent">right way</span>
+        {{ 'HOME.LANDING.CTA.TITLE' | translate }} <span class="text-accent">{{ 'HOME.LANDING.CTA.TITLE_ACCENT' | translate }}</span>
       </h2>
       <p class="cta-description">
-        Gylde isn't about signing up fast. It's about joining a community 
-        where trust is earned and quality is protected.
+        {{ 'HOME.LANDING.CTA.DESCRIPTION' | translate }}
       </p>
       <button class="btn-primary btn-large" type="button" (click)="beginJourney()">
-        Request Early Access
+        {{ 'HOME.LANDING.CTA.BUTTON' | translate }}
       </button>
     </div>
   </section>

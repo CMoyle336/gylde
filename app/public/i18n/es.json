@@ -14,96 +14,205 @@
       "LOGOUT": "Cerrar sesión",
       "ARIA_LABEL": "Navegación principal",
       "LAUNCH": "Lanzar",
-      "SWITCH_TO_LIGHT_ARIA": "Cambiar a modo claro",
-      "SWITCH_TO_DARK_ARIA": "Cambiar a modo oscuro",
+      "SWITCH_TO_LIGHT_ARIA": "Cambiar al modo claro",
+      "SWITCH_TO_DARK_ARIA": "Cambiar al modo oscuro",
       "OPEN_MENU_ARIA": "Abrir menú",
       "LIGHT_MODE": "Modo claro",
       "DARK_MODE": "Modo oscuro",
       "LANGUAGE": "Idioma",
       "CHANGE_LANGUAGE_ARIA": "Cambiar idioma"
     },
+    "LANDING": {
+      "HERO": {
+        "TITLE": "Una forma más confiable de",
+        "TITLE_ACCENT": "conectar",
+        "DESCRIPTION": "Gylde recompensa el respeto, la consistencia y la intención real—para que las personas adecuadas lleguen a la cima.",
+        "CTA_SECONDARY": "Cómo funciona la reputación",
+        "FLOATING": {
+          "REPUTATION_VERIFIED": "Reputación verificada",
+          "TRUST_EARNED": "Confianza ganada",
+          "QUALITY_PROTECTED": "Calidad protegida"
+        }
+      },
+      "PROBLEM": {
+        "LABEL": "El Problema",
+        "TITLE": "Por qué las plataformas existentes se sienten rotas",
+        "STATEMENTS": {
+          "S1": "La visibilidad no debería ser algo que compres.",
+          "S2": "La confianza no debería reiniciarse cada vez que inicias sesión.",
+          "S3": "El buen comportamiento debería acumularse—no quedar enterrado.",
+          "S4": "Mensajería interminable con poca señal es agotadora.",
+          "S5": "El dinero no debería anular la forma en que alguien te trata."
+        }
+      },
+      "PROMISE": {
+        "LABEL": "La Diferencia Gylde",
+        "TITLE": "Lo que hacemos en su lugar",
+        "DESCRIPTION": "Un contrato social diferente. No es una alternativa—es una elección.",
+        "PILLARS": {
+          "P1": {
+            "TITLE": "Reputación sobre Alcance",
+            "POINTS": {
+              "P1": "El comportamiento determina la visibilidad",
+              "P2": "La consistencia supera al volumen",
+              "P3": "El respeto se acumula con el tiempo"
+            }
+          },
+          "P2": {
+            "TITLE": "Protección para la Calidad",
+            "POINTS": {
+              "P1": "Límites cuidadosos en las interacciones",
+              "P2": "Buzones más tranquilos y enfocados",
+              "P3": "Menos, mejores conversaciones"
+            }
+          },
+          "P3": {
+            "TITLE": "Confianza que no se puede comprar",
+            "POINTS": {
+              "P1": "El pago mejora la experiencia, no la credibilidad",
+              "P2": "Sin atajos alrededor de la reputación",
+              "P3": "Todos ganan su posición"
+            }
+          }
+        }
+      },
+      "REPUTATION": {
+        "LABEL": "La Experiencia",
+        "TITLE": "Qué cambia cuando te unes",
+        "DESCRIPTION": "Nos enfocamos en resultados, no en mecánicas. Así es como se siente una conexión impulsada por la reputación.",
+        "EXPERIENCES": {
+          "E1": "Las personas responden más.",
+          "E2": "Eres visto por miembros más serios.",
+          "E3": "Las conversaciones se sienten intencionales.",
+          "E4": "Los malos actores desaparecen rápidamente.",
+          "E5": "Tu esfuerzo es reconocido y recompensado."
+        },
+        "CARD": {
+          "TITLE": "La reputación se acumula"
+        }
+      },
+      "AUDIENCE": {
+        "LABEL": "Un Filtro Cultural",
+        "TITLE": "Gylde es para algunas personas—no para todos",
+        "FOR_TITLE": "Gylde es para personas que",
+        "NOT_TITLE": "Gylde no es para",
+        "FOR": {
+          "I1": "Valoran la discreción y el respeto",
+          "I2": "Prefieren calidad sobre cantidad",
+          "I3": "Quieren que la confianza importe",
+          "I4": "Están cansados de dinámicas transaccionales"
+        },
+        "NOT": {
+          "I1": "Mensajería masiva",
+          "I2": "Explotación a corto plazo",
+          "I3": "Comprar atención",
+          "I4": "Comportamiento de bajo esfuerzo"
+        }
+      },
+      "EARLY_ACCESS": {
+        "LABEL": "Acceso Anticipado",
+        "TITLE": "Construido con intención, no prisa",
+        "DESCRIPTION": "Estamos abriendo Gylde de manera cuidadosa. Los primeros miembros ayudan a dar forma a la plataforma y establecer la cultura que la hace funcionar.",
+        "POINTS": {
+          "P1": "Actualmente abierto en regiones limitadas",
+          "P2": "Los miembros fundadores ayudan a dar forma a la plataforma",
+          "P3": "El acceso anticipado prioriza los perfiles verificados",
+          "P4": "Calidad sobre velocidad—siempre"
+        },
+        "CARD": {
+          "BADGE": "Miembro Fundador",
+          "TEXT": "Moldear la comunidad"
+        }
+      },
+      "CTA": {
+        "TITLE": "Únete al",
+        "TITLE_ACCENT": "camino correcto",
+        "DESCRIPTION": "Gylde no se trata de registrarse rápido. Se trata de unirse a una comunidad donde la confianza se gana y la calidad se protege.",
+        "BUTTON": "Solicitar acceso anticipado"
+      }
+    },
     "HERO": {
-      "TAGLINE": "Citas para relaciones intencionales y con apoyo",
+      "TAGLINE": "Citas para relaciones intencionales y apoyadas",
       "TITLE": "Encuentra tu",
       "TITLE_ACCENT": "Gylde",
       "DESCRIPTION": "No citas casuales. No suposiciones. Un espacio estructurado donde la claridad se encuentra con la conexión y las relaciones se construyen con intención.",
       "CTA_PRIMARY": "Comienza tu viaje",
-      "CTA_SECONDARY": "Más información",
-      "VERIFIED_MEMBER": "Miembro verificado",
-      "PREMIUM_MEMBER": "Miembro premium",
-      "ITS_A_MATCH": "¡Es un match!"
+      "CTA_SECONDARY": "Aprende más",
+      "VERIFIED_MEMBER": "Miembro Verificado",
+      "PREMIUM_MEMBER": "Miembro Premium",
+      "ITS_A_MATCH": "¡Es una coincidencia!"
     },
     "STATS": {
-      "ACTIVE_MEMBERS": "Miembros activos",
-      "CONNECTIONS_MADE": "Conexiones realizadas",
-      "SATISFACTION_RATE": "Tasa de satisfacción"
+      "ACTIVE_MEMBERS": "Miembros Activos",
+      "CONNECTIONS_MADE": "Conexiones Realizadas",
+      "SATISFACTION_RATE": "Tasa de Satisfacción"
     },
     "FEATURES": {
       "LABEL": "Por qué Gylde",
       "TITLE": "Claridad, no suposiciones",
-      "DESCRIPTION": "Nuestros miembros se unen porque quieren estructura alrededor de lo que más importa—estilo de vida, ambición, generosidad e intención.",
+      "DESCRIPTION": "Nuestros miembros se unen porque quieren una estructura alrededor de lo que más importa: estilo de vida, ambición, generosidad e intención.",
       "LIFESTYLE": {
         "TITLE": "Expectativas de estilo de vida",
-        "DESCRIPTION": "Sé directo sobre cómo vives y qué esperas. Sin ambigüedad—solo estilos de vida alineados desde el inicio."
+        "DESCRIPTION": "Sé claro sobre cómo vives y qué esperas. Sin ambigüedad—solo estilos de vida alineados desde el principio."
       },
       "AMBITION": {
-        "TITLE": "Ambición y crecimiento",
+        "TITLE": "Ambición y Crecimiento",
         "DESCRIPTION": "Conéctate con miembros que valoran el desarrollo personal, metas profesionales y construir algo mayor."
       },
       "GENEROSITY": {
-        "TITLE": "Generosidad y apoyo",
+        "TITLE": "Generosidad y Apoyo",
         "DESCRIPTION": "Un espacio para quienes están abiertos a dar y recibir apoyo. Claros sobre intenciones, respetuosos en el enfoque."
       },
       "INTENTION": {
-        "TITLE": "Construido con intención",
-        "DESCRIPTION": "Cada relación aquí comienza con propósito. Sin juegos, sin incertidumbre—solo conexiones genuinas e intencionales."
+        "TITLE": "Construido con Intención",
+        "DESCRIPTION": "Cada relación aquí comienza con un propósito. Sin juegos, sin incertidumbre—solo conexiones genuinas e intencionales."
       },
       "VERIFIED": {
-        "TITLE": "Miembros verificados",
-        "DESCRIPTION": "Cada perfil está verificado. Saber que la persona con la que te conectas es real, seria y auténtica."
+        "TITLE": "Miembros Verificados",
+        "DESCRIPTION": "Cada perfil está verificado. Sabe que la persona con la que te conectas es real, seria y auténtica."
       },
       "PRIVACY": {
-        "TITLE": "Privacidad y discreción",
+        "TITLE": "Privacidad y Discreción",
         "DESCRIPTION": "Tu privacidad importa. Comparte en tus términos con controles robustos diseñados para tu tranquilidad."
       }
     },
     "HOW_IT_WORKS": {
-      "LABEL": "El viaje",
+      "LABEL": "El Viaje",
       "TITLE": "Tres pasos para la conexión",
       "STEP_1": {
         "TITLE": "Define lo que quieres",
-        "DESCRIPTION": "Nuestro perfil estructurado te guía a través del estilo de vida, ambiciones y expectativas de relación. Sin adivinanzas—solo claridad."
+        "DESCRIPTION": "Nuestro perfil estructurado te guía a través del estilo de vida, ambiciones y expectativas de relación. Sin suposiciones—solo claridad."
       },
       "STEP_2": {
         "TITLE": "Encuentra coincidencias alineadas",
         "DESCRIPTION": "Explora miembros verificados que comparten tus intenciones. Filtra por lo que importa: estilo de vida, metas y apertura al apoyo."
       },
       "STEP_3": {
-        "TITLE": "Conecta con propósito",
-        "DESCRIPTION": "Inicia conversaciones sabiendo que ambos están en la misma página. Construye relaciones basadas en respeto mutuo e intenciones claras."
+        "TITLE": "Conéctate con propósito",
+        "DESCRIPTION": "Inicia conversaciones sabiendo que ambos están en la misma sintonía. Construye relaciones basadas en respeto mutuo e intenciones claras."
       }
     },
     "VALUES": {
-      "LABEL": "Nuestra promesa",
+      "LABEL": "Nuestra Promesa",
       "TITLE": "Estructura que funciona",
-      "DESCRIPTION": "Construimos Gylde porque las citas no deberían requerir descifrar señales mixtas. Nuestra plataforma te da la estructura para ser claro sobre lo que quieres y encontrar a otros que quieren lo mismo.",
+      "DESCRIPTION": "Construimos Gylde porque las citas no deberían requerir descifrar señales mixtas. Nuestra plataforma te brinda la estructura para ser claro sobre lo que deseas—y encontrar a otros que quieren lo mismo.",
       "INTENTIONAL_CONNECTIONS": "Conexiones intencionales",
       "LIST": {
         "CLEAR_EXPECTATIONS": "Expectativas claras desde el primer mensaje",
         "VERIFIED_IDENTITY": "Identidad verificada para cada miembro",
-        "ZERO_TOLERANCE": "Tolerancia cero para deshonestidad o juegos",
+        "ZERO_TOLERANCE": "Tolerancia cero a la deshonestidad o juegos",
         "STRUCTURED_PROFILES": "Perfiles estructurados que resaltan lo que importa",
         "MUTUAL_RESPECT": "Una comunidad construida sobre respeto mutuo"
       }
     },
     "CTA": {
-      "TITLE": "Proveemos la",
+      "TITLE": "Nosotros proporcionamos el",
       "TITLE_ACCENT": "Estructura",
       "DESCRIPTION": "Tú defines la conexión. Únete a una comunidad construida sobre claridad, intención y respeto mutuo.",
       "BUTTON": "Crea tu perfil"
     },
     "FOOTER": {
-      "TAGLINE": "Proveemos la estructura. Tú defines la conexión.",
+      "TAGLINE": "Nosotros proporcionamos la estructura. Tú defines la conexión.",
       "ARIA_LABEL": "Navegación del pie de página",
       "PLATFORM": {
         "TITLE": "Plataforma",
@@ -116,7 +225,7 @@
         "TITLE": "Soporte",
         "HELP": "Centro de ayuda",
         "SAFETY": "Consejos de seguridad",
-        "GUIDELINES": "Directrices de la comunidad",
+        "GUIDELINES": "Guías de la comunidad",
         "CONTACT": "Contáctanos"
       },
       "LEGAL": {
@@ -126,7 +235,7 @@
         "COOKIES": "Política de cookies"
       },
       "COPYRIGHT": "© {{year}} Gylde. Todos los derechos reservados.",
-      "DISCLAIMER": "Gylde es una plataforma de citas. No facilitamos ni toleramos ninguna forma de actividad ilegal."
+      "DISCLAIMER": "Gylde es una plataforma de citas. No facilitamos ni aprobamos ninguna forma de actividad ilegal."
     }
   },
   "ONBOARDING": {
@@ -960,7 +1069,7 @@
       "LANGUAGE": "Idioma",
       "LANGUAGE_DESC": "Elige tu idioma preferido",
       "LANGUAGE_EN": "Inglés",
-      "LANGUAGE_NL": "Neerlandés",
+      "LANGUAGE_ES": "Español",
       "LANGUAGE_DE": "Alemán",
       "DARK_MODE": "Modo oscuro",
       "DARK_MODE_DESC": "Cambiar entre temas claro y oscuro"

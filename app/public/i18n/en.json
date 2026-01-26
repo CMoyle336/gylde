@@ -22,6 +22,115 @@
       "LANGUAGE": "Language",
       "CHANGE_LANGUAGE_ARIA": "Change language"
     },
+    "LANDING": {
+      "HERO": {
+        "TITLE": "A more trustworthy way to",
+        "TITLE_ACCENT": "connect",
+        "DESCRIPTION": "Gylde rewards respect, consistency, and real intent—so the right people rise to the top.",
+        "CTA_SECONDARY": "How Reputation Works",
+        "FLOATING": {
+          "REPUTATION_VERIFIED": "Reputation verified",
+          "TRUST_EARNED": "Trust earned",
+          "QUALITY_PROTECTED": "Quality protected"
+        }
+      },
+      "PROBLEM": {
+        "LABEL": "The Problem",
+        "TITLE": "Why existing platforms feel broken",
+        "STATEMENTS": {
+          "S1": "Visibility shouldn't be something you buy.",
+          "S2": "Trust shouldn't reset every time you log in.",
+          "S3": "Good behavior should compound—not get buried.",
+          "S4": "Endless messaging with little signal is exhausting.",
+          "S5": "Money shouldn't override how someone treats you."
+        }
+      },
+      "PROMISE": {
+        "LABEL": "The Gylde Difference",
+        "TITLE": "What we do instead",
+        "DESCRIPTION": "A different social contract. Not an alternative—a choice.",
+        "PILLARS": {
+          "P1": {
+            "TITLE": "Reputation Over Reach",
+            "POINTS": {
+              "P1": "Behavior determines visibility",
+              "P2": "Consistency beats volume",
+              "P3": "Respect compounds over time"
+            }
+          },
+          "P2": {
+            "TITLE": "Protection for Quality",
+            "POINTS": {
+              "P1": "Thoughtful limits on interactions",
+              "P2": "Calmer, more focused inboxes",
+              "P3": "Fewer, better conversations"
+            }
+          },
+          "P3": {
+            "TITLE": "Trust That Can't Be Bought",
+            "POINTS": {
+              "P1": "Payment enhances experience, not credibility",
+              "P2": "No shortcuts around reputation",
+              "P3": "Everyone earns their standing"
+            }
+          }
+        }
+      },
+      "REPUTATION": {
+        "LABEL": "The Experience",
+        "TITLE": "What changes when you join",
+        "DESCRIPTION": "We focus on outcomes, not mechanics. Here's what reputation-driven connection actually feels like.",
+        "EXPERIENCES": {
+          "E1": "People respond more.",
+          "E2": "You're seen by more serious members.",
+          "E3": "Conversations feel intentional.",
+          "E4": "Bad actors disappear quickly.",
+          "E5": "Your effort is recognized and rewarded."
+        },
+        "CARD": {
+          "TITLE": "Reputation Compounds"
+        }
+      },
+      "AUDIENCE": {
+        "LABEL": "A Cultural Filter",
+        "TITLE": "Gylde is for some people—not everyone",
+        "FOR_TITLE": "Gylde is for people who",
+        "NOT_TITLE": "Gylde is not for",
+        "FOR": {
+          "I1": "Value discretion and respect",
+          "I2": "Prefer quality over volume",
+          "I3": "Want trust to matter",
+          "I4": "Are tired of transactional dynamics"
+        },
+        "NOT": {
+          "I1": "Mass messaging",
+          "I2": "Short-term exploitation",
+          "I3": "Buying attention",
+          "I4": "Low-effort behavior"
+        }
+      },
+      "EARLY_ACCESS": {
+        "LABEL": "Early Access",
+        "TITLE": "Built with intention, not haste",
+        "DESCRIPTION": "We're opening Gylde thoughtfully. Early members help shape the platform and establish the culture that makes it work.",
+        "POINTS": {
+          "P1": "Currently opening in limited regions",
+          "P2": "Founding members help shape the platform",
+          "P3": "Early access prioritizes verified profiles",
+          "P4": "Quality over speed—always"
+        },
+        "CARD": {
+          "BADGE": "Founding Member",
+          "TEXT": "Shape the community"
+        }
+      },
+      "CTA": {
+        "TITLE": "Join the",
+        "TITLE_ACCENT": "right way",
+        "DESCRIPTION": "Gylde isn't about signing up fast. It's about joining a community where trust is earned and quality is protected.",
+        "BUTTON": "Request Early Access"
+      }
+    },
     "HERO": {
       "TAGLINE": "Dating for Intentional, Supported Relationships",
       "TITLE": "Find Your",
@@ -960,7 +1069,7 @@
       "LANGUAGE": "Language",
       "LANGUAGE_DESC": "Choose your preferred language",
       "LANGUAGE_EN": "English",
-      "LANGUAGE_NL": "Nederlands",
+      "LANGUAGE_ES": "Español",
       "LANGUAGE_DE": "Deutsch",
       "DARK_MODE": "Dark mode",
       "DARK_MODE_DESC": "Switch between light and dark themes"

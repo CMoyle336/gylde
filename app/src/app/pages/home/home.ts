@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
+import { TranslateModule } from '@ngx-translate/core';
 import { AuthModalComponent } from '../../components/auth-modal/auth-modal';
 import { PublicHeaderComponent } from '../../components/public-header/public-header';
 import { PublicFooterComponent } from '../../components/public-footer/public-footer';
@@ -8,10 +9,11 @@ import { AuthResult } from '../../core/interfaces';
 
 @Component({
   selector: 'app-home',
+  standalone: true,
   templateUrl: './home.html',
   styleUrl: './home.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AuthModalComponent, PublicHeaderComponent, PublicFooterComponent],
+  imports: [TranslateModule, AuthModalComponent, PublicHeaderComponent, PublicFooterComponent],
 })
 export class HomeComponent {
   private readonly router = inject(Router);
@@ -50,74 +52,74 @@ export class HomeComponent {
 
   // Problem statements - emotional truths about existing platforms
   protected readonly problemStatements = signal([
-    'Visibility shouldn\'t be something you buy.',
-    'Trust shouldn\'t reset every time you log in.',
-    'Good behavior should compound—not get buried.',
-    'Endless messaging with little signal is exhausting.',
-    'Money shouldn\'t override how someone treats you.',
+    'HOME.LANDING.PROBLEM.STATEMENTS.S1',
+    'HOME.LANDING.PROBLEM.STATEMENTS.S2',
+    'HOME.LANDING.PROBLEM.STATEMENTS.S3',
+    'HOME.LANDING.PROBLEM.STATEMENTS.S4',
+    'HOME.LANDING.PROBLEM.STATEMENTS.S5',
   ]);
 
   // Three pillars of the Gylde promise
   protected readonly pillars = signal([
     {
       icon: 'trending_up',
-      title: 'Reputation Over Reach',
-      points: [
-        'Behavior determines visibility',
-        'Consistency beats volume',
-        'Respect compounds over time',
+      titleKey: 'HOME.LANDING.PROMISE.PILLARS.P1.TITLE',
+      pointKeys: [
+        'HOME.LANDING.PROMISE.PILLARS.P1.POINTS.P1',
+        'HOME.LANDING.PROMISE.PILLARS.P1.POINTS.P2',
+        'HOME.LANDING.PROMISE.PILLARS.P1.POINTS.P3',
       ],
     },
     {
       icon: 'shield',
-      title: 'Protection for Quality',
-      points: [
-        'Thoughtful limits on interactions',
-        'Calmer, more focused inboxes',
-        'Fewer, better conversations',
+      titleKey: 'HOME.LANDING.PROMISE.PILLARS.P2.TITLE',
+      pointKeys: [
+        'HOME.LANDING.PROMISE.PILLARS.P2.POINTS.P1',
+        'HOME.LANDING.PROMISE.PILLARS.P2.POINTS.P2',
+        'HOME.LANDING.PROMISE.PILLARS.P2.POINTS.P3',
       ],
     },
     {
       icon: 'verified',
-      title: 'Trust That Can\'t Be Bought',
-      points: [
-        'Payment enhances experience, not credibility',
-        'No shortcuts around reputation',
-        'Everyone earns their standing',
+      titleKey: 'HOME.LANDING.PROMISE.PILLARS.P3.TITLE',
+      pointKeys: [
+        'HOME.LANDING.PROMISE.PILLARS.P3.POINTS.P1',
+        'HOME.LANDING.PROMISE.PILLARS.P3.POINTS.P2',
+        'HOME.LANDING.PROMISE.PILLARS.P3.POINTS.P3',
       ],
     },
   ]);
 
   // Experiential benefits - how reputation feels
   protected readonly experiences = signal([
-    'People respond more.',
-    'You\'re seen by more serious members.',
-    'Conversations feel intentional.',
-    'Bad actors disappear quickly.',
-    'Your effort is recognized and rewarded.',
+    'HOME.LANDING.REPUTATION.EXPERIENCES.E1',
+    'HOME.LANDING.REPUTATION.EXPERIENCES.E2',
+    'HOME.LANDING.REPUTATION.EXPERIENCES.E3',
+    'HOME.LANDING.REPUTATION.EXPERIENCES.E4',
+    'HOME.LANDING.REPUTATION.EXPERIENCES.E5',
   ]);
 
   // Who Gylde is for
   protected readonly audienceFor = signal([
-    'Value discretion and respect',
-    'Prefer quality over volume',
-    'Want trust to matter',
-    'Are tired of transactional dynamics',
+    'HOME.LANDING.AUDIENCE.FOR.I1',
+    'HOME.LANDING.AUDIENCE.FOR.I2',
+    'HOME.LANDING.AUDIENCE.FOR.I3',
+    'HOME.LANDING.AUDIENCE.FOR.I4',
   ]);
 
   // Who Gylde is not for
   protected readonly audienceNot = signal([
-    'Mass messaging',
-    'Short-term exploitation',
-    'Buying attention',
-    'Low-effort behavior',
+    'HOME.LANDING.AUDIENCE.NOT.I1',
+    'HOME.LANDING.AUDIENCE.NOT.I2',
+    'HOME.LANDING.AUDIENCE.NOT.I3',
+    'HOME.LANDING.AUDIENCE.NOT.I4',
   ]);
 
   // Early access points - social proof without users
   protected readonly earlyAccessPoints = signal([
-    'Currently opening in limited regions',
-    'Founding members help shape the platform',
-    'Early access prioritizes verified profiles',
-    'Quality over speed—always',
+    'HOME.LANDING.EARLY_ACCESS.POINTS.P1',
+    'HOME.LANDING.EARLY_ACCESS.POINTS.P2',
+    'HOME.LANDING.EARLY_ACCESS.POINTS.P3',
+    'HOME.LANDING.EARLY_ACCESS.POINTS.P4',
   ]);
 }

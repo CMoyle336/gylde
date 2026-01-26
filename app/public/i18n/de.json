@@ -14,13 +14,122 @@
       "LOGOUT": "Abmelden",
       "ARIA_LABEL": "Hauptnavigation",
       "LAUNCH": "Starten",
-      "SWITCH_TO_LIGHT_ARIA": "Zum Light‑Modus wechseln",
-      "SWITCH_TO_DARK_ARIA": "Zum Dark‑Modus wechseln",
+      "SWITCH_TO_LIGHT_ARIA": "Zum Light-Modus wechseln",
+      "SWITCH_TO_DARK_ARIA": "Zum Dark-Modus wechseln",
       "OPEN_MENU_ARIA": "Menü öffnen",
-      "LIGHT_MODE": "Light‑Modus",
-      "DARK_MODE": "Dark‑Modus",
+      "LIGHT_MODE": "Lichtmodus",
+      "DARK_MODE": "Dunkelmodus",
       "LANGUAGE": "Sprache",
       "CHANGE_LANGUAGE_ARIA": "Sprache ändern"
+    },
+    "LANDING": {
+      "HERO": {
+        "TITLE": "Eine vertrauenswürdigere Art zu",
+        "TITLE_ACCENT": "verbinden",
+        "DESCRIPTION": "Gylde belohnt Respekt, Konsistenz und echte Absicht – sodass die richtigen Menschen an die Spitze kommen.",
+        "CTA_SECONDARY": "Wie Reputation funktioniert",
+        "FLOATING": {
+          "REPUTATION_VERIFIED": "Ruf verifiziert",
+          "TRUST_EARNED": "Vertrauen erworben",
+          "QUALITY_PROTECTED": "Qualität geschützt"
+        }
+      },
+      "PROBLEM": {
+        "LABEL": "Das Problem",
+        "TITLE": "Warum bestehende Plattformen fehlerhaft wirken",
+        "STATEMENTS": {
+          "S1": "Sichtbarkeit sollte nichts sein, das man kauft.",
+          "S2": "Vertrauen sollte nicht jedes Mal zurückgesetzt werden, wenn Sie sich anmelden.",
+          "S3": "Gutes Verhalten sollte sich summieren – nicht vergraben werden.",
+          "S4": "Endloses Messaging mit wenig Signal ist erschöpfend.",
+          "S5": "Geld sollte nicht darüber entscheiden, wie jemand Sie behandelt."
+        }
+      },
+      "PROMISE": {
+        "LABEL": "Der Gylde Unterschied",
+        "TITLE": "Was wir stattdessen tun",
+        "DESCRIPTION": "Ein anderer sozialer Vertrag. Keine Alternative – eine Wahl.",
+        "PILLARS": {
+          "P1": {
+            "TITLE": "Ruf vor Reichweite",
+            "POINTS": {
+              "P1": "Verhalten bestimmt Sichtbarkeit",
+              "P2": "Konsistenz schlägt Volumen",
+              "P3": "Respekt kumuliert über die Zeit"
+            }
+          },
+          "P2": {
+            "TITLE": "Schutz für Qualität",
+            "POINTS": {
+              "P1": "Durchdachte Limits für Interaktionen",
+              "P2": "Ruhigere, fokussiertere Posteingänge",
+              "P3": "Weniger, bessere Gespräche"
+            }
+          },
+          "P3": {
+            "TITLE": "Vertrauen, das nicht gekauft werden kann",
+            "POINTS": {
+              "P1": "Zahlungen verbessern das Erlebnis, nicht die Glaubwürdigkeit",
+              "P2": "Keine Abkürzungen beim Ruf",
+              "P3": "Jeder verdient seinen Stand"
+            }
+          }
+        }
+      },
+      "REPUTATION": {
+        "LABEL": "Das Erlebnis",
+        "TITLE": "Was sich ändert, wenn Sie beitreten",
+        "DESCRIPTION": "Wir fokussieren uns auf Ergebnisse, nicht auf Mechaniken. So fühlt sich eine rufbasierte Verbindung an.",
+        "EXPERIENCES": {
+          "E1": "Menschen reagieren mehr.",
+          "E2": "Sie werden von ernsthafteren Mitgliedern gesehen.",
+          "E3": "Gespräche wirken intentional.",
+          "E4": "Schlechte Akteure verschwinden schnell.",
+          "E5": "Ihr Einsatz wird anerkannt und belohnt."
+        },
+        "CARD": {
+          "TITLE": "Ruf kumuliert"
+        }
+      },
+      "AUDIENCE": {
+        "LABEL": "Ein kultureller Filter",
+        "TITLE": "Gylde ist für manche Menschen – nicht für alle",
+        "FOR_TITLE": "Gylde ist für Menschen, die",
+        "NOT_TITLE": "Gylde ist nicht für",
+        "FOR": {
+          "I1": "Diskretion und Respekt schätzen",
+          "I2": "Qualität über Menge bevorzugen",
+          "I3": "Wollen, dass Vertrauen zählt",
+          "I4": "Sind müde von transaktionalen Dynamiken"
+        },
+        "NOT": {
+          "I1": "Massen-Messaging",
+          "I2": "Kurzfristige Ausbeutung",
+          "I3": "Aufmerksamkeit kaufen",
+          "I4": "Niedrig Aufwand Verhalten"
+        }
+      },
+      "EARLY_ACCESS": {
+        "LABEL": "Früher Zugang",
+        "TITLE": "Mit Absicht gebaut, nicht hastig",
+        "DESCRIPTION": "Wir öffnen Gylde durchdacht. Frühe Mitglieder helfen, die Plattform zu formen und die Kultur zu etablieren, die sie funktionieren lässt.",
+        "POINTS": {
+          "P1": "Derzeit in begrenzten Regionen verfügbar",
+          "P2": "Gründungsmitglieder helfen, die Plattform zu gestalten",
+          "P3": "Früher Zugang priorisiert verifizierte Profile",
+          "P4": "Qualität vor Geschwindigkeit – immer"
+        },
+        "CARD": {
+          "BADGE": "Gründungsmitglied",
+          "TEXT": "Gestalte die Community"
+        }
+      },
+      "CTA": {
+        "TITLE": "Tritt dem",
+        "TITLE_ACCENT": "richtigen Weg",
+        "DESCRIPTION": "Gylde geht nicht darum, sich schnell anzumelden. Es geht darum, einer Gemeinschaft beizutreten, in der Vertrauen verdient und Qualität geschützt wird.",
+        "BUTTON": "Frühen Zugang anfordern"
+      }
     },
     "HERO": {
       "TAGLINE": "Dating für absichtsvolle, unterstützte Beziehungen",
@@ -28,82 +137,82 @@
       "TITLE_ACCENT": "Gylde",
       "DESCRIPTION": "Kein lockeres Dating. Kein Rätselraten. Ein strukturierter Raum, in dem Klarheit auf Verbindung trifft und Beziehungen mit Absicht aufgebaut werden.",
       "CTA_PRIMARY": "Beginne deine Reise",
-      "CTA_SECONDARY": "Mehr erfahren",
-      "VERIFIED_MEMBER": "Verifizierter Nutzer",
-      "PREMIUM_MEMBER": "Premium‑Nutzer",
+      "CTA_SECONDARY": "Erfahre mehr",
+      "VERIFIED_MEMBER": "Verifizierter Benutzer",
+      "PREMIUM_MEMBER": "Premium-Mitglied",
       "ITS_A_MATCH": "Es ist ein Match!"
     },
     "STATS": {
       "ACTIVE_MEMBERS": "Aktive Mitglieder",
-      "CONNECTIONS_MADE": "Verbindungen hergestellt",
+      "CONNECTIONS_MADE": "Hergestellte Verbindungen",
       "SATISFACTION_RATE": "Zufriedenheitsrate"
     },
     "FEATURES": {
       "LABEL": "Warum Gylde",
       "TITLE": "Klarheit, kein Rätselraten",
-      "DESCRIPTION": "Unsere Mitglieder kommen, weil sie Struktur um das Wichtigste wollen – Lebensstil, Ehrgeiz, Großzügigkeit und Absicht.",
+      "DESCRIPTION": "Unsere Mitglieder treten bei, weil sie Struktur um das Wichtigste wollen – Lebensstil, Ehrgeiz, Großzügigkeit und Absicht.",
       "LIFESTYLE": {
         "TITLE": "Erwartungen an den Lebensstil",
-        "DESCRIPTION": "Sei offen darüber, wie du lebst und was du erwartest. Keine Mehrdeutigkeit – von Anfang an abgestimmte Lebensstile."
+        "DESCRIPTION": "Seien Sie offen darüber, wie Sie leben und was Sie erwarten. Keine Mehrdeutigkeit – nur abgestimmte Lebensstile von Anfang an."
       },
       "AMBITION": {
         "TITLE": "Ehrgeiz & Wachstum",
-        "DESCRIPTION": "Verbinde dich mit Mitgliedern, die persönliche Entwicklung, Karriereziele und das Streben nach etwas Größerem schätzen."
+        "DESCRIPTION": "Verbinden Sie sich mit Mitgliedern, die persönliche Entwicklung, Karriereziel und das Streben nach etwas Größerem schätzen."
       },
       "GENEROSITY": {
         "TITLE": "Großzügigkeit & Unterstützung",
-        "DESCRIPTION": "Ein Raum für alle, die bereit sind zu geben und zu erhalten. Klarheit über Absichten, respektvoll im Ansatz."
+        "DESCRIPTION": "Ein Raum für jene, die bereit sind zu geben und zu empfangen. Klar über Absichten, respektvoll im Ansatz."
       },
       "INTENTION": {
         "TITLE": "Mit Absicht gebaut",
-        "DESCRIPTION": "Jede Beziehung hier beginnt mit einem Zweck. Keine Spiele, keine Ungewissheit – nur echte, intentionale Verbindungen."
+        "DESCRIPTION": "Jede Beziehung hier beginnt mit Zweck. Keine Spiele, keine Unsicherheit – nur echte, absichtsvolle Verbindungen."
       },
       "VERIFIED": {
         "TITLE": "Verifizierte Mitglieder",
-        "DESCRIPTION": "Jedes Profil ist verifiziert. Du weißt, dass die Person, mit der du dich verbindest, echt, ernsthaft und authentisch ist."
+        "DESCRIPTION": "Jedes Profil ist verifiziert. Wissen Sie, dass die Person, mit der Sie sich verbinden, echt, ernsthaft und authentisch ist."
       },
       "PRIVACY": {
         "TITLE": "Privatsphäre & Diskretion",
-        "DESCRIPTION": "Deine Privatsphäre ist wichtig. Teile nach deinen Bedingungen mit robusten Kontrollen für dein gutes Gefühl."
+        "DESCRIPTION": "Ihre Privatsphäre zählt. Teilen Sie nach Ihren Bedingungen mit robusten Kontrollen, die für Ihre Ruhe entwickelt wurden."
       }
     },
     "HOW_IT_WORKS": {
       "LABEL": "Die Reise",
       "TITLE": "Drei Schritte zur Verbindung",
       "STEP_1": {
-        "TITLE": "Definiere, was du willst",
-        "DESCRIPTION": "Unser strukturiertes Profil führt dich durch Lebensstil, Ambitionen und Beziehungserwartungen. Kein Rätselraten – nur Klarheit."
+        "TITLE": "Definieren Sie, was Sie wollen",
+        "DESCRIPTION": "Unser strukturiertes Profil führt Sie durch Lebensstil, Ambitionen und Beziehungserwartungen. Kein Rätselraten – nur Klarheit."
       },
       "STEP_2": {
-        "TITLE": "Finde passende Matches",
-        "DESCRIPTION": "Durchsuche verifizierte Mitglieder, die deine Absichten teilen. Filtere nach dem, was wichtig ist: Lebensstil, Ziele und Offenheit für Unterstützung."
+        "TITLE": "Finden Sie passende Übereinstimmungen",
+        "DESCRIPTION": "Durchsuchen Sie verifizierte Mitglieder, die Ihre Absichten teilen. Filtern Sie nach dem, was zählt: Lebensstil, Ziele und Offenheit für Unterstützung."
       },
       "STEP_3": {
-        "TITLE": "Verbinde dich mit Zweck",
-        "DESCRIPTION": "Beginne Gespräche, wissend, dass ihr beide auf derselben Wellenlänge seid. Baue Beziehungen auf, die auf gegenseitigem Respekt und klaren Absichten beruhen."
+        "TITLE": "Verbinden Sie sich mit Ziel",
+        "DESCRIPTION": "Beginnen Sie Gespräche, in dem Wissen, dass Sie beide auf derselben Seite stehen. Bauen Sie Beziehungen auf, die auf gegenseitigem Respekt und klaren Absichten basieren."
       }
     },
     "VALUES": {
       "LABEL": "Unser Versprechen",
       "TITLE": "Struktur, die funktioniert",
-      "DESCRIPTION": "Wir haben Gylde gebaut, weil Dating nicht das Entschlüsseln gemischter Signale erfordern sollte. Unsere Plattform gibt dir die Struktur, um klar zu sein, was du willst – und andere zu finden, die das Gleiche wollen.",
+      "DESCRIPTION": "Wir haben Gylde gebaut, weil Dating nicht das Entschlüsseln gemischter Signale erfordern sollte. Unsere Plattform gibt Ihnen die Struktur, um klar zu sein, was Sie wollen – und andere zu finden, die dasselbe wollen.",
       "INTENTIONAL_CONNECTIONS": "Absichtsvolle Verbindungen",
       "LIST": {
-        "CLEAR_EXPECTATIONS": "Klare Erwartungen von der ersten Nachricht",
+        "CLEAR_EXPECTATIONS": "Klare Erwartungen bereits in der ersten Nachricht",
         "VERIFIED_IDENTITY": "Verifizierte Identität für jedes Mitglied",
-        "ZERO_TOLERANCE": "Nulltoleranz gegenüber Unehrlichkeit oder Spielchen",
+        "ZERO_TOLERANCE": "Nulltoleranz für Unehrlichkeit oder Spielchen",
         "STRUCTURED_PROFILES": "Strukturierte Profile, die das Wesentliche hervorheben",
-        "MUTUAL_RESPECT": "Eine Gemeinschaft, die auf gegenseitigem Respekt beruht"
+        "MUTUAL_RESPECT": "Eine Community, die auf gegenseitigem Respekt basiert"
       }
     },
     "CTA": {
-      "TITLE": "Wir bieten die",
+      "TITLE": "Wir bieten das",
       "TITLE_ACCENT": "Struktur",
-      "DESCRIPTION": "Du definierst die Verbindung. Tritt einer Gemeinschaft bei, die auf Klarheit, Absicht und gegenseitigem Respekt basiert.",
-      "BUTTON": "Erstelle dein Profil"
+      "DESCRIPTION": "Sie definieren die Verbindung. Treten Sie einer Community bei, die auf Klarheit, Absicht und gegenseitigem Respekt basiert.",
+      "BUTTON": "Erstellen Sie Ihr Profil"
     },
     "FOOTER": {
-      "TAGLINE": "Wir bieten die Struktur. Du definierst die Verbindung.",
+      "TAGLINE": "Wir bieten die Struktur. Sie definieren die Verbindung.",
       "ARIA_LABEL": "Footer-Navigation",
       "PLATFORM": {
         "TITLE": "Plattform",
@@ -114,19 +223,19 @@
       },
       "SUPPORT": {
         "TITLE": "Support",
-        "HELP": "Hilfe‑Zentrum",
+        "HELP": "Hilfe-Center",
         "SAFETY": "Sicherheitstipps",
-        "GUIDELINES": "Community‑Richtlinien",
+        "GUIDELINES": "Community-Richtlinien",
         "CONTACT": "Kontakt"
       },
       "LEGAL": {
-        "TITLE": "Rechtliches",
-        "PRIVACY": "Datenschutz‑Richtlinie",
+        "TITLE": "Rechtlich",
+        "PRIVACY": "Datenschutzrichtlinie",
         "TERMS": "Nutzungsbedingungen",
-        "COOKIES": "Cookie‑Richtlinie"
+        "COOKIES": "Cookie-Richtlinie"
       },
       "COPYRIGHT": "© {{year}} Gylde. Alle Rechte vorbehalten.",
-      "DISCLAIMER": "Gylde ist eine Dating‑Plattform. Wir fördern oder dulden keine illegalen Aktivitäten."
+      "DISCLAIMER": "Gylde ist eine Dating-Plattform. Wir unterstützen oder billigen keine Form von illegaler Aktivität."
     }
   },
   "ONBOARDING": {
@@ -960,7 +1069,7 @@
       "LANGUAGE": "Sprache",
       "LANGUAGE_DESC": "Wähle deine bevorzugte Sprache",
       "LANGUAGE_EN": "Englisch",
-      "LANGUAGE_NL": "Niederländisch",
+      "LANGUAGE_ES": "Spanisch",
       "LANGUAGE_DE": "Deutsch",
       "DARK_MODE": "Dunkler Modus",
       "DARK_MODE_DESC": "Zwischen hellem und dunklem Thema wechseln"
