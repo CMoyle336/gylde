@@ -7,27 +7,17 @@
  * IMPORTANT: All AI operations should verify the user has Premium subscription before processing.
  */
 
-import {onCall, HttpsError} from "firebase-functions/v2/https";
+import {isSignedIn, onCallGenkit, HttpsError} from "firebase-functions/v2/https";
 import {defineSecret} from "firebase-functions/params";
 import {getFirestore} from "firebase-admin/firestore";
 import * as logger from "firebase-functions/logger";
-import OpenAI from "openai";
+import {z} from "genkit";
+import {getAi} from "../services/genkit.service";
 
 const db = getFirestore();
 
-// Define the OpenAI API key as a secret
-const openaiApiKey = defineSecret("OPENAI_API_KEY");
-
-// ============================================
-// OpenAI Client
-// ============================================
-
-function getOpenAIClient(apiKey: string): OpenAI {
-  if (!apiKey) {
-    throw new HttpsError("failed-precondition", "OpenAI API key not configured");
-  }
-  return new OpenAI({apiKey});
-}
+// Gemini API key (for Genkit + Google AI). Must be set in Secret Manager.
+const geminiApiKey = defineSecret("GEMINI_API_KEY");
 
 /**
  * Clean up AI-generated text by removing surrounding quotes
@@ -69,83 +59,11 @@ type MessageTone =
   | "apologetic"
   | "boundary-setting";
 
-type UserVoicePreference = "authentic" | "balanced" | "polished";
-
 interface ReplySuggestion {
   id: string;
   text: string;
   tone: MessageTone;
   explanation?: string;
-}
-
-interface ReplyRequest {
-  conversationId: string;
-  recipientId: string;
-  recipientProfile?: {
-    displayName?: string;
-    tagline?: string;
-    aboutUser?: string;
-  };
-  userProfile?: {
-    displayName?: string;
-    tagline?: string;
-    aboutUser?: string;
-  };
-  recentMessages: Array<{
-    content: string;
-    isOwn: boolean;
-    createdAt: Date;
-  }>;
-  userDraft?: string;
-  requestedTone?: MessageTone;
-  userVoice?: UserVoicePreference;
-}
-
-interface RewriteRequest {
-  conversationId: string;
-  originalText: string;
-  targetTone: MessageTone;
-  userVoice?: UserVoicePreference;
-  recentMessages?: Array<{
-    content: string;
-    isOwn: boolean;
-  }>;
-}
-
-interface StarterRequest {
-  conversationId: string;
-  recipientId: string;
-  recipientProfile?: {
-    displayName?: string;
-    tagline?: string;
-    aboutUser?: string;
-    connectionTypes?: string[];
-    interests?: string[];
-  };
-  userProfile?: {
-    displayName?: string;
-    aboutUser?: string;
-  };
-  lastInteraction?: Date;
-}
-
-interface CoachRequest {
-  conversationId: string;
-  lastReceivedMessage: string;
-  recentMessages?: Array<{
-    content: string;
-    isOwn: boolean;
-  }>;
-}
-
-interface SafetyRequest {
-  conversationId: string;
-  messageToAnalyze: string;
-  isIncoming: boolean;
-  recentMessages?: Array<{
-    content: string;
-    isOwn: boolean;
-  }>;
 }
 
 // ============================================
@@ -178,72 +96,169 @@ function generateId(): string {
   return `ai_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 }
 
+function getGeminiApiKeyForRuntime(): string {
+  const apiKey = geminiApiKey.value();
+  if (!apiKey) {
+    // In the emulator, secrets may not be available unless you either:
+    // - create `functions/.secret.local` with GEMINI_API_KEY=...
+    // - or configure Application Default Credentials (ADC) so the emulator can read Secret Manager
+    throw new Error("GEMINI_API_KEY is not available at runtime");
+  }
+  return apiKey;
+}
+
+type ProfileContext = {
+  displayName?: string;
+  age?: number;
+  city?: string;
+  genderIdentity?: string;
+  tagline?: string;
+  aboutMeItems?: string[];
+  connectionTypes?: string[];
+  supportOrientation?: string;
+  idealRelationship?: string;
+  supportMeaning?: string;
+  occupation?: string;
+  education?: string;
+  interests?: string[];
+};
+
 // ============================================
-// Get Reply Suggestions (OpenAI Integration)
+// Get Reply Suggestions (Gemini via Genkit)
 // ============================================
 
 /**
  * Get AI-generated reply suggestions based on conversation context.
  */
-export const aiGetReplySuggestions = onCall({secrets: [openaiApiKey]}, async (request) => {
-  const {auth, data} = request;
+const aiGetReplySuggestionsFlow = getAi().defineFlow(
+  {
+    name: "aiGetReplySuggestions",
+    // Keep input permissive to avoid breaking existing callers.
+    inputSchema: z.object({
+      conversationId: z.string(),
+      recipientId: z.string(),
+      recipientProfile: z.object({
+        displayName: z.string().optional(),
+        tagline: z.string().optional(),
+        aboutUser: z.string().optional(),
+      }).optional(),
+      userProfile: z.object({
+        displayName: z.string().optional(),
+        tagline: z.string().optional(),
+        aboutUser: z.string().optional(),
+      }).optional(),
+      recentMessages: z.array(z.object({
+        content: z.string(),
+        isOwn: z.boolean(),
+        createdAt: z.any().optional(),
+      }).passthrough()),
+      userDraft: z.string().nullable().optional(),
+      requestedTone: z.enum([
+        "playful",
+        "flirty",
+        "confident",
+        "warm",
+        "direct",
+        "casual",
+        "witty",
+        "apologetic",
+        "boundary-setting",
+      ] as const).nullable().optional(),
+      userVoice: z.enum(["authentic", "balanced", "polished"] as const).optional(),
+    }).passthrough(),
+    outputSchema: z.object({
+      suggestions: z.array(z.object({
+        id: z.string(),
+        text: z.string(),
+        tone: z.enum([
+          "playful",
+          "flirty",
+          "confident",
+          "warm",
+          "direct",
+          "casual",
+          "witty",
+          "apologetic",
+          "boundary-setting",
+        ] as const),
+        explanation: z.string().optional(),
+      })),
+    }),
+  },
+  async (req, opts) => {
+    const uid = opts?.context?.auth?.uid;
+    if (!uid) {
+      // Should be blocked by authPolicy, but keep defense-in-depth.
+      throw new HttpsError("unauthenticated", "Must be authenticated");
+    }
 
-  if (!auth) {
-    throw new HttpsError("unauthenticated", "Must be authenticated");
-  }
+    await verifyPremiumSubscription(uid);
 
-  await verifyPremiumSubscription(auth.uid);
+    logger.info("AI reply suggestions requested", {
+      conversationId: req.conversationId,
+      messageCount: req.recentMessages?.length,
+      tone: req.requestedTone ?? null,
+    });
 
-  const req = data as ReplyRequest;
-  logger.info("AI reply suggestions requested", {
-    conversationId: req.conversationId,
-    messageCount: req.recentMessages?.length,
-    tone: req.requestedTone,
-  });
+    try {
+      const lastMessage = req.recentMessages?.at(-1);
+      // Only generate "reply suggestions" when there's a new incoming message to reply to.
+      // If the last message is the user's own, they're not replying — they're composing a follow-up.
+      if (!lastMessage || lastMessage.isOwn) {
+        return {suggestions: []};
+      }
 
-  try {
-    const openai = getOpenAIClient(openaiApiKey.value());
+      // Build conversation context
+      const conversationHistory = req.recentMessages
+        ?.slice(-10) // Last 10 messages for context
+        .map((m) => `${m.isOwn ? "You" : "Them"}: ${m.content}`)
+        .join("\n") || "";
 
-    // Build conversation context
-    const conversationHistory = req.recentMessages
-      ?.slice(-10) // Last 10 messages for context
-      .map((m) => `${m.isOwn ? "You" : "Them"}: ${m.content}`)
-      .join("\n") || "";
+      const userContext = req.userProfile?.displayName ?
+        `Your name is ${req.userProfile.displayName}.` :
+        "";
 
-    const userContext = req.userProfile?.displayName ?
-      `Your name is ${req.userProfile.displayName}.` :
-      "";
+      const recipientContext = req.recipientProfile?.displayName ?
+        `You're talking to ${req.recipientProfile.displayName}.` :
+        "";
 
-    const recipientContext = req.recipientProfile?.displayName ?
-      `You're talking to ${req.recipientProfile.displayName}.` :
-      "";
+      const voiceStyle = req.userVoice === "polished" ?
+        "WRITING STYLE: Polished and well-crafted. Use proper grammar, thoughtful word choices, and articulate phrasing. Sound intelligent and refined." :
+        req.userVoice === "authentic" ?
+          "WRITING STYLE: Casual and authentic like texting a friend. Use lowercase, abbreviations, casual phrasing. Sound relaxed and natural, not formal." :
+          "WRITING STYLE: Balanced - natural but thoughtful. Mix casual and polished elements.";
 
-    const voiceStyle = req.userVoice === "polished" ?
-      "WRITING STYLE: Polished and well-crafted. Use proper grammar, thoughtful word choices, and articulate phrasing. Sound intelligent and refined." :
-      req.userVoice === "authentic" ?
-        "WRITING STYLE: Casual and authentic like texting a friend. Use lowercase, abbreviations, casual phrasing. Sound relaxed and natural, not formal." :
-        "WRITING STYLE: Balanced - natural but thoughtful. Mix casual and polished elements.";
+      const draftContext = req.userDraft ?
+        `The user has started typing: "${req.userDraft}". Build on their thought.` :
+        "";
 
-    const draftContext = req.userDraft ?
-      `The user has started typing: "${req.userDraft}". Build on their thought.` :
-      "";
-
-    // Build tone instructions based on whether a specific tone is requested
-    const toneInstructions = req.requestedTone ?
-      `- ALL suggestions must have a "${req.requestedTone}" tone
+      // Build tone instructions based on whether a specific tone is requested
+      const toneInstructions = req.requestedTone ?
+        `- ALL suggestions must have a "${req.requestedTone}" tone
 - Vary the approach/angle but keep the same "${req.requestedTone}" feel
 - Each suggestion should be a different way to express "${req.requestedTone}" energy` :
-      "- Have a distinct tone (vary between warm, playful, flirty, casual, witty, direct)";
+        "- Have a distinct tone (vary between warm, playful, flirty, casual, witty, direct)";
 
-    const toneExample = req.requestedTone ?
-      `    { "text": "message here", "tone": "${req.requestedTone}", "explanation": "why this works" },
-    { "text": "message here", "tone": "${req.requestedTone}", "explanation": "different angle" },
-    { "text": "message here", "tone": "${req.requestedTone}", "explanation": "another approach" }` :
-      `    { "text": "message here", "tone": "warm", "explanation": "why this works" },
-    { "text": "message here", "tone": "playful", "explanation": "why this works" },
-    { "text": "message here", "tone": "flirty", "explanation": "why this works" }`;
+      const outputSchema = z.object({
+        suggestions: z.array(z.object({
+          text: z.string().describe("A complete, ready-to-send message"),
+          tone: z.enum([
+            "playful",
+            "flirty",
+            "confident",
+            "warm",
+            "direct",
+            "casual",
+            "witty",
+            "apologetic",
+            "boundary-setting",
+          ] as const),
+          explanation: z.string().optional().describe("Brief reason why this works"),
+        })).length(3),
+      });
 
-    const prompt = `${DATING_ASSISTANT_SYSTEM_PROMPT}
+      const prompt = `You are generating reply suggestions to THEIR most recent message.
+Do NOT suggest follow-ups to the user's own last message.
 
 Context:
 ${userContext}
@@ -254,535 +269,617 @@ ${draftContext}
 Recent conversation:
 ${conversationHistory}
 
-Generate 3 different reply suggestions. Each should:
+Generate exactly 3 different reply suggestions. Each should:
 - Be a complete, ready-to-send message
 ${toneInstructions}
 - Feel natural and human (not AI-generated)
-- Be concise (ideally under 150 characters)
+- Be concise (ideally under 150 characters)`;
 
-Respond in JSON format:
-{
-  "suggestions": [
-${toneExample}
-  ]
-}`;
+      const ai = getAi();
+      const response = await ai.generate({
+        system: DATING_ASSISTANT_SYSTEM_PROMPT,
+        prompt,
+        output: {schema: outputSchema},
+        config: {
+          // Because `googleAI({ apiKey: false })` is used at init-time,
+          // we must provide the API key at call time.
+          apiKey: getGeminiApiKeyForRuntime(),
+          maxOutputTokens: 500,
+          temperature: 0.8, // Higher for more creative variety
+        },
+      });
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [{role: "user", content: prompt}],
-      response_format: {type: "json_object"},
-      max_tokens: 500,
-      temperature: 0.8, // Higher for more creative variety
-    });
+      const parsed = response.output;
+      if (!parsed?.suggestions?.length) {
+        throw new Error("AI response did not match expected schema");
+      }
 
-    const content = response.choices[0]?.message?.content;
-    if (!content) {
-      throw new Error("No response from OpenAI");
-    }
-
-    const parsed = JSON.parse(content);
-    const suggestions: ReplySuggestion[] = parsed.suggestions.map(
-      (s: { text: string; tone: MessageTone; explanation: string }) => ({
+      const suggestions: ReplySuggestion[] = parsed.suggestions.map((s) => ({
         id: generateId(),
         text: cleanText(s.text),
-        tone: s.tone,
+        tone: s.tone as MessageTone,
         explanation: s.explanation,
-      })
-    );
+      }));
 
-    return {suggestions};
-  } catch (error: any) {
-    logger.error("OpenAI reply suggestions failed:", error);
+      return {suggestions};
+    } catch (error: any) {
+      logger.error("AI reply suggestions failed:", error);
 
-    // Fallback to basic suggestions if OpenAI fails
-    const fallbackSuggestions: ReplySuggestion[] = [
-      {
-        id: generateId(),
-        text: "I'd love to hear more about that!",
-        tone: "warm",
-        explanation: "Shows genuine interest",
-      },
-      {
-        id: generateId(),
-        text: "That sounds really interesting - tell me more?",
-        tone: "casual",
-        explanation: "Keeps the conversation going",
-      },
-    ];
+      // Fallback to basic suggestions if AI fails
+      const fallbackSuggestions: ReplySuggestion[] = [
+        {
+          id: generateId(),
+          text: "I'd love to hear more about that!",
+          tone: "warm",
+          explanation: "Shows genuine interest",
+        },
+        {
+          id: generateId(),
+          text: "That sounds really interesting - tell me more?",
+          tone: "casual",
+          explanation: "Keeps the conversation going",
+        },
+      ];
 
-    return {suggestions: fallbackSuggestions};
+      return {suggestions: fallbackSuggestions};
+    }
   }
-});
+);
+
+export const aiGetReplySuggestions = onCallGenkit(
+  {
+    secrets: [geminiApiKey],
+    authPolicy: isSignedIn(),
+  },
+  aiGetReplySuggestionsFlow
+);
 
 // ============================================
-// Rewrite Message (OpenAI Integration)
+// Rewrite Message (Gemini via Genkit)
 // ============================================
 
-/**
- * Rewrite a user's draft message with a different tone.
- */
-export const aiRewriteMessage = onCall({secrets: [openaiApiKey]}, async (request) => {
-  const {auth, data} = request;
+const aiRewriteMessageFlow = getAi().defineFlow(
+  {
+    name: "aiRewriteMessage",
+    inputSchema: z.object({
+      conversationId: z.string(),
+      originalText: z.string(),
+      targetTone: z.enum([
+        "playful",
+        "flirty",
+        "confident",
+        "warm",
+        "direct",
+        "casual",
+        "witty",
+        "apologetic",
+        "boundary-setting",
+      ] as const),
+      userVoice: z.enum(["authentic", "balanced", "polished"] as const).optional(),
+      recentMessages: z.array(z.object({
+        content: z.string(),
+        isOwn: z.boolean(),
+      }).passthrough()).optional().nullable(),
+    }).passthrough(),
+    outputSchema: z.object({
+      variants: z.array(z.object({
+        id: z.string(),
+        text: z.string(),
+        changeSummary: z.string(),
+      })),
+    }),
+  },
+  async (req, opts) => {
+    const uid = opts?.context?.auth?.uid;
+    if (!uid) {
+      throw new HttpsError("unauthenticated", "Must be authenticated");
+    }
 
-  if (!auth) {
-    throw new HttpsError("unauthenticated", "Must be authenticated");
-  }
+    await verifyPremiumSubscription(uid);
 
-  await verifyPremiumSubscription(auth.uid);
+    logger.info("AI rewrite requested", {
+      conversationId: req.conversationId,
+      targetTone: req.targetTone,
+      originalLength: req.originalText?.length,
+    });
 
-  const req = data as RewriteRequest;
-  logger.info("AI rewrite requested", {
-    conversationId: req.conversationId,
-    targetTone: req.targetTone,
-    originalLength: req.originalText?.length,
-  });
+    try {
+      const voiceStyle = req.userVoice === "polished" ?
+        "STYLE: Polished, well-crafted language with proper grammar and thoughtful phrasing." :
+        req.userVoice === "authentic" ?
+          "STYLE: Casual like texting a friend - lowercase ok, relaxed phrasing, natural." :
+          "STYLE: Balanced - natural but thoughtful.";
 
-  try {
-    const openai = getOpenAIClient(openaiApiKey.value());
+      const toneDescriptions: Record<MessageTone, string> = {
+        "playful": "Add humor, lightness, and fun energy",
+        "flirty": "Add subtle romantic interest and charm without being inappropriate",
+        "confident": "Make it self-assured and bold",
+        "warm": "Make it friendly, caring, and inviting",
+        "direct": "Make it clear and straightforward",
+        "casual": "Make it relaxed and low-pressure",
+        "witty": "Add clever wordplay or humor",
+        "apologetic": "Make it sincerely apologetic and understanding",
+        "boundary-setting": "Make it firm but respectful about boundaries",
+      };
 
-    const voiceStyle = req.userVoice === "polished" ?
-      "STYLE: Polished, well-crafted language with proper grammar and thoughtful phrasing." :
-      req.userVoice === "authentic" ?
-        "STYLE: Casual like texting a friend - lowercase ok, relaxed phrasing, natural." :
-        "STYLE: Balanced - natural but thoughtful.";
+      const outputSchema = z.object({
+        variants: z.array(z.object({
+          text: z.string().describe("Rewritten message"),
+          changeSummary: z.string().describe("Brief explanation of what changed"),
+        })).length(3),
+      });
 
-    const toneDescriptions: Record<MessageTone, string> = {
-      "playful": "Add humor, lightness, and fun energy",
-      "flirty": "Add subtle romantic interest and charm without being inappropriate",
-      "confident": "Make it self-assured and bold",
-      "warm": "Make it friendly, caring, and inviting",
-      "direct": "Make it clear and straightforward",
-      "casual": "Make it relaxed and low-pressure",
-      "witty": "Add clever wordplay or humor",
-      "apologetic": "Make it sincerely apologetic and understanding",
-      "boundary-setting": "Make it firm but respectful about boundaries",
-    };
-
-    const prompt = `You are helping someone rewrite a message for a dating app conversation.
+      const prompt = `You are helping someone rewrite a message for a dating app conversation.
 
 Original message: "${req.originalText}"
 
 Target tone: ${req.targetTone} (${toneDescriptions[req.targetTone]})
 ${voiceStyle}
 
-Create 3 different rewrites of this message with the target tone. Each should:
+Create exactly 3 different rewrites of this message with the target tone. Each should:
 - Preserve the core meaning and intent
 - Sound natural and human (not AI-generated)
 - Be appropriate for dating app conversation
-- Vary slightly in approach
+- Vary slightly in approach`;
 
-Respond in JSON format:
-{
-  "variants": [
-    { "text": "rewritten message", "changeSummary": "brief explanation of changes" },
-    { "text": "rewritten message", "changeSummary": "brief explanation of changes" },
-    { "text": "rewritten message", "changeSummary": "brief explanation of changes" }
-  ]
-}`;
+      const ai = getAi();
+      const response = await ai.generate({
+        system: DATING_ASSISTANT_SYSTEM_PROMPT,
+        prompt,
+        output: {schema: outputSchema},
+        config: {
+          apiKey: getGeminiApiKeyForRuntime(),
+          maxOutputTokens: 400,
+          temperature: 0.7,
+        },
+      });
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [{role: "user", content: prompt}],
-      response_format: {type: "json_object"},
-      max_tokens: 400,
-      temperature: 0.7,
-    });
+      const parsed = response.output;
+      if (!parsed?.variants?.length) {
+        throw new Error("AI response did not match expected schema");
+      }
 
-    const content = response.choices[0]?.message?.content;
-    if (!content) {
-      throw new Error("No response from OpenAI");
-    }
-
-    const parsed = JSON.parse(content);
-    const variants = parsed.variants.map(
-      (v: { text: string; changeSummary: string }) => ({
+      const variants = parsed.variants.map((v) => ({
         id: generateId(),
         text: cleanText(v.text),
         changeSummary: v.changeSummary,
-      })
-    );
+      }));
 
-    return {variants};
-  } catch (error: any) {
-    logger.error("OpenAI rewrite failed:", error);
+      return {variants};
+    } catch (error: any) {
+      logger.error("AI rewrite failed:", error);
 
-    // Return the original as fallback
-    return {
-      variants: [
-        {
-          id: generateId(),
-          text: req.originalText,
-          changeSummary: "Unable to rewrite - try again",
-        },
-      ],
-    };
+      // Return the original as fallback
+      return {
+        variants: [
+          {
+            id: generateId(),
+            text: req.originalText,
+            changeSummary: "Unable to rewrite - try again",
+          },
+        ],
+      };
+    }
   }
-});
+);
+
+export const aiRewriteMessage = onCallGenkit(
+  {
+    secrets: [geminiApiKey],
+    authPolicy: isSignedIn(),
+  },
+  aiRewriteMessageFlow
+);
 
 // ============================================
-// Conversation Starters (OpenAI Integration)
+// Conversation Starters (Gemini via Genkit)
 // ============================================
 
-/**
- * Get conversation starters for an empty or stalled conversation.
- */
-export const aiGetConversationStarters = onCall({secrets: [openaiApiKey]}, async (request) => {
-  const {auth, data} = request;
-
-  if (!auth) {
-    throw new HttpsError("unauthenticated", "Must be authenticated");
-  }
-
-  await verifyPremiumSubscription(auth.uid);
-
-  const req = data as StarterRequest;
-  const recipientName = req.recipientProfile?.displayName || "them";
-
-  logger.info("AI conversation starters requested", {
-    conversationId: req.conversationId,
-    recipientId: req.recipientId,
-  });
-
-  try {
-    const openai = getOpenAIClient(openaiApiKey.value());
-
-    // Build profile context
-    const profileInfo: string[] = [];
-    if (req.recipientProfile?.tagline) {
-      profileInfo.push(`Their tagline: "${req.recipientProfile.tagline}"`);
+const aiGetConversationStartersFlow = getAi().defineFlow(
+  {
+    name: "aiGetConversationStarters",
+    inputSchema: z.object({
+      conversationId: z.string(),
+      recipientId: z.string(),
+      recipientProfile: z.object({
+        displayName: z.string().optional(),
+        tagline: z.string().optional(),
+        aboutUser: z.string().optional(),
+        connectionTypes: z.array(z.string()).optional(),
+        interests: z.array(z.string()).optional(),
+      }).optional(),
+      userProfile: z.object({
+        displayName: z.string().optional(),
+        aboutUser: z.string().optional(),
+      }).optional(),
+      lastInteraction: z.any().optional().nullable(),
+    }).passthrough(),
+    outputSchema: z.object({
+      ideas: z.array(z.string()),
+      readyMessages: z.array(z.object({
+        id: z.string(),
+        text: z.string(),
+        tone: z.enum([
+          "playful",
+          "flirty",
+          "confident",
+          "warm",
+          "direct",
+          "casual",
+          "witty",
+          "apologetic",
+          "boundary-setting",
+        ] as const),
+        explanation: z.string().optional(),
+      })),
+    }),
+  },
+  async (req, opts) => {
+    const uid = opts?.context?.auth?.uid;
+    if (!uid) {
+      throw new HttpsError("unauthenticated", "Must be authenticated");
     }
-    if (req.recipientProfile?.aboutUser) {
-      profileInfo.push(`About them: "${req.recipientProfile.aboutUser}"`);
-    }
-    if (req.recipientProfile?.interests?.length) {
-      profileInfo.push(`Their interests: ${req.recipientProfile.interests.join(", ")}`);
-    }
-    if (req.recipientProfile?.connectionTypes?.length) {
-      profileInfo.push(`Looking for: ${req.recipientProfile.connectionTypes.join(", ")}`);
-    }
 
-    const profileContext = profileInfo.length > 0 ?
-      `What you know about ${recipientName}:\n${profileInfo.join("\n")}` :
-      `You don't have much info about ${recipientName} yet.`;
+    await verifyPremiumSubscription(uid);
 
-    const prompt = `${DATING_ASSISTANT_SYSTEM_PROMPT}
+    const recipientName = req.recipientProfile?.displayName || "them";
 
-You're helping someone start a conversation with a new match.
-${profileContext}
+    logger.info("AI conversation starters requested", {
+      conversationId: req.conversationId,
+      recipientId: req.recipientId,
+    });
+
+    try {
+      // Build profile context
+      const profileInfo: string[] = [];
+      if (req.recipientProfile?.tagline) {
+        profileInfo.push(`Their tagline: "${req.recipientProfile.tagline}"`);
+      }
+      if (req.recipientProfile?.aboutUser) {
+        profileInfo.push(`About them: "${req.recipientProfile.aboutUser}"`);
+      }
+      if (req.recipientProfile?.interests?.length) {
+        profileInfo.push(`Their interests: ${req.recipientProfile.interests.join(", ")}`);
+      }
+      if (req.recipientProfile?.connectionTypes?.length) {
+        profileInfo.push(`Looking for: ${req.recipientProfile.connectionTypes.join(", ")}`);
+      }
+
+      const factsBlock = profileInfo.length > 0 ?
+        `FACTS (the ONLY specific details you may reference):\n${profileInfo.map((l) => `- ${l}`).join("\n")}` :
+        "FACTS: (none provided)";
+
+      const outputSchema = z.object({
+        ideas: z.array(z.string()).min(3).max(6),
+        readyMessages: z.array(z.object({
+          text: z.string().describe("Complete message ready to send"),
+          tone: z.enum([
+            "playful",
+            "flirty",
+            "confident",
+            "warm",
+            "direct",
+            "casual",
+            "witty",
+            "apologetic",
+            "boundary-setting",
+          ] as const),
+          explanation: z.string().optional().describe("Why this works"),
+        })).min(2).max(4),
+      });
+
+      const prompt = `You're helping someone start a conversation with a new match (${recipientName}).
+
+${factsBlock}
+
+GROUNDING RULES (CRITICAL):
+- Do NOT invent or assume any details that are not explicitly present in FACTS.
+- Examples of forbidden hallucinations unless in FACTS: pets/dogs, travel, hobbies, job, school, specific photos, "you seem like...", location, music tastes.
+- If FACTS is empty or too vague, keep it warm but explicitly acknowledge limited info and ask an open-ended question.
+- Prefer asking about something in FACTS. If you reference a FACT, reference it clearly (e.g., their tagline/interests/what they're looking for).
 
 Generate conversation starters that are:
-- Personalized based on their profile (if info available)
+- Personalized based on FACTS (if any)
 - Not generic or boring ("hey what's up")
 - Invite a response (open-ended)
 - Show genuine interest
-- Appropriate for a dating app
+- Appropriate for a dating app`;
 
-Respond in JSON format:
-{
-  "ideas": [
-    "Brief idea 1 (what to talk about)",
-    "Brief idea 2",
-    "Brief idea 3"
-  ],
-  "readyMessages": [
-    { "text": "complete message ready to send", "tone": "warm", "explanation": "why this works" },
-    { "text": "complete message ready to send", "tone": "playful", "explanation": "why this works" },
-    { "text": "complete message ready to send", "tone": "casual", "explanation": "why this works" }
-  ]
-}`;
+      const ai = getAi();
+      const response = await ai.generate({
+        system: DATING_ASSISTANT_SYSTEM_PROMPT,
+        prompt,
+        output: {schema: outputSchema},
+        config: {
+          apiKey: getGeminiApiKeyForRuntime(),
+          maxOutputTokens: 600,
+          temperature: 0.6, // Lower to reduce hallucinated specifics
+        },
+      });
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [{role: "user", content: prompt}],
-      response_format: {type: "json_object"},
-      max_tokens: 600,
-      temperature: 0.9, // Higher creativity for unique openers
-    });
+      const parsed = response.output;
+      if (!parsed?.ideas?.length || !parsed.readyMessages?.length) {
+        throw new Error("AI response did not match expected schema");
+      }
 
-    const content = response.choices[0]?.message?.content;
-    if (!content) {
-      throw new Error("No response from OpenAI");
-    }
-
-    const parsed = JSON.parse(content);
-
-    const readyMessages: ReplySuggestion[] = parsed.readyMessages.map(
-      (m: { text: string; tone: MessageTone; explanation: string }) => ({
+      const readyMessages: ReplySuggestion[] = parsed.readyMessages.map((m) => ({
         id: generateId(),
         text: cleanText(m.text),
-        tone: m.tone,
+        tone: m.tone as MessageTone,
         explanation: m.explanation,
-      })
-    );
+      }));
 
-    return {ideas: parsed.ideas, readyMessages};
-  } catch (error: any) {
-    logger.error("OpenAI starters failed:", error);
+      return {ideas: parsed.ideas, readyMessages};
+    } catch (error: any) {
+      logger.error("AI starters failed:", error);
 
-    // Fallback starters
-    return {
-      ideas: [
-        "Ask about their interests",
-        "Comment on something from their profile",
-        "Share something about yourself",
-      ],
-      readyMessages: [
-        {
-          id: generateId(),
-          text: `Hey ${recipientName}! What's been the best part of your week?`,
-          tone: "warm" as MessageTone,
-          explanation: "Friendly and invites sharing",
-        },
-      ],
-    };
+      // Fallback starters
+      return {
+        ideas: [
+          "Ask about their interests",
+          "Comment on something from their profile",
+          "Share something about yourself",
+        ],
+        readyMessages: [
+          {
+            id: generateId(),
+            text: `Hey ${recipientName}! What's been the best part of your week?`,
+            tone: "warm" as MessageTone,
+            explanation: "Friendly and invites sharing",
+          },
+        ],
+      };
+    }
   }
-});
+);
+
+export const aiGetConversationStarters = onCallGenkit(
+  {
+    secrets: [geminiApiKey],
+    authPolicy: isSignedIn(),
+  },
+  aiGetConversationStartersFlow
+);
 
 // ============================================
-// Coach Insights (OpenAI Integration)
+// Coach Insights (Gemini via Genkit)
 // ============================================
 
-/**
- * Get tone analysis and advice for the conversation.
- */
-export const aiGetCoachInsights = onCall({secrets: [openaiApiKey]}, async (request) => {
-  const {auth, data} = request;
+const aiGetCoachInsightsFlow = getAi().defineFlow(
+  {
+    name: "aiGetCoachInsights",
+    inputSchema: z.object({
+      conversationId: z.string(),
+      lastReceivedMessage: z.string(),
+      recentMessages: z.array(z.object({
+        content: z.string(),
+        isOwn: z.boolean(),
+      }).passthrough()).optional().nullable(),
+    }).passthrough(),
+    outputSchema: z.object({
+      toneInsight: z.object({
+        label: z.enum([
+          "playful-teasing",
+          "genuine-interest",
+          "low-effort",
+          "possibly-dismissive",
+          "enthusiastic",
+          "neutral",
+          "guarded",
+          "flirtatious",
+          "friendly",
+          "confused",
+          "frustrated",
+        ] as const),
+        displayLabel: z.string(),
+        explanation: z.string(),
+        confidence: z.enum(["high", "medium", "low"] as const),
+      }),
+      nextMove: z.object({
+        advice: z.string(),
+        reasoning: z.string(),
+      }),
+    }),
+  },
+  async (req, opts) => {
+    const uid = opts?.context?.auth?.uid;
+    if (!uid) {
+      throw new HttpsError("unauthenticated", "Must be authenticated");
+    }
 
-  if (!auth) {
-    throw new HttpsError("unauthenticated", "Must be authenticated");
-  }
+    await verifyPremiumSubscription(uid);
 
-  await verifyPremiumSubscription(auth.uid);
+    logger.info("AI coach insights requested", {
+      conversationId: req.conversationId,
+      messageLength: req.lastReceivedMessage?.length,
+    });
 
-  const req = data as CoachRequest;
-  logger.info("AI coach insights requested", {
-    conversationId: req.conversationId,
-    messageLength: req.lastReceivedMessage?.length,
-  });
+    try {
+      const conversationContext = req.recentMessages
+        ?.slice(-8)
+        .map((m) => `${m.isOwn ? "You" : "Them"}: ${m.content}`)
+        .join("\n") || "";
 
-  try {
-    const openai = getOpenAIClient(openaiApiKey.value());
+      const outputSchema = z.object({
+        toneInsight: z.object({
+          label: z.enum([
+            "playful-teasing",
+            "genuine-interest",
+            "low-effort",
+            "possibly-dismissive",
+            "enthusiastic",
+            "neutral",
+            "guarded",
+            "flirtatious",
+            "friendly",
+            "confused",
+            "frustrated",
+          ] as const).describe("One label from the allowed set"),
+          displayLabel: z.string().describe("Human readable label"),
+          explanation: z.string().describe("2-3 sentences explaining tone/intent"),
+          confidence: z.enum(["high", "medium", "low"] as const),
+        }),
+        nextMove: z.object({
+          advice: z.string().describe("Brief actionable advice (1 sentence)"),
+          reasoning: z.string().describe("Why this approach would work well"),
+        }),
+      });
 
-    // Build conversation context
-    const conversationContext = req.recentMessages
-      ?.slice(-8)
-      .map((m) => `${m.isOwn ? "You" : "Them"}: ${m.content}`)
-      .join("\n") || "";
-
-    const prompt = `${DATING_ASSISTANT_SYSTEM_PROMPT}
-
-Analyze this dating conversation and provide coaching insights.
+      const prompt = `Analyze this dating conversation and provide coaching insights.
 
 Recent conversation:
 ${conversationContext}
 
 Their last message: "${req.lastReceivedMessage}"
 
-Analyze:
-1. What tone/emotion is in their last message?
-2. What does it suggest about their interest level?
-3. What would be a good strategy for responding?
+Return:
+1) toneInsight (label + explanation + confidence)
+2) nextMove (advice + reasoning)
 
-Respond in JSON format:
-{
-  "toneInsight": {
-    "label": "one-word-label",
-    "displayLabel": "Human Readable Label",
-    "explanation": "2-3 sentences explaining what their message reveals about their interest and intent",
-    "confidence": "high|medium|low"
+Rules:
+- Use ONLY one of these labels:
+  playful-teasing, genuine-interest, low-effort, possibly-dismissive, enthusiastic, neutral, guarded, flirtatious, friendly, confused, frustrated
+- Keep advice practical and kind.`;
+
+      const ai = getAi();
+      const response = await ai.generate({
+        system: DATING_ASSISTANT_SYSTEM_PROMPT,
+        prompt,
+        output: {schema: outputSchema},
+        config: {
+          apiKey: getGeminiApiKeyForRuntime(),
+          maxOutputTokens: 400,
+          temperature: 0.4, // More consistent analysis
+        },
+      });
+
+      const parsed = response.output;
+      if (!parsed?.toneInsight || !parsed?.nextMove) {
+        throw new Error("AI response did not match expected schema");
+      }
+
+      return parsed as z.infer<typeof outputSchema>;
+    } catch (error: any) {
+      logger.error("AI coach insights failed:", error);
+
+      return {
+        toneInsight: {
+          label: "neutral" as const,
+          displayLabel: "Neutral",
+          explanation: "Unable to analyze the message right now. Try again shortly.",
+          confidence: "low" as const,
+        },
+        nextMove: {
+          advice: "Be genuine and respond in your own voice",
+          reasoning: "Authenticity is always a good approach.",
+        },
+      };
+    }
+  }
+);
+
+export const aiGetCoachInsights = onCallGenkit(
+  {
+    secrets: [geminiApiKey],
+    authPolicy: isSignedIn(),
   },
-  "nextMove": {
-    "advice": "Brief actionable advice (1 sentence)",
-    "reasoning": "Why this approach would work well"
-  }
-}
-
-Labels to use: genuine-interest, curious, playful, guarded, polite-neutral, enthusiastic, flirty, uncertain, distant, warm`;
-
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [{role: "user", content: prompt}],
-      response_format: {type: "json_object"},
-      max_tokens: 400,
-      temperature: 0.5, // Lower for more consistent analysis
-    });
-
-    const content = response.choices[0]?.message?.content;
-    if (!content) {
-      throw new Error("No response from OpenAI");
-    }
-
-    const parsed = JSON.parse(content);
-    return {
-      toneInsight: parsed.toneInsight,
-      nextMove: parsed.nextMove,
-    };
-  } catch (error: any) {
-    logger.error("OpenAI coach insights failed:", error);
-
-    return {
-      toneInsight: {
-        label: "analyzing",
-        displayLabel: "Analyzing...",
-        explanation: "Unable to analyze the message right now. Try again shortly.",
-        confidence: "low",
-      },
-      nextMove: {
-        advice: "Be genuine and respond in your own voice",
-        reasoning: "Authenticity is always a good approach.",
-      },
-    };
-  }
-});
+  aiGetCoachInsightsFlow
+);
 
 // ============================================
-// Safety Check (OpenAI Integration)
+// Safety Check (Gemini via Genkit)
 // ============================================
 
-/**
- * Analyze a message for safety concerns using AI.
- */
-export const aiCheckMessageSafety = onCall({secrets: [openaiApiKey]}, async (request) => {
-  const {auth, data} = request;
-
-  if (!auth) {
-    throw new HttpsError("unauthenticated", "Must be authenticated");
-  }
-
-  await verifyPremiumSubscription(auth.uid);
-
-  const req = data as SafetyRequest;
-  const message = req.messageToAnalyze;
-
-  logger.info("AI safety check requested", {
-    conversationId: req.conversationId,
-    isIncoming: req.isIncoming,
-    messageLength: message.length,
-  });
-
-  try {
-    const openai = getOpenAIClient(openaiApiKey.value());
-
-    // First, use OpenAI moderation API for content policy violations
-    const moderationResult = await openai.moderations.create({
-      input: message,
-    });
-
-    const moderation = moderationResult.results[0];
-    const alerts: Array<{
-      flag: string;
-      displayLabel: string;
-      severity: string;
-      explanation: string;
-      recommendedActions: string[];
-      boundaryDraft?: { id: string; text: string; tone: MessageTone };
-    }> = [];
-
-    // Check moderation flags
-    if (moderation.flagged) {
-      if (moderation.categories.harassment || moderation.categories["harassment/threatening"]) {
-        alerts.push({
-          flag: "harassment",
-          displayLabel: "Aggressive Language Detected",
-          severity: "high",
-          explanation: "This message contains language that may be harassing or threatening.",
-          recommendedActions: [
-            "You don't have to tolerate this behavior",
-            "Consider blocking and reporting this user",
-            "Trust your instincts about your safety",
-          ],
-          boundaryDraft: {
-            id: generateId(),
-            text: "I'm not comfortable with how this conversation is going. I think it's best if we stop talking.",
-            tone: "boundary-setting",
-          },
-        });
-      }
-
-      if (moderation.categories.sexual || moderation.categories["sexual/minors"]) {
-        alerts.push({
-          flag: "inappropriate-sexual",
-          displayLabel: "Inappropriate Content",
-          severity: "high",
-          explanation: "This message contains sexual content that may be unwanted or inappropriate.",
-          recommendedActions: [
-            "You don't have to engage with unwanted sexual content",
-            "Block and report if this makes you uncomfortable",
-          ],
-        });
-      }
-
-      // Check for self-harm related content
-      if (
-        moderation.categories["self-harm"] ||
-        moderation.categories["self-harm/intent"] ||
-        moderation.categories["self-harm/instructions"]
-      ) {
-        alerts.push({
-          flag: "self-harm",
-          displayLabel: "Harmful Content Detected",
-          severity: "high",
-          explanation: "This message contains content encouraging self-harm. This is a serious red flag.",
-          recommendedActions: [
-            "This person is exhibiting concerning behavior",
-            "Block and report this user immediately",
-            "If you're feeling distressed, please reach out to a crisis helpline",
-          ],
-          boundaryDraft: {
-            id: generateId(),
-            text: "This conversation is over. What you said is completely unacceptable.",
-            tone: "boundary-setting",
-          },
-        });
-      }
-
-      // Check for violence
-      if (moderation.categories.violence || moderation.categories["violence/graphic"]) {
-        alerts.push({
-          flag: "violence",
-          displayLabel: "Violent Content Detected",
-          severity: "high",
-          explanation: "This message contains violent content or threats.",
-          recommendedActions: [
-            "Take threats seriously",
-            "Block and report this user",
-            "If you feel in danger, contact local authorities",
-          ],
-          boundaryDraft: {
-            id: generateId(),
-            text: "I'm ending this conversation. Your behavior is unacceptable and I'm reporting you.",
-            tone: "boundary-setting",
-          },
-        });
-      }
-
-      // Check for hate speech
-      if (moderation.categories.hate || moderation.categories["hate/threatening"]) {
-        alerts.push({
-          flag: "hate-speech",
-          displayLabel: "Hate Speech Detected",
-          severity: "high",
-          explanation: "This message contains hateful or discriminatory language.",
-          recommendedActions: [
-            "You don't have to tolerate hate speech",
-            "Block and report this user",
-          ],
-          boundaryDraft: {
-            id: generateId(),
-            text: "I don't tolerate this kind of language. This conversation is over.",
-            tone: "boundary-setting",
-          },
-        });
-      }
+const aiCheckMessageSafetyFlow = getAi().defineFlow(
+  {
+    name: "aiCheckMessageSafety",
+    inputSchema: z.object({
+      conversationId: z.string(),
+      messageToAnalyze: z.string(),
+      isIncoming: z.boolean(),
+      recentMessages: z.array(z.object({
+        content: z.string(),
+        isOwn: z.boolean(),
+      }).passthrough()).optional().nullable(),
+    }).passthrough(),
+    outputSchema: z.object({
+      isFlagged: z.boolean(),
+      alerts: z.array(z.object({
+        flag: z.string(),
+        displayLabel: z.string(),
+        severity: z.enum(["high", "medium", "low"] as const),
+        explanation: z.string(),
+        recommendedActions: z.array(z.string()),
+        boundaryDraft: z.object({
+          id: z.string(),
+          text: z.string(),
+          tone: z.enum([
+            "playful",
+            "flirty",
+            "confident",
+            "warm",
+            "direct",
+            "casual",
+            "witty",
+            "apologetic",
+            "boundary-setting",
+          ] as const),
+        }).optional(),
+      })),
+    }),
+  },
+  async (req, opts) => {
+    const uid = opts?.context?.auth?.uid;
+    if (!uid) {
+      throw new HttpsError("unauthenticated", "Must be authenticated");
     }
 
-    // Now use GPT to analyze for dating-specific red flags
-    const conversationContext = req.recentMessages
-      ?.slice(-5)
-      .map((m) => `${m.isOwn ? "You" : "Them"}: ${m.content}`)
-      .join("\n") || "";
+    await verifyPremiumSubscription(uid);
 
-    const safetyPrompt = `Analyze this message from a dating app for safety red flags.
+    const message = req.messageToAnalyze;
+
+    logger.info("AI safety check requested", {
+      conversationId: req.conversationId,
+      isIncoming: req.isIncoming,
+      messageLength: message.length,
+    });
+
+    try {
+      const conversationContext = req.recentMessages
+        ?.slice(-5)
+        .map((m) => `${m.isOwn ? "You" : "Them"}: ${m.content}`)
+        .join("\n") || "";
+
+      const outputSchema = z.object({
+        hasConcerns: z.boolean().describe("True only when there are genuine safety concerns"),
+        concerns: z.array(z.object({
+          flag: z.enum([
+            "money-request",
+            "personal-info",
+            "love-bombing",
+            "pressure",
+            "isolation",
+            "inconsistency",
+            "boundary-pushing",
+            "explicit-content",
+            "aggression",
+            "hate-speech",
+            "self-harm",
+            "violence",
+            "scam-indicators",
+            "coercion",
+            "doxxing",
+            "manipulation",
+          ] as const),
+          displayLabel: z.string(),
+          severity: z.enum(["high", "medium", "low"] as const),
+          explanation: z.string(),
+          recommendedActions: z.array(z.string()).min(1).max(5),
+          suggestedResponse: z.string().optional().describe("Optional polite but firm response"),
+        })).default([]),
+      });
+
+      const prompt = `Analyze this message from a dating app for safety red flags.
 
 Message to analyze: "${message}"
 ${req.isIncoming ? "This is an INCOMING message from someone else." : "This is the user's own draft message."}
@@ -790,239 +887,253 @@ ${req.isIncoming ? "This is an INCOMING message from someone else." : "This is t
 Recent context:
 ${conversationContext}
 
-Check for these RED FLAGS (common in romance scams and unsafe situations):
-1. Money requests (sending money, gift cards, crypto, investment opportunities)
-2. Personal information fishing (SSN, bank details, address, workplace)
-3. Love bombing (excessive flattery too quickly, "I've never felt this way")
-4. Urgency/pressure tactics ("you have to decide now", "don't you trust me")
-5. Isolation attempts (asking to move off platform immediately, delete messages)
-6. Inconsistencies or too-good-to-be-true claims
-7. Boundary pushing (ignoring "no", guilting, manipulating)
+Check for these red flags (only flag genuine concerns):
+- Money or financial requests (gift cards, crypto, wire transfer, Cash App, Venmo)
+- Personal information fishing (address, SSN, bank details, workplace)
+- Love bombing / manipulation
+- Pressure / urgency / coercion
+- Isolation attempts (move off platform immediately, delete messages)
+- Boundary pushing or ignoring 'no'
+- Explicit sexual content (unwanted or inappropriate)
+- Aggression / harassment / threats
+- Hate speech
+- Self-harm content
+- Violence / threats
 
-Respond in JSON:
-{
-  "hasConcerns": true/false,
-  "concerns": [
-    {
-      "flag": "money-request|personal-info|love-bombing|pressure|isolation|inconsistency|boundary-pushing",
-      "displayLabel": "Human readable label",
-      "severity": "high|medium|low",
-      "explanation": "What specifically is concerning and why",
-      "recommendedActions": ["action 1", "action 2"],
-      "suggestedResponse": "Optional polite but firm response if needed"
+If there are no real concerns, set hasConcerns=false and return an empty concerns array.`;
+
+      const ai = getAi();
+      const response = await ai.generate({
+        system: DATING_ASSISTANT_SYSTEM_PROMPT,
+        prompt,
+        output: {schema: outputSchema},
+        config: {
+          apiKey: getGeminiApiKeyForRuntime(),
+          maxOutputTokens: 500,
+          temperature: 0.2, // Consistent safety classification
+        },
+      });
+
+      const parsed = response.output;
+      const concerns = parsed?.hasConcerns ? (parsed.concerns || []) : [];
+
+      const alerts = concerns.map((c) => ({
+        flag: c.flag,
+        displayLabel: c.displayLabel,
+        severity: c.severity,
+        explanation: c.explanation,
+        recommendedActions: c.recommendedActions,
+        ...(c.suggestedResponse ? {
+          boundaryDraft: {
+            id: generateId(),
+            text: c.suggestedResponse,
+            tone: "boundary-setting" as MessageTone,
+          },
+        } : {}),
+      }));
+
+      return {
+        isFlagged: alerts.length > 0,
+        alerts,
+      };
+    } catch (error: any) {
+      logger.error("AI safety check failed:", error);
+
+      // Fallback to basic keyword detection
+      const lowerMessage = message.toLowerCase();
+      const alerts: Array<{
+        flag: string;
+        displayLabel: string;
+        severity: "high" | "medium" | "low";
+        explanation: string;
+        recommendedActions: string[];
+      }> = [];
+
+      if (
+        lowerMessage.includes("send money") ||
+        lowerMessage.includes("wire transfer") ||
+        lowerMessage.includes("cash app") ||
+        lowerMessage.includes("gift card")
+      ) {
+        alerts.push({
+          flag: "money-request",
+          displayLabel: "Financial Request Detected",
+          severity: "high",
+          explanation: "This message may contain a request for money - a common romance scam pattern.",
+          recommendedActions: [
+            "Never send money to someone you haven't met",
+            "Report if this feels suspicious",
+          ],
+        });
+      }
+
+      return {
+        isFlagged: alerts.length > 0,
+        alerts,
+      };
     }
-  ]
-}
+  }
+);
 
-Only flag genuine concerns - don't be overly paranoid about normal conversation.`;
+export const aiCheckMessageSafety = onCallGenkit(
+  {
+    secrets: [geminiApiKey],
+    authPolicy: isSignedIn(),
+  },
+  aiCheckMessageSafetyFlow
+);
 
-    const safetyResponse = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [{role: "user", content: safetyPrompt}],
-      response_format: {type: "json_object"},
-      max_tokens: 500,
-      temperature: 0.3, // Lower for more consistent safety analysis
+// ============================================
+// Modify Suggestion (Gemini via Genkit)
+// ============================================
+
+const aiModifySuggestionFlow = getAi().defineFlow(
+  {
+    name: "aiModifySuggestion",
+    inputSchema: z.object({
+      text: z.string(),
+      instruction: z.string(),
+    }).passthrough(),
+    outputSchema: z.object({
+      text: z.string(),
+    }),
+  },
+  async (req, opts) => {
+    const uid = opts?.context?.auth?.uid;
+    if (!uid) {
+      throw new HttpsError("unauthenticated", "Must be authenticated");
+    }
+
+    await verifyPremiumSubscription(uid);
+
+    logger.info("AI modify suggestion requested", {
+      instruction: req.instruction,
+      textLength: req.text?.length,
     });
 
-    const safetyContent = safetyResponse.choices[0]?.message?.content;
-    if (safetyContent) {
-      const parsed = JSON.parse(safetyContent);
-      if (parsed.hasConcerns && parsed.concerns) {
-        for (const concern of parsed.concerns) {
-          alerts.push({
-            flag: concern.flag,
-            displayLabel: concern.displayLabel,
-            severity: concern.severity,
-            explanation: concern.explanation,
-            recommendedActions: concern.recommendedActions,
-            ...(concern.suggestedResponse && {
-              boundaryDraft: {
-                id: generateId(),
-                text: concern.suggestedResponse,
-                tone: "boundary-setting" as MessageTone,
-              },
-            }),
-          });
-        }
-      }
-    }
+    try {
+      const prompt = `Modify this dating app message according to the instruction.
 
-    return {
-      isFlagged: alerts.length > 0,
-      alerts,
-    };
-  } catch (error: any) {
-    logger.error("OpenAI safety check failed:", error);
+Original message: "${req.text}"
 
-    // Fallback to basic keyword detection
-    const lowerMessage = message.toLowerCase();
-    const alerts: Array<{
-      flag: string;
-      displayLabel: string;
-      severity: string;
-      explanation: string;
-      recommendedActions: string[];
-    }> = [];
-
-    if (
-      lowerMessage.includes("send money") ||
-      lowerMessage.includes("wire transfer") ||
-      lowerMessage.includes("cash app") ||
-      lowerMessage.includes("gift card")
-    ) {
-      alerts.push({
-        flag: "money-request",
-        displayLabel: "Financial Request Detected",
-        severity: "high",
-        explanation: "This message may contain a request for money - a common romance scam pattern.",
-        recommendedActions: [
-          "Never send money to someone you haven't met",
-          "Report if this feels suspicious",
-        ],
-      });
-    }
-
-    return {
-      isFlagged: alerts.length > 0,
-      alerts,
-    };
-  }
-});
-
-// ============================================
-// Modify Suggestion (OpenAI Integration)
-// ============================================
-
-/**
- * Modify an AI suggestion with a specific instruction.
- */
-export const aiModifySuggestion = onCall({secrets: [openaiApiKey]}, async (request) => {
-  const {auth, data} = request;
-
-  if (!auth) {
-    throw new HttpsError("unauthenticated", "Must be authenticated");
-  }
-
-  await verifyPremiumSubscription(auth.uid);
-
-  const {text, instruction} = data as { text: string; instruction: string };
-
-  logger.info("AI modify suggestion requested", {
-    instruction,
-    textLength: text?.length,
-  });
-
-  try {
-    const openai = getOpenAIClient(openaiApiKey.value());
-
-    const prompt = `Modify this dating app message according to the instruction.
-
-Original message: "${text}"
-
-Instruction: ${instruction}
+Instruction: ${req.instruction}
 
 Rules:
 - Keep the core meaning intact
 - Make it sound natural and human
 - Keep it appropriate for a dating app
-- Return ONLY the modified message, nothing else
+- Return ONLY the modified message, nothing else`;
 
-Modified message:`;
+      const outputSchema = z.object({
+        text: z.string().describe("The modified message only (no quotes, no extra commentary)"),
+      });
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [{role: "user", content: prompt}],
-      max_tokens: 200,
-      temperature: 0.7,
-    });
+      const ai = getAi();
+      const response = await ai.generate({
+        system: DATING_ASSISTANT_SYSTEM_PROMPT,
+        prompt,
+        output: {schema: outputSchema},
+        config: {
+          apiKey: getGeminiApiKeyForRuntime(),
+          maxOutputTokens: 200,
+          temperature: 0.7,
+        },
+      });
 
-    const modifiedText = response.choices[0]?.message?.content?.trim() || text;
+      const parsed = response.output;
+      const modifiedText = parsed?.text?.trim() || req.text;
+      return {text: cleanText(modifiedText)};
+    } catch (error: any) {
+      logger.error("AI modify failed:", error);
 
-    return {text: cleanText(modifiedText)};
-  } catch (error: any) {
-    logger.error("OpenAI modify failed:", error);
+      // Fallback to simple modifications
+      let modifiedText = req.text;
+      const lowerInstruction = req.instruction.toLowerCase();
 
-    // Fallback to simple modifications
-    let modifiedText = text;
-    const lowerInstruction = instruction.toLowerCase();
+      if (lowerInstruction.includes("shorter")) {
+        const sentences = req.text.split(/[.!?]+/).filter(Boolean);
+        modifiedText =
+          sentences[0] +
+          (req.text.match(/[.!?]/) ? req.text.match(/[.!?]/)?.[0] : ".");
+      } else if (lowerInstruction.includes("playful")) {
+        modifiedText = req.text + " 😊";
+      }
 
-    if (lowerInstruction.includes("shorter")) {
-      const sentences = text.split(/[.!?]+/).filter(Boolean);
-      modifiedText = sentences[0] + (text.match(/[.!?]/) ? text.match(/[.!?]/)?.[0] : ".");
-    } else if (lowerInstruction.includes("playful")) {
-      modifiedText = text + " 😊";
+      return {text: modifiedText};
     }
-
-    return {text: modifiedText};
   }
-});
+);
 
-// ============================================
-// Profile Text Polish (OpenAI Integration)
-// ============================================
-
-interface ProfilePolishRequest {
-  text: string;
-  fieldType: "tagline" | "idealRelationship" | "supportMeaning" | "generic";
-  maxLength?: number;
-  profileContext?: {
-    displayName?: string;
-    age?: number;
-    city?: string;
-    genderIdentity?: string;
-    tagline?: string;
-    aboutMeItems?: string[];
-    connectionTypes?: string[];
-    supportOrientation?: string;
-    idealRelationship?: string;
-    supportMeaning?: string;
-    occupation?: string;
-    education?: string;
-    interests?: string[];
-  };
-}
-
-interface ProfilePolishResponse {
-  polished: string;
-  suggestions: string[];
-}
-
+export const aiModifySuggestion = onCallGenkit(
+  {
+    secrets: [geminiApiKey],
+    authPolicy: isSignedIn(),
+  },
+  aiModifySuggestionFlow
+);
 /**
  * Polish profile text using AI.
  * For Premium users to improve their profile content.
  */
-export const aiPolishProfileText = onCall({secrets: [openaiApiKey]}, async (request) => {
-  const {auth, data} = request;
+const aiPolishProfileTextFlow = getAi().defineFlow(
+  {
+    name: "aiPolishProfileText",
+    inputSchema: z.object({
+      text: z.string(),
+      fieldType: z.enum(["tagline", "idealRelationship", "supportMeaning", "generic"] as const),
+      maxLength: z.number().optional().nullable(),
+      profileContext: z.object({
+        displayName: z.string().optional(),
+        age: z.number().optional(),
+        city: z.string().optional(),
+        genderIdentity: z.string().optional(),
+        tagline: z.string().optional(),
+        aboutMeItems: z.array(z.string()).optional(),
+        connectionTypes: z.array(z.string()).optional(),
+        supportOrientation: z.string().optional(),
+        idealRelationship: z.string().optional(),
+        supportMeaning: z.string().optional(),
+        occupation: z.string().optional(),
+        education: z.string().optional(),
+        interests: z.array(z.string()).optional(),
+      }).passthrough().optional().nullable(),
+    }).passthrough(),
+    outputSchema: z.object({
+      polished: z.string(),
+      suggestions: z.array(z.string()),
+    }),
+  },
+  async (req, opts) => {
+    const uid = opts?.context?.auth?.uid;
+    if (!uid) {
+      throw new HttpsError("unauthenticated", "Must be authenticated");
+    }
 
-  if (!auth) {
-    throw new HttpsError("unauthenticated", "Must be authenticated");
-  }
+    await verifyPremiumSubscription(uid);
 
-  await verifyPremiumSubscription(auth.uid);
+    if (!req.text || req.text.trim().length === 0) {
+      throw new HttpsError("invalid-argument", "Text is required");
+    }
 
-  const req = data as ProfilePolishRequest;
+    logger.info("AI profile polish requested", {
+      fieldType: req.fieldType,
+      textLength: req.text.length,
+      hasContext: !!req.profileContext,
+    });
 
-  if (!req.text || req.text.trim().length === 0) {
-    throw new HttpsError("invalid-argument", "Text is required");
-  }
+    const maxLength = req.maxLength || 500;
 
-  logger.info("AI profile polish requested", {
-    fieldType: req.fieldType,
-    textLength: req.text.length,
-    hasContext: !!req.profileContext,
-  });
+    // Get field-specific guidance
+    const fieldGuidance = getFieldGuidance(req.fieldType, req.profileContext?.supportOrientation);
+    const profileContextStr = buildProfileContext((req.profileContext ?? undefined) as ProfileContext | undefined);
 
-  // Get field-specific guidance
-  const fieldGuidance = getFieldGuidance(req.fieldType, req.profileContext?.supportOrientation);
-  const maxLength = req.maxLength || 500;
+    try {
+      const outputSchema = z.object({
+        polished: z.string().describe("Primary improved version of their text"),
+        suggestions: z.array(z.string()).describe("Up to 2 alternative versions"),
+      });
 
-  // Build profile context for AI
-  const profileContextStr = buildProfileContext(req.profileContext);
-
-  try {
-    const openai = getOpenAIClient(openaiApiKey.value());
-
-    const prompt = `You are helping someone improve their dating profile text. Use their profile context to make personalized, authentic suggestions.
+      const prompt = `You are helping someone improve their dating profile text. Use their profile context to make personalized, authentic suggestions.
 
 ${profileContextStr}
 
@@ -1045,55 +1156,53 @@ RULES:
 - Make them sound interesting, not desperate or boastful
 - Reference their interests, occupation, or other details naturally when appropriate
 
-Respond in JSON format:
-{
-  "polished": "The improved version of their text (primary suggestion)",
-  "suggestions": [
-    "Alternative polished version 1",
-    "Alternative polished version 2"
-  ]
-}`;
+Return JSON that matches the schema.`;
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [{role: "user", content: prompt}],
-      response_format: {type: "json_object"},
-      max_tokens: 400,
-      temperature: 0.7,
-    });
+      const ai = getAi();
+      const response = await ai.generate({
+        system: DATING_ASSISTANT_SYSTEM_PROMPT,
+        prompt,
+        output: {schema: outputSchema},
+        config: {
+          apiKey: getGeminiApiKeyForRuntime(),
+          maxOutputTokens: 400,
+          temperature: 0.7,
+        },
+      });
 
-    const content = response.choices[0]?.message?.content;
-    if (!content) {
-      throw new Error("No response from AI");
+      const parsed = response.output;
+      if (!parsed?.polished) {
+        throw new Error("AI response did not match expected schema");
+      }
+
+      const polished = (parsed.polished || req.text).substring(0, maxLength);
+      const suggestions = (parsed.suggestions || [])
+        .map((s) => s.substring(0, maxLength))
+        .slice(0, 2);
+
+      return {
+        polished: cleanText(polished),
+        suggestions: suggestions.map((s) => cleanText(s)),
+      };
+    } catch (error: any) {
+      logger.error("AI profile polish failed:", error);
+      return {polished: req.text, suggestions: []};
     }
-
-    const parsed = JSON.parse(content) as ProfilePolishResponse;
-
-    // Ensure we stay within limits
-    const polished = parsed.polished?.substring(0, maxLength) || req.text;
-    const suggestions = (parsed.suggestions || [])
-      .map((s) => s.substring(0, maxLength))
-      .slice(0, 2);
-
-    return {
-      polished: cleanText(polished),
-      suggestions: suggestions.map((s) => cleanText(s)),
-    };
-  } catch (error: any) {
-    logger.error("OpenAI profile polish failed:", error);
-
-    // Return original text on failure
-    return {
-      polished: req.text,
-      suggestions: [],
-    };
   }
-});
+);
+
+export const aiPolishProfileText = onCallGenkit(
+  {
+    secrets: [geminiApiKey],
+    authPolicy: isSignedIn(),
+  },
+  aiPolishProfileTextFlow
+);
 
 /**
  * Build profile context string for AI prompt
  */
-function buildProfileContext(context?: ProfilePolishRequest["profileContext"]): string {
+function buildProfileContext(context?: ProfileContext): string {
   if (!context) {
     return "PROFILE CONTEXT: Limited information available";
   }
