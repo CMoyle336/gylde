@@ -57,6 +57,17 @@ export class AiChatService {
   readonly starterMessages = computed(() => this._state().starterMessages);
 
   /**
+   * Set an error message to display in the panel UI.
+   */
+  setError(message: string | null): void {
+    this._state.update(s => ({
+      ...s,
+      isLoading: false,
+      error: message,
+    }));
+  }
+
+  /**
    * Check if user has AI assistant access (Premium tier)
    */
   readonly hasAccess = computed(() => {

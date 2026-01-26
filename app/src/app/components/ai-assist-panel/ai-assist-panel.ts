@@ -175,6 +175,13 @@ export class AiAssistPanelComponent {
         userProfile: this.context.userProfile,
       });
     } else {
+      const lastMessage = this.context.recentMessages.at(-1);
+      // Only generate "reply suggestions" when the last message is from them.
+      if (!lastMessage || lastMessage.isOwn) {
+        this.aiService.setError('There isn’t a new message from them to reply to yet.');
+        return;
+      }
+
       await this.aiService.getSuggestions({
         conversationId: this.context.conversationId,
         recipientId: this.context.recipientId,
@@ -234,7 +241,10 @@ export class AiAssistPanelComponent {
       .reverse()
       .find(m => !m.isOwn);
 
-    if (!lastReceived) return;
+    if (!lastReceived) {
+      this.aiService.setError('There isn’t a message from them to analyze yet. Wait for a reply, then try again.');
+      return;
+    }
 
     const messages = this.context.recentMessages.slice(-10).map(m => ({
       content: m.content,
