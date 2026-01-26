@@ -1017,6 +1017,126 @@
       "MATCHES": "Coincidencias"
     }
   },
+  "PROGRESS_PAGE": {
+    "TITLE": "Progreso del perfil",
+    "SCORE_LABEL": "Completado",
+    "DESCRIPTION": {
+      "PREMIUM": "Como miembro Premium, tienes acceso a asistencia de IA para tu perfil y conversaciones, además de un número de teléfono virtual privado.",
+      "FREE": "Completa tu perfil para destacar y hacer conexiones significativas. Un perfil completo ayuda a los demás a saber que te tomas las citas en serio."
+    },
+    "SUMMARY": {
+      "COMPLETED": "{{completed}} de {{total}} elementos completados"
+    },
+    "POINTS": {
+      "CATEGORY": "{{earned}}/{{max}} pts",
+      "TASK": "+{{points}} pts"
+    },
+    "LEVELS": {
+      "COMPLETE": "Completado",
+      "ALMOST_THERE": "Casi listo",
+      "GOOD_PROGRESS": "Buen progreso",
+      "GETTING_STARTED": "Empezando",
+      "JUST_BEGINNING": "Recién comenzando"
+    },
+    "INFO": {
+      "TITLE": "¿Por qué completar tu perfil?",
+      "BODY": "Un perfil completo te ayuda a destacar y demuestra a los demás que te tomas en serio hacer conexiones reales. Los miembros verificados con perfiles detallados tienen más probabilidades de recibir mensajes y obtener mejores coincidencias."
+    },
+    "ACTIONS": {
+      "VERIFY_NOW": "Verificar ahora",
+      "VERIFY_EMAIL": "Verificar correo",
+      "ADD_PHONE": "Agregar teléfono",
+      "ADD_PHOTO": "Agregar foto",
+      "ADD_PHOTOS": "Agregar fotos",
+      "ADD_TAGLINE": "Agregar eslogan",
+      "EDIT_PREFERENCES": "Editar preferencias",
+      "EDIT_PROFILE": "Editar perfil",
+      "ADD_DETAILS": "Agregar detalles",
+      "DISCOVER": "Descubrir",
+      "MESSAGES": "Mensajes",
+      "SETTINGS": "Configuración"
+    },
+    "CATEGORIES": {
+      "VERIFICATION": {
+        "NAME": "Verificación",
+        "DESCRIPTION": "Verifica tu identidad para generar confianza"
+      },
+      "PHOTOS": {
+        "NAME": "Fotos",
+        "DESCRIPTION": "Agrega fotos a tu perfil"
+      },
+      "PROFILE": {
+        "NAME": "Perfil",
+        "DESCRIPTION": "Completa la información de tu perfil"
+      },
+      "ACTIVITY": {
+        "NAME": "Actividad",
+        "DESCRIPTION": "Mantente activo en la plataforma"
+      }
+    },
+    "TASKS": {
+      "IDENTITY_VERIFIED": {
+        "NAME": "Verificar identidad",
+        "DESCRIPTION": "Completa la verificación de identidad para demostrar que eres quien dices ser"
+      },
+      "EMAIL_CONFIRMED": {
+        "NAME": "Confirmar correo",
+        "DESCRIPTION": "Verifica tu dirección de correo electrónico"
+      },
+      "PHONE_VERIFIED": {
+        "NAME": "Verificar teléfono",
+        "DESCRIPTION": "Agrega y verifica tu número de teléfono"
+      },
+      "PROFILE_PHOTO": {
+        "NAME": "Agregar foto de perfil",
+        "DESCRIPTION": "Sube tu foto principal de perfil"
+      },
+      "MULTIPLE_PHOTOS": {
+        "NAME": "Agregar varias fotos",
+        "DESCRIPTION": "Sube al menos 3 fotos a tu perfil"
+      },
+      "COMPLETE_GALLERY": {
+        "NAME": "Completar galería de fotos",
+        "DESCRIPTION": "Sube 5 o más fotos para un perfil completo"
+      },
+      "TAGLINE_ADDED": {
+        "NAME": "Agregar eslogan",
+        "DESCRIPTION": "Escribe un eslogan corto que te describa"
+      },
+      "DATING_PREFERENCES": {
+        "NAME": "Establecer preferencias de citas",
+        "DESCRIPTION": "Especifica a quién te interesa conocer"
+      },
+      "ABOUT_WRITTEN": {
+        "NAME": "Escribir sobre ti",
+        "DESCRIPTION": "Comparte lo que buscas (al menos 50 caracteres)"
+      },
+      "PERSONAL_DETAILS": {
+        "NAME": "Completar detalles personales",
+        "DESCRIPTION": "Completa al menos 3 detalles (ocupación, educación, etc.)"
+      },
+      "CONNECTION_TYPES": {
+        "NAME": "Definir tipos de conexión",
+        "DESCRIPTION": "Especifica qué tipos de conexiones buscas"
+      },
+      "RECENTLY_ACTIVE": {
+        "NAME": "Mantente activo",
+        "DESCRIPTION": "Inicia sesión en los últimos 3 días"
+      },
+      "HAS_FAVORITES": {
+        "NAME": "Interactuar con perfiles",
+        "DESCRIPTION": "Marca como favorito al menos 3 perfiles"
+      },
+      "RECENT_CONVERSATIONS": {
+        "NAME": "Iniciar conversaciones",
+        "DESCRIPTION": "Ten al menos una conversación con actividad reciente"
+      },
+      "PROFILE_VISIBLE": {
+        "NAME": "Perfil visible",
+        "DESCRIPTION": "Mantén tu perfil visible para que te descubran"
+      }
+    }
+  },
   "SETTINGS": {
     "TITLE": "Configuración",
     "SUBTITLE": "Administra tu cuenta, privacidad y preferencias",
@@ -1236,6 +1356,66 @@
     "SAVE_VIEW_MENU": "Guardar vista actual",
     "MANAGE_VIEWS_MENU": "Gestionar vistas",
     "SORT_LABEL": "Ordenar",
+    "SORT_OPTIONS": {
+      "RECENTLY_ACTIVE": "Recientemente activo",
+      "NEAREST": "Más cercano",
+      "NEWEST": "Perfiles más nuevos",
+      "PRIORITIZE_TRUSTED": "Priorizar confiables",
+      "AGE_YOUNGEST": "Edad (más joven)",
+      "AGE_OLDEST": "Edad (más mayor)"
+    },
+    "FILTER_PANEL": {
+      "MEMBER_STATUS_LABEL": "Estado del miembro",
+      "MEMBER_STATUS_HINT": "Filtrar por nivel de reputación",
+      "REPUTATION_TIERS": {
+        "ALL": "Todos",
+        "ALL_MEMBERS": "Todos los miembros",
+        "ACTIVE_PLUS": "Activo+",
+        "ESTABLISHED_PLUS": "Establecido+",
+        "TRUSTED_PLUS": "Confiable+"
+      },
+      "REPUTATION_TIERS_DESC": {
+        "ALL": "Mostrar todos los miembros",
+        "ACTIVE_PLUS": "Miembros comprometidos que participan activamente",
+        "ESTABLISHED_PLUS": "Miembros de larga duración con actividad constante",
+        "TRUSTED_PLUS": "Miembros muy confiables con excelentes antecedentes"
+      },
+      "QUICK_FILTERS_LABEL": "Filtros rápidos",
+      "QUICK_FILTERS": {
+        "VERIFIED_ONLY": "Solo verificados",
+        "ONLINE_NOW": "En línea ahora",
+        "ACTIVE_24H": "Activo en 24 h"
+      },
+      "DISTANCE_LABEL": "Distancia",
+      "DISTANCE": {
+        "WITHIN_MI": "Dentro de {{miles}} mi",
+        "ANY": "Cualquier distancia"
+      },
+      "LOOKING_FOR_LABEL": "Buscando",
+      "MORE_FILTERS": "Más filtros",
+      "LESS_FILTERS": "Menos filtros",
+      "PREMIUM_BADGE": "Premium",
+      "ADVANCED": {
+        "SUPPORT_STYLE": "Estilo de apoyo",
+        "HEIGHT": "Altura",
+        "INCOME": "Ingresos",
+        "ETHNICITY": "Etnia",
+        "RELATIONSHIP_STATUS": "Estado civil",
+        "CHILDREN": "Hijos",
+        "SMOKING": "Fumar",
+        "DRINKING": "Beber",
+        "EDUCATION": "Educación"
+      },
+      "ACTIONS": {
+        "RESET_ALL": "Restablecer todo",
+        "APPLY_FILTERS": "Aplicar filtros"
+      },
+      "SUPPORT_ORIENTATION": {
+        "PROVIDER": "Proveedor",
+        "RECEIVER": "Receptor",
+        "FLEXIBLE": "Flexible"
+      }
+    },
     "RESULTS_COUNT": "{{count}} resultados",
     "EMPTY_TITLE": "No se encontraron perfiles",
     "EMPTY_SUBTITLE": "Intenta ajustar tus filtros o vuelve más tarde.",
@@ -1259,6 +1439,77 @@
       "EMPTY_TITLE": "Aún no hay vistas guardadas",
       "EMPTY_DESCRIPTION": "Guarda tus filtros actuales para aplicarlos rápidamente más tarde",
       "DONE_BUTTON": "Listo"
+    }
+  },
+  "UPGRADE_DIALOG": {
+    "CLOSE_ARIA": "Cerrar diálogo",
+    "PER_MONTH": "/mes",
+    "MAYBE_LATER": "Quizá más tarde",
+    "LOADING": "Cargando...",
+    "SUBSCRIBE_NOW": "Suscribirme ahora",
+    "TRUST_MESSAGE": "Cancela cuando quieras. Pago seguro a través de Stripe.",
+    "ERRORS": {
+      "ALREADY_PREMIUM": "Ya eres suscriptor premium.",
+      "CHECKOUT_FAILED": "No se pudo iniciar el checkout. Inténtalo de nuevo."
+    },
+    "FEATURE_MESSAGES": {
+      "GENERAL": {
+        "TITLE": "Mejora a Premium",
+        "DESCRIPTION": "Desbloquea todas las funciones premium para la mejor experiencia en Gylde."
+      },
+      "UNLIMITED_MESSAGING": {
+        "TITLE": "Conversaciones ilimitadas",
+        "DESCRIPTION": "Inicia conversaciones ilimitadas con miembros de cualquier nivel sin límites diarios."
+      },
+      "CAN_MESSAGE_ANY_TIER": {
+        "TITLE": "Sin restricciones de nivel",
+        "DESCRIPTION": "Inicia conversaciones con cualquier miembro sin importar su nivel de reputación."
+      },
+      "HAS_AI_ASSISTANT": {
+        "TITLE": "Asistente de IA",
+        "DESCRIPTION": "Obtén un asistente de IA que ayuda a crear tu perfil y sugiere iniciadores de conversación."
+      },
+      "HAS_VIRTUAL_PHONE": {
+        "TITLE": "Número de teléfono virtual",
+        "DESCRIPTION": "Obtén un número virtual privado para proteger tu número real mientras sales con alguien."
+      },
+      "PRIORITY_VISIBILITY": {
+        "TITLE": "Visibilidad prioritaria",
+        "DESCRIPTION": "Aparece primero en los resultados de búsqueda y obtén más coincidencias."
+      },
+      "CAN_SEE_WHO_VIEWED_PROFILE": {
+        "TITLE": "Ver quién vio tu perfil",
+        "DESCRIPTION": "Mira quién ha estado viendo tu perfil."
+      },
+      "CAN_SEE_WHO_FAVORITED": {
+        "TITLE": "Ver quién te marcó como favorito",
+        "DESCRIPTION": "Mira quién te añadió a sus favoritos."
+      },
+      "MAX_PHOTOS": {
+        "TITLE": "Sube más fotos",
+        "DESCRIPTION": "Sube hasta 20 fotos para mostrar más de ti."
+      },
+      "CAN_ACCESS_PRIVATE_PHOTOS": {
+        "TITLE": "Acceder a fotos privadas",
+        "DESCRIPTION": "Solicita y comparte fotos privadas con tus conexiones."
+      },
+      "ADVANCED_FILTERS": {
+        "TITLE": "Filtros avanzados",
+        "DESCRIPTION": "Usa filtros avanzados como ingresos, educación y más para encontrar tu coincidencia perfecta."
+      },
+      "READ_RECEIPTS": {
+        "TITLE": "Confirmaciones de lectura",
+        "DESCRIPTION": "Sabe cuándo tus mensajes han sido leídos."
+      }
+    },
+    "PREMIUM_FEATURES": {
+      "PRIVATE_PHOTOS": "Solicitar y ver fotos privadas",
+      "ADVANCED_FILTERS": "Filtros avanzados de descubrimiento",
+      "WHO_VIEWED": "Ver quién vio tu perfil",
+      "WHO_FAVORITED": "Ver quién te marcó como favorito",
+      "AI": "Asistente de IA para perfil y chat",
+      "PHONE": "Número de teléfono virtual",
+      "READ_RECEIPTS": "Confirmaciones de lectura"
     }
   },
   "MATCHES": {

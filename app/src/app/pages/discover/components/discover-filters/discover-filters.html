@@ -2,8 +2,8 @@
   <!-- Member Status Filter - Core Feature -->
   <div class="reputation-filter-section">
     <div class="reputation-filter-header">
-      <label class="filter-label">Member Status</label>
-      <span class="filter-hint">Filter by reputation level</span>
+      <label class="filter-label">{{ 'DISCOVER.FILTER_PANEL.MEMBER_STATUS_LABEL' | translate }}</label>
+      <span class="filter-hint">{{ 'DISCOVER.FILTER_PANEL.MEMBER_STATUS_HINT' | translate }}</span>
     </div>
     <div class="reputation-tier-selector">
       @for (tier of tierVisualOptions; track tier.value) {
@@ -12,11 +12,11 @@
           class="tier-option"
           [class.selected]="isReputationTierSelected(tier.value)"
           [style.--tier-color]="tier.color"
-          [matTooltip]="tier.description"
+          [matTooltip]="tier.descriptionKey | translate"
           matTooltipPosition="above"
           (click)="selectReputationTier(tier.value)">
           <mat-icon class="tier-icon">{{ tier.icon }}</mat-icon>
-          <span class="tier-label">{{ tier.label }}</span>
+          <span class="tier-label">{{ tier.labelKey | translate }}</span>
           @if (isReputationTierSelected(tier.value)) {
             <mat-icon class="tier-check">check_circle</mat-icon>
           }
@@ -31,7 +31,7 @@
     <div class="quick-filters-section">
       <div class="filter-header">
         <mat-icon class="filter-header-icon">filter_alt</mat-icon>
-        <label class="filter-label">Quick Filters</label>
+        <label class="filter-label">{{ 'DISCOVER.FILTER_PANEL.QUICK_FILTERS_LABEL' | translate }}</label>
       </div>
       <div class="quick-filters-grid">
         <button
@@ -42,7 +42,7 @@
           <div class="quick-filter-icon-wrapper verified">
             <mat-icon>verified</mat-icon>
           </div>
-          <span class="quick-filter-label">Verified Only</span>
+          <span class="quick-filter-label">{{ 'DISCOVER.FILTER_PANEL.QUICK_FILTERS.VERIFIED_ONLY' | translate }}</span>
           <div class="quick-filter-indicator">
             <div class="indicator-dot"></div>
           </div>
@@ -56,7 +56,7 @@
           <div class="quick-filter-icon-wrapper online">
             <mat-icon>circle</mat-icon>
           </div>
-          <span class="quick-filter-label">Online Now</span>
+          <span class="quick-filter-label">{{ 'DISCOVER.FILTER_PANEL.QUICK_FILTERS.ONLINE_NOW' | translate }}</span>
           <div class="quick-filter-indicator">
             <div class="indicator-dot"></div>
           </div>
@@ -70,7 +70,7 @@
           <div class="quick-filter-icon-wrapper recent">
             <mat-icon>schedule</mat-icon>
           </div>
-          <span class="quick-filter-label">Active in 24h</span>
+          <span class="quick-filter-label">{{ 'DISCOVER.FILTER_PANEL.QUICK_FILTERS.ACTIVE_24H' | translate }}</span>
           <div class="quick-filter-indicator">
             <div class="indicator-dot"></div>
           </div>
@@ -82,7 +82,7 @@
     <div class="distance-filter-section">
       <div class="filter-header">
         <mat-icon class="filter-header-icon">location_on</mat-icon>
-        <label class="filter-label">Distance</label>
+        <label class="filter-label">{{ 'DISCOVER.FILTER_PANEL.DISTANCE_LABEL' | translate }}</label>
       </div>
       <div class="distance-selector">
         @for (option of distanceOptions(); track option.value) {
@@ -91,7 +91,7 @@
             class="distance-option"
             [class.selected]="filters().maxDistance === option.value"
             (click)="updateFilter('maxDistance', option.value)">
-            <span class="distance-value">{{ option.label }}</span>
+            <span class="distance-value">{{ option.labelKey | translate: option.labelParams }}</span>
           </button>
         }
       </div>
@@ -100,7 +100,7 @@
 
   <!-- Looking For Section -->
   <div class="filter-section">
-    <label class="filter-label">Looking For</label>
+    <label class="filter-label">{{ 'DISCOVER.FILTER_PANEL.LOOKING_FOR_LABEL' | translate }}</label>
     <div class="chip-grid">
       <!-- Relationship Goals -->
       <div class="chip-group-row">
@@ -110,7 +110,7 @@
             class="filter-chip"
             [class.selected]="isFilterSelected('connectionTypes', option.value)"
             (click)="toggleArrayFilter('connectionTypes', option.value)">
-            {{ option.label }}
+            {{ ('ONBOARDING.STEP_3.' + option.labelKey) | translate }}
           </button>
         }
       </div>
@@ -122,7 +122,7 @@
             class="filter-chip"
             [class.selected]="isFilterSelected('connectionTypes', option.value)"
             (click)="toggleArrayFilter('connectionTypes', option.value)">
-            {{ option.label }}
+            {{ ('ONBOARDING.STEP_3.' + option.labelKey) | translate }}
           </button>
         }
       </div>
@@ -134,7 +134,7 @@
             class="filter-chip"
             [class.selected]="isFilterSelected('connectionTypes', option.value)"
             (click)="toggleArrayFilter('connectionTypes', option.value)">
-            {{ option.label }}
+            {{ ('ONBOARDING.STEP_3.' + option.labelKey) | translate }}
           </button>
         }
       </div>
@@ -148,9 +148,9 @@
     } @else {
       <mat-icon>{{ showAdvancedFilters() ? 'expand_less' : 'expand_more' }}</mat-icon>
     }
-    {{ showAdvancedFilters() ? 'Less filters' : 'More filters' }}
+    {{ (showAdvancedFilters() ? 'DISCOVER.FILTER_PANEL.LESS_FILTERS' : 'DISCOVER.FILTER_PANEL.MORE_FILTERS') | translate }}
     @if (!isPremium()) {
-      <span class="premium-badge">Premium</span>
+      <span class="premium-badge">{{ 'DISCOVER.FILTER_PANEL.PREMIUM_BADGE' | translate }}</span>
     }
   </button>
 
@@ -159,11 +159,11 @@
     <div class="filters-row advanced-filters">
       <!-- Support Orientation -->
       <div class="filter-group">
-        <label class="filter-label">Support Style</label>
+        <label class="filter-label">{{ 'DISCOVER.FILTER_PANEL.ADVANCED.SUPPORT_STYLE' | translate }}</label>
         <mat-form-field appearance="outline" class="full-width">
           <mat-select multiple [value]="filters().supportOrientation" (selectionChange)="updateFilter('supportOrientation', $event.value)">
             @for (option of supportOrientationOptions(); track option.value) {
-              <mat-option [value]="option.value">{{ option.label }}</mat-option>
+              <mat-option [value]="option.value">{{ ('DISCOVER.FILTER_PANEL.SUPPORT_ORIENTATION.' + option.value.toUpperCase()) | translate }}</mat-option>
             }
           </mat-select>
         </mat-form-field>
@@ -171,7 +171,7 @@
 
       <!-- Height -->
       <div class="filter-group">
-        <label class="filter-label">Height</label>
+        <label class="filter-label">{{ 'DISCOVER.FILTER_PANEL.ADVANCED.HEIGHT' | translate }}</label>
         <mat-form-field appearance="outline" class="full-width">
           <mat-select multiple [value]="filters().height" (selectionChange)="updateFilter('height', $event.value)">
             @for (option of heightOptions(); track option) {
@@ -183,7 +183,7 @@
 
       <!-- Income -->
       <div class="filter-group">
-        <label class="filter-label">Income</label>
+        <label class="filter-label">{{ 'DISCOVER.FILTER_PANEL.ADVANCED.INCOME' | translate }}</label>
         <mat-form-field appearance="outline" class="full-width">
           <mat-select multiple [value]="filters().income" (selectionChange)="updateFilter('income', $event.value)">
             @for (option of incomeOptions(); track option) {
@@ -195,7 +195,7 @@
 
       <!-- Ethnicity -->
       <div class="filter-group">
-        <label class="filter-label">Ethnicity</label>
+        <label class="filter-label">{{ 'DISCOVER.FILTER_PANEL.ADVANCED.ETHNICITY' | translate }}</label>
         <mat-form-field appearance="outline" class="full-width">
           <mat-select multiple [value]="filters().ethnicity" (selectionChange)="updateFilter('ethnicity', $event.value)">
             @for (option of ethnicityOptions(); track option) {
@@ -207,7 +207,7 @@
 
       <!-- Relationship Status -->
       <div class="filter-group">
-        <label class="filter-label">Relationship Status</label>
+        <label class="filter-label">{{ 'DISCOVER.FILTER_PANEL.ADVANCED.RELATIONSHIP_STATUS' | translate }}</label>
         <mat-form-field appearance="outline" class="full-width">
           <mat-select multiple [value]="filters().relationshipStatus" (selectionChange)="updateFilter('relationshipStatus', $event.value)">
             @for (option of relationshipStatusOptions(); track option) {
@@ -219,7 +219,7 @@
 
       <!-- Children -->
       <div class="filter-group">
-        <label class="filter-label">Children</label>
+        <label class="filter-label">{{ 'DISCOVER.FILTER_PANEL.ADVANCED.CHILDREN' | translate }}</label>
         <mat-form-field appearance="outline" class="full-width">
           <mat-select multiple [value]="filters().children" (selectionChange)="updateFilter('children', $event.value)">
             @for (option of childrenOptions(); track option) {
@@ -231,7 +231,7 @@
 
       <!-- Smoker -->
       <div class="filter-group">
-        <label class="filter-label">Smoking</label>
+        <label class="filter-label">{{ 'DISCOVER.FILTER_PANEL.ADVANCED.SMOKING' | translate }}</label>
         <mat-form-field appearance="outline" class="full-width">
           <mat-select multiple [value]="filters().smoker" (selectionChange)="updateFilter('smoker', $event.value)">
             @for (option of smokerOptions(); track option) {
@@ -243,7 +243,7 @@
 
       <!-- Drinker -->
       <div class="filter-group">
-        <label class="filter-label">Drinking</label>
+        <label class="filter-label">{{ 'DISCOVER.FILTER_PANEL.ADVANCED.DRINKING' | translate }}</label>
         <mat-form-field appearance="outline" class="full-width">
           <mat-select multiple [value]="filters().drinker" (selectionChange)="updateFilter('drinker', $event.value)">
             @for (option of drinkerOptions(); track option) {
@@ -255,7 +255,7 @@
 
       <!-- Education -->
       <div class="filter-group">
-        <label class="filter-label">Education</label>
+        <label class="filter-label">{{ 'DISCOVER.FILTER_PANEL.ADVANCED.EDUCATION' | translate }}</label>
         <mat-form-field appearance="outline" class="full-width">
           <mat-select multiple [value]="filters().education" (selectionChange)="updateFilter('education', $event.value)">
             @for (option of educationOptions(); track option) {
@@ -271,11 +271,11 @@
   <div class="filter-actions">
     <button mat-button (click)="onReset()">
       <mat-icon>refresh</mat-icon>
-      Reset All
+      {{ 'DISCOVER.FILTER_PANEL.ACTIONS.RESET_ALL' | translate }}
     </button>
     <button mat-flat-button color="primary" (click)="onApply()">
       <mat-icon>search</mat-icon>
-      Apply Filters
+      {{ 'DISCOVER.FILTER_PANEL.ACTIONS.APPLY_FILTERS' | translate }}
     </button>
   </div>
 </div>

@@ -1,6 +1,6 @@
 <div class="upgrade-dialog">
   <!-- Close button -->
-  <button class="close-btn" (click)="close()">
+  <button class="close-btn" (click)="close()" [attr.aria-label]="'UPGRADE_DIALOG.CLOSE_ARIA' | translate">
     <mat-icon>close</mat-icon>
   </button>
 
@@ -9,14 +9,14 @@
     <div class="feature-icon">
       <mat-icon>{{ featureInfo.icon }}</mat-icon>
     </div>
-    <h2>{{ featureInfo.title }}</h2>
-    <p>{{ featureInfo.description }}</p>
+    <h2>{{ featureInfo.titleKey | translate }}</h2>
+    <p>{{ featureInfo.descriptionKey | translate }}</p>
   </div>
 
   <!-- Price -->
   <div class="price-section">
     <span class="price-amount">{{ priceFormatted() }}</span>
-    <span class="price-period">/month</span>
+    <span class="price-period">{{ 'UPGRADE_DIALOG.PER_MONTH' | translate }}</span>
   </div>
 
   <!-- Features List -->
@@ -24,7 +24,7 @@
     @for (feature of features; track feature.id) {
       <div class="feature-item">
         <mat-icon>{{ feature.icon }}</mat-icon>
-        <span>{{ feature.label }}</span>
+        <span>{{ feature.labelKey | translate }}</span>
       </div>
     }
   </div>
@@ -39,16 +39,16 @@
 
   <!-- Actions -->
   <div class="dialog-actions">
-    <button class="secondary-btn" (click)="close()">Maybe Later</button>
+    <button class="secondary-btn" (click)="close()">{{ 'UPGRADE_DIALOG.MAYBE_LATER' | translate }}</button>
     <button 
       class="primary-btn" 
       (click)="subscribe()"
       [disabled]="loading()">
       @if (loading()) {
         <mat-spinner diameter="20"></mat-spinner>
-        <span>Loading...</span>
+        <span>{{ 'UPGRADE_DIALOG.LOADING' | translate }}</span>
       } @else {
-        <span>Subscribe Now</span>
+        <span>{{ 'UPGRADE_DIALOG.SUBSCRIBE_NOW' | translate }}</span>
         <mat-icon>arrow_forward</mat-icon>
       }
     </button>
@@ -57,6 +57,6 @@
   <!-- Trust message -->
   <p class="trust-message">
     <mat-icon>lock</mat-icon>
-    Cancel anytime. Secure payment via Stripe.
+    {{ 'UPGRADE_DIALOG.TRUST_MESSAGE' | translate }}
   </p>
 </div>

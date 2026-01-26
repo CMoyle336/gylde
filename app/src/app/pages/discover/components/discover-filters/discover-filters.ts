@@ -4,6 +4,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { TranslateModule } from '@ngx-translate/core';
 import { DiscoveryFilters } from '../../../../core/interfaces';
 import { 
   RELATIONSHIP_GOALS, 
@@ -18,31 +19,32 @@ export interface FilterOption {
 }
 
 export interface DistanceOption {
-  label: string;
+  labelKey: string;
+  labelParams?: Record<string, unknown>;
   value: number | null;
 }
 
 export interface ReputationTierOption {
-  label: string;
+  labelKey: string;
   value: string | null;
 }
 
 // Tier display configuration for the visual selector
-const TIER_VISUAL_CONFIG: Record<string, { icon: string; color: string; description: string }> = {
+const TIER_VISUAL_CONFIG: Record<string, { icon: string; color: string; descriptionKey: string }> = {
   active: {
     icon: 'trending_up',
     color: '#3b82f6', // blue-500
-    description: 'Engaged members who are actively participating',
+    descriptionKey: 'DISCOVER.FILTER_PANEL.REPUTATION_TIERS_DESC.ACTIVE_PLUS',
   },
   established: {
     icon: 'star_half',
     color: '#c9a962', // brand gold
-    description: 'Long-standing members with consistent activity',
+    descriptionKey: 'DISCOVER.FILTER_PANEL.REPUTATION_TIERS_DESC.ESTABLISHED_PLUS',
   },
   trusted: {
     icon: 'star',
     color: '#f59e0b', // amber-500
-    description: 'Highly trusted members with excellent track records',
+    descriptionKey: 'DISCOVER.FILTER_PANEL.REPUTATION_TIERS_DESC.TRUSTED_PLUS',
   },
 };
 
@@ -58,6 +60,7 @@ const TIER_VISUAL_CONFIG: Record<string, { icon: string; color: string; descript
     MatButtonModule,
     MatIconModule,
     MatTooltipModule,
+    TranslateModule,
   ],
 })
 export class DiscoverFiltersComponent {
@@ -130,10 +133,10 @@ export class DiscoverFiltersComponent {
 
   // Reputation tier selector helpers
   protected readonly tierVisualOptions = [
-    { value: null, label: 'All', icon: 'people', color: 'var(--color-text-muted)', description: 'Show all members' },
-    { value: 'active', label: 'Active+', ...TIER_VISUAL_CONFIG['active'] },
-    { value: 'established', label: 'Established+', ...TIER_VISUAL_CONFIG['established'] },
-    { value: 'trusted', label: 'Trusted+', ...TIER_VISUAL_CONFIG['trusted'] },
+    { value: null, labelKey: 'DISCOVER.FILTER_PANEL.REPUTATION_TIERS.ALL', icon: 'people', color: 'var(--color-text-muted)', descriptionKey: 'DISCOVER.FILTER_PANEL.REPUTATION_TIERS_DESC.ALL' },
+    { value: 'active', labelKey: 'DISCOVER.FILTER_PANEL.REPUTATION_TIERS.ACTIVE_PLUS', ...TIER_VISUAL_CONFIG['active'] },
+    { value: 'established', labelKey: 'DISCOVER.FILTER_PANEL.REPUTATION_TIERS.ESTABLISHED_PLUS', ...TIER_VISUAL_CONFIG['established'] },
+    { value: 'trusted', labelKey: 'DISCOVER.FILTER_PANEL.REPUTATION_TIERS.TRUSTED_PLUS', ...TIER_VISUAL_CONFIG['trusted'] },
   ];
 
   protected isReputationTierSelected(value: string | null): boolean {

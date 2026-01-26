@@ -20,16 +20,16 @@
         class="sort-btn"
         [matMenuTriggerFor]="sortMenu">
         <mat-icon>sort</mat-icon>
-        <span>{{ getSortLabel() }}</span>
+        <span>{{ getSortLabelKey() | translate }}</span>
         <mat-icon class="dropdown-icon">expand_more</mat-icon>
       </button>
       <mat-menu #sortMenu="matMenu">
-        @for (option of sortOptions; track option.label) {
+        @for (option of sortOptions; track option.labelKey) {
           <button 
             mat-menu-item 
             (click)="setSort(option.value)"
             [class.selected]="isSortActive(option.value)">
-            {{ option.label }}
+            {{ option.labelKey | translate }}
             @if (isSortActive(option.value)) {
               <mat-icon>check</mat-icon>
             }

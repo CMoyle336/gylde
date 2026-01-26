@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { TranslateModule } from '@ngx-translate/core';
 import { SubscriptionService } from '../../core/services/subscription.service';
 import { IdentityVerificationComponent } from '../../components/identity-verification';
 import { 
@@ -40,6 +41,7 @@ interface TrustCategoryDisplay extends TrustCategoryDefinition {
   styleUrl: './progress.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    TranslateModule,
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
@@ -67,11 +69,11 @@ export class ProgressComponent {
 
   protected readonly progressLevel = computed(() => {
     const progress = this.profileProgress();
-    if (progress >= 90) return { label: 'Complete', color: '#10b981' };
-    if (progress >= 70) return { label: 'Almost There', color: '#c9a962' };
-    if (progress >= 50) return { label: 'Good Progress', color: '#f59e0b' };
-    if (progress >= 25) return { label: 'Getting Started', color: '#f97316' };
-    return { label: 'Just Beginning', color: '#94a3b8' };
+    if (progress >= 90) return { labelKey: 'PROGRESS_PAGE.LEVELS.COMPLETE', color: '#10b981' };
+    if (progress >= 70) return { labelKey: 'PROGRESS_PAGE.LEVELS.ALMOST_THERE', color: '#c9a962' };
+    if (progress >= 50) return { labelKey: 'PROGRESS_PAGE.LEVELS.GOOD_PROGRESS', color: '#f59e0b' };
+    if (progress >= 25) return { labelKey: 'PROGRESS_PAGE.LEVELS.GETTING_STARTED', color: '#f97316' };
+    return { labelKey: 'PROGRESS_PAGE.LEVELS.JUST_BEGINNING', color: '#94a3b8' };
   });
 
   /**

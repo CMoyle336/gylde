@@ -1017,6 +1017,126 @@
       "MATCHES": "Matches"
     }
   },
+  "PROGRESS_PAGE": {
+    "TITLE": "Profilfortschritt",
+    "SCORE_LABEL": "Abgeschlossen",
+    "DESCRIPTION": {
+      "PREMIUM": "Als Premium‑Mitglied hast du Zugriff auf KI‑Unterstützung für dein Profil und deine Gespräche sowie auf eine private virtuelle Telefonnummer.",
+      "FREE": "Vervollständige dein Profil, um herauszustechen und sinnvolle Verbindungen zu knüpfen. Ein vollständiges Profil zeigt anderen, dass du es mit Dating ernst meinst."
+    },
+    "SUMMARY": {
+      "COMPLETED": "{{completed}} von {{total}} Elementen abgeschlossen"
+    },
+    "POINTS": {
+      "CATEGORY": "{{earned}}/{{max}} Pkt.",
+      "TASK": "+{{points}} Pkt."
+    },
+    "LEVELS": {
+      "COMPLETE": "Abgeschlossen",
+      "ALMOST_THERE": "Fast geschafft",
+      "GOOD_PROGRESS": "Gute Fortschritte",
+      "GETTING_STARTED": "Erste Schritte",
+      "JUST_BEGINNING": "Ganz am Anfang"
+    },
+    "INFO": {
+      "TITLE": "Warum dein Profil vervollständigen?",
+      "BODY": "Ein vollständiges Profil hilft dir, herauszustechen, und zeigt anderen, dass du es mit echten Verbindungen ernst meinst. Verifizierte Mitglieder mit detaillierten Profilen erhalten eher Nachrichten und bessere Matches."
+    },
+    "ACTIONS": {
+      "VERIFY_NOW": "Jetzt verifizieren",
+      "VERIFY_EMAIL": "E‑Mail verifizieren",
+      "ADD_PHONE": "Telefonnummer hinzufügen",
+      "ADD_PHOTO": "Foto hinzufügen",
+      "ADD_PHOTOS": "Fotos hinzufügen",
+      "ADD_TAGLINE": "Slogan hinzufügen",
+      "EDIT_PREFERENCES": "Präferenzen bearbeiten",
+      "EDIT_PROFILE": "Profil bearbeiten",
+      "ADD_DETAILS": "Details hinzufügen",
+      "DISCOVER": "Entdecken",
+      "MESSAGES": "Nachrichten",
+      "SETTINGS": "Einstellungen"
+    },
+    "CATEGORIES": {
+      "VERIFICATION": {
+        "NAME": "Verifizierung",
+        "DESCRIPTION": "Verifiziere deine Identität, um Vertrauen aufzubauen"
+      },
+      "PHOTOS": {
+        "NAME": "Fotos",
+        "DESCRIPTION": "Füge Fotos zu deinem Profil hinzu"
+      },
+      "PROFILE": {
+        "NAME": "Profil",
+        "DESCRIPTION": "Vervollständige deine Profilinformationen"
+      },
+      "ACTIVITY": {
+        "NAME": "Aktivität",
+        "DESCRIPTION": "Bleib auf der Plattform aktiv"
+      }
+    },
+    "TASKS": {
+      "IDENTITY_VERIFIED": {
+        "NAME": "Identität verifizieren",
+        "DESCRIPTION": "Schließe die Identitätsverifizierung ab, um zu bestätigen, dass du die Person bist, die du vorgibst zu sein"
+      },
+      "EMAIL_CONFIRMED": {
+        "NAME": "E‑Mail bestätigen",
+        "DESCRIPTION": "Verifiziere deine E‑Mail‑Adresse"
+      },
+      "PHONE_VERIFIED": {
+        "NAME": "Telefon verifizieren",
+        "DESCRIPTION": "Füge deine Telefonnummer hinzu und verifiziere sie"
+      },
+      "PROFILE_PHOTO": {
+        "NAME": "Profilfoto hinzufügen",
+        "DESCRIPTION": "Lade dein Haupt‑Profilfoto hoch"
+      },
+      "MULTIPLE_PHOTOS": {
+        "NAME": "Mehrere Fotos hinzufügen",
+        "DESCRIPTION": "Lade mindestens 3 Fotos in dein Profil hoch"
+      },
+      "COMPLETE_GALLERY": {
+        "NAME": "Fotogalerie vervollständigen",
+        "DESCRIPTION": "Lade 5 oder mehr Fotos für ein vollständiges Profil hoch"
+      },
+      "TAGLINE_ADDED": {
+        "NAME": "Slogan hinzufügen",
+        "DESCRIPTION": "Schreibe einen kurzen Slogan, der dich beschreibt"
+      },
+      "DATING_PREFERENCES": {
+        "NAME": "Dating‑Präferenzen festlegen",
+        "DESCRIPTION": "Lege fest, wen du kennenlernen möchtest"
+      },
+      "ABOUT_WRITTEN": {
+        "NAME": "Über dich schreiben",
+        "DESCRIPTION": "Teile mit, wonach du suchst (mindestens 50 Zeichen)"
+      },
+      "PERSONAL_DETAILS": {
+        "NAME": "Persönliche Details vervollständigen",
+        "DESCRIPTION": "Fülle mindestens 3 Details aus (Beruf, Bildung usw.)"
+      },
+      "CONNECTION_TYPES": {
+        "NAME": "Verbindungsarten festlegen",
+        "DESCRIPTION": "Gib an, welche Arten von Verbindungen du suchst"
+      },
+      "RECENTLY_ACTIVE": {
+        "NAME": "Aktiv bleiben",
+        "DESCRIPTION": "Melde dich innerhalb der letzten 3 Tage an"
+      },
+      "HAS_FAVORITES": {
+        "NAME": "Mit Profilen interagieren",
+        "DESCRIPTION": "Markiere mindestens 3 Profile als Favoriten"
+      },
+      "RECENT_CONVERSATIONS": {
+        "NAME": "Gespräche starten",
+        "DESCRIPTION": "Führe mindestens ein Gespräch mit aktueller Aktivität"
+      },
+      "PROFILE_VISIBLE": {
+        "NAME": "Profil sichtbar",
+        "DESCRIPTION": "Halte dein Profil sichtbar, damit du gefunden wirst"
+      }
+    }
+  },
   "SETTINGS": {
     "TITLE": "Einstellungen",
     "SUBTITLE": "Verwalte dein Konto, deine Privatsphäre und deine Präferenzen",
@@ -1236,6 +1356,66 @@
     "SAVE_VIEW_MENU": "Aktuelle Ansicht speichern",
     "MANAGE_VIEWS_MENU": "Ansichten verwalten",
     "SORT_LABEL": "Sortieren",
+    "SORT_OPTIONS": {
+      "RECENTLY_ACTIVE": "Kürzlich aktiv",
+      "NEAREST": "Nächste",
+      "NEWEST": "Neueste Profile",
+      "PRIORITIZE_TRUSTED": "Vertrauenswürdige priorisieren",
+      "AGE_YOUNGEST": "Alter (jüngste)",
+      "AGE_OLDEST": "Alter (älteste)"
+    },
+    "FILTER_PANEL": {
+      "MEMBER_STATUS_LABEL": "Mitgliederstatus",
+      "MEMBER_STATUS_HINT": "Nach Reputationsstufe filtern",
+      "REPUTATION_TIERS": {
+        "ALL": "Alle",
+        "ALL_MEMBERS": "Alle Mitglieder",
+        "ACTIVE_PLUS": "Aktiv+",
+        "ESTABLISHED_PLUS": "Etabliert+",
+        "TRUSTED_PLUS": "Vertrauenswürdig+"
+      },
+      "REPUTATION_TIERS_DESC": {
+        "ALL": "Alle Mitglieder anzeigen",
+        "ACTIVE_PLUS": "Engagierte Mitglieder, die aktiv teilnehmen",
+        "ESTABLISHED_PLUS": "Langjährige Mitglieder mit konstanter Aktivität",
+        "TRUSTED_PLUS": "Sehr vertrauenswürdige Mitglieder mit hervorragender Bilanz"
+      },
+      "QUICK_FILTERS_LABEL": "Schnellfilter",
+      "QUICK_FILTERS": {
+        "VERIFIED_ONLY": "Nur verifiziert",
+        "ONLINE_NOW": "Jetzt online",
+        "ACTIVE_24H": "Aktiv in 24 Std"
+      },
+      "DISTANCE_LABEL": "Entfernung",
+      "DISTANCE": {
+        "WITHIN_MI": "Innerhalb von {{miles}} mi",
+        "ANY": "Beliebige Entfernung"
+      },
+      "LOOKING_FOR_LABEL": "Ich suche",
+      "MORE_FILTERS": "Mehr Filter",
+      "LESS_FILTERS": "Weniger Filter",
+      "PREMIUM_BADGE": "Premium",
+      "ADVANCED": {
+        "SUPPORT_STYLE": "Support‑Stil",
+        "HEIGHT": "Größe",
+        "INCOME": "Einkommen",
+        "ETHNICITY": "Ethnie",
+        "RELATIONSHIP_STATUS": "Beziehungsstatus",
+        "CHILDREN": "Kinder",
+        "SMOKING": "Rauchen",
+        "DRINKING": "Alkohol",
+        "EDUCATION": "Bildung"
+      },
+      "ACTIONS": {
+        "RESET_ALL": "Alles zurücksetzen",
+        "APPLY_FILTERS": "Filter anwenden"
+      },
+      "SUPPORT_ORIENTATION": {
+        "PROVIDER": "Gebend",
+        "RECEIVER": "Empfangend",
+        "FLEXIBLE": "Flexibel"
+      }
+    },
     "RESULTS_COUNT": "{{count}} Ergebnisse",
     "EMPTY_TITLE": "Keine Profile gefunden",
     "EMPTY_SUBTITLE": "Versuche, deine Filter anzupassen oder schau später wieder vorbei.",
@@ -1259,6 +1439,77 @@
       "EMPTY_TITLE": "Noch keine gespeicherten Ansichten",
       "EMPTY_DESCRIPTION": "Speichere deine aktuellen Filter, um sie später schnell anzuwenden",
       "DONE_BUTTON": "Fertig"
+    }
+  },
+  "UPGRADE_DIALOG": {
+    "CLOSE_ARIA": "Dialog schließen",
+    "PER_MONTH": "/Monat",
+    "MAYBE_LATER": "Vielleicht später",
+    "LOADING": "Lädt...",
+    "SUBSCRIBE_NOW": "Jetzt abonnieren",
+    "TRUST_MESSAGE": "Jederzeit kündbar. Sichere Zahlung über Stripe.",
+    "ERRORS": {
+      "ALREADY_PREMIUM": "Du bist bereits Premium‑Abonnent.",
+      "CHECKOUT_FAILED": "Checkout konnte nicht gestartet werden. Bitte versuche es erneut."
+    },
+    "FEATURE_MESSAGES": {
+      "GENERAL": {
+        "TITLE": "Upgrade auf Premium",
+        "DESCRIPTION": "Schalte alle Premium‑Funktionen frei für das beste Gylde‑Erlebnis."
+      },
+      "UNLIMITED_MESSAGING": {
+        "TITLE": "Unbegrenzte Gespräche",
+        "DESCRIPTION": "Starte unbegrenzt Gespräche mit Mitgliedern jeder Stufe – ohne Tageslimits."
+      },
+      "CAN_MESSAGE_ANY_TIER": {
+        "TITLE": "Keine Tier‑Beschränkungen",
+        "DESCRIPTION": "Starte Gespräche mit jedem Mitglied – unabhängig von dessen Reputationsstufe."
+      },
+      "HAS_AI_ASSISTANT": {
+        "TITLE": "KI‑Assistent",
+        "DESCRIPTION": "Erhalte einen KI‑Assistenten, der dein Profil optimiert und Gesprächsstarter vorschlägt."
+      },
+      "HAS_VIRTUAL_PHONE": {
+        "TITLE": "Virtuelle Telefonnummer",
+        "DESCRIPTION": "Erhalte eine private virtuelle Nummer, um deine echte Nummer beim Dating zu schützen."
+      },
+      "PRIORITY_VISIBILITY": {
+        "TITLE": "Priorisierte Sichtbarkeit",
+        "DESCRIPTION": "Erscheine zuerst in den Suchergebnissen und erhalte mehr Matches."
+      },
+      "CAN_SEE_WHO_VIEWED_PROFILE": {
+        "TITLE": "Sieh, wer dich angesehen hat",
+        "DESCRIPTION": "Sieh, wer dein Profil angesehen hat."
+      },
+      "CAN_SEE_WHO_FAVORITED": {
+        "TITLE": "Sieh, wer dich favorisiert hat",
+        "DESCRIPTION": "Sieh, wer dich zu den Favoriten hinzugefügt hat."
+      },
+      "MAX_PHOTOS": {
+        "TITLE": "Mehr Fotos hochladen",
+        "DESCRIPTION": "Lade bis zu 20 Fotos hoch, um mehr von dir zu zeigen."
+      },
+      "CAN_ACCESS_PRIVATE_PHOTOS": {
+        "TITLE": "Private Fotos ansehen",
+        "DESCRIPTION": "Private Fotos bei deinen Verbindungen anfordern und teilen."
+      },
+      "ADVANCED_FILTERS": {
+        "TITLE": "Erweiterte Filter",
+        "DESCRIPTION": "Nutze erweiterte Filter wie Einkommen, Bildung und mehr, um dein perfektes Match zu finden."
+      },
+      "READ_RECEIPTS": {
+        "TITLE": "Lesebestätigungen",
+        "DESCRIPTION": "Sieh, wann deine Nachrichten gelesen wurden."
+      }
+    },
+    "PREMIUM_FEATURES": {
+      "PRIVATE_PHOTOS": "Private Fotos anfordern & ansehen",
+      "ADVANCED_FILTERS": "Erweiterte Suchfilter",
+      "WHO_VIEWED": "Sieh, wer dein Profil angesehen hat",
+      "WHO_FAVORITED": "Sieh, wer dich favorisiert hat",
+      "AI": "KI‑Assistent für Profil & Chat",
+      "PHONE": "Virtuelle Telefonnummer",
+      "READ_RECEIPTS": "Lesebestätigungen"
     }
   },
   "MATCHES": {

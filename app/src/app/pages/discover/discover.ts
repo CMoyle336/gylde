@@ -136,12 +136,12 @@ export class DiscoverComponent implements OnInit {
     this.discoveryService.searchProfiles(false, true); // Force refresh to show loading
   }
 
-  protected getSortLabel(): string {
+  protected getSortLabelKey(): string {
     const currentSort = this.sort();
     const option = this.sortOptions.find(
       o => o.value.field === currentSort.field && o.value.direction === currentSort.direction
     );
-    return option?.label || this.translate.instant('DISCOVER.SORT_LABEL');
+    return option?.labelKey || 'DISCOVER.SORT_LABEL';
   }
 
   protected isSortActive(sort: DiscoverySort): boolean {
