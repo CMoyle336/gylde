@@ -69,6 +69,7 @@ export interface UserProfile {
   // Founder status - first 50 members of a city/region
   isFounder?: boolean; // true if user is a founder for their city
   founderCity?: string; // The city they're a founder for (display name)
+  founderCityNormalized?: string; // Normalized city name used for tracking
   founderGrantedAt?: unknown; // When founder status was granted
   
   // NOTE: profileProgress (trust score) and subscription are stored in users/{uid}/private/data

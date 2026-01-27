@@ -86,6 +86,7 @@ export class UserProfileService {
 
     // Update local profile
     this._profile.set({
+      ...(existingProfile ?? ({} as UserProfile)),
       uid: user.uid,
       displayName: user.displayName,
       photoURL: profilePhotoURL,

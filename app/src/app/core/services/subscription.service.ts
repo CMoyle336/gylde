@@ -22,8 +22,6 @@ interface PrivateUserData {
   trust?: TrustData;
   reputation?: ReputationData;
   subscription: UserSubscription;
-  isFounder?: boolean;
-  founderCity?: string;
   updatedAt?: unknown;
 }
 
@@ -43,8 +41,6 @@ export class SubscriptionService {
   private readonly _profileProgress = signal<number>(0);
   private readonly _trustData = signal<TrustData | null>(null);
   private readonly _reputationData = signal<ReputationData | null>(null);
-  private readonly _isFounder = signal<boolean>(false);
-  private readonly _founderCity = signal<string | null>(null);
   private readonly _loading = signal(false);
   private unsubscribe: (() => void) | null = null;
   
@@ -56,8 +52,6 @@ export class SubscriptionService {
   readonly profileProgress = this._profileProgress.asReadonly();
   readonly trustData = this._trustData.asReadonly();
   readonly reputationData = this._reputationData.asReadonly();
-  readonly isFounder = this._isFounder.asReadonly();
-  readonly founderCity = this._founderCity.asReadonly();
   readonly loading = this._loading.asReadonly();
 
   readonly currentTier = computed<SubscriptionTier>(() => {
@@ -172,14 +166,11 @@ export class SubscriptionService {
           this._profileProgress.set(data.profileProgress ?? 0);
           this._trustData.set(data.trust ?? null);
           this._reputationData.set(data.reputation ?? null);
-          this._isFounder.set(data.isFounder ?? false);
-          this._founderCity.set(data.founderCity ?? null);
 
           // Keep GA user properties in sync for Remote Config targeting/segmentation
           this.analytics.setUserProperties({
             subscription_tier: newTier,
             reputation_tier: data.reputation?.tier ?? 'new',
-            is_founder: data.isFounder ?? false,
           });
         } else {
           // Private doc doesn't exist yet - default to free
@@ -187,15 +178,12 @@ export class SubscriptionService {
           this._profileProgress.set(0);
           this._trustData.set(null);
           this._reputationData.set(null);
-          this._isFounder.set(false);
-          this._founderCity.set(null);
           this.previousTier = 'free';
 
           // Keep GA user properties in sync for Remote Config targeting/segmentation
           this.analytics.setUserProperties({
             subscription_tier: 'free',
             reputation_tier: 'new',
-            is_founder: false,
           });
         }
         this._loading.set(false);

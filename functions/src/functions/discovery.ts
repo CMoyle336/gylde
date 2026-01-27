@@ -237,9 +237,8 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
 
       const profileProgressMap = new Map<string, number>();
       const reputationTierMap = new Map<string, ReputationTier>();
-      const isFounderMap = new Map<string, boolean>();
 
-      // Fetch profile progress (trust score), reputation tier, and founder status in batches of 10
+      // Fetch profile progress (trust score) and reputation tier in batches of 10
       const batchSize = 10;
       for (let i = 0; i < candidateIds.length; i += batchSize) {
         const batch = candidateIds.slice(i, i + batchSize);
@@ -252,10 +251,8 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
           const data = doc.exists ? doc.data() : {};
           const progress = data?.profileProgress ?? 0;
           const tier = (data?.reputation?.tier ?? "new") as ReputationTier;
-          const isFounder = data?.isFounder === true;
           profileProgressMap.set(batch[idx], progress);
           reputationTierMap.set(batch[idx], tier);
-          isFounderMap.set(batch[idx], isFounder);
         });
       }
 
@@ -282,7 +279,7 @@ export const searchProfiles = onCall<SearchRequest, Promise<SearchResponse>>(
         const profileProgress = profileProgressMap.get(doc.id) ?? 0;
         const reputationTier = reputationTierMap.get(doc.id) ?? "new";
         const tierRank = REPUTATION_TIER_ORDER.indexOf(reputationTier);
-        const isFounder = isFounderMap.get(doc.id) ?? data.isFounder === true;
+        const isFounder = data.isFounder === true;
 
         // Calculate distance
         let distance: number | undefined;
