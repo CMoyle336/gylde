@@ -1,0 +1,22 @@
+@if (video.isOpen) {
+  <div class="video-overlay" (click)="onOverlayClick()">
+    <div class="video-container" (click)="onContainerClick($event)">
+      <!-- Close Button -->
+      <button type="button" class="video-close" (click)="close()" aria-label="Close video">
+        <span class="material-icons-outlined">close</span>
+      </button>
+
+      <!-- Video Player -->
+      <div class="video-wrapper">
+        <video 
+          controls 
+          autoplay 
+          [src]="video.videoUrl" 
+          [poster]="video.thumbnailUrl"
+          class="video-element">
+          Your browser does not support the video tag.
+        </video>
+      </div>
+    </div>
+  </div>
+}

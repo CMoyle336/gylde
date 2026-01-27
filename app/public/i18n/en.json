@@ -1612,11 +1612,15 @@
     },
     "CHAT_INPUT": {
       "SELECTED_IMAGE_ALT": "Selected image",
+      "SELECTED_VIDEO_ALT": "Selected video",
       "REMOVE_IMAGE_ARIA": "Remove image",
+      "REMOVE_VIDEO_ARIA": "Remove video",
       "CLEAR_ALL_BUTTON": "Clear all",
       "BLOCKED_NOTICE": "You cannot send messages to this user",
       "AI_ASSIST_ARIA": "AI Assist",
       "ATTACH_IMAGES_ARIA": "Attach images",
+      "ATTACH_VIDEO_ARIA": "Attach video",
+      "ATTACH_MEDIA_ARIA": "Attach photo or video",
       "MESSAGE_PLACEHOLDER": "Type a message..."
     },
     "CONVERSATION_LIST": {
@@ -1650,7 +1654,9 @@
       "SECONDS_SUFFIX": "s",
       "OPENED_TIME": "Opened {{time}}",
       "DELETE_FOR_ME": "Delete for me",
-      "DELETE_FOR_EVERYONE": "Delete for everyone"
+      "DELETE_FOR_EVERYONE": "Delete for everyone",
+      "VIDEO_THUMBNAIL_ALT": "Video thumbnail",
+      "UPLOADING": "Uploading..."
     },
     "VIRTUAL_PHONE": {
       "LABEL": "Your Private Number",

@@ -40,6 +40,15 @@ import {
 } from '../interfaces';
 import { UserProfile } from '../interfaces/user.interface';
 
+/** Response from the uploadConversationVideo Cloud Function */
+export interface UploadVideoResponse {
+  success: boolean;
+  videoUrl?: string;
+  thumbnailUrl?: string;
+  duration?: number;
+  error?: string;
+}
+
 /** Result from the checkMessagePermission Cloud Function */
 export interface MessagePermissionResult {
   allowed: boolean;
@@ -786,6 +795,10 @@ export class MessageService {
             recipientViewedAt,
             isRecipientViewing,
             recipientViewExpired,
+            // Video fields
+            videoUrl: isDeleted ? undefined : data.videoUrl,
+            videoThumbnailUrl: isDeleted ? undefined : data.videoThumbnailUrl,
+            videoDuration: isDeleted ? undefined : data.videoDuration,
           });
         }
 
@@ -1019,6 +1032,10 @@ export class MessageService {
           recipientViewedAt,
           isRecipientViewing,
           recipientViewExpired,
+          // Video fields
+          videoUrl: isDeleted ? undefined : data.videoUrl,
+          videoThumbnailUrl: isDeleted ? undefined : data.videoThumbnailUrl,
+          videoDuration: isDeleted ? undefined : data.videoDuration,
         });
       }
 
@@ -1364,6 +1381,235 @@ export class MessageService {
         this.pendingConversationUpdate = null;
       }
     }, 200);
+  }
+
+  /**
+   * Send a video message in the active conversation
+   * @param videoFile The video file to upload
+   * @param thumbnailBlob Optional client-generated thumbnail for preview
+   */
+  async sendVideoMessage(videoFile: File, thumbnailBlob?: Blob): Promise<void> {
+    const authUser = this.authService.user();
+    const activeConversation = this._activeConversation();
+
+    if (!authUser || !activeConversation || !videoFile) return;
+
+    // Use profile photoURL from Firestore (user's chosen photo), fallback to auth photo
+    const profile = this.userProfileService.profile();
+    const currentUser = {
+      uid: authUser.uid,
+      displayName: authUser.displayName,
+      photoURL: profile?.photoURL ?? authUser.photoURL,
+    };
+
+    // Check if blocked
+    if (this._messageBlocked()) {
+      return;
+    }
+
+    // Record send time to suppress typing updates
+    this.lastMessageSentAt = Date.now();
+    
+    // Reset typing state
+    if (this.typingTimeout) {
+      clearTimeout(this.typingTimeout);
+      this.typingTimeout = null;
+    }
+    this.currentTypingState = false;
+
+    // Generate temporary ID with sequence number for strict ordering
+    const sequence = ++this.pendingMessageSequence;
+    const tempId = `pending-video-${sequence}`;
+    
+    // Use a timestamp that ensures proper ordering
+    const optimisticTimestamp = new Date(Date.now() + sequence);
+    
+    // Create temporary blob URL for immediate preview
+    const tempVideoUrl = URL.createObjectURL(videoFile);
+    let tempThumbnailUrl: string | undefined;
+    if (thumbnailBlob) {
+      tempThumbnailUrl = URL.createObjectURL(thumbnailBlob);
+    }
+    
+    // Create optimistic message for immediate UI update
+    const optimisticMessage: MessageDisplay = {
+      id: tempId,
+      content: 'Sent a video',
+      isOwn: true,
+      createdAt: optimisticTimestamp,
+      read: false,
+      type: 'video',
+      senderId: currentUser.uid,
+      senderName: currentUser.displayName,
+      senderPhoto: currentUser.photoURL,
+      pending: true,
+      videoUrl: tempVideoUrl,
+      videoThumbnailUrl: tempThumbnailUrl,
+    };
+    
+    // Add optimistic message to UI immediately
+    this._messages.update(msgs => [...msgs, optimisticMessage]);
+
+    // Send in background
+    this.sendVideoToServer(
+      activeConversation,
+      currentUser,
+      videoFile,
+      thumbnailBlob,
+      tempId,
+      tempVideoUrl,
+      tempThumbnailUrl
+    ).catch(error => {
+      console.error('Error sending video message:', error);
+      // Remove the optimistic message on error
+      this._messages.update(msgs => msgs.filter(m => m.id !== tempId));
+      // Clean up blob URLs
+      URL.revokeObjectURL(tempVideoUrl);
+      if (tempThumbnailUrl) URL.revokeObjectURL(tempThumbnailUrl);
+    });
+  }
+
+  /**
+   * Internal method to upload video and create message in Firestore
+   */
+  private async sendVideoToServer(
+    activeConversation: ConversationDisplay,
+    currentUser: { uid: string; displayName: string | null; photoURL: string | null },
+    videoFile: File,
+    thumbnailBlob: Blob | undefined,
+    tempId: string,
+    tempVideoUrl: string,
+    tempThumbnailUrl?: string
+  ): Promise<void> {
+    // Check if recipient's account is disabled
+    const otherUserId = activeConversation.otherUser?.uid;
+    if (otherUserId) {
+      const recipientDisabled = await this.isUserDisabled(otherUserId);
+      if (recipientDisabled) {
+        console.warn('Cannot send message: recipient account is disabled');
+        this._messages.update(msgs => msgs.filter(m => m.id !== tempId));
+        URL.revokeObjectURL(tempVideoUrl);
+        if (tempThumbnailUrl) URL.revokeObjectURL(tempThumbnailUrl);
+        return;
+      }
+    }
+
+    // Convert video file to base64
+    const videoBase64 = await this.fileToBase64(videoFile);
+    
+    // Convert thumbnail to base64 if provided
+    let thumbnailBase64: string | undefined;
+    if (thumbnailBlob) {
+      thumbnailBase64 = await this.blobToBase64(thumbnailBlob);
+    }
+
+    // Call the cloud function to upload video
+    const uploadFn = httpsCallable<
+      { videoData: string; mimeType: string; fileName: string; conversationId: string; thumbnailData?: string },
+      UploadVideoResponse
+    >(this.functions, 'uploadConversationVideo');
+
+    const result = await uploadFn({
+      videoData: videoBase64,
+      mimeType: videoFile.type,
+      fileName: videoFile.name,
+      conversationId: activeConversation.id,
+      thumbnailData: thumbnailBase64,
+    });
+
+    if (!result.data.success || !result.data.videoUrl) {
+      throw new Error(result.data.error || 'Failed to upload video');
+    }
+
+    // Clean up blob URLs now that real URLs are available
+    URL.revokeObjectURL(tempVideoUrl);
+    if (tempThumbnailUrl) URL.revokeObjectURL(tempThumbnailUrl);
+
+    // Update the optimistic message with uploaded URLs
+    this._messages.update(msgs => msgs.map(m => 
+      m.id === tempId ? { 
+        ...m, 
+        videoUrl: result.data.videoUrl, 
+        videoThumbnailUrl: result.data.thumbnailUrl 
+      } : m
+    ));
+
+    // Create message document in Firestore
+    const messagesRef = collection(
+      this.firestore,
+      'conversations',
+      activeConversation.id,
+      'messages'
+    );
+
+    const messageData: Record<string, unknown> = {
+      conversationId: activeConversation.id,
+      senderId: currentUser.uid,
+      content: 'Sent a video',
+      createdAt: serverTimestamp(),
+      type: 'video',
+      videoUrl: result.data.videoUrl,
+      videoThumbnailUrl: result.data.thumbnailUrl,
+    };
+
+    if (result.data.duration) {
+      messageData['videoDuration'] = result.data.duration;
+    }
+
+    // Get conversation reference for metadata update
+    const conversationRef = doc(
+      this.firestore,
+      'conversations',
+      activeConversation.id
+    );
+
+    // Create the message
+    await addDoc(messagesRef, messageData);
+    
+    // Schedule conversation metadata update
+    this.scheduleConversationUpdate(
+      conversationRef,
+      '🎬 Video',
+      currentUser.uid,
+      activeConversation.otherUser.uid
+    );
+    
+    // Decrement local remaining message count
+    this.decrementRemainingMessages();
+  }
+
+  /**
+   * Convert a File to base64 string
+   */
+  private fileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        // Remove data URL prefix
+        const base64 = result.split(',')[1] || result;
+        resolve(base64);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  /**
+   * Convert a Blob to base64 string
+   */
+  private blobToBase64(blob: Blob): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        // Remove data URL prefix
+        const base64 = result.split(',')[1] || result;
+        resolve(base64);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
   }
 
   /**

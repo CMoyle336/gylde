@@ -17,6 +17,12 @@ export interface GalleryOpenEvent {
   message: MessageDisplay;
 }
 
+export interface VideoOpenEvent {
+  videoUrl: string;
+  thumbnailUrl?: string;
+  message: MessageDisplay;
+}
+
 @Component({
   selector: 'app-message-bubble',
   templateUrl: './message-bubble.html',
@@ -32,6 +38,7 @@ export class MessageBubbleComponent {
   @Input() showReadReceipts = true; // Premium feature - hide for free users
 
   @Output() openGallery = new EventEmitter<GalleryOpenEvent>();
+  @Output() openVideo = new EventEmitter<VideoOpenEvent>();
   @Output() deleteForMe = new EventEmitter<MessageDisplay>();
   @Output() deleteForEveryone = new EventEmitter<MessageDisplay>();
 
@@ -64,6 +71,19 @@ export class MessageBubbleComponent {
       images,
       startIndex: index,
       event,
+      message: this.message,
+    });
+  }
+
+  protected onOpenVideo(event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!this.message.videoUrl) return;
+
+    this.openVideo.emit({
+      videoUrl: this.message.videoUrl,
+      thumbnailUrl: this.message.videoThumbnailUrl,
       message: this.message,
     });
   }
