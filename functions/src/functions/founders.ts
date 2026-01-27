@@ -157,17 +157,6 @@ export async function tryGrantFounderStatus(
         founderGrantedAt: now,
       });
 
-      // Also store in private data for reputation calculations
-      transaction.set(
-        db.collection("users").doc(userId).collection("private").doc("data"),
-        {
-          isFounder: true,
-          founderCity: city,
-          founderGrantedAt: now,
-        },
-        {merge: true}
-      );
-
       logger.info(
         `Granted founder status to user ${userId} for ${city} ` +
         `(slot ${currentCount + 1}/${maxFounders})`

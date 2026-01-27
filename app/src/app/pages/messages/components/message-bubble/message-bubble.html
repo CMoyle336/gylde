@@ -1,6 +1,7 @@
 <div class="message" 
      [class.own]="message.isOwn" 
      [class.image-message]="message.type === 'image'" 
+     [class.video-message]="message.type === 'video'" 
      [class.deleted]="message.isDeletedForAll || message.isDeletedForMe" 
      [class.with-avatar]="!message.isOwn"
      [animate.enter]="message.isOwn ? 'message-enter-own' : 'message-enter'">
@@ -97,6 +98,61 @@
               }
             </div>
           }
+          <div class="message-meta">
+            <time>{{ formatMessageTime(message.createdAt) }}</time>
+            @if (message.isOwn && showReadReceipts) {
+              @if (message.pending) {
+                <span class="read-status pending">
+                  <span class="material-icons-outlined">schedule</span>
+                </span>
+              } @else {
+                <span class="read-status" [class.read]="message.read">
+                  <span class="material-icons-outlined">{{ message.read ? 'done_all' : 'done' }}</span>
+                </span>
+              }
+            }
+          </div>
+        </div>
+        <!-- Message actions menu -->
+        <button type="button" class="message-menu-btn" [matMenuTriggerFor]="messageMenu">
+          <span class="material-icons-outlined">more_vert</span>
+        </button>
+        <mat-menu #messageMenu="matMenu" class="message-actions-menu">
+          <button mat-menu-item (click)="onDeleteForMe()">
+            <span class="material-icons-outlined">delete</span>
+            <span>{{ 'MESSAGES.BUBBLE.DELETE_FOR_ME' | translate }}</span>
+          </button>
+          @if (message.isOwn) {
+            <button mat-menu-item (click)="onDeleteForEveryone()" class="delete-everyone">
+              <span class="material-icons-outlined">delete_forever</span>
+              <span>{{ 'MESSAGES.BUBBLE.DELETE_FOR_EVERYONE' | translate }}</span>
+            </button>
+          }
+        </mat-menu>
+      </div>
+    }
+    <!-- Video message -->
+    @else if (message.type === 'video' && message.videoUrl) {
+      <div class="message-wrapper">
+        <div class="video-bubble">
+          <button type="button" class="video-item" (click)="onOpenVideo($event)">
+            @if (message.videoThumbnailUrl) {
+              <img [src]="message.videoThumbnailUrl" [attr.alt]="'MESSAGES.BUBBLE.VIDEO_THUMBNAIL_ALT' | translate" loading="lazy">
+            } @else {
+              <div class="video-placeholder">
+                <span class="material-icons-outlined">videocam</span>
+              </div>
+            }
+            <div class="video-play-overlay">
+              <span class="material-icons-outlined play-icon">play_circle_filled</span>
+            </div>
+            @if (message.pending) {
+              <div class="video-uploading-overlay">
+                <span class="material-icons-outlined">cloud_upload</span>
+                <span>{{ 'MESSAGES.BUBBLE.UPLOADING' | translate }}</span>
+              </div>
+            }
+          </button>
           <div class="message-meta">
             <time>{{ formatMessageTime(message.createdAt) }}</time>
             @if (message.isOwn && showReadReceipts) {

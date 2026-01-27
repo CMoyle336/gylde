@@ -88,6 +88,7 @@
               [isLast]="isLast && pendingMessages().length === 0"
               [showReadReceipts]="showReadReceipts()"
               (openGallery)="onOpenGallery($event)"
+              (openVideo)="onOpenVideo($event)"
               (deleteForMe)="onDeleteForMe($event)"
               (deleteForEveryone)="onDeleteForEveryone($event)">
             </app-message-bubble>
@@ -102,6 +103,7 @@
               [isLast]="isLast"
               [showReadReceipts]="showReadReceipts()"
               (openGallery)="onOpenGallery($event)"
+              (openVideo)="onOpenVideo($event)"
               (deleteForMe)="onDeleteForMe($event)"
               (deleteForEveryone)="onDeleteForEveryone($event)">
             </app-message-bubble>
@@ -159,6 +161,7 @@
             [isAiPanelOpen]="isAiPanelOpen()"
             [hasAiAccess]="hasAiAccess()"
             (messageSent)="onMessageSent($event)"
+            (videoSent)="onVideoSent($event)"
             (typing)="onTyping()"
             (draftChanged)="onDraftChanged($event)"
             (aiAssistToggled)="onAiAssistToggled()">
@@ -194,6 +197,12 @@
   (closed)="onGalleryClosed()"
   (navigated)="onGalleryNavigated($event)">
 </app-image-gallery>
+
+<!-- Video Player Modal -->
+<app-video-player
+  [video]="videoPlayer()"
+  (closed)="onVideoClosed()">
+</app-video-player>
 
 <!-- Virtual Phone Settings Dialog -->
 <app-virtual-phone-settings

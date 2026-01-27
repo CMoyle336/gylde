@@ -22,6 +22,26 @@ service firebase.storage {
                    && request.resource.contentType.matches('image/.*');
     }
     
+    // Conversation videos - publicly readable (URLs are unguessable, membership checked at upload), writable by authenticated users
+    match /conversations/{conversationId}/videos/{fileName} {
+      // Anyone can read conversation videos (URLs include timestamp, conversation membership checked at upload)
+      allow read: if true;
+      // Any authenticated user can upload videos (conversation membership checked at app level)
+      allow write: if request.auth != null
+                   && request.resource.size < 100 * 1024 * 1024 // Max 100MB
+                   && request.resource.contentType.matches('video/.*');
+    }
+    
+    // Conversation video thumbnails - publicly readable (just preview images), writable by authenticated users
+    match /conversations/{conversationId}/video-thumbnails/{fileName} {
+      // Anyone can read video thumbnails (preview images, not sensitive)
+      allow read: if true;
+      // Any authenticated user can upload thumbnails (created by cloud function)
+      allow write: if request.auth != null
+                   && request.resource.size < 1 * 1024 * 1024 // Max 1MB
+                   && request.resource.contentType.matches('image/.*');
+    }
+    
     // Default: deny all other access
     match /{allPaths=**} {
       allow read, write: if false;

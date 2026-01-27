@@ -84,9 +84,6 @@ export interface ReputationData {
   /** Number of new conversations started with higher-tier users today */
   higherTierConversationsToday: number;
   lastConversationDate: string; // YYYY-MM-DD for reset detection
-
-  // Founder status - grants special privileges
-  isFounder?: boolean;
 }
 
 /**

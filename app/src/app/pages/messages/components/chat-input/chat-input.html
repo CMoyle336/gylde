@@ -1,4 +1,31 @@
 <footer class="chat-input-area">
+  <!-- Video Preview -->
+  @if (selectedVideo(); as video) {
+    <div class="video-preview-row">
+      <div class="video-preview">
+        <div class="preview-item video">
+          @if (video.thumbnailUrl) {
+            <img [src]="video.thumbnailUrl" [attr.alt]="'MESSAGES.CHAT_INPUT.SELECTED_VIDEO_ALT' | translate">
+          } @else {
+            <div class="video-placeholder">
+              <span class="material-icons-outlined">videocam</span>
+            </div>
+          }
+          <div class="video-overlay">
+            <span class="material-icons-outlined play-icon">play_circle</span>
+          </div>
+          <button type="button" class="remove-preview" (click)="removeVideo()" [attr.aria-label]="'MESSAGES.CHAT_INPUT.REMOVE_VIDEO_ARIA' | translate">
+            <span class="material-icons-outlined">close</span>
+          </button>
+        </div>
+        <div class="video-info">
+          <span class="video-name">{{ video.file.name }}</span>
+          <span class="video-size">{{ formatFileSize(video.file.size) }}</span>
+        </div>
+      </div>
+    </div>
+  }
+
   <!-- Image Previews (inline with input) -->
   @if (selectedImages().length > 0) {
     <div class="image-preview-row">
@@ -40,14 +67,14 @@
     </div>
   } @else {
     <div class="chat-input">
-      <!-- Hidden file input -->
+      <!-- Hidden file input for both images and videos -->
       <input 
-        #fileInput
+        #mediaInput
         type="file" 
-        accept="image/*" 
+        accept="image/*,video/mp4,video/webm,video/quicktime" 
         multiple 
         hidden 
-        (change)="onFilesSelected($event)">
+        (change)="onMediaSelected($event)">
       
       <!-- AI Assist button -->
       <button 
@@ -60,13 +87,13 @@
         <span class="material-icons-outlined">auto_awesome</span>
       </button>
       
-      <!-- Image upload button -->
+      <!-- Combined media upload button (images + videos) -->
       <button 
         type="button" 
         class="attach-btn"
-        (click)="openImagePicker()"
-        [attr.aria-label]="'MESSAGES.CHAT_INPUT.ATTACH_IMAGES_ARIA' | translate">
-        <span class="material-icons-outlined">image</span>
+        (click)="openMediaPicker()"
+        [attr.aria-label]="'MESSAGES.CHAT_INPUT.ATTACH_MEDIA_ARIA' | translate">
+        <span class="material-icons-outlined">attach_file</span>
       </button>
 
       <input

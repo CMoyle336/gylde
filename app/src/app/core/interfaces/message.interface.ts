@@ -9,7 +9,7 @@ export interface Message {
   senderId: string;
   content: string;
   createdAt: Date | FieldValue;
-  type: 'text' | 'image' | 'system';
+  type: 'text' | 'image' | 'video' | 'system';
   imageUrls?: string[]; // For image messages
   deletedFor?: string[]; // User IDs who deleted this message for themselves
   deletedForAll?: boolean; // Sender deleted for everyone
@@ -19,6 +19,10 @@ export interface Message {
   imageViewedBy?: { // Track when each user viewed the timed image
     [uid: string]: Date | FieldValue;
   };
+  // Video message fields
+  videoUrl?: string; // URL of the uploaded video
+  videoThumbnailUrl?: string; // URL of the video thumbnail
+  videoDuration?: number; // Duration in seconds
 }
 
 /**
@@ -90,7 +94,7 @@ export interface MessageDisplay {
   isOwn: boolean;
   createdAt: Date;
   read: boolean;
-  type: 'text' | 'image' | 'system';
+  type: 'text' | 'image' | 'video' | 'system';
   imageUrls?: string[]; // For image messages
   isDeletedForAll?: boolean; // Show "message was deleted" placeholder
   isDeletedForMe?: boolean; // Show "You deleted this message" placeholder
@@ -108,4 +112,8 @@ export interface MessageDisplay {
   recipientViewExpired?: boolean; // True if recipient's timer has expired
   // Optimistic UI state
   pending?: boolean; // True if message is being sent (not yet confirmed by server)
+  // Video message fields
+  videoUrl?: string; // URL of the uploaded video
+  videoThumbnailUrl?: string; // URL of the video thumbnail
+  videoDuration?: number; // Duration in seconds
 }

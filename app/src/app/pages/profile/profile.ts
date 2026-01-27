@@ -162,9 +162,9 @@ export class ProfileComponent implements OnInit, OnDestroy {
   // Reputation data from subscription service
   protected readonly reputationData = this.subscriptionService.reputationData;
 
-  // Founder status
-  protected readonly isFounder = this.subscriptionService.isFounder;
-  protected readonly founderCity = this.subscriptionService.founderCity;
+  // Founder status (source of truth: users/{uid})
+  protected readonly isFounder = computed(() => this.profile()?.isFounder === true);
+  protected readonly founderCity = computed(() => this.profile()?.founderCity ?? null);
 
   // Reputation tier for display
   protected readonly reputationTier = computed<ReputationTier>(() => {

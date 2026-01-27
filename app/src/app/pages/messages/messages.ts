@@ -38,10 +38,14 @@ import {
   MessageBubbleComponent,
   ChatInputComponent,
   ImageGalleryComponent,
+  VideoPlayerComponent,
   VirtualPhoneSettingsComponent,
   GalleryState,
   GalleryOpenEvent,
+  VideoPlayerState,
+  VideoOpenEvent,
   SendMessageEvent,
+  SendVideoEvent,
 } from './components';
 
 @Component({
@@ -59,6 +63,7 @@ import {
     MessageBubbleComponent,
     ChatInputComponent,
     ImageGalleryComponent,
+    VideoPlayerComponent,
     VirtualPhoneSettingsComponent,
   ],
 })
@@ -92,6 +97,12 @@ export class MessagesComponent implements OnInit, OnDestroy, AfterViewInit {
     currentIndex: 0,
   });
   protected readonly galleryCountdown = signal<number | null>(null);
+  
+  // Video player state
+  protected readonly videoPlayer = signal<VideoPlayerState>({
+    isOpen: false,
+    videoUrl: '',
+  });
   protected readonly currentDraft = signal<string>('');
   protected readonly senderCountdowns = signal<Map<string, number>>(new Map());
   protected readonly recipientCountdowns = signal<Map<string, number>>(new Map());
@@ -822,6 +833,13 @@ export class MessagesComponent implements OnInit, OnDestroy, AfterViewInit {
     this.currentDraft.set(''); // Clear draft after sending
   }
 
+  protected onVideoSent(event: SendVideoEvent): void {
+    // Track video sent
+    this.analytics.trackMessageSent(true, 0);
+    
+    this.messageService.sendVideoMessage(event.videoFile, event.thumbnailBlob);
+  }
+
   protected onTyping(): void {
     this.messageService.setTyping(true);
   }
@@ -903,6 +921,27 @@ export class MessagesComponent implements OnInit, OnDestroy, AfterViewInit {
 
   protected onGalleryNavigated(index: number): void {
     this.gallery.update(g => ({ ...g, currentIndex: index }));
+  }
+
+  // ============================================
+  // VIDEO PLAYER HANDLERS
+  // ============================================
+
+  protected onOpenVideo(event: VideoOpenEvent): void {
+    const { videoUrl, thumbnailUrl, message } = event;
+
+    if (!videoUrl) return;
+
+    this.videoPlayer.set({
+      isOpen: true,
+      videoUrl,
+      thumbnailUrl,
+      messageId: message.id,
+    });
+  }
+
+  protected onVideoClosed(): void {
+    this.videoPlayer.update(v => ({ ...v, isOpen: false }));
   }
 
   // ============================================

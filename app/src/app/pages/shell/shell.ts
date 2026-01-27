@@ -94,11 +94,11 @@ export class ShellComponent implements OnInit, OnDestroy {
     return profile?.photoURL ?? this.currentUser()?.photoURL ?? null;
   });
 
-  // Founder status
-  protected readonly isFounder = this.subscriptionService.isFounder;
+  // Founder status (source of truth: users/{uid}.isFounder)
+  protected readonly isFounder = computed(() => this.userProfileService.profile()?.isFounder === true);
   
   // Show founder report issue button (requires both founder status AND feature flag)
-  protected readonly showFounderReportIssue = computed(() => 
+  protected readonly showFounderReportIssue = computed(() =>
     this.isFounder() && this.remoteConfigService.featureReportIssue()
   );
 
@@ -166,6 +166,8 @@ export class ShellComponent implements OnInit, OnDestroy {
         profile_complete: !!profile?.onboarding?.photoDetails?.length,
         has_photos: !!(profile?.onboarding?.photoDetails?.length),
         photo_count: profile?.onboarding?.photoDetails?.length || 0,
+        language: profile?.settings?.preferences?.language || this.translateService.currentLang || 'en',
+        theme: (profile?.settings?.preferences?.theme as 'light' | 'dark' | undefined) || 'dark',
       });
     }
   }

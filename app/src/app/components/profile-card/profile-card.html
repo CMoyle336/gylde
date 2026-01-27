@@ -63,7 +63,7 @@
     @if (profile().connectionTypes?.length) {
       <div class="card-tags">
         @for (type of profile().connectionTypes!.slice(0, 2); track type) {
-          <span class="tag">{{ ('CONNECTION_TYPES.' + connectionTypeKey(type)) | translate }}</span>
+          <span class="tag">{{ connectionTypeTranslateKey(type) | translate }}</span>
         }
       </div>
     }

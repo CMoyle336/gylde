@@ -17,6 +17,7 @@ export * from "./virtual-phone";
 export * from "./payments";
 export * from "./subscriptions";
 export * from "./reputation";
+export * from "./videos";
 export {submitFounderIssue} from "./founders";
 
 // Future function modules:

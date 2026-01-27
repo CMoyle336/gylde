@@ -4,6 +4,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TranslateModule } from '@ngx-translate/core';
 import { ReputationTier, shouldShowPublicBadge } from '../../core/interfaces';
+import { ALL_CONNECTION_TYPES } from '../../core/constants/connection-types';
 import { ReputationBadgeComponent } from '../reputation-badge';
 import { FounderBadgeComponent } from '../founder-badge';
 
@@ -60,6 +61,14 @@ export class ProfileCardComponent {
     return this.profile().reputationTier ?? 'new';
   });
 
+  private readonly connectionTypeValueToLabelKey = new Map(
+    ALL_CONNECTION_TYPES.map((o) => [o.value, o.labelKey] as const)
+  );
+
+  private readonly connectionTypeLabelKeys = new Set(
+    ALL_CONNECTION_TYPES.map((o) => o.labelKey)
+  );
+
   protected get photoUrl(): string | null {
     const p = this.profile();
     // Use photoURL (the designated profile photo) first, fallback to first photo in array
@@ -85,20 +94,52 @@ export class ProfileCardComponent {
     this.favoriteClick.emit(this.profile());
   }
 
-  protected connectionTypeKey(type: string): string {
-    switch (type) {
+  /**
+   * Returns a full ngx-translate key for a connection type value.
+   *
+   * Most values are stored as slugs (e.g. "active-lifestyle") and have
+   * translations under `ONBOARDING.STEP_3.*` (labelKey).
+   *
+   * We also support legacy values that existed before the expanded list.
+   */
+  protected connectionTypeTranslateKey(type: string): string {
+    const raw = (type ?? '').trim();
+    if (!raw) return 'CONNECTION_TYPES.OTHER';
+
+    // If we're already passed a translation key, allow it.
+    if (raw.includes('.')) return raw;
+
+    // Normalize common storage variations
+    const normalizedValue = raw
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, '-')   // "Active lifestyle" -> "active-lifestyle"
+      .replace(/_/g, '-');    // "active_lifestyle" -> "active-lifestyle"
+
+    // Preferred: map stored value -> labelKey -> ONBOARDING.STEP_3.<labelKey>
+    const labelKeyFromValue = this.connectionTypeValueToLabelKey.get(normalizedValue);
+    if (labelKeyFromValue) return `ONBOARDING.STEP_3.${labelKeyFromValue}`;
+
+    // If we were given a labelKey already (e.g. "ACTIVE_LIFESTYLE")
+    const maybeLabelKey = raw.toUpperCase().replace(/[-\s]/g, '_');
+    if (this.connectionTypeLabelKeys.has(maybeLabelKey)) return `ONBOARDING.STEP_3.${maybeLabelKey}`;
+
+    // Legacy values (kept for older user records / seed data)
+    switch (normalizedValue) {
       case 'intentional-dating':
-        return 'INTENTIONAL_DATING';
+        return 'CONNECTION_TYPES.INTENTIONAL_DATING';
       case 'long-term':
-        return 'LONG_TERM';
+        return 'ONBOARDING.STEP_3.LONG_TERM';
       case 'mentorship':
-        return 'MENTORSHIP';
+        return 'ONBOARDING.STEP_3.MENTORSHIP';
       case 'lifestyle-aligned':
-        return 'LIFESTYLE_ALIGNED';
+        return 'CONNECTION_TYPES.LIFESTYLE_ALIGNED';
       case 'exploring':
-        return 'EXPLORING';
+        return 'CONNECTION_TYPES.EXPLORING';
+      case 'other':
+        return 'CONNECTION_TYPES.OTHER';
       default:
-        return 'OTHER';
+        return 'CONNECTION_TYPES.OTHER';
     }
   }
 

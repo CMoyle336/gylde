@@ -216,7 +216,6 @@ export async function recalculateReputation(
 
   const privateData = privateDoc.data();
   const existingReputation = privateData?.reputation as ReputationData | undefined;
-  const isFounder = privateData?.isFounder === true;
 
   const tierConfig = getTierConfig(tier);
   const now = Timestamp.now();
@@ -238,7 +237,6 @@ export async function recalculateReputation(
       (existingReputation?.higherTierConversationsToday ?? 0) :
       0,
     lastConversationDate: existingReputation?.lastConversationDate ?? today,
-    ...(isFounder ? {isFounder: true} : {}),
   };
 
   // Write to Firestore
@@ -617,9 +615,6 @@ export async function initializeReputation(userId: string): Promise<void> {
     return;
   }
 
-  // Check if user is a founder (for tracking purposes only, no reputation bonus)
-  const isFounder = privateDoc.data()?.isFounder === true;
-
   // All users start at "new" tier with score 0
   const startingTier: ReputationTier = "new";
   const startingScore = 0;
@@ -635,7 +630,6 @@ export async function initializeReputation(userId: string): Promise<void> {
     signals: getDefaultSignals(),
     higherTierConversationsToday: 0,
     lastConversationDate: today,
-    ...(isFounder ? {isFounder: true} : {}),
   };
 
   const initialMessageMetrics = getDefaultMessageMetrics();
@@ -660,7 +654,7 @@ export async function initializeReputation(userId: string): Promise<void> {
     reputationTier: startingTier,
   });
 
-  logger.info(`Reputation initialized for user ${userId} at tier: ${startingTier}${isFounder ? " (founder)" : ""}`);
+  logger.info(`Reputation initialized for user ${userId} at tier: ${startingTier}`);
 }
 
 // ============================================================================

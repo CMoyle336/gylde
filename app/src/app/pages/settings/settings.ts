@@ -296,12 +296,14 @@ export class SettingsComponent implements OnInit, OnDestroy {
     // Handle language change
     if (category === 'preferences' && key === 'language') {
       this.analytics.trackLanguageChanged(value as string);
+      this.analytics.setUserProperties({ language: value as string });
       this.translateService.use(value as string);
     }
     
     // Handle theme change tracking
     if (category === 'preferences' && key === 'theme') {
       this.analytics.trackThemeChanged(value as 'light' | 'dark');
+      this.analytics.setUserProperties({ theme: value as 'light' | 'dark' });
     }
   }
 
