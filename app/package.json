@@ -42,6 +42,7 @@
     "@veriff/js-sdk": "^2.0.0",
     "express": "^5.1.0",
     "firebase": "^12.7.0",
+    "firebase-admin": "^13.6.0",
     "intl-tel-input": "^25.15.0",
     "ngx-ui-scroll": "^4.1.0",
     "rxjs": "~7.8.0",

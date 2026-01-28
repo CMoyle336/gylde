@@ -162,6 +162,146 @@ async function processThumbnail(
     .toBuffer();
 }
 
+interface UploadFeedVideoRequest {
+  videoData: string; // Base64 encoded video data
+  mimeType: string;
+  fileName?: string;
+  thumbnailData?: string; // Client-generated thumbnail (base64)
+  visibility?: "public" | "connections" | "private"; // For content moderation
+}
+
+interface UploadFeedVideoResponse {
+  success: boolean;
+  videoUrl?: string;
+  thumbnailUrl?: string;
+  error?: string;
+}
+
+/**
+ * Callable function to upload a video for feed posts
+ */
+export const uploadFeedVideo = onCall<UploadFeedVideoRequest, Promise<UploadFeedVideoResponse>>(
+  {
+    region: "us-central1",
+    memory: "1GiB",
+    timeoutSeconds: 300,
+    maxInstances: 10,
+  },
+  async (request) => {
+    // Verify authentication
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "You must be logged in to upload videos");
+    }
+
+    const userId = request.auth.uid;
+    const {videoData, mimeType, fileName, thumbnailData} = request.data;
+
+    // Validate required fields
+    if (!videoData || !mimeType) {
+      throw new HttpsError(
+        "invalid-argument",
+        "Missing required fields: videoData, mimeType"
+      );
+    }
+
+    // Validate the video data
+    const validation = validateBase64Video(videoData, mimeType);
+    if (!validation.valid || !validation.buffer) {
+      throw new HttpsError("invalid-argument", validation.error || "Invalid video");
+    }
+
+    const videoBuffer = validation.buffer;
+
+    logger.info(`Processing feed video upload for user ${userId}`, {
+      size: `${(videoBuffer.length / 1024 / 1024).toFixed(2)}MB`,
+      mimeType,
+    });
+
+    try {
+      // Generate timestamp and file names
+      const timestamp = Date.now();
+      const randomSuffix = Math.random().toString(36).substring(2, 8);
+      const baseFileName = fileName?.replace(/\.[^/.]+$/, "") || "video";
+      const sanitizedFileName = baseFileName.replace(/[^a-zA-Z0-9_-]/g, "_");
+
+      // Determine extension from MIME type
+      let extension = "mp4";
+      if (mimeType === "video/webm") extension = "webm";
+      else if (mimeType === "video/quicktime") extension = "mov";
+
+      const videoPath = `users/${userId}/feed/${timestamp}_${randomSuffix}_${sanitizedFileName}.${extension}`;
+      const thumbnailPath = `users/${userId}/feed/${timestamp}_${randomSuffix}_${sanitizedFileName}_thumb.jpg`;
+
+      // Process thumbnail (from client data or generate placeholder)
+      const thumbnailBuffer = await processThumbnail(thumbnailData, videoBuffer);
+
+      // Upload video and thumbnail in parallel
+      const videoFile = bucket.file(videoPath);
+      const thumbnailFile = bucket.file(thumbnailPath);
+
+      await Promise.all([
+        videoFile.save(videoBuffer, {
+          metadata: {
+            contentType: mimeType,
+            metadata: {
+              uploadedBy: userId,
+              uploadedAt: new Date().toISOString(),
+              originalFileName: fileName || "unknown",
+              mediaType: "video",
+            },
+          },
+        }),
+        thumbnailFile.save(thumbnailBuffer, {
+          metadata: {
+            contentType: "image/jpeg",
+            metadata: {
+              uploadedBy: userId,
+              uploadedAt: new Date().toISOString(),
+              videoPath,
+            },
+          },
+        }),
+      ]);
+
+      // Make files publicly readable
+      await Promise.all([
+        videoFile.makePublic(),
+        thumbnailFile.makePublic(),
+      ]);
+
+      // Get download URLs
+      const emulatorHost = process.env.FIREBASE_STORAGE_EMULATOR_HOST;
+      let videoUrl: string;
+      let thumbnailUrl: string;
+
+      if (emulatorHost) {
+        const encodedVideoPath = encodeURIComponent(videoPath);
+        const encodedThumbPath = encodeURIComponent(thumbnailPath);
+        videoUrl = `http://${emulatorHost}/v0/b/${bucket.name}/o/${encodedVideoPath}?alt=media`;
+        thumbnailUrl = `http://${emulatorHost}/v0/b/${bucket.name}/o/${encodedThumbPath}?alt=media`;
+      } else {
+        videoUrl = `https://storage.googleapis.com/${bucket.name}/${videoPath}`;
+        thumbnailUrl = `https://storage.googleapis.com/${bucket.name}/${thumbnailPath}`;
+      }
+
+      logger.info(`Feed video uploaded successfully for user ${userId}`, {
+        videoPath,
+        thumbnailPath,
+        size: `${(videoBuffer.length / 1024 / 1024).toFixed(2)}MB`,
+      });
+
+      return {
+        success: true,
+        videoUrl,
+        thumbnailUrl,
+      };
+    } catch (error) {
+      logger.error(`Failed to upload feed video for user ${userId}`, error);
+      throw new HttpsError("internal", "Failed to upload video. Please try again.");
+    }
+  }
+);
+
 /**
  * Callable function to upload a video to a conversation
  */

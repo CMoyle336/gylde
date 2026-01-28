@@ -1170,6 +1170,88 @@
       "SUBMIT_FAILED": "No se pudo enviar. Inténtalo de nuevo."
     }
   },
+  "FEED": {
+    "TITLE": "Feed",
+    "TITLE_ACCENT": "Social",
+    "DESCRIPTION": "Una nueva forma de conectar con tus matches. Comparte momentos, interactúa con contenido y construye relaciones más profundas.",
+    "COMING_SOON": "Próximamente",
+    "WHAT_TO_EXPECT": "Qué esperar",
+    "WHAT_TO_EXPECT_DESCRIPTION": "El feed social trae una nueva dimensión a tu experiencia en Gylde.",
+    "HOW_IT_WORKS": "Cómo funciona",
+    "STEP_1_TITLE": "Primero haz match",
+    "STEP_1_DESCRIPTION": "Conéctate con alguien a través del proceso normal de matching.",
+    "STEP_2_TITLE": "Ve su feed",
+    "STEP_2_DESCRIPTION": "Una vez conectados, puedes ver sus publicaciones y actualizaciones.",
+    "STEP_3_TITLE": "Interactúa y conecta",
+    "STEP_3_DESCRIPTION": "Da like, comenta y mantente conectado entre conversaciones.",
+    "NOTIFY_TITLE": "Sé el primero en enterarte",
+    "NOTIFY_DESCRIPTION": "Estamos trabajando duro para dar vida al feed social. Mantente atento a las notificaciones—te avisaremos cuando esté listo.",
+    "BACK_TO_DISCOVER": "Volver a Descubrir",
+    "FEATURES": {
+      "SHARE": {
+        "TITLE": "Comparte tu viaje",
+        "DESCRIPTION": "Publica actualizaciones, fotos y momentos de tu vida. Deja que tus matches vean el verdadero tú más allá de tu perfil."
+      },
+      "ENGAGE": {
+        "TITLE": "Interactúa con matches",
+        "DESCRIPTION": "Da like, comenta e interactúa con publicaciones de personas con las que te has conectado. Construye relaciones más profundas."
+      },
+      "INSPIRE": {
+        "TITLE": "Comparte lo que te inspira",
+        "DESCRIPTION": "Publica artículos, música, videos y enlaces que te importan. Muestra tus intereses e inicia conversaciones."
+      },
+      "CONNECTED": {
+        "TITLE": "Mantente conectado",
+        "DESCRIPTION": "Ve actualizaciones de personas que te gustan. Conoce lo que pasa en sus vidas entre conversaciones."
+      },
+      "PRIVACY": {
+        "TITLE": "Privacidad primero",
+        "DESCRIPTION": "Controla quién ve tus publicaciones. Comparte con todos tus matches o selecciona personas específicas para actualizaciones privadas."
+      },
+      "AUTHENTIC": {
+        "TITLE": "Contenido auténtico",
+        "DESCRIPTION": "Solo miembros verificados pueden publicar. Sin bots, sin spam—solo personas reales compartiendo momentos reales."
+      }
+    },
+    "FILTER_ALL": "Todas las publicaciones",
+    "FILTER_CONNECTIONS": "Conexiones",
+    "FILTER_PRIVATE": "Privado",
+    "VISIBILITY_PUBLIC": "Público",
+    "VISIBILITY_CONNECTIONS": "Solo conexiones",
+    "VISIBILITY_PRIVATE": "Privado",
+    "LOADING": "Cargando feed...",
+    "TRY_AGAIN": "Intentar de nuevo",
+    "EMPTY_TITLE": "Sin publicaciones aún",
+    "EMPTY_DESCRIPTION": "¡Sé el primero en compartir algo con tu comunidad!",
+    "LOAD_MORE": "Cargar más",
+    "DELETING": "Eliminando...",
+    "COMPOSER_PLACEHOLDER": "¿Qué tienes en mente?",
+    "POST_BUTTON": "Publicar",
+    "REMOVE_PHOTO": "Eliminar foto",
+    "VISIBILITY": {
+      "PUBLIC": "Público",
+      "VERIFIED": "Solo verificados",
+      "TRUSTED": "Confiables+",
+      "CONNECTIONS": "Conexiones",
+      "PRIVATE": "Privado"
+    },
+    "ANONYMOUS_USER": "Anónimo",
+    "POST_OPTIONS": "Opciones de publicación",
+    "DELETE_POST": "Eliminar publicación",
+    "REPORT_POST": "Reportar publicación",
+    "LIKE": "Me gusta",
+    "UNLIKE": "Ya no me gusta",
+    "COMMENT": "Comentar",
+    "COMMENT_SINGULAR": "comentario",
+    "COMMENT_PLURAL": "comentarios",
+    "COMMENTS_TITLE": "Comentarios",
+    "NO_COMMENTS": "Sin comentarios aún",
+    "BE_FIRST_COMMENT": "¡Sé el primero en comentar!",
+    "ADD_COMMENT_PLACEHOLDER": "Añadir un comentario...",
+    "COMMENT_OPTIONS": "Opciones de comentario",
+    "DELETE_COMMENT": "Eliminar comentario",
+    "LOAD_MORE_COMMENTS": "Cargar más comentarios"
+  },
   "SETTINGS": {
     "TITLE": "Configuración",
     "SUBTITLE": "Administra tu cuenta, privacidad y preferencias",

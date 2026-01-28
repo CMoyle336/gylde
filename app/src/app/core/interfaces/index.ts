@@ -14,3 +14,4 @@ export * from './trust.interface';
 export * from './ai-chat.interface';
 export * from './photo.interface';
 export * from './reputation.interface';
+export * from './post.interface';

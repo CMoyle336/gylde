@@ -326,6 +326,101 @@ service cloud.firestore {
     }
 
     // ============================================
+    // POSTS COLLECTION (Social Feed)
+    // ============================================
+    match /posts/{postId} {
+      // Authenticated users can read posts
+      // (visibility/blocking filters applied at query level and client-side)
+      allow read: if isAuthenticated();
+      
+      // Users can create posts for themselves
+      allow create: if isAuthenticated() 
+        && request.auth.uid == request.resource.data.authorId;
+      
+      // Authors can update their own posts
+      // Protected fields (metrics, author info) can only be modified by Cloud Functions
+      allow update: if isAuthenticated()
+        && request.auth.uid == resource.data.authorId
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+          'metrics', 'authorTier', 'authorVerified', 'regionId'
+        ]);
+      
+      // Soft delete only via Cloud Functions
+      allow delete: if false;
+      
+      // ------------------------------------------
+      // LIKES SUBCOLLECTION
+      // ------------------------------------------
+      match /likes/{userId} {
+        // Anyone can read likes
+        allow read: if isAuthenticated();
+        
+        // Users can like/unlike for themselves
+        allow create: if isOwner(userId);
+        allow delete: if isOwner(userId);
+        allow update: if false;
+      }
+      
+      // ------------------------------------------
+      // COMMENTS SUBCOLLECTION
+      // ------------------------------------------
+      match /comments/{commentId} {
+        // Authenticated users can read comments
+        allow read: if isAuthenticated();
+        
+        // Users can create comments as themselves
+        allow create: if isAuthenticated()
+          && request.auth.uid == request.resource.data.authorId;
+        
+        // Only Cloud Functions handle comment updates/deletes (soft delete)
+        allow update, delete: if false;
+      }
+      
+      // ------------------------------------------
+      // REPORTS SUBCOLLECTION
+      // ------------------------------------------
+      match /reports/{userId} {
+        // Users can read their own report
+        allow read: if isOwner(userId);
+        
+        // Writes handled by Cloud Functions
+        allow write: if false;
+      }
+    }
+
+    // ============================================
+    // FEED ITEMS SUBCOLLECTION (Home Feed Inbox)
+    // Stored in: users/{userId}/feedItems/{postId}
+    // ============================================
+    // Note: feedItems rule is in the users/{userId} section below
+    
+    // Add feedItems to users collection
+    match /users/{userId}/feedItems/{postId} {
+      // Only owner can read their feed
+      allow read: if isOwner(userId);
+      
+      // All writes handled by Cloud Functions (fanout)
+      allow write: if false;
+    }
+    
+    // ============================================
+    // PRIVATE ACCESS SUBCOLLECTION (Private Post Access)
+    // Stored in: users/{authorId}/privateAccess/{viewerId}
+    // ============================================
+    // Note: Added to users collection
+    match /users/{authorId}/privateAccess/{viewerId} {
+      // Author can see all their grants
+      // Viewer can see their own grant status
+      allow read: if isOwner(authorId) || isOwner(viewerId);
+      
+      // Author can grant/update/revoke access
+      allow create: if isOwner(authorId)
+        && request.resource.data.viewerId == viewerId;
+      allow update: if isOwner(authorId);
+      allow delete: if isOwner(authorId);
+    }
+
+    // ============================================
     // COLLECTION GROUP RULES
     // For queries that span multiple subcollections
     // ============================================

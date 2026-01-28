@@ -1,107 +1,192 @@
-<div class="feed-page">
-  <!-- Hero Section -->
-  <div class="hero-section">
-    <div class="coming-soon-badge">
-      <span class="material-icons-outlined">schedule</span>
-      Coming Soon
-    </div>
-    <h1 class="hero-title">Social <span class="text-accent">Feed</span></h1>
-    <p class="hero-description">
-      A new way to connect with your matches. Share moments, engage with content, 
-      and build deeper relationships beyond just messaging.
-    </p>
+@if (!configInitialized()) {
+  <!-- Loading state while config initializes -->
+  <div class="config-loading-state">
+    <mat-spinner diameter="40"></mat-spinner>
   </div>
-
-  <!-- Preview Section -->
-  <div class="preview-section">
-    <div class="preview-mockup">
-      <div class="mockup-header">
-        <div class="mockup-avatar"></div>
-        <div class="mockup-meta">
-          <div class="mockup-name"></div>
-          <div class="mockup-time"></div>
-        </div>
-      </div>
-      <div class="mockup-content">
-        <div class="mockup-image"></div>
-      </div>
-      <div class="mockup-actions">
-        <div class="mockup-action">
-          <span class="material-icons-outlined">favorite_border</span>
-        </div>
-        <div class="mockup-action">
-          <span class="material-icons-outlined">chat_bubble_outline</span>
-        </div>
-        <div class="mockup-action">
-          <span class="material-icons-outlined">bookmark_border</span>
-        </div>
-      </div>
+} @else if (feedEnabled()) {
+  <!-- Actual Feed View -->
+  <div class="feed-container">
+    <!-- Feed Header with Composer and Filter -->
+    <div class="feed-header">
+      <h2 class="feed-title">{{ 'FEED.TITLE' | translate }}</h2>
+      
+      <!-- Filter Dropdown -->
+      <button type="button" [matMenuTriggerFor]="filterMenu" class="filter-button">
+        @for (option of filterOptions; track option.value) {
+          @if (option.value === activeFilter()) {
+            <mat-icon>{{ option.icon }}</mat-icon>
+            <span class="filter-label">{{ option.labelKey | translate }}</span>
+          }
+        }
+        <mat-icon class="dropdown-icon">expand_more</mat-icon>
+      </button>
+      
+      <mat-menu #filterMenu="matMenu">
+        @for (option of filterOptions; track option.value) {
+          <button 
+            mat-menu-item 
+            (click)="onFilterChange(option.value)"
+            [class.active]="option.value === activeFilter()">
+            <mat-icon>{{ option.icon }}</mat-icon>
+            <span>{{ option.labelKey | translate }}</span>
+          </button>
+        }
+      </mat-menu>
     </div>
-  </div>
 
-  <!-- Features Section -->
-  <div class="features-section">
-    <h2 class="section-title">What to Expect</h2>
-    <p class="section-description">
-      The social feed brings a new dimension to your Gylde experience.
-    </p>
+    <!-- Post Composer -->
+    <app-post-composer (postCreated)="onPostCreated()" />
 
-    <div class="features-grid">
-      @for (feature of features; track feature.title) {
-        <div class="feature-card">
-          <div class="feature-icon">
-            <span class="material-icons-outlined">{{ feature.icon }}</span>
+    <!-- Feed Content -->
+    <div class="feed-content">
+      @if (loading()) {
+        <div class="loading-state">
+          <mat-spinner diameter="40"></mat-spinner>
+          <p>{{ 'FEED.LOADING' | translate }}</p>
+        </div>
+      } @else if (error()) {
+        <div class="error-state">
+          <mat-icon>error_outline</mat-icon>
+          <p>{{ error() }}</p>
+          <button mat-stroked-button (click)="refresh()">
+            {{ 'FEED.TRY_AGAIN' | translate }}
+          </button>
+        </div>
+      } @else if (isEmpty()) {
+        <div class="empty-state">
+          <mat-icon>dynamic_feed</mat-icon>
+          <h3>{{ 'FEED.EMPTY_TITLE' | translate }}</h3>
+          <p>{{ 'FEED.EMPTY_DESCRIPTION' | translate }}</p>
+        </div>
+      } @else {
+        <!-- Post List -->
+        <div class="posts-list">
+          @for (post of posts(); track trackByPostId($index, post)) {
+            <app-post-card
+              [post]="post"
+              [isDeleting]="deletingPostId() === post.id"
+              (likeClick)="onLike($event)"
+              (commentClick)="onComment($event)"
+              (authorClick)="onAuthorClick($event)"
+              (deleteClick)="onDelete($event)"
+              (reportClick)="onReport($event)" />
+          }
+        </div>
+
+        <!-- Load More -->
+        @if (hasMore()) {
+          <div class="load-more-section">
+            @if (loadingMore()) {
+              <mat-spinner diameter="32"></mat-spinner>
+            } @else {
+              <button mat-stroked-button (click)="loadMore()">
+                {{ 'FEED.LOAD_MORE' | translate }}
+              </button>
+            }
           </div>
-          <h3 class="feature-title">{{ feature.title }}</h3>
-          <p class="feature-description">{{ feature.description }}</p>
-        </div>
+        }
       }
     </div>
   </div>
+} @else {
+  <!-- Coming Soon Placeholder View -->
+  <div class="feed-page">
+    <!-- Hero Section -->
+    <div class="hero-section">
+      <div class="coming-soon-badge">
+        <span class="material-icons-outlined">schedule</span>
+        {{ 'FEED.COMING_SOON' | translate }}
+      </div>
+      <h1 class="hero-title">{{ 'FEED.TITLE' | translate }} <span class="text-accent">{{ 'FEED.TITLE_ACCENT' | translate }}</span></h1>
+      <p class="hero-description">{{ 'FEED.DESCRIPTION' | translate }}</p>
+    </div>
 
-  <!-- How It Works Section -->
-  <div class="how-section">
-    <h2 class="section-title">How It Works</h2>
-    <div class="steps-container">
-      <div class="step">
-        <div class="step-number">1</div>
-        <h3>Match First</h3>
-        <p>Connect with someone through the normal matching process.</p>
-      </div>
-      <div class="step-connector"></div>
-      <div class="step">
-        <div class="step-number">2</div>
-        <h3>See Their Feed</h3>
-        <p>Once matched, you can see their posts and updates.</p>
-      </div>
-      <div class="step-connector"></div>
-      <div class="step">
-        <div class="step-number">3</div>
-        <h3>Engage & Connect</h3>
-        <p>Like, comment, and stay connected between conversations.</p>
+    <!-- Preview Section -->
+    <div class="preview-section">
+      <div class="preview-mockup">
+        <div class="mockup-header">
+          <div class="mockup-avatar"></div>
+          <div class="mockup-meta">
+            <div class="mockup-name"></div>
+            <div class="mockup-time"></div>
+          </div>
+        </div>
+        <div class="mockup-content">
+          <div class="mockup-image"></div>
+        </div>
+        <div class="mockup-actions">
+          <div class="mockup-action">
+            <span class="material-icons-outlined">favorite_border</span>
+          </div>
+          <div class="mockup-action">
+            <span class="material-icons-outlined">chat_bubble_outline</span>
+          </div>
+          <div class="mockup-action">
+            <span class="material-icons-outlined">bookmark_border</span>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- Notification Section -->
-  <div class="notify-section">
-    <div class="notify-card">
-      <span class="material-icons-outlined notify-icon">notifications_active</span>
-      <div class="notify-content">
-        <h3>Be the First to Know</h3>
-        <p>
-          We're working hard to bring the social feed to life. 
-          Keep an eye on your notifications—we'll let you know as soon as it's ready.
-        </p>
+    <!-- Features Section -->
+    <div class="features-section">
+      <h2 class="section-title">{{ 'FEED.WHAT_TO_EXPECT' | translate }}</h2>
+      <p class="section-description">{{ 'FEED.WHAT_TO_EXPECT_DESCRIPTION' | translate }}</p>
+
+      <div class="features-grid">
+        @for (feature of features; track feature.titleKey) {
+          <div class="feature-card">
+            <div class="feature-icon">
+              <span class="material-icons-outlined">{{ feature.icon }}</span>
+            </div>
+            <h3 class="feature-title">{{ feature.titleKey | translate }}</h3>
+            <p class="feature-description">{{ feature.descriptionKey | translate }}</p>
+          </div>
+        }
       </div>
     </div>
-  </div>
 
-  <!-- Back Link -->
-  <div class="back-section">
-    <a routerLink="/discover" class="back-link">
-      <span class="material-icons-outlined">arrow_back</span>
-      Back to Discover
-    </a>
+    <!-- How It Works Section -->
+    <div class="how-section">
+      <h2 class="section-title">{{ 'FEED.HOW_IT_WORKS' | translate }}</h2>
+      <div class="steps-container">
+        <div class="step">
+          <div class="step-number">1</div>
+          <h3>{{ 'FEED.STEP_1_TITLE' | translate }}</h3>
+          <p>{{ 'FEED.STEP_1_DESCRIPTION' | translate }}</p>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step">
+          <div class="step-number">2</div>
+          <h3>{{ 'FEED.STEP_2_TITLE' | translate }}</h3>
+          <p>{{ 'FEED.STEP_2_DESCRIPTION' | translate }}</p>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step">
+          <div class="step-number">3</div>
+          <h3>{{ 'FEED.STEP_3_TITLE' | translate }}</h3>
+          <p>{{ 'FEED.STEP_3_DESCRIPTION' | translate }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notification Section -->
+    <div class="notify-section">
+      <div class="notify-card">
+        <span class="material-icons-outlined notify-icon">notifications_active</span>
+        <div class="notify-content">
+          <h3>{{ 'FEED.NOTIFY_TITLE' | translate }}</h3>
+          <p>{{ 'FEED.NOTIFY_DESCRIPTION' | translate }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Back Link -->
+    <div class="back-section">
+      <a routerLink="/discover" class="back-link">
+        <span class="material-icons-outlined">arrow_back</span>
+        {{ 'FEED.BACK_TO_DISCOVER' | translate }}
+      </a>
+    </div>
   </div>
-</div>
+}

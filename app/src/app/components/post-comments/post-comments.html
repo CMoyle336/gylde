@@ -1,0 +1,206 @@
+<div class="comments-dialog">
+  <!-- Header -->
+  <header class="dialog-header">
+    <h2>{{ data.post.author.displayName || 'User' }}'s Post</h2>
+    <button 
+      type="button" 
+      mat-icon-button 
+      class="close-btn" 
+      (click)="close()"
+      [attr.aria-label]="'COMMON.CLOSE' | translate">
+      <mat-icon>close</mat-icon>
+    </button>
+  </header>
+
+  <!-- Scrollable Content Area -->
+  <div class="dialog-content">
+    <!-- Post Content -->
+    <article class="post-section">
+      <div class="post-author">
+        <div class="author-avatar-container">
+          @if (data.post.author.photoURL) {
+            <img 
+              [src]="data.post.author.photoURL" 
+              [alt]="data.post.author.displayName || 'User'" 
+              class="author-avatar"
+              #postAvatarImg
+              (error)="postAvatarImg.style.display='none'">
+          }
+          <div class="author-avatar-placeholder">
+            <mat-icon>person</mat-icon>
+          </div>
+        </div>
+        <div class="author-info">
+          <span class="author-name">
+            {{ data.post.author.displayName || ('FEED.ANONYMOUS_USER' | translate) }}
+            @if (data.post.author.reputationTier) {
+              <app-reputation-badge [tier]="$any(data.post.author.reputationTier)" mode="icon" size="small" />
+            }
+            @if (data.post.author.isVerified) {
+              <mat-icon class="verified-badge">verified</mat-icon>
+            }
+          </span>
+          <span class="post-time">{{ formatDate(data.post.createdAt) }}</span>
+        </div>
+      </div>
+
+      <!-- Post Text -->
+      @if (data.post.content.text) {
+        <p class="post-text">{{ data.post.content.text }}</p>
+      }
+
+      <!-- Post Media -->
+      @if (data.post.content.media && data.post.content.media.length > 0) {
+        @let mediaCount = data.post.content.media.length;
+        <div class="post-media" [class.single]="mediaCount === 1" [class.multi]="mediaCount > 1">
+          @for (media of data.post.content.media; track $index) {
+            <div class="media-item" [class.single-item]="mediaCount === 1">
+              @if (isVideoMedia(media)) {
+                <video 
+                  [src]="media.url" 
+                  controls 
+                  preload="metadata"
+                  playsinline
+                  class="media-video">
+                </video>
+              } @else {
+                <img 
+                  [src]="media.url" 
+                  [alt]="'Post media'" 
+                  class="media-image clickable-image"
+                  (click)="openGallery(media.url)">
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Post Stats -->
+      <div class="post-stats">
+        <span class="stat">
+          <mat-icon>favorite</mat-icon>
+          {{ data.post.likeCount }}
+        </span>
+        <span class="stat">
+          <mat-icon>chat_bubble</mat-icon>
+          {{ data.post.commentCount }}
+        </span>
+      </div>
+    </article>
+
+    <!-- Divider -->
+    <div class="section-divider"></div>
+
+    <!-- Comments Section -->
+    <section class="comments-section">
+      <h3 class="comments-heading">{{ 'FEED.COMMENTS_TITLE' | translate }}</h3>
+
+      @if (loading()) {
+        <div class="loading-state">
+          <mat-spinner diameter="32"></mat-spinner>
+        </div>
+      } @else if (comments().length === 0) {
+        <div class="empty-state">
+          <mat-icon>chat_bubble_outline</mat-icon>
+          <p>{{ 'FEED.NO_COMMENTS' | translate }}</p>
+          <span>{{ 'FEED.BE_FIRST_COMMENT' | translate }}</span>
+        </div>
+      } @else {
+        <div class="comments-list">
+          @for (comment of comments(); track comment.id) {
+            <article class="comment-item">
+              <!-- Author Avatar -->
+              <div class="comment-avatar-container">
+                @if (comment.author.photoURL) {
+                  <img 
+                    [src]="comment.author.photoURL" 
+                    [alt]="comment.author.displayName || 'User'" 
+                    class="comment-avatar"
+                    loading="lazy"
+                    #avatarImg
+                    (error)="avatarImg.style.display='none'">
+                }
+                <div class="comment-avatar-placeholder">
+                  <mat-icon>person</mat-icon>
+                </div>
+              </div>
+
+              <div class="comment-bubble">
+                <span class="comment-author">
+                  {{ comment.author.displayName || ('FEED.ANONYMOUS_USER' | translate) }}
+                  @if (comment.author.reputationTier) {
+                    <app-reputation-badge [tier]="$any(comment.author.reputationTier)" mode="icon" size="small" />
+                  }
+                </span>
+                <p class="comment-text">{{ comment.content }}</p>
+              </div>
+
+              <div class="comment-meta">
+                <span class="comment-time">{{ formatDate(comment.createdAt) }}</span>
+                @if (comment.isOwn) {
+                  <button 
+                    type="button" 
+                    mat-icon-button
+                    [matMenuTriggerFor]="commentMenu"
+                    class="comment-options"
+                    [attr.aria-label]="'FEED.COMMENT_OPTIONS' | translate">
+                    <mat-icon>more_horiz</mat-icon>
+                  </button>
+
+                  <mat-menu #commentMenu="matMenu">
+                    <button mat-menu-item (click)="deleteComment(comment)">
+                      <mat-icon>delete</mat-icon>
+                      <span>{{ 'FEED.DELETE_COMMENT' | translate }}</span>
+                    </button>
+                  </mat-menu>
+                }
+              </div>
+            </article>
+          }
+        </div>
+      }
+    </section>
+  </div>
+
+  <!-- Error Message -->
+  @if (error()) {
+    <div class="error-message">
+      <mat-icon>error</mat-icon>
+      <span>{{ error() }}</span>
+    </div>
+  }
+
+  <!-- Fixed Comment Input -->
+  <footer class="comment-input-section">
+    <div class="current-user-avatar">
+      <mat-icon>person</mat-icon>
+    </div>
+    <div class="comment-input-wrapper">
+      <input
+        type="text"
+        class="comment-input"
+        [placeholder]="'FEED.ADD_COMMENT_PLACEHOLDER' | translate"
+        [(ngModel)]="commentText"
+        [maxlength]="maxCommentLength"
+        (keydown.enter)="submitComment()">
+      
+      <button
+        type="button"
+        class="send-btn"
+        [disabled]="!canSubmit"
+        (click)="submitComment()">
+        @if (submitting()) {
+          <mat-spinner diameter="18"></mat-spinner>
+        } @else {
+          <mat-icon>send</mat-icon>
+        }
+      </button>
+    </div>
+  </footer>
+</div>
+
+<!-- Image Gallery -->
+<app-image-gallery
+  [gallery]="galleryState()"
+  (closed)="closeGallery()"
+  (navigated)="navigateGallery($event)" />

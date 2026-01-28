@@ -13,6 +13,7 @@ import * as logger from "firebase-functions/logger";
  */
 export interface RemoteConfigValues {
   virtual_phone_enabled: boolean;
+  feature_feed_enabled: boolean;
   subscription_monthly_price_cents: number;
   founder_max_per_city: number;
   premium_max_photos: number;
@@ -27,6 +28,7 @@ export interface RemoteConfigValues {
  */
 const DEFAULTS: RemoteConfigValues = {
   virtual_phone_enabled: false,
+  feature_feed_enabled: false,
   subscription_monthly_price_cents: 2499,
   founder_max_per_city: 50,
   premium_max_photos: 20,
@@ -54,6 +56,10 @@ async function fetchConfig(): Promise<RemoteConfigValues> {
       virtual_phone_enabled: parseBooleanValue(
         config.getString("virtual_phone_enabled"),
         DEFAULTS.virtual_phone_enabled
+      ),
+      feature_feed_enabled: parseBooleanValue(
+        config.getString("feature_feed_enabled"),
+        DEFAULTS.feature_feed_enabled
       ),
       subscription_monthly_price_cents: parseNumberValue(
         config.getString("subscription_monthly_price_cents"),

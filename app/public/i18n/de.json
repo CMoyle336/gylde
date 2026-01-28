@@ -1170,6 +1170,88 @@
       "SUBMIT_FAILED": "Senden fehlgeschlagen. Bitte versuche es erneut."
     }
   },
+  "FEED": {
+    "TITLE": "Sozialer",
+    "TITLE_ACCENT": "Feed",
+    "DESCRIPTION": "Eine neue Art, mit deinen Matches zu verbinden. Teile Momente, interagiere mit Inhalten und baue tiefere Beziehungen auf.",
+    "COMING_SOON": "Demnächst",
+    "WHAT_TO_EXPECT": "Was dich erwartet",
+    "WHAT_TO_EXPECT_DESCRIPTION": "Der soziale Feed bringt eine neue Dimension in dein Gylde-Erlebnis.",
+    "HOW_IT_WORKS": "So funktioniert's",
+    "STEP_1_TITLE": "Erst matchen",
+    "STEP_1_DESCRIPTION": "Verbinde dich mit jemandem durch den normalen Matching-Prozess.",
+    "STEP_2_TITLE": "Ihren Feed sehen",
+    "STEP_2_DESCRIPTION": "Nach dem Match kannst du ihre Beiträge und Updates sehen.",
+    "STEP_3_TITLE": "Interagieren & Verbinden",
+    "STEP_3_DESCRIPTION": "Like, kommentiere und bleibe zwischen Gesprächen verbunden.",
+    "NOTIFY_TITLE": "Sei der Erste, der es erfährt",
+    "NOTIFY_DESCRIPTION": "Wir arbeiten hart daran, den sozialen Feed zum Leben zu erwecken. Halte Ausschau nach Benachrichtigungen—wir lassen es dich wissen, sobald er fertig ist.",
+    "BACK_TO_DISCOVER": "Zurück zum Entdecken",
+    "FEATURES": {
+      "SHARE": {
+        "TITLE": "Teile deine Reise",
+        "DESCRIPTION": "Poste Updates, Fotos und Momente aus deinem Leben. Zeige deinen Matches das wahre du jenseits deines Profils."
+      },
+      "ENGAGE": {
+        "TITLE": "Mit Matches interagieren",
+        "DESCRIPTION": "Like, kommentiere und interagiere mit Beiträgen von Leuten, mit denen du verbunden bist. Baue tiefere Beziehungen auf."
+      },
+      "INSPIRE": {
+        "TITLE": "Teile was dich inspiriert",
+        "DESCRIPTION": "Poste Artikel, Musik, Videos und Links, die dir wichtig sind. Zeige deine Interessen und starte Gespräche."
+      },
+      "CONNECTED": {
+        "TITLE": "Bleib verbunden",
+        "DESCRIPTION": "Sieh Updates von Leuten, die du geliked hast. Erfahre, was in ihrem Leben zwischen Gesprächen passiert."
+      },
+      "PRIVACY": {
+        "TITLE": "Privatsphäre zuerst",
+        "DESCRIPTION": "Kontrolliere, wer deine Beiträge sieht. Teile mit allen Matches oder wähle bestimmte Personen für private Updates."
+      },
+      "AUTHENTIC": {
+        "TITLE": "Authentischer Inhalt",
+        "DESCRIPTION": "Nur verifizierte Mitglieder können posten. Keine Bots, kein Spam—nur echte Menschen, die echte Momente teilen."
+      }
+    },
+    "FILTER_ALL": "Alle Beiträge",
+    "FILTER_CONNECTIONS": "Verbindungen",
+    "FILTER_PRIVATE": "Privat",
+    "VISIBILITY_PUBLIC": "Öffentlich",
+    "VISIBILITY_CONNECTIONS": "Nur Verbindungen",
+    "VISIBILITY_PRIVATE": "Privat",
+    "LOADING": "Feed wird geladen...",
+    "TRY_AGAIN": "Erneut versuchen",
+    "EMPTY_TITLE": "Noch keine Beiträge",
+    "EMPTY_DESCRIPTION": "Sei der Erste, der etwas mit deiner Community teilt!",
+    "LOAD_MORE": "Mehr laden",
+    "DELETING": "Löschen...",
+    "COMPOSER_PLACEHOLDER": "Was denkst du gerade?",
+    "POST_BUTTON": "Posten",
+    "REMOVE_PHOTO": "Foto entfernen",
+    "VISIBILITY": {
+      "PUBLIC": "Öffentlich",
+      "VERIFIED": "Nur Verifizierte",
+      "TRUSTED": "Vertraut+",
+      "CONNECTIONS": "Verbindungen",
+      "PRIVATE": "Privat"
+    },
+    "ANONYMOUS_USER": "Anonym",
+    "POST_OPTIONS": "Beitragsoptionen",
+    "DELETE_POST": "Beitrag löschen",
+    "REPORT_POST": "Beitrag melden",
+    "LIKE": "Gefällt mir",
+    "UNLIKE": "Gefällt mir nicht mehr",
+    "COMMENT": "Kommentieren",
+    "COMMENT_SINGULAR": "Kommentar",
+    "COMMENT_PLURAL": "Kommentare",
+    "COMMENTS_TITLE": "Kommentare",
+    "NO_COMMENTS": "Noch keine Kommentare",
+    "BE_FIRST_COMMENT": "Sei der Erste, der kommentiert!",
+    "ADD_COMMENT_PLACEHOLDER": "Kommentar hinzufügen...",
+    "COMMENT_OPTIONS": "Kommentaroptionen",
+    "DELETE_COMMENT": "Kommentar löschen",
+    "LOAD_MORE_COMMENTS": "Mehr Kommentare laden"
+  },
   "SETTINGS": {
     "TITLE": "Einstellungen",
     "SUBTITLE": "Verwalte dein Konto, deine Privatsphäre und deine Präferenzen",

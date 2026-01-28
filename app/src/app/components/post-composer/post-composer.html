@@ -1,0 +1,120 @@
+<div class="post-composer">
+  <!-- User Avatar -->
+  <div class="composer-avatar">
+    @if (userPhoto()) {
+      <img [src]="userPhoto()" alt="" class="avatar-img">
+    } @else {
+      <div class="avatar-placeholder">
+        <mat-icon>person</mat-icon>
+      </div>
+    }
+  </div>
+
+  <!-- Composer Content -->
+  <div class="composer-content">
+    <!-- Text Input -->
+    <textarea
+      class="composer-input"
+      [placeholder]="'FEED.COMPOSER_PLACEHOLDER' | translate"
+      [value]="content()"
+      (input)="onContentChange($event)"
+      (focus)="onFocus()"
+      rows="3"
+      [attr.maxlength]="maxContentLength"
+    ></textarea>
+
+    <!-- Media Previews -->
+    @if (media().length > 0) {
+      <div class="media-previews">
+        @for (item of media(); track item.preview; let i = $index) {
+          <div class="media-preview" [class.video]="item.type === 'video'">
+            @if (item.type === 'video') {
+              <video [src]="item.preview" muted></video>
+              <div class="video-indicator">
+                <mat-icon>play_circle</mat-icon>
+              </div>
+            } @else {
+              <img [src]="item.preview" alt="">
+            }
+            <button 
+              type="button" 
+              class="remove-media-btn" 
+              (click)="removeMedia(i)"
+              [attr.aria-label]="'FEED.REMOVE_MEDIA' | translate">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Error Message -->
+    @if (error()) {
+      <div class="error-message">
+        <mat-icon>error</mat-icon>
+        <span>{{ error() }}</span>
+      </div>
+    }
+
+    <!-- Composer Actions -->
+    <div class="composer-actions">
+      <div class="action-buttons">
+        <!-- Media Upload (Photos & Videos) -->
+        <label class="action-btn" [class.disabled]="media().length >= maxMedia">
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/jpg,video/mp4,video/webm,video/quicktime"
+            multiple
+            [disabled]="media().length >= maxMedia"
+            (change)="onMediaSelect($event)"
+            class="file-input">
+          <mat-icon>photo_library</mat-icon>
+        </label>
+
+        <!-- Visibility Selector -->
+        <button 
+          type="button" 
+          class="action-btn visibility-btn"
+          [matMenuTriggerFor]="visibilityMenu">
+          <mat-icon>{{ selectedVisibility().icon }}</mat-icon>
+          <span class="visibility-label">{{ selectedVisibility().labelKey | translate }}</span>
+          <mat-icon class="dropdown-icon">arrow_drop_down</mat-icon>
+        </button>
+
+        <mat-menu #visibilityMenu="matMenu">
+          @for (option of visibilityOptions; track option.value) {
+            <button 
+              mat-menu-item 
+              (click)="setVisibility(option.value)"
+              [class.selected]="visibility() === option.value">
+              <mat-icon>{{ option.icon }}</mat-icon>
+              <span>{{ option.labelKey | translate }}</span>
+            </button>
+          }
+        </mat-menu>
+      </div>
+
+      <div class="submit-section">
+        <!-- Character Count -->
+        @if (content().length > 0) {
+          <span class="char-count" [class]="charCountClass()">
+            {{ remainingChars() }}
+          </span>
+        }
+
+        <!-- Submit Button -->
+        <button
+          type="button"
+          class="submit-btn"
+          [disabled]="!isValid() || creating() || uploading()"
+          (click)="createPost()">
+          @if (creating() || uploading()) {
+            <mat-spinner diameter="18"></mat-spinner>
+          } @else {
+            {{ 'FEED.POST_BUTTON' | translate }}
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

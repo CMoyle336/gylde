@@ -1,4 +1,200 @@
-/* Feed Page - Coming Soon Marketing Page */
+/* ========================================
+   Config Loading State
+   ======================================== */
+
+.config-loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  padding: 4rem 2rem;
+}
+
+/* ========================================
+   Active Feed View
+   ======================================== */
+
+.feed-container {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-height: 100%;
+}
+
+/* Feed Header */
+.feed-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0;
+}
+
+.feed-title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+/* Filter Button */
+.filter-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 20px;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.filter-button:hover {
+  border-color: var(--color-accent);
+  color: var(--color-text-primary);
+  background: var(--color-bg-elevated);
+}
+
+.filter-button mat-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  color: var(--color-accent);
+}
+
+.filter-button .filter-label {
+  color: var(--color-text-primary);
+}
+
+.filter-button .dropdown-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  margin-left: 0.125rem;
+  color: var(--color-text-tertiary);
+  transition: transform 0.15s ease;
+}
+
+.filter-button:hover .dropdown-icon {
+  color: var(--color-text-secondary);
+}
+
+/* Filter Menu */
+::ng-deep .mat-mdc-menu-panel {
+  min-width: 180px;
+}
+
+::ng-deep .mat-mdc-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+::ng-deep .mat-mdc-menu-item.active {
+  background: var(--color-accent-glow);
+}
+
+::ng-deep .mat-mdc-menu-item.active mat-icon,
+::ng-deep .mat-mdc-menu-item.active span {
+  color: var(--color-accent);
+}
+
+.feed-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.posts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Loading State */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  gap: 1rem;
+  color: var(--color-text-secondary);
+}
+
+/* Error State */
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  gap: 1rem;
+  text-align: center;
+}
+
+.error-state mat-icon {
+  font-size: 48px;
+  width: 48px;
+  height: 48px;
+  color: var(--color-error, #ef4444);
+}
+
+.error-state p {
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+/* Empty State */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+.empty-state mat-icon {
+  font-size: 64px;
+  width: 64px;
+  height: 64px;
+  color: var(--color-text-tertiary);
+  margin-bottom: 1rem;
+}
+
+.empty-state h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.empty-state p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  max-width: 300px;
+}
+
+/* Load More */
+.load-more-section {
+  display: flex;
+  justify-content: center;
+  padding: 1.5rem 0;
+}
+
+/* ========================================
+   Coming Soon Placeholder View
+   ======================================== */
 
 .feed-page {
   min-height: 100%;

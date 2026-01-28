@@ -97,6 +97,49 @@ async function syncStorageWithPhotos(
 }
 
 /**
+ * Generate a normalized regionId from onboarding data
+ * Format: <country>-<state/admin1>-<city>
+ * Example: "us-mi-detroit"
+ *
+ * Rules:
+ * - All lowercase
+ * - ASCII only (removes accents)
+ * - Underscores replace spaces
+ * - No punctuation
+ */
+function computeRegionId(onboarding: {
+  city?: string;
+  state?: string;
+  country?: string;
+} | undefined): string | null {
+  if (!onboarding?.city || !onboarding?.country) {
+    return null;
+  }
+
+  const normalize = (str: string): string => {
+    return str
+      .toLowerCase()
+      .normalize("NFD") // Decompose accented characters
+      .replace(/[\u0300-\u036f]/g, "") // Remove diacritics
+      .replace(/[^a-z0-9\s]/g, "") // Remove non-alphanumeric except spaces
+      .replace(/\s+/g, "_") // Replace spaces with underscores
+      .trim();
+  };
+
+  const country = normalize(onboarding.country);
+  const state = onboarding.state ? normalize(onboarding.state) : "";
+  const city = normalize(onboarding.city);
+
+  // For US, use state abbreviation pattern
+  // For other countries, may not have state
+  if (state) {
+    return `${country}-${state}-${city}`;
+  }
+
+  return `${country}-${city}`;
+}
+
+/**
  * Generate a geohash for a lat/lng coordinate
  */
 function encodeGeohash(latitude: number, longitude: number, precision = 9): string {
@@ -247,10 +290,13 @@ function calculateDenormalizedFields(data: FirebaseFirestore.DocumentData) {
     encodeGeohash(location.latitude, location.longitude, 9) :
     null;
 
+  // RegionId for feed queries (e.g., "us-mi-detroit")
+  const regionId = computeRegionId(data.onboarding);
+
   // Note: profileProgress is stored ONLY in users/{uid}/private/data for security
   // It is not written to the public user document
 
-  return {isSearchable, identityVerified, sortableLastActive, geohash};
+  return {isSearchable, identityVerified, sortableLastActive, geohash, regionId};
 }
 
 /**
@@ -271,16 +317,21 @@ export const onUserCreated = onDocumentCreated(
       return;
     }
 
-    const {isSearchable, identityVerified, sortableLastActive, geohash} = calculateDenormalizedFields(data);
+    const {isSearchable, identityVerified, sortableLastActive, geohash, regionId} = calculateDenormalizedFields(data);
     const trustData = calculateTrustData(data);
 
     // Update public denormalized fields on user document
-    await db.collection("users").doc(userId).update({
+    // Only include regionId if it's defined (Firestore doesn't accept undefined)
+    const publicFields: Record<string, unknown> = {
       isSearchable,
       identityVerified,
       sortableLastActive,
       geohash,
-    });
+    };
+    if (regionId) {
+      publicFields.regionId = regionId;
+    }
+    await db.collection("users").doc(userId).update(publicFields);
 
     // Store sensitive data in private subcollection (only user can read, only functions can write)
     await db.collection("users").doc(userId).collection("private").doc("data").set({
@@ -358,6 +409,7 @@ export const onUserUpdated = onDocumentUpdated(
       identityVerified: afterData.identityVerified,
       sortableLastActive: afterData.sortableLastActive,
       geohash: afterData.geohash,
+      regionId: afterData.regionId,
     };
 
     // Determine what needs to be updated on public document
@@ -382,6 +434,13 @@ export const onUserUpdated = onDocumentUpdated(
     // Check geohash
     if (expected.geohash !== current.geohash) {
       publicUpdates.geohash = expected.geohash;
+    }
+
+    // Check regionId
+    if (expected.regionId !== current.regionId) {
+      if (expected.regionId) {
+        publicUpdates.regionId = expected.regionId;
+      }
     }
 
     // Update public document if there are changes

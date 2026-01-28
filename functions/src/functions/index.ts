@@ -18,6 +18,7 @@ export * from "./payments";
 export * from "./subscriptions";
 export * from "./reputation";
 export * from "./videos";
+export * from "./feed";
 export {submitFounderIssue} from "./founders";
 
 // Future function modules:

@@ -391,6 +391,24 @@ mat-progress-spinner svg,
   background: #ffffff !important;
 }
 
+/* Comments dialog panel */
+.comments-dialog-panel .mat-mdc-dialog-container {
+  --mdc-dialog-container-color: var(--color-bg-secondary);
+  border-radius: 16px !important;
+}
+
+.comments-dialog-panel .mat-mdc-dialog-surface {
+  background: var(--color-bg-secondary) !important;
+  border-radius: 16px !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+
+[data-theme="light"] .comments-dialog-panel .mat-mdc-dialog-container,
+[data-theme="light"] .comments-dialog-panel .mat-mdc-dialog-surface {
+  --mdc-dialog-container-color: #ffffff;
+  background: #ffffff !important;
+}
+
 /* ============================================
    SIDENAV Z-INDEX FIX
    Ensure sidenav stays behind dialog overlays

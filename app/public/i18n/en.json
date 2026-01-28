@@ -1170,6 +1170,88 @@
       "SUBMIT_FAILED": "Failed to submit issue. Please try again."
     }
   },
+  "FEED": {
+    "TITLE": "Social",
+    "TITLE_ACCENT": "Feed",
+    "DESCRIPTION": "A new way to connect with your matches. Share moments, engage with content, and build deeper relationships beyond just messaging.",
+    "COMING_SOON": "Coming Soon",
+    "WHAT_TO_EXPECT": "What to Expect",
+    "WHAT_TO_EXPECT_DESCRIPTION": "The social feed brings a new dimension to your Gylde experience.",
+    "HOW_IT_WORKS": "How It Works",
+    "STEP_1_TITLE": "Match First",
+    "STEP_1_DESCRIPTION": "Connect with someone through the normal matching process.",
+    "STEP_2_TITLE": "See Their Feed",
+    "STEP_2_DESCRIPTION": "Once matched, you can see their posts and updates.",
+    "STEP_3_TITLE": "Engage & Connect",
+    "STEP_3_DESCRIPTION": "Like, comment, and stay connected between conversations.",
+    "NOTIFY_TITLE": "Be the First to Know",
+    "NOTIFY_DESCRIPTION": "We're working hard to bring the social feed to life. Keep an eye on your notifications—we'll let you know as soon as it's ready.",
+    "BACK_TO_DISCOVER": "Back to Discover",
+    "FEATURES": {
+      "SHARE": {
+        "TITLE": "Share Your Journey",
+        "DESCRIPTION": "Post updates, photos, and moments from your life. Let your matches see the real you beyond your profile."
+      },
+      "ENGAGE": {
+        "TITLE": "Engage With Matches",
+        "DESCRIPTION": "Like, comment, and interact with posts from people you've connected with. Build deeper relationships."
+      },
+      "INSPIRE": {
+        "TITLE": "Share What Inspires You",
+        "DESCRIPTION": "Post articles, music, videos, and links that matter to you. Show your interests and spark conversations."
+      },
+      "CONNECTED": {
+        "TITLE": "Stay Connected",
+        "DESCRIPTION": "See updates from people you've liked. Know what's happening in their lives between conversations."
+      },
+      "PRIVACY": {
+        "TITLE": "Privacy First",
+        "DESCRIPTION": "Control who sees your posts. Share with all matches or select specific people for private updates."
+      },
+      "AUTHENTIC": {
+        "TITLE": "Authentic Content",
+        "DESCRIPTION": "Only verified members can post. No bots, no spam—just real people sharing real moments."
+      }
+    },
+    "FILTER_ALL": "All Posts",
+    "FILTER_CONNECTIONS": "Connections",
+    "FILTER_PRIVATE": "Private",
+    "VISIBILITY_PUBLIC": "Public",
+    "VISIBILITY_CONNECTIONS": "Connections only",
+    "VISIBILITY_PRIVATE": "Private",
+    "LOADING": "Loading feed...",
+    "TRY_AGAIN": "Try Again",
+    "EMPTY_TITLE": "No posts yet",
+    "EMPTY_DESCRIPTION": "Be the first to share something with your community!",
+    "LOAD_MORE": "Load More",
+    "DELETING": "Deleting...",
+    "COMPOSER_PLACEHOLDER": "What's on your mind?",
+    "POST_BUTTON": "Post",
+    "REMOVE_PHOTO": "Remove photo",
+    "VISIBILITY": {
+      "PUBLIC": "Public",
+      "VERIFIED": "Verified Only",
+      "TRUSTED": "Trusted+",
+      "CONNECTIONS": "Connections",
+      "PRIVATE": "Private"
+    },
+    "ANONYMOUS_USER": "Anonymous",
+    "POST_OPTIONS": "Post options",
+    "DELETE_POST": "Delete Post",
+    "REPORT_POST": "Report Post",
+    "LIKE": "Like",
+    "UNLIKE": "Unlike",
+    "COMMENT": "Comment",
+    "COMMENT_SINGULAR": "comment",
+    "COMMENT_PLURAL": "comments",
+    "COMMENTS_TITLE": "Comments",
+    "NO_COMMENTS": "No comments yet",
+    "BE_FIRST_COMMENT": "Be the first to comment!",
+    "ADD_COMMENT_PLACEHOLDER": "Add a comment...",
+    "COMMENT_OPTIONS": "Comment options",
+    "DELETE_COMMENT": "Delete Comment",
+    "LOAD_MORE_COMMENTS": "Load more comments"
+  },
   "SETTINGS": {
     "TITLE": "Settings",
     "SUBTITLE": "Manage your account, privacy, and preferences",

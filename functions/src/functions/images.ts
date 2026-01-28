@@ -25,7 +25,9 @@ import {moderateImage, detectPerson} from "../services/openai.service";
 const openaiApiKey = defineSecret("OPENAI_API_KEY");
 
 // Constants for validation
-const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/jpg"];
+const ALLOWED_IMAGE_MIME_TYPES = ["image/jpeg", "image/png", "image/jpg"];
+const ALLOWED_VIDEO_MIME_TYPES = ["video/mp4", "video/webm", "video/quicktime"];
+const ALLOWED_MIME_TYPES = [...ALLOWED_IMAGE_MIME_TYPES, ...ALLOWED_VIDEO_MIME_TYPES];
 const MAX_DIMENSION = 4096; // Max width or height
 const MIN_DIMENSION = 100; // Min width or height
 
@@ -34,6 +36,10 @@ const OPTIMIZED_MAX_WIDTH = 1200; // Max width for web-ready images
 const OPTIMIZED_MAX_HEIGHT = 1600; // Max height for web-ready images
 const JPEG_QUALITY = 85; // Quality for JPEG compression (0-100)
 const PNG_COMPRESSION = 8; // PNG compression level (0-9)
+
+// Video settings
+const MAX_VIDEO_SIZE_MB = 100; // Max video size in MB
+// const MAX_VIDEO_DURATION_SECONDS = 60; // Max video duration (1 minute) - TODO: implement duration check
 
 /** Default max photos for free users */
 const FREE_MAX_PHOTOS = 5;
@@ -103,6 +109,9 @@ interface ImageInput {
   fileName?: string;
 }
 
+/** Post visibility for feed uploads - determines content moderation rules */
+type FeedVisibility = "public" | "connections" | "private";
+
 interface UploadImageRequest {
   imageData: string; // Base64 encoded image data (single image - backwards compatible)
   mimeType: string;
@@ -112,14 +121,19 @@ interface UploadImageRequest {
 
 interface UploadImagesRequest {
   images: ImageInput[]; // Multiple images
-  folder?: string; // 'photos' | 'verification' etc.
+  folder?: string; // 'photos' | 'verification' | 'feed' etc.
+  visibility?: FeedVisibility; // For feed uploads - determines if explicit content is allowed
 }
+
+/** Media type returned from upload */
+type MediaType = "image" | "video";
 
 interface ImageResult {
   success: boolean;
   url?: string;
   error?: string;
   fileName?: string;
+  mediaType?: MediaType;
 }
 
 interface UploadImageResponse {
@@ -136,16 +150,26 @@ interface UploadImagesResponse {
 }
 
 /**
- * Validate that the data is a valid base64 image
- * @param maxFileSizeBytes - Max file size in bytes (from Remote Config)
+ * Check if a MIME type is a video
  */
-function validateBase64Image(
+function isVideoMimeType(mimeType: string): boolean {
+  return ALLOWED_VIDEO_MIME_TYPES.includes(mimeType);
+}
+
+
+/**
+ * Validate that the data is a valid base64 image or video
+ * @param maxFileSizeBytes - Max file size in bytes (from Remote Config)
+ * @param isVideo - Whether this is a video upload
+ */
+function validateBase64Media(
   base64Data: string,
   mimeType: string,
-  maxFileSizeBytes: number
+  maxFileSizeBytes: number,
+  isVideo: boolean
 ): { valid: boolean; error?: string; buffer?: Buffer } {
-  // Remove data URL prefix if present
-  const base64Clean = base64Data.replace(/^data:image\/\w+;base64,/, "");
+  // Remove data URL prefix if present (handles both image and video)
+  const base64Clean = base64Data.replace(/^data:[^;]+;base64,/, "");
 
   // Decode base64
   let buffer: Buffer;
@@ -155,11 +179,13 @@ function validateBase64Image(
     return {valid: false, error: "Invalid base64 encoding"};
   }
 
-  // Check file size
-  if (buffer.length > maxFileSizeBytes) {
+  // Check file size - different limits for images vs videos
+  const maxSize = isVideo ? MAX_VIDEO_SIZE_MB * 1024 * 1024 : maxFileSizeBytes;
+  if (buffer.length > maxSize) {
+    const maxSizeMB = maxSize / 1024 / 1024;
     return {
       valid: false,
-      error: `File size exceeds maximum of ${maxFileSizeBytes / 1024 / 1024}MB`,
+      error: `File size exceeds maximum of ${maxSizeMB}MB`,
     };
   }
 
@@ -171,7 +197,12 @@ function validateBase64Image(
     };
   }
 
-  // Validate image magic bytes (file signature)
+  // For videos, we trust the MIME type (magic byte detection is complex for video containers)
+  if (isVideo) {
+    return {valid: true, buffer};
+  }
+
+  // For images, validate magic bytes (file signature)
   const isJpeg = buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
   const isPng =
     buffer[0] === 0x89 &&
@@ -192,6 +223,17 @@ function validateBase64Image(
   }
 
   return {valid: true, buffer};
+}
+
+/**
+ * @deprecated Use validateBase64Media instead
+ */
+function validateBase64Image(
+  base64Data: string,
+  mimeType: string,
+  maxFileSizeBytes: number
+): { valid: boolean; error?: string; buffer?: Buffer } {
+  return validateBase64Media(base64Data, mimeType, maxFileSizeBytes, false);
 }
 
 /**
@@ -501,7 +543,8 @@ export const uploadProfileImage = onCall<UploadImageRequest, Promise<UploadImage
 );
 
 /**
- * Process a single image - shared logic for single and batch uploads
+ * Process a single media file (image or video) - shared logic for single and batch uploads
+ * @param visibility - For feed uploads, determines if explicit content is allowed
  */
 async function processSingleImage(
   userId: string,
@@ -510,65 +553,102 @@ async function processSingleImage(
   currentPhotoCount: number,
   maxPhotos: number,
   apiKey: string | undefined,
-  maxFileSizeBytes: number
+  maxFileSizeBytes: number,
+  visibility?: FeedVisibility
 ): Promise<ImageResult> {
   const {imageData, mimeType, fileName} = image;
+  const isFeedUpload = folder === "feed";
+  const isVideo = isVideoMimeType(mimeType);
+  const mediaTypeResult: MediaType = isVideo ? "video" : "image";
 
   try {
-    // Validate the image data
-    const validation = validateBase64Image(imageData, mimeType, maxFileSizeBytes);
-    if (!validation.valid || !validation.buffer) {
-      return {success: false, error: validation.error || "Invalid image", fileName};
-    }
-
-    // Check image dimensions
-    const dimensions = getImageDimensions(validation.buffer, mimeType);
-    if (dimensions) {
-      if (dimensions.width > MAX_DIMENSION || dimensions.height > MAX_DIMENSION) {
-        return {
-          success: false,
-          error: `Image dimensions too large. Maximum: ${MAX_DIMENSION}x${MAX_DIMENSION}px`,
-          fileName,
-        };
-      }
-      if (dimensions.width < MIN_DIMENSION || dimensions.height < MIN_DIMENSION) {
-        return {
-          success: false,
-          error: `Image dimensions too small. Minimum: ${MIN_DIMENSION}x${MIN_DIMENSION}px`,
-          fileName,
-        };
-      }
-    }
-
-    // Check for duplicate image (before expensive moderation)
-    const imageHash = computeImageHash(validation.buffer);
-    const duplicateUrl = await checkForDuplicateImage(userId, imageHash, folder);
-    if (duplicateUrl) {
-      logger.info(`Duplicate image detected for user ${userId}`, {hash: imageHash, fileName});
+    // Videos are only allowed in feed uploads
+    if (isVideo && !isFeedUpload) {
       return {
         success: false,
-        error: "This image has already been uploaded. Please choose a different photo.",
+        error: "Videos can only be uploaded to the feed",
         fileName,
+        mediaType: mediaTypeResult,
       };
     }
 
-    // Content moderation using OpenAI
-    if (apiKey) {
+    // Validate the media data
+    const validation = validateBase64Media(imageData, mimeType, maxFileSizeBytes, isVideo);
+    if (!validation.valid || !validation.buffer) {
+      return {success: false, error: validation.error || "Invalid media", fileName, mediaType: mediaTypeResult};
+    }
+
+    // For images: check dimensions
+    if (!isVideo) {
+      const dimensions = getImageDimensions(validation.buffer, mimeType);
+      if (dimensions) {
+        if (dimensions.width > MAX_DIMENSION || dimensions.height > MAX_DIMENSION) {
+          return {
+            success: false,
+            error: `Image dimensions too large. Maximum: ${MAX_DIMENSION}x${MAX_DIMENSION}px`,
+            fileName,
+            mediaType: mediaTypeResult,
+          };
+        }
+        if (dimensions.width < MIN_DIMENSION || dimensions.height < MIN_DIMENSION) {
+          return {
+            success: false,
+            error: `Image dimensions too small. Minimum: ${MIN_DIMENSION}x${MIN_DIMENSION}px`,
+            fileName,
+            mediaType: mediaTypeResult,
+          };
+        }
+      }
+    }
+
+    // Compute hash for storage metadata (but skip duplicate check for feed uploads)
+    const mediaHash = computeImageHash(validation.buffer);
+
+    // Check for duplicate - skip for feed uploads (users can repost same media)
+    if (!isFeedUpload) {
+      const duplicateUrl = await checkForDuplicateImage(userId, mediaHash, folder);
+      if (duplicateUrl) {
+        logger.info(`Duplicate media detected for user ${userId}`, {hash: mediaHash, fileName});
+        return {
+          success: false,
+          error: "This file has already been uploaded. Please choose a different one.",
+          fileName,
+          mediaType: mediaTypeResult,
+        };
+      }
+    }
+
+    // Content moderation using OpenAI (images only for now)
+    // TODO: Add video frame extraction for video moderation in the future
+    if (apiKey && !isVideo) {
       const moderation = await moderateImage(imageData, mimeType, apiKey);
 
-      if (moderation.flagged) {
+      // For feed uploads: explicit content is only allowed in private posts
+      // For profile photos: explicit content is never allowed
+      const allowExplicit = isFeedUpload && visibility === "private";
+
+      if (moderation.flagged && !allowExplicit) {
         logger.warn(`Image rejected for user ${userId} - inappropriate content`, {
           categories: moderation.categories,
           fileName,
+          folder,
+          visibility,
         });
+
+        // Different error message for feed uploads
+        const errorMessage = isFeedUpload
+          ? "Explicit content is only allowed in private posts. Please change visibility to private or choose a different photo."
+          : "This image contains content that violates our community guidelines.";
+
         return {
           success: false,
-          error: "This image contains content that violates our community guidelines.",
+          error: errorMessage,
           fileName,
+          mediaType: mediaTypeResult,
         };
       }
 
-      // Person detection - ensure the image contains a real person
+      // Person detection - ensure the image contains a real person (profile photos only)
       if (folder === "photos") {
         const personCheck = await detectPerson(imageData, mimeType, apiKey);
 
@@ -578,36 +658,65 @@ async function processSingleImage(
             success: false,
             error: "Profile photos must contain a person. Please upload a photo of yourself.",
             fileName,
+            mediaType: mediaTypeResult,
           };
         }
       }
     }
 
-    // Optimize image for web delivery
-    const optimized = await optimizeImage(validation.buffer, mimeType);
-    const optimizedBuffer = optimized.buffer;
-    const optimizedMimeType = optimized.mimeType;
+    // Process the media for upload
+    let uploadBuffer: Buffer;
+    let uploadMimeType: string;
+    let extension: string;
+
+    if (isVideo) {
+      // Videos are uploaded as-is (no optimization for now)
+      // TODO: Consider adding video transcoding/compression in the future
+      uploadBuffer = validation.buffer;
+      uploadMimeType = mimeType;
+      
+      // Determine extension from MIME type
+      switch (mimeType) {
+        case "video/mp4":
+          extension = "mp4";
+          break;
+        case "video/webm":
+          extension = "webm";
+          break;
+        case "video/quicktime":
+          extension = "mov";
+          break;
+        default:
+          extension = "mp4";
+      }
+    } else {
+      // Optimize image for web delivery
+      const optimized = await optimizeImage(validation.buffer, mimeType);
+      uploadBuffer = optimized.buffer;
+      uploadMimeType = optimized.mimeType;
+      extension = uploadMimeType === "image/png" ? "png" : "jpg";
+    }
 
     // Generate unique file path
     const timestamp = Date.now();
     const randomSuffix = Math.random().toString(36).substring(2, 8);
-    const extension = optimizedMimeType === "image/png" ? "png" : "jpg";
-    const baseFileName = fileName?.replace(/\.[^/.]+$/, "") || "image";
+    const baseFileName = fileName?.replace(/\.[^/.]+$/, "") || (isVideo ? "video" : "image");
     const sanitizedFileName = baseFileName.replace(/[^a-zA-Z0-9_-]/g, "_");
     const filePath = `users/${userId}/${folder}/${timestamp}_${randomSuffix}_${sanitizedFileName}.${extension}`;
 
     // Upload to Firebase Storage
     const file = bucket.file(filePath);
-    await file.save(optimizedBuffer, {
+    await file.save(uploadBuffer, {
       metadata: {
-        contentType: optimizedMimeType,
+        contentType: uploadMimeType,
         metadata: {
           uploadedBy: userId,
           uploadedAt: new Date().toISOString(),
           originalFileName: fileName || "unknown",
           originalSize: validation.buffer.length.toString(),
-          optimizedSize: optimizedBuffer.length.toString(),
-          imageHash, // Store hash for duplicate detection
+          optimizedSize: uploadBuffer.length.toString(),
+          mediaHash, // Store hash for duplicate detection
+          mediaType: mediaTypeResult,
         },
       },
     });
@@ -626,17 +735,18 @@ async function processSingleImage(
       downloadUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
     }
 
-    logger.info(`Image uploaded successfully for user ${userId}`, {
+    const sizeMB = (validation.buffer.length / 1024 / 1024).toFixed(2);
+    logger.info(`${isVideo ? "Video" : "Image"} uploaded successfully for user ${userId}`, {
       path: filePath,
-      originalSize: `${(validation.buffer.length / 1024).toFixed(1)}KB`,
-      optimizedSize: `${(optimizedBuffer.length / 1024).toFixed(1)}KB`,
+      originalSize: `${sizeMB}MB`,
       fileName,
+      mediaType: mediaTypeResult,
     });
 
-    return {success: true, url: downloadUrl, fileName};
+    return {success: true, url: downloadUrl, fileName, mediaType: mediaTypeResult};
   } catch (error) {
-    logger.error(`Failed to process image for user ${userId}`, {error, fileName});
-    return {success: false, error: "Failed to process image", fileName};
+    logger.error(`Failed to process ${isVideo ? "video" : "image"} for user ${userId}`, {error, fileName});
+    return {success: false, error: `Failed to process ${isVideo ? "video" : "image"}`, fileName, mediaType: mediaTypeResult};
   }
 }
 
@@ -658,7 +768,7 @@ export const uploadProfileImages = onCall<UploadImagesRequest, Promise<UploadIma
     }
 
     const userId = request.auth.uid;
-    const {images, folder = "photos"} = request.data;
+    const {images, folder = "photos", visibility} = request.data;
 
     // Validate request
     if (!images || !Array.isArray(images) || images.length === 0) {
@@ -667,6 +777,12 @@ export const uploadProfileImages = onCall<UploadImagesRequest, Promise<UploadIma
 
     if (images.length > 10) {
       throw new HttpsError("invalid-argument", "Maximum 10 images per upload batch");
+    }
+
+    // For feed uploads, visibility is required
+    const isFeedUpload = folder === "feed";
+    if (isFeedUpload && !visibility) {
+      throw new HttpsError("invalid-argument", "Visibility is required for feed uploads");
     }
 
     // Get config and user's current photo count
@@ -683,6 +799,7 @@ export const uploadProfileImages = onCall<UploadImagesRequest, Promise<UploadIma
     const maxPhotos = await getMaxPhotosForUser(isPremium);
     const availableSlots = maxPhotos - currentPhotoDetails.length;
 
+    // Photo count limit only applies to profile photos, not feed
     if (folder === "photos" && images.length > availableSlots) {
       throw new HttpsError(
         "resource-exhausted",
@@ -711,7 +828,8 @@ export const uploadProfileImages = onCall<UploadImagesRequest, Promise<UploadIma
             currentPhotoDetails.length + results.filter((r) => r.success).length + idx,
             maxPhotos,
             apiKey,
-            maxFileSizeBytes
+            maxFileSizeBytes,
+            visibility // Pass visibility for feed content moderation
           )
         )
       );

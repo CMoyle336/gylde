@@ -2,11 +2,48 @@
  * Favorite-related Cloud Functions
  */
 import {onDocumentCreated, onDocumentDeleted} from "firebase-functions/v2/firestore";
-import {FieldValue} from "firebase-admin/firestore";
+import {FieldValue, Timestamp} from "firebase-admin/firestore";
 import {db} from "../config/firebase";
 import {ActivityService, UserService, sendEmailNotification, initializeEmailService} from "../services";
 import {UserDisplayInfo} from "../types";
 import * as logger from "firebase-functions/logger";
+
+// ============================================================================
+// Feed Backfill Types & Constants
+// ============================================================================
+
+const BACKFILL_LIMIT = 10; // Number of posts to backfill on new connection
+
+interface FeedItemPreview {
+  authorName: string;
+  authorPhotoURL?: string;
+  contentExcerpt: string;
+  hasMedia: boolean;
+}
+
+interface FeedItem {
+  postId: string;
+  authorId: string;
+  createdAt: FieldValue | Timestamp;
+  insertedAt: FieldValue | Timestamp;
+  reason: "connection" | "approved" | "systemBoost";
+  visibility: "public" | "connections" | "private";
+  regionId: string;
+  preview: FeedItemPreview;
+}
+
+interface PostData {
+  id: string;
+  authorId: string;
+  createdAt: Timestamp;
+  visibility: "public" | "connections" | "private";
+  regionId: string;
+  content: {
+    type: string;
+    text?: string;
+    media?: Array<{url: string}>;
+  };
+}
 
 /**
  * Check if a user has premium subscription
@@ -191,6 +228,65 @@ async function handleUnmatch(
 }
 
 /**
+ * Backfill connection posts to a user's feedItems
+ */
+async function backfillConnectionPosts(
+  viewerId: string,
+  authorId: string,
+  authorName: string,
+  authorPhotoURL: string | null
+): Promise<void> {
+  // Get recent connection posts from author
+  const postsSnapshot = await db
+    .collection("posts")
+    .where("authorId", "==", authorId)
+    .where("visibility", "==", "connections")
+    .where("status", "==", "active")
+    .orderBy("createdAt", "desc")
+    .limit(BACKFILL_LIMIT)
+    .get();
+
+  if (postsSnapshot.empty) {
+    return;
+  }
+
+  const bulkWriter = db.bulkWriter();
+
+  for (const doc of postsSnapshot.docs) {
+    const post = doc.data() as PostData;
+    const contentExcerpt = post.content.text?.substring(0, 100) || "";
+    const hasMedia = (post.content.media?.length || 0) > 0;
+
+    const feedItem: FeedItem = {
+      postId: post.id,
+      authorId: post.authorId,
+      createdAt: post.createdAt,
+      insertedAt: FieldValue.serverTimestamp(),
+      reason: "connection",
+      visibility: post.visibility,
+      regionId: post.regionId,
+      preview: {
+        authorName,
+        ...(authorPhotoURL && {authorPhotoURL}),
+        contentExcerpt,
+        hasMedia,
+      },
+    };
+
+    const feedItemRef = db
+      .collection("users")
+      .doc(viewerId)
+      .collection("feedItems")
+      .doc(post.id);
+
+    bulkWriter.set(feedItemRef, feedItem);
+  }
+
+  await bulkWriter.close();
+  logger.info(`Backfilled ${postsSnapshot.size} connection posts for ${viewerId} from ${authorId}`);
+}
+
+/**
  * Handle match creation when mutual favorites are detected
  */
 async function handleMatch(
@@ -255,4 +351,11 @@ async function handleMatch(
     .catch((err) => logger.error("Error sending match email to fromUser:", err));
   sendEmailNotification(toUserId, "match", fromUser.displayName || "Someone", fromUserId)
     .catch((err) => logger.error("Error sending match email to toUser:", err));
+
+  // Backfill connection posts to each user's feed (async, don't block)
+  // This ensures each user sees recent connection posts from their new match
+  Promise.all([
+    backfillConnectionPosts(fromUserId, toUserId, toUser.displayName || "Someone", toUser.photoURL || null),
+    backfillConnectionPosts(toUserId, fromUserId, fromUser.displayName || "Someone", fromUser.photoURL || null),
+  ]).catch((err) => logger.error("Error backfilling connection posts:", err));
 }

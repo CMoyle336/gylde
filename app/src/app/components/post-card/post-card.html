@@ -1,0 +1,152 @@
+<article class="post-card" [class.deleting]="isDeleting()">
+  <!-- Deleting Overlay -->
+  @if (isDeleting()) {
+    <div class="deleting-overlay">
+      <mat-spinner diameter="32"></mat-spinner>
+      <span>{{ 'FEED.DELETING' | translate }}</span>
+    </div>
+  }
+  <!-- Author Header -->
+  <header class="post-header">
+    <button type="button" class="author-info" (click)="viewProfile()">
+      @if (post().author.photoURL) {
+        <img 
+          [src]="post().author.photoURL" 
+          [alt]="post().author.displayName || 'User'" 
+          class="author-avatar"
+          loading="lazy">
+      } @else {
+        <div class="author-avatar-placeholder">
+          <mat-icon>person</mat-icon>
+        </div>
+      }
+      <div class="author-details">
+        <span class="author-name">
+          {{ post().author.displayName || ('FEED.ANONYMOUS_USER' | translate) }}
+          @if (post().author.isVerified) {
+            <mat-icon class="verified-icon">verified</mat-icon>
+          }
+          @if (post().author.reputationTier) {
+            <app-reputation-badge [tier]="$any(post().author.reputationTier)" mode="icon" size="small" />
+          }
+        </span>
+        <span class="post-meta">
+          <span class="post-time">{{ formattedDate() }}</span>
+          <span class="visibility-indicator" [matTooltip]="visibilityLabel() | translate">
+            <mat-icon>{{ visibilityIcon() }}</mat-icon>
+          </span>
+        </span>
+      </div>
+    </button>
+
+    <!-- Options Menu -->
+    <button 
+      type="button" 
+      mat-icon-button
+      [matMenuTriggerFor]="postMenu"
+      class="options-btn"
+      [attr.aria-label]="'FEED.POST_OPTIONS' | translate">
+      <mat-icon>more_vert</mat-icon>
+    </button>
+
+    <mat-menu #postMenu="matMenu">
+      @if (post().isOwn) {
+        <button mat-menu-item (click)="onDelete()">
+          <mat-icon>delete</mat-icon>
+          <span>{{ 'FEED.DELETE_POST' | translate }}</span>
+        </button>
+      } @else {
+        <button mat-menu-item (click)="onReport()">
+          <mat-icon>flag</mat-icon>
+          <span>{{ 'FEED.REPORT_POST' | translate }}</span>
+        </button>
+      }
+    </mat-menu>
+  </header>
+
+  <!-- Post Content -->
+  <div class="post-content">
+    @if (post().content.text) {
+      <p class="post-text">{{ post().content.text }}</p>
+    }
+
+    <!-- Media Gallery -->
+    @if (hasMedia()) {
+      <div class="post-media" [class.single]="mediaCount() === 1" [class.multi]="mediaCount() > 1">
+        @for (media of mediaItems().slice(0, 4); track media.url; let i = $index) {
+          @let isVideo = media.type === 'video';
+          <div class="media-item" [class.has-more]="i === 3 && mediaCount() > 4" [class.video]="isVideo">
+            @if (isVideo) {
+              <!-- Inline video player -->
+              <video 
+                [src]="media.url" 
+                [poster]="media.thumbUrl || ''"
+                controls 
+                preload="metadata"
+                playsinline
+                class="video-player">
+              </video>
+            } @else {
+              <img 
+                [src]="media.url" 
+                alt="" 
+                loading="lazy" 
+                class="clickable-image"
+                (click)="openGallery(media.url)">
+            }
+            @if (i === 3 && mediaCount() > 4) {
+              <div class="more-overlay" (click)="openGallery(media.url)">
+                <span>+{{ mediaCount() - 4 }}</span>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Engagement Stats -->
+  @if (post().likeCount > 0 || post().commentCount > 0) {
+    <div class="post-stats">
+      @if (post().likeCount > 0) {
+        <span class="stat-item">
+          <mat-icon class="stat-icon">favorite</mat-icon>
+          {{ post().likeCount }}
+        </span>
+      }
+      @if (post().commentCount > 0) {
+        <button type="button" class="stat-item clickable" (click)="onComment()">
+          {{ post().commentCount }} {{ (post().commentCount === 1 ? 'FEED.COMMENT_SINGULAR' : 'FEED.COMMENT_PLURAL') | translate }}
+        </button>
+      }
+    </div>
+  }
+
+  <!-- Action Buttons -->
+  <footer class="post-actions">
+    <button 
+      type="button" 
+      class="action-btn" 
+      [class.liked]="post().isLiked"
+      (click)="onLike()"
+      [attr.aria-label]="(post().isLiked ? 'FEED.UNLIKE' : 'FEED.LIKE') | translate">
+      <mat-icon>{{ likeIcon() }}</mat-icon>
+      <span>{{ 'FEED.LIKE' | translate }}</span>
+    </button>
+
+    <button 
+      type="button" 
+      class="action-btn" 
+      (click)="onComment()"
+      [attr.aria-label]="'FEED.COMMENT' | translate">
+      <mat-icon>chat_bubble_outline</mat-icon>
+      <span>{{ 'FEED.COMMENT' | translate }}</span>
+    </button>
+  </footer>
+</article>
+
+<!-- Image Gallery -->
+<app-image-gallery
+  [gallery]="galleryState()"
+  (closed)="closeGallery()"
+  (navigated)="navigateGallery($event)" />

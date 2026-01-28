@@ -1,9 +1,9 @@
-import { Injectable, inject, signal, PLATFORM_ID } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
-import { RemoteConfig, fetchAndActivate, getValue, getBoolean, getNumber, getString } from '@angular/fire/remote-config';
+import { Injectable, inject, signal, PLATFORM_ID, makeStateKey, TransferState } from '@angular/core';
+import { isPlatformBrowser, isPlatformServer } from '@angular/common';
+import { RemoteConfig, fetchAndActivate, getString } from '@angular/fire/remote-config';
 
 /**
- * Remote Config keys and their types (client-side only)
+ * Remote Config keys and their types
  * 
  * Note: Server-only configs (reputation_*, founder_max_per_city) are not
  * included here as they should not be exposed to clients.
@@ -12,6 +12,7 @@ export interface RemoteConfigValues {
   // Feature flags
   virtual_phone_enabled: boolean;
   feature_report_issue: boolean;
+  feature_feed_enabled: boolean;
   
   // Pricing & limits (display purposes - server enforces actual limits)
   subscription_monthly_price_cents: number;
@@ -29,6 +30,7 @@ export interface RemoteConfigValues {
 const DEFAULTS: RemoteConfigValues = {
   virtual_phone_enabled: false,
   feature_report_issue: false,
+  feature_feed_enabled: true,
   subscription_monthly_price_cents: 2499,
   premium_max_photos: 20,
   image_max_size_mb: 10,
@@ -36,8 +38,15 @@ const DEFAULTS: RemoteConfigValues = {
   allowed_region_codes: ['us'],
 };
 
+// TransferState key for passing config from server to client
+const REMOTE_CONFIG_KEY = makeStateKey<RemoteConfigValues>('remoteConfig');
+const REMOTE_CONFIG_INITIALIZED_KEY = makeStateKey<boolean>('remoteConfigInitialized');
+
 /**
  * Service to manage Firebase Remote Config values
+ * 
+ * On SSR: Fetches config using Firebase Admin SDK and stores in TransferState
+ * On Client: Reads from TransferState if available, otherwise fetches via client SDK
  * 
  * Usage:
  * ```typescript
@@ -54,11 +63,13 @@ const DEFAULTS: RemoteConfigValues = {
 export class RemoteConfigService {
   private readonly remoteConfig = inject(RemoteConfig);
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly transferState = inject(TransferState);
 
   // Signals for reactive config values
   private readonly _initialized = signal(false);
   private readonly _virtualPhoneEnabled = signal(DEFAULTS.virtual_phone_enabled);
   private readonly _featureReportIssue = signal(DEFAULTS.feature_report_issue);
+  private readonly _featureFeedEnabled = signal(DEFAULTS.feature_feed_enabled);
   private readonly _subscriptionMonthlyPriceCents = signal(DEFAULTS.subscription_monthly_price_cents);
   private readonly _premiumMaxPhotos = signal(DEFAULTS.premium_max_photos);
   private readonly _imageMaxSizeMb = signal(DEFAULTS.image_max_size_mb);
@@ -69,6 +80,7 @@ export class RemoteConfigService {
   readonly initialized = this._initialized.asReadonly();
   readonly virtualPhoneEnabled = this._virtualPhoneEnabled.asReadonly();
   readonly featureReportIssue = this._featureReportIssue.asReadonly();
+  readonly featureFeedEnabled = this._featureFeedEnabled.asReadonly();
   readonly subscriptionMonthlyPriceCents = this._subscriptionMonthlyPriceCents.asReadonly();
   readonly premiumMaxPhotos = this._premiumMaxPhotos.asReadonly();
   readonly imageMaxSizeMb = this._imageMaxSizeMb.asReadonly();
@@ -80,19 +92,108 @@ export class RemoteConfigService {
   }
 
   /**
-   * Initialize Remote Config - fetches and activates latest values
+   * Initialize Remote Config
+   * - On server: Fetch via Admin SDK and store in TransferState
+   * - On client: Read from TransferState if available, otherwise fetch via client SDK
    */
   async initialize(): Promise<void> {
-    // Remote Config only works in browser
-    if (!isPlatformBrowser(this.platformId)) {
+    if (isPlatformServer(this.platformId)) {
+      await this.initializeServer();
+    } else if (isPlatformBrowser(this.platformId)) {
+      await this.initializeBrowser();
+    }
+  }
+
+  /**
+   * Server-side initialization using Firebase Admin SDK
+   */
+  private async initializeServer(): Promise<void> {
+    // Check if we have credentials available (required for Remote Config)
+    // In development, we typically don't have credentials, so skip gracefully
+    const hasCredentials = !!(
+      process.env['GOOGLE_APPLICATION_CREDENTIALS'] ||
+      process.env['FIREBASE_CONFIG'] ||
+      process.env['GCLOUD_PROJECT'] ||
+      process.env['K_SERVICE'] // Cloud Run/Cloud Functions
+    );
+
+    if (!hasCredentials) {
+      // No credentials available - use defaults silently in development
+      this.transferState.set(REMOTE_CONFIG_KEY, DEFAULTS);
+      this.transferState.set(REMOTE_CONFIG_INITIALIZED_KEY, true);
+      this._initialized.set(true);
       return;
     }
 
     try {
-      // Set default values (client-side configs only)
+      // Dynamic import firebase-admin (only available on server)
+      const adminModule = await import('firebase-admin');
+      const admin = adminModule.default || adminModule;
+      const { getRemoteConfig } = await import('firebase-admin/remote-config');
+      
+      // Initialize admin if not already initialized
+      // Check both admin.apps and admin.apps?.length for safety
+      const apps = admin.apps;
+      if (!apps || apps.length === 0) {
+        admin.initializeApp();
+      }
+
+      const remoteConfig = getRemoteConfig();
+      const template = await remoteConfig.getServerTemplate();
+      const config = template.evaluate();
+
+      const values: RemoteConfigValues = {
+        virtual_phone_enabled: this.parseBoolean(config.getString('virtual_phone_enabled'), DEFAULTS.virtual_phone_enabled),
+        feature_report_issue: this.parseBoolean(config.getString('feature_report_issue'), DEFAULTS.feature_report_issue),
+        feature_feed_enabled: this.parseBoolean(config.getString('feature_feed_enabled'), DEFAULTS.feature_feed_enabled),
+        subscription_monthly_price_cents: this.parseNumber(config.getString('subscription_monthly_price_cents'), DEFAULTS.subscription_monthly_price_cents),
+        premium_max_photos: this.parseNumber(config.getString('premium_max_photos'), DEFAULTS.premium_max_photos),
+        image_max_size_mb: this.parseNumber(config.getString('image_max_size_mb'), DEFAULTS.image_max_size_mb),
+        discover_page_size: this.parseNumber(config.getString('discover_page_size'), DEFAULTS.discover_page_size),
+        allowed_region_codes: this.parseStringArray(config.getString('allowed_region_codes'), DEFAULTS.allowed_region_codes),
+      };
+
+      // Store in TransferState for client
+      this.transferState.set(REMOTE_CONFIG_KEY, values);
+      this.transferState.set(REMOTE_CONFIG_INITIALIZED_KEY, true);
+
+      // Update signals
+      this.applyValues(values);
+      this._initialized.set(true);
+    } catch (error) {
+      console.warn('Server Remote Config fetch failed, using defaults:', error);
+      this.transferState.set(REMOTE_CONFIG_KEY, DEFAULTS);
+      this.transferState.set(REMOTE_CONFIG_INITIALIZED_KEY, true);
+      this._initialized.set(true);
+    }
+  }
+
+  /**
+   * Browser-side initialization
+   * Reads from TransferState if available, otherwise fetches via client SDK
+   */
+  private async initializeBrowser(): Promise<void> {
+    // Check if we have values from SSR
+    if (this.transferState.hasKey(REMOTE_CONFIG_KEY)) {
+      const values = this.transferState.get(REMOTE_CONFIG_KEY, DEFAULTS);
+      this.applyValues(values);
+      this._initialized.set(true);
+      
+      // Remove from TransferState so subsequent navigations don't reuse stale values
+      this.transferState.remove(REMOTE_CONFIG_KEY);
+      this.transferState.remove(REMOTE_CONFIG_INITIALIZED_KEY);
+      
+      // Optionally refresh in background for long-lived sessions
+      // this.refreshInBackground();
+      return;
+    }
+
+    // No SSR values, fetch via client SDK
+    try {
       this.remoteConfig.defaultConfig = {
         virtual_phone_enabled: '',
         feature_report_issue: 'false',
+        feature_feed_enabled: 'false',
         subscription_monthly_price_cents: '2499',
         premium_max_photos: '20',
         image_max_size_mb: '10',
@@ -100,11 +201,8 @@ export class RemoteConfigService {
         allowed_region_codes: 'us',
       };
 
-      // Fetch and activate
       await fetchAndActivate(this.remoteConfig);
-      
-      // Update signals with fetched values
-      this.updateValues();
+      this.updateValuesFromClientSdk();
       this._initialized.set(true);
     } catch (error) {
       console.warn('Remote Config fetch failed, using defaults:', error);
@@ -113,26 +211,53 @@ export class RemoteConfigService {
   }
 
   /**
-   * Update all signal values from Remote Config
+   * Apply values to signals
    */
-  private updateValues(): void {
-    // Boolean feature flags
+  private applyValues(values: RemoteConfigValues): void {
+    this._virtualPhoneEnabled.set(values.virtual_phone_enabled);
+    this._featureReportIssue.set(values.feature_report_issue);
+    this._featureFeedEnabled.set(values.feature_feed_enabled);
+    this._subscriptionMonthlyPriceCents.set(values.subscription_monthly_price_cents);
+    this._premiumMaxPhotos.set(values.premium_max_photos);
+    this._imageMaxSizeMb.set(values.image_max_size_mb);
+    this._discoverPageSize.set(values.discover_page_size);
+    this._allowedRegionCodes.set(values.allowed_region_codes);
+  }
+
+  /**
+   * Update signals from client SDK values
+   */
+  private updateValuesFromClientSdk(): void {
     this._virtualPhoneEnabled.set(this.getBooleanValue('virtual_phone_enabled', DEFAULTS.virtual_phone_enabled));
     this._featureReportIssue.set(this.getBooleanValue('feature_report_issue', DEFAULTS.feature_report_issue));
-
-    // Number values - empty string means use default
+    this._featureFeedEnabled.set(this.getBooleanValue('feature_feed_enabled', DEFAULTS.feature_feed_enabled));
     this._subscriptionMonthlyPriceCents.set(this.getNumberValue('subscription_monthly_price_cents', DEFAULTS.subscription_monthly_price_cents));
     this._premiumMaxPhotos.set(this.getNumberValue('premium_max_photos', DEFAULTS.premium_max_photos));
     this._imageMaxSizeMb.set(this.getNumberValue('image_max_size_mb', DEFAULTS.image_max_size_mb));
     this._discoverPageSize.set(this.getNumberValue('discover_page_size', DEFAULTS.discover_page_size));
-    
-    // String array values
     this._allowedRegionCodes.set(this.getStringArrayValue('allowed_region_codes', DEFAULTS.allowed_region_codes));
   }
 
-  /**
-   * Get boolean value with fallback for empty strings
-   */
+  // === Parse helpers for server-side (plain strings) ===
+
+  private parseBoolean(value: string, defaultValue: boolean): boolean {
+    if (!value || value === '') return defaultValue;
+    return value.toLowerCase() === 'true';
+  }
+
+  private parseNumber(value: string, defaultValue: number): number {
+    if (!value || value === '') return defaultValue;
+    const num = parseFloat(value);
+    return isNaN(num) ? defaultValue : num;
+  }
+
+  private parseStringArray(value: string, defaultValue: string[]): string[] {
+    if (!value || value === '') return defaultValue;
+    return value.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+  }
+
+  // === Get helpers for client SDK ===
+
   private getBooleanValue(key: string, defaultValue: boolean): boolean {
     const stringValue = getString(this.remoteConfig, key);
     if (stringValue === '' || stringValue === undefined) {
@@ -141,9 +266,6 @@ export class RemoteConfigService {
     return stringValue.toLowerCase() === 'true';
   }
 
-  /**
-   * Get number value with fallback for empty strings
-   */
   private getNumberValue(key: string, defaultValue: number): number {
     const stringValue = getString(this.remoteConfig, key);
     if (stringValue === '' || stringValue === undefined) {
@@ -153,9 +275,6 @@ export class RemoteConfigService {
     return isNaN(num) ? defaultValue : num;
   }
 
-  /**
-   * Get string array value (comma-separated) with fallback for empty strings
-   */
   private getStringArrayValue(key: string, defaultValue: string[]): string[] {
     const stringValue = getString(this.remoteConfig, key);
     if (stringValue === '' || stringValue === undefined) {
@@ -165,7 +284,7 @@ export class RemoteConfigService {
   }
 
   /**
-   * Force refresh config values
+   * Force refresh config values (browser only)
    */
   async refresh(): Promise<void> {
     if (!isPlatformBrowser(this.platformId)) {
@@ -174,7 +293,7 @@ export class RemoteConfigService {
 
     try {
       await fetchAndActivate(this.remoteConfig);
-      this.updateValues();
+      this.updateValuesFromClientSdk();
     } catch (error) {
       console.warn('Remote Config refresh failed:', error);
     }
