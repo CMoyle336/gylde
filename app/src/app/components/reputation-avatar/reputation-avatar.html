@@ -1,0 +1,19 @@
+<div 
+  class="avatar-container"
+  [class]="sizeClass()"
+  [class.has-tier]="hasTier()"
+  [style.border-color]="borderColor()"
+  [matTooltip]="tooltip()">
+  @if (photoURL()) {
+    <img 
+      [src]="photoURL()" 
+      [alt]="altText()" 
+      class="avatar-image"
+      loading="lazy"
+      #avatarImg
+      (error)="onImageError($event)">
+  }
+  <div class="avatar-placeholder">
+    <mat-icon>person</mat-icon>
+  </div>
+</div>

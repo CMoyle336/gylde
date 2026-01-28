@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal, OnInit, OnDestroy, computed, PLATFORM_ID, HostListener } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal, OnInit, OnDestroy, computed, PLATFORM_ID, HostListener, effect } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
@@ -150,32 +150,36 @@ export class ShellComponent implements OnInit, OnDestroy {
     // Initialize subscription service (loads trust score + subscription from private subcollection)
     this.subscriptionService.initialize();
     
-    // Set up analytics user identification
-    this.setupAnalytics();
-    
     // Track page views on navigation
     this.trackNavigationEvents();
   }
 
-  private setupAnalytics(): void {
+  // Effect to reactively update analytics when user data changes
+  private readonly analyticsEffect = effect(() => {
     const user = this.currentUser();
-    if (user) {
-      this.analytics.setUser(user.uid);
-      
-      // Set user properties for segmentation
-      const profile = this.userProfileService.profile();
-      this.analytics.setUserProperties({
-        subscription_tier: this.subscriptionService.isPremium() ? 'premium' : 'free',
-        reputation_tier: this.subscriptionService.reputationData()?.tier || 'new',
-        is_founder: this.isFounder(),
-        profile_complete: !!profile?.onboarding?.photoDetails?.length,
-        has_photos: !!(profile?.onboarding?.photoDetails?.length),
-        photo_count: profile?.onboarding?.photoDetails?.length || 0,
-        language: profile?.settings?.preferences?.language || this.translateService.currentLang || 'en',
-        theme: (profile?.settings?.preferences?.theme as 'light' | 'dark' | undefined) || 'dark',
-      });
-    }
-  }
+    if (!user) return;
+
+    // Set user ID
+    this.analytics.setUser(user.uid);
+
+    // Read all reactive signals to track changes
+    const profile = this.userProfileService.profile();
+    const isPremium = this.subscriptionService.isPremium();
+    const reputationData = this.subscriptionService.reputationData();
+    const isFounder = this.isFounder();
+
+    // Set user properties for segmentation (updates whenever any signal changes)
+    this.analytics.setUserProperties({
+      subscription_tier: isPremium ? 'premium' : 'free',
+      reputation_tier: reputationData?.tier || 'new',
+      is_founder: isFounder,
+      profile_complete: !!profile?.onboarding?.photoDetails?.length,
+      has_photos: !!(profile?.onboarding?.photoDetails?.length),
+      photo_count: profile?.onboarding?.photoDetails?.length || 0,
+      language: profile?.settings?.preferences?.language || this.translateService.currentLang || 'en',
+      theme: (profile?.settings?.preferences?.theme as 'light' | 'dark' | undefined) || 'dark',
+    });
+  });
 
   private trackNavigationEvents(): void {
     // Track route changes

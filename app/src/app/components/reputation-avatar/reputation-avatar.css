@@ -1,0 +1,79 @@
+.avatar-container {
+  position: relative;
+  flex-shrink: 0;
+  border-radius: 50%;
+  padding: 2px;
+  border: 2px solid transparent;
+  transition: border-color 0.15s ease;
+}
+
+.avatar-container.has-tier {
+  border-width: 2px;
+}
+
+/* Size variants */
+.avatar-container.size-small {
+  --avatar-size: 28px;
+  --icon-size: 16px;
+  padding: 1px;
+  border-width: 1.5px;
+}
+
+.avatar-container.size-small.has-tier {
+  border-width: 1.5px;
+}
+
+.avatar-container.size-medium {
+  --avatar-size: 40px;
+  --icon-size: 24px;
+}
+
+.avatar-container.size-large {
+  --avatar-size: 56px;
+  --icon-size: 32px;
+  padding: 3px;
+  border-width: 3px;
+}
+
+.avatar-container.size-large.has-tier {
+  border-width: 3px;
+}
+
+/* Avatar image and placeholder */
+.avatar-image,
+.avatar-placeholder {
+  width: var(--avatar-size);
+  height: var(--avatar-size);
+  border-radius: 50%;
+  display: block;
+}
+
+.avatar-image {
+  object-fit: cover;
+  position: relative;
+  z-index: 1;
+}
+
+.avatar-placeholder {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--color-surface-variant, #3a3644);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-tertiary, #a8a4b0);
+  z-index: 0;
+}
+
+.avatar-placeholder mat-icon {
+  font-size: var(--icon-size);
+  width: var(--icon-size);
+  height: var(--icon-size);
+}
+
+/* When image is hidden (on error), placeholder shows through */
+.avatar-image[style*="display: none"] + .avatar-placeholder {
+  z-index: 1;
+}

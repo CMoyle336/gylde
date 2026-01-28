@@ -17,25 +17,14 @@
     <!-- Post Content -->
     <article class="post-section">
       <div class="post-author">
-        <div class="author-avatar-container">
-          @if (data.post.author.photoURL) {
-            <img 
-              [src]="data.post.author.photoURL" 
-              [alt]="data.post.author.displayName || 'User'" 
-              class="author-avatar"
-              #postAvatarImg
-              (error)="postAvatarImg.style.display='none'">
-          }
-          <div class="author-avatar-placeholder">
-            <mat-icon>person</mat-icon>
-          </div>
-        </div>
+        <app-reputation-avatar
+          [photoURL]="data.post.author.photoURL"
+          [displayName]="data.post.author.displayName"
+          [reputationTier]="data.post.author.reputationTier"
+          size="medium" />
         <div class="author-info">
           <span class="author-name">
             {{ data.post.author.displayName || ('FEED.ANONYMOUS_USER' | translate) }}
-            @if (data.post.author.reputationTier) {
-              <app-reputation-badge [tier]="$any(data.post.author.reputationTier)" mode="icon" size="small" />
-            }
             @if (data.post.author.isVerified) {
               <mat-icon class="verified-badge">verified</mat-icon>
             }
@@ -110,27 +99,15 @@
           @for (comment of comments(); track comment.id) {
             <article class="comment-item">
               <!-- Author Avatar -->
-              <div class="comment-avatar-container">
-                @if (comment.author.photoURL) {
-                  <img 
-                    [src]="comment.author.photoURL" 
-                    [alt]="comment.author.displayName || 'User'" 
-                    class="comment-avatar"
-                    loading="lazy"
-                    #avatarImg
-                    (error)="avatarImg.style.display='none'">
-                }
-                <div class="comment-avatar-placeholder">
-                  <mat-icon>person</mat-icon>
-                </div>
-              </div>
+              <app-reputation-avatar
+                [photoURL]="comment.author.photoURL"
+                [displayName]="comment.author.displayName"
+                [reputationTier]="comment.author.reputationTier"
+                size="small" />
 
               <div class="comment-bubble">
                 <span class="comment-author">
                   {{ comment.author.displayName || ('FEED.ANONYMOUS_USER' | translate) }}
-                  @if (comment.author.reputationTier) {
-                    <app-reputation-badge [tier]="$any(comment.author.reputationTier)" mode="icon" size="small" />
-                  }
                 </span>
                 <p class="comment-text">{{ comment.content }}</p>
               </div>

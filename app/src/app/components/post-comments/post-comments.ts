@@ -8,7 +8,7 @@ import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { FeedService } from '../../core/services/feed.service';
 import { PostDisplay, CommentDisplay } from '../../core/interfaces';
-import { ReputationBadgeComponent } from '../reputation-badge';
+import { ReputationAvatarComponent } from '../reputation-avatar';
 import { ImageGalleryComponent, GalleryState } from '../../pages/messages/components/image-gallery';
 
 export interface PostCommentsDialogData {
@@ -29,7 +29,7 @@ const MAX_COMMENT_LENGTH = 280;
     MatMenuModule,
     FormsModule,
     TranslateModule,
-    ReputationBadgeComponent,
+    ReputationAvatarComponent,
     ImageGalleryComponent,
   ],
 })

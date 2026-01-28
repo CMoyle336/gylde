@@ -50,45 +50,6 @@
   margin-bottom: 12px;
 }
 
-.author-avatar-container {
-  position: relative;
-  width: 40px;
-  height: 40px;
-  flex-shrink: 0;
-}
-
-.author-avatar {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  object-fit: cover;
-  z-index: 1;
-}
-
-.author-avatar-placeholder {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: var(--color-bg-elevated, #252030);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-text-secondary, #a8a4b0);
-  z-index: 0;
-}
-
-.author-avatar-placeholder mat-icon {
-  font-size: 24px;
-  width: 24px;
-  height: 24px;
-}
-
 .author-info {
   display: flex;
   flex-direction: column;
@@ -271,46 +232,6 @@
   display: flex;
   gap: 8px;
   align-items: flex-start;
-}
-
-/* Comment Avatar */
-.comment-avatar-container {
-  position: relative;
-  width: 32px;
-  height: 32px;
-  flex-shrink: 0;
-}
-
-.comment-avatar {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  object-fit: cover;
-  z-index: 1;
-}
-
-.comment-avatar-placeholder {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: var(--color-bg-elevated, #252030);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-text-secondary, #a8a4b0);
-  z-index: 0;
-}
-
-.comment-avatar-placeholder mat-icon {
-  font-size: 18px;
-  width: 18px;
-  height: 18px;
 }
 
 /* Comment Bubble - Facebook style */
