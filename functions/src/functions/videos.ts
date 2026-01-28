@@ -125,7 +125,7 @@ async function verifyConversationParticipant(
  */
 async function processThumbnail(
   thumbnailData: string | undefined,
-  videoBuffer: Buffer
+  _videoBuffer: Buffer
 ): Promise<Buffer> {
   // If client provided a thumbnail, process and optimize it
   if (thumbnailData) {

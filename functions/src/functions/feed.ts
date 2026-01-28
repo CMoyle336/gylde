@@ -701,7 +701,7 @@ export const addComment = onCall(async (request) => {
   batch.set(commentRef, comment);
   batch.update(postRef, {
     "metrics.commentCount": FieldValue.increment(1),
-    updatedAt: FieldValue.serverTimestamp(),
+    "updatedAt": FieldValue.serverTimestamp(),
   });
   await batch.commit();
 

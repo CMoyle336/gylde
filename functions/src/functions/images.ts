@@ -636,9 +636,9 @@ async function processSingleImage(
         });
 
         // Different error message for feed uploads
-        const errorMessage = isFeedUpload
-          ? "Explicit content is only allowed in private posts. Please change visibility to private or choose a different photo."
-          : "This image contains content that violates our community guidelines.";
+        const errorMessage = isFeedUpload ?
+          "Explicit content is only allowed in private posts. Please change visibility to private or choose a different photo." :
+          "This image contains content that violates our community guidelines.";
 
         return {
           success: false,
@@ -674,20 +674,20 @@ async function processSingleImage(
       // TODO: Consider adding video transcoding/compression in the future
       uploadBuffer = validation.buffer;
       uploadMimeType = mimeType;
-      
+
       // Determine extension from MIME type
       switch (mimeType) {
-        case "video/mp4":
-          extension = "mp4";
-          break;
-        case "video/webm":
-          extension = "webm";
-          break;
-        case "video/quicktime":
-          extension = "mov";
-          break;
-        default:
-          extension = "mp4";
+      case "video/mp4":
+        extension = "mp4";
+        break;
+      case "video/webm":
+        extension = "webm";
+        break;
+      case "video/quicktime":
+        extension = "mov";
+        break;
+      default:
+        extension = "mp4";
       }
     } else {
       // Optimize image for web delivery
