@@ -62,7 +62,13 @@
               <div class="tier-badge">{{ 'HOW_IT_WORKS.MEMBERSHIP.MOST_POPULAR' | translate }}</div>
             }
             <h3 class="tier-name">{{ tier.nameKey | translate }}</h3>
-            <div class="tier-price">{{ tier.priceKey | translate }}</div>
+            <div class="tier-price">
+              @if (tier.useDynamicPrice) {
+                {{ premiumPriceFormatted() }}/{{ 'HOW_IT_WORKS.MEMBERSHIP.PRICE_SUFFIX' | translate }}
+              } @else {
+                {{ tier.priceKey | translate }}
+              }
+            </div>
             <p class="tier-description">{{ tier.descriptionKey | translate }}</p>
             <ul class="tier-features">
               @for (featureKey of tier.featureKeys; track featureKey) {

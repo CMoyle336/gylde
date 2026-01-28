@@ -2,7 +2,7 @@
  * Stripe Subscription Cloud Functions
  * Handles subscription checkout, management, and webhook events
  *
- * Simplified to free/premium model at $49.99/month
+ * Simplified to free/premium model. Price controlled by Remote Config (subscription_monthly_price_cents)
  */
 import {onCall, onRequest, HttpsError} from "firebase-functions/v2/https";
 import {db} from "../config/firebase";

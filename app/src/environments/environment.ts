@@ -31,8 +31,9 @@ export const environment = {
   stripe: {
     publishableKey: 'pk_test_51SpemHFd7ok3RIzwYr7GAhAcctfRysm9YffzNoX7KHeT8Jl1jUnzYIaFBGFQs8wawRYYn9QLPgLsdsVylPZxXqXn00KgPe9UlK',
     // Stripe Price IDs for subscriptions (create these in Stripe Dashboard)
+    // Price is controlled by Remote Config (subscription_monthly_price_cents)
     prices: {
-      premium_monthly: '', // TODO: Add Stripe Price ID for Premium monthly ($49.99)
+      premium_monthly: '', // TODO: Add Stripe Price ID for Premium monthly subscription
     },
   },
 

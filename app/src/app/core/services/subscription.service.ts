@@ -119,8 +119,8 @@ export class SubscriptionService {
   // Price info - uses Remote Config for dynamic pricing
   readonly priceMonthly = this.remoteConfigService.subscriptionMonthlyPriceCents;
   readonly price = computed(() => ({
-    ...SUBSCRIPTION_PRICE,
     monthly: this.priceMonthly(),
+    ...SUBSCRIPTION_PRICE,
   }));
 
   constructor() {

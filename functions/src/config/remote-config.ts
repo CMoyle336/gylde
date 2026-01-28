@@ -27,7 +27,7 @@ export interface RemoteConfigValues {
  */
 const DEFAULTS: RemoteConfigValues = {
   virtual_phone_enabled: false,
-  subscription_monthly_price_cents: 4999,
+  subscription_monthly_price_cents: 2499,
   founder_max_per_city: 50,
   premium_max_photos: 20,
   image_max_size_mb: 10,

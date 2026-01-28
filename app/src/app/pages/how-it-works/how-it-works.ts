@@ -1,10 +1,11 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { PublicHeaderComponent } from '../../components/public-header/public-header';
 import { PublicFooterComponent } from '../../components/public-footer/public-footer';
 import { SeoService } from '../../core/services/seo.service';
+import { SubscriptionService } from '../../core/services/subscription.service';
 
 @Component({
   selector: 'app-how-it-works',
@@ -17,6 +18,13 @@ export class HowItWorksComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly seoService = inject(SeoService);
   private readonly translate = inject(TranslateService);
+  private readonly subscriptionService = inject(SubscriptionService);
+
+  // Dynamic price from remote config
+  protected readonly premiumPriceFormatted = computed(() => {
+    const priceInCents = this.subscriptionService.priceMonthly();
+    return `$${(priceInCents / 100).toFixed(2)}`;
+  });
 
   protected navigateToAuth(): void {
     this.router.navigate(['/']);
@@ -97,7 +105,8 @@ export class HowItWorksComponent implements OnInit {
         'HOW_IT_WORKS.MEMBERSHIP.TIERS.FREE.FEATURES.F5',
         'HOW_IT_WORKS.MEMBERSHIP.TIERS.FREE.FEATURES.F6',
       ],
-      highlighted: false
+      highlighted: false,
+      useDynamicPrice: false,
     },
     {
       nameKey: 'HOW_IT_WORKS.MEMBERSHIP.TIERS.PREMIUM.NAME',
@@ -113,7 +122,8 @@ export class HowItWorksComponent implements OnInit {
         'HOW_IT_WORKS.MEMBERSHIP.TIERS.PREMIUM.FEATURES.F7',
         'HOW_IT_WORKS.MEMBERSHIP.TIERS.PREMIUM.FEATURES.F8',
       ],
-      highlighted: true
+      highlighted: true,
+      useDynamicPrice: true,
     }
   ];
 

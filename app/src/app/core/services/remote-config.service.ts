@@ -29,7 +29,7 @@ export interface RemoteConfigValues {
 const DEFAULTS: RemoteConfigValues = {
   virtual_phone_enabled: false,
   feature_report_issue: false,
-  subscription_monthly_price_cents: 4999,
+  subscription_monthly_price_cents: 2499,
   premium_max_photos: 20,
   image_max_size_mb: 10,
   discover_page_size: 20,
@@ -93,7 +93,7 @@ export class RemoteConfigService {
       this.remoteConfig.defaultConfig = {
         virtual_phone_enabled: '',
         feature_report_issue: 'false',
-        subscription_monthly_price_cents: '4999',
+        subscription_monthly_price_cents: '2499',
         premium_max_photos: '20',
         image_max_size_mb: '10',
         discover_page_size: '',

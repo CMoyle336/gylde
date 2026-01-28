@@ -552,6 +552,7 @@
       "MOST_POPULAR": "Beliebteste",
       "GET_STARTED": "Loslegen",
       "LEARN_MORE": "Mehr erfahren",
+      "PRICE_SUFFIX": "Monat",
       "TIERS": {
         "FREE": {
           "NAME": "Kostenlos",
@@ -568,7 +569,7 @@
         },
         "PREMIUM": {
           "NAME": "Premium",
-          "PRICE": "$49.99/Monat",
+          "PRICE": "Kontaktiere uns",
           "DESCRIPTION": "Das volle Erlebnis",
           "FEATURES": {
             "F1": "Bis zu 20 Fotos",

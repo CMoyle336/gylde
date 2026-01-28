@@ -596,7 +596,7 @@ export class AnalyticsService {
    */
   trackPurchase(params: {
     transactionId?: string;
-    value: number;           // Revenue amount in dollars (e.g., 49.99)
+    value: number;           // Revenue amount in dollars (e.g., 29.99 for premium subscription)
     currency?: string;       // Currency code (default: USD)
     itemName: string;        // e.g., 'Premium Subscription', 'Identity Verification'
     itemId?: string;         // e.g., 'premium_monthly', 'id_verification'

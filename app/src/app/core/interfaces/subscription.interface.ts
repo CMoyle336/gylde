@@ -101,9 +101,10 @@ export function getSubscriptionCapabilities(tier: SubscriptionTier): Subscriptio
 
 /**
  * Subscription pricing configuration
+ * Note: The monthly price is controlled by Remote Config (subscription_monthly_price_cents)
+ * and should not be hardcoded. Use SubscriptionService.price() to get the current price.
  */
 export const SUBSCRIPTION_PRICE = {
-  monthly: 4999, // $49.99/month in cents
   name: 'Premium',
   tagline: 'Unlock the full Gylde experience',
   badge: 'star',
