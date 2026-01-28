@@ -329,15 +329,20 @@ service cloud.firestore {
     // POSTS COLLECTION (Social Feed)
     // ============================================
     match /posts/{postId} {
-      // Authenticated users can read posts
+      // Helper to check if post is deleted
+      function isDeleted() {
+        return resource.data.status == 'removed' || resource.data.status == 'deleted';
+      }
+      
+      // Authenticated users can read non-deleted posts
       // (visibility/blocking filters applied at query level and client-side)
-      allow read: if isAuthenticated();
+      allow read: if isAuthenticated() && !isDeleted();
       
       // Users can create posts for themselves
       allow create: if isAuthenticated() 
         && request.auth.uid == request.resource.data.authorId;
       
-      // Authors can update their own posts
+      // Authors can update their own posts (including soft delete)
       // Protected fields (metrics, author info) can only be modified by Cloud Functions
       allow update: if isAuthenticated()
         && request.auth.uid == resource.data.authorId
@@ -345,7 +350,7 @@ service cloud.firestore {
           'metrics', 'authorTier', 'authorVerified', 'regionId'
         ]);
       
-      // Soft delete only via Cloud Functions
+      // Hard delete not allowed - soft delete only via Cloud Functions
       allow delete: if false;
       
       // ------------------------------------------
@@ -365,8 +370,10 @@ service cloud.firestore {
       // COMMENTS SUBCOLLECTION
       // ------------------------------------------
       match /comments/{commentId} {
-        // Authenticated users can read comments
-        allow read: if isAuthenticated();
+        // Authenticated users can read non-deleted comments
+        allow read: if isAuthenticated()
+          && resource.data.status != 'removed'
+          && resource.data.status != 'deleted';
         
         // Users can create comments as themselves
         allow create: if isAuthenticated()

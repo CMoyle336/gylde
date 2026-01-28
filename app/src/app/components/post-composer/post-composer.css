@@ -123,19 +123,22 @@
 /* Error Message */
 .error-message {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
-  padding: 8px 12px;
+  padding: 12px;
   background: var(--color-error-background, rgba(239, 68, 68, 0.1));
   border-radius: 8px;
   color: var(--color-error, #ef4444);
   font-size: 0.875rem;
+  line-height: 1.4;
 }
 
 .error-message mat-icon {
-  font-size: 18px;
-  width: 18px;
-  height: 18px;
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  margin-top: 1px;
 }
 
 /* Actions */

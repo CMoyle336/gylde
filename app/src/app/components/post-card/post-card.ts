@@ -6,8 +6,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TranslateModule } from '@ngx-translate/core';
-import { PostDisplay } from '../../core/interfaces';
-import { ReputationBadgeComponent } from '../reputation-badge';
+import { PostDisplay, getTierDisplay, ReputationTier } from '../../core/interfaces';
 import { ImageGalleryComponent, GalleryState } from '../../pages/messages/components/image-gallery';
 
 @Component({
@@ -22,7 +21,6 @@ import { ImageGalleryComponent, GalleryState } from '../../pages/messages/compon
     MatTooltipModule,
     MatProgressSpinnerModule,
     TranslateModule,
-    ReputationBadgeComponent,
     ImageGalleryComponent,
   ],
 })
@@ -69,6 +67,24 @@ export class PostCardComponent {
       .filter(m => m.type !== 'video')
       .map(m => m.url)
   );
+
+  // Reputation tier display for avatar border
+  protected readonly tierDisplay = computed(() => {
+    const tier = this.post().author.reputationTier as ReputationTier | undefined;
+    if (!tier) return null;
+    return getTierDisplay(tier);
+  });
+
+  protected readonly avatarBorderColor = computed(() => {
+    const display = this.tierDisplay();
+    return display?.color || 'transparent';
+  });
+
+  protected readonly tierTooltip = computed(() => {
+    const display = this.tierDisplay();
+    if (!display) return '';
+    return `${display.label}: ${display.description}`;
+  });
 
   /**
    * Infer media type from URL extension (fallback for posts without type field)
@@ -147,7 +163,7 @@ export class PostCardComponent {
   }
 
   protected viewProfile(): void {
-    this.router.navigate(['/profile', this.post().author.uid]);
+    this.router.navigate(['/user', this.post().author.uid]);
   }
 
   protected openGallery(imageUrl: string): void {

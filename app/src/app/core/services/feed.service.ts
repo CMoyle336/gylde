@@ -180,14 +180,38 @@ export class FeedService {
       const mergeAndApplyFilter = () => {
         if (!publicLoaded || !homeLoaded) return;
 
+        // Get current posts for preserving optimistic updates
+        const currentPostsMap = new Map<string, PostDisplay>();
+        this._allPosts().forEach((post) => currentPostsMap.set(post.id, post));
+
         // Merge and deduplicate by post ID
         const allPostsMap = new Map<string, PostDisplay>();
         
         // Add public posts first
-        publicPosts.forEach((post) => allPostsMap.set(post.id, post));
+        publicPosts.forEach((post) => {
+          const current = currentPostsMap.get(post.id);
+          if (current) {
+            // Preserve optimistic like state and count if we have a cached value
+            const cachedLiked = this.likeStatusCache.get(post.id);
+            if (cachedLiked !== undefined) {
+              post = { ...post, isLiked: cachedLiked, likeCount: current.likeCount };
+            }
+          }
+          allPostsMap.set(post.id, post);
+        });
         
         // Add home posts, overwriting if duplicate (home has more context)
-        homePosts.forEach((post) => allPostsMap.set(post.id, post));
+        homePosts.forEach((post) => {
+          const current = currentPostsMap.get(post.id);
+          if (current) {
+            // Preserve optimistic like state and count if we have a cached value
+            const cachedLiked = this.likeStatusCache.get(post.id);
+            if (cachedLiked !== undefined) {
+              post = { ...post, isLiked: cachedLiked, likeCount: current.likeCount };
+            }
+          }
+          allPostsMap.set(post.id, post);
+        });
 
         // Sort by createdAt descending and filter out deleted posts
         const allPosts = Array.from(allPostsMap.values())
@@ -689,15 +713,18 @@ export class FeedService {
   async likePost(postId: string): Promise<boolean> {
     if (!this.authService.user()) return false;
 
-    // Optimistic update - both state and cache
+    // Optimistic update - cache, _allPosts (source), and _posts (filtered view)
     this.likeStatusCache.set(postId, true);
-    this._posts.update((posts) =>
+    
+    const updateLike = (posts: PostDisplay[]) =>
       posts.map((post) =>
         post.id === postId
           ? { ...post, isLiked: true, likeCount: post.likeCount + 1 }
           : post
-      )
-    );
+      );
+    
+    this._allPosts.update(updateLike);
+    this._posts.update(updateLike);
 
     try {
       const likePostFn = httpsCallable<{ postId: string }, { success: boolean }>(
@@ -710,15 +737,18 @@ export class FeedService {
     } catch (err) {
       console.error('Failed to like post:', err);
 
-      // Revert optimistic update - both state and cache
+      // Revert optimistic update - cache, _allPosts, and _posts
       this.likeStatusCache.set(postId, false);
-      this._posts.update((posts) =>
+      
+      const revertLike = (posts: PostDisplay[]) =>
         posts.map((post) =>
           post.id === postId
             ? { ...post, isLiked: false, likeCount: post.likeCount - 1 }
             : post
-        )
-      );
+        );
+      
+      this._allPosts.update(revertLike);
+      this._posts.update(revertLike);
       return false;
     }
   }
@@ -729,15 +759,18 @@ export class FeedService {
   async unlikePost(postId: string): Promise<boolean> {
     if (!this.authService.user()) return false;
 
-    // Optimistic update - both state and cache
+    // Optimistic update - cache, _allPosts (source), and _posts (filtered view)
     this.likeStatusCache.set(postId, false);
-    this._posts.update((posts) =>
+    
+    const updateUnlike = (posts: PostDisplay[]) =>
       posts.map((post) =>
         post.id === postId
           ? { ...post, isLiked: false, likeCount: Math.max(0, post.likeCount - 1) }
           : post
-      )
-    );
+      );
+    
+    this._allPosts.update(updateUnlike);
+    this._posts.update(updateUnlike);
 
     try {
       const unlikePostFn = httpsCallable<{ postId: string }, { success: boolean }>(
@@ -750,15 +783,18 @@ export class FeedService {
     } catch (err) {
       console.error('Failed to unlike post:', err);
 
-      // Revert optimistic update - both state and cache
+      // Revert optimistic update - cache, _allPosts, and _posts
       this.likeStatusCache.set(postId, true);
-      this._posts.update((posts) =>
+      
+      const revertUnlike = (posts: PostDisplay[]) =>
         posts.map((post) =>
           post.id === postId
             ? { ...post, isLiked: true, likeCount: post.likeCount + 1 }
             : post
-        )
-      );
+        );
+      
+      this._allPosts.update(revertUnlike);
+      this._posts.update(revertUnlike);
       return false;
     }
   }

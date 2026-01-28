@@ -9,25 +9,28 @@
   <!-- Author Header -->
   <header class="post-header">
     <button type="button" class="author-info" (click)="viewProfile()">
-      @if (post().author.photoURL) {
-        <img 
-          [src]="post().author.photoURL" 
-          [alt]="post().author.displayName || 'User'" 
-          class="author-avatar"
-          loading="lazy">
-      } @else {
-        <div class="author-avatar-placeholder">
-          <mat-icon>person</mat-icon>
-        </div>
-      }
+      <div 
+        class="avatar-container" 
+        [style.border-color]="avatarBorderColor()"
+        [class.has-tier]="tierDisplay()"
+        [matTooltip]="tierTooltip()">
+        @if (post().author.photoURL) {
+          <img 
+            [src]="post().author.photoURL" 
+            [alt]="post().author.displayName || 'User'" 
+            class="author-avatar"
+            loading="lazy">
+        } @else {
+          <div class="author-avatar-placeholder">
+            <mat-icon>person</mat-icon>
+          </div>
+        }
+      </div>
       <div class="author-details">
         <span class="author-name">
           {{ post().author.displayName || ('FEED.ANONYMOUS_USER' | translate) }}
           @if (post().author.isVerified) {
             <mat-icon class="verified-icon">verified</mat-icon>
-          }
-          @if (post().author.reputationTier) {
-            <app-reputation-badge [tier]="$any(post().author.reputationTier)" mode="icon" size="small" />
           }
         </span>
         <span class="post-meta">
