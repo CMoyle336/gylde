@@ -96,6 +96,10 @@ export interface Post {
   authorVerified: boolean;
   regionId: string;  // e.g., "us-mi-detroit"
   
+  // Author attributes for discover-style fan-out filtering
+  authorGenderIdentity: string;
+  authorSupportOrientation: string;
+  
   // Status
   status: PostStatus;
 }
@@ -103,7 +107,7 @@ export interface Post {
 /**
  * Reason a post appeared in user's home feed
  */
-export type FeedItemReason = 'connection' | 'approved' | 'systemBoost';
+export type FeedItemReason = 'connection' | 'approved' | 'systemBoost' | 'public' | 'own';
 
 /**
  * Preview data for a feed item (denormalized to avoid extra reads)

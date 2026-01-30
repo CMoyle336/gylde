@@ -13,6 +13,7 @@ import {
   doc,
   getDoc,
   getDocs,
+  documentId,
   DocumentSnapshot,
   QueryDocumentSnapshot,
   Timestamp,
@@ -48,12 +49,8 @@ export class FeedService {
   private readonly destroyRef = inject(DestroyRef);
   private readonly platformId = inject(PLATFORM_ID);
 
-  // Active subscriptions
-  private exploreFeedUnsubscribe: (() => void) | null = null;
-  private homeFeedUnsubscribe: (() => void) | null = null;
-
-  // Cache for current user's regionId to avoid repeated fetches
-  private cachedRegionId: string | null = null;
+  // Active feed subscription
+  private feedUnsubscribe: (() => void) | null = null;
 
   // Caches to avoid refetching data we already have
   private likeStatusCache = new Map<string, boolean>(); // postId -> isLiked
@@ -71,7 +68,6 @@ export class FeedService {
   private readonly _hasMore = signal(true);
   private readonly _activeFilter = signal<FeedFilter>('all');
   private lastVisibleDoc: DocumentSnapshot | null = null;
-  private lastHomeFeedDoc: DocumentSnapshot | null = null;
 
   // Comments state
   private readonly _comments = signal<CommentDisplay[]>([]);
@@ -82,6 +78,7 @@ export class FeedService {
   private readonly _currentPostId = signal<string | null>(null);
   private commentsUnsubscribe: (() => void) | null = null;
   private postUnsubscribe: (() => void) | null = null;
+  private postsMetricsUnsubscribes: (() => void)[] = []; // Subscriptions to post documents for real-time metrics
 
   // Post creation state
   private readonly _creating = signal(false);
@@ -129,7 +126,7 @@ export class FeedService {
 
   /**
    * Subscribe to unified feed (public + connections + private)
-   * All posts are fetched, then client-side filtered based on activeFilter
+   * All posts flow through feedItems via server-side fan-out with discover-style filtering
    */
   subscribeToFeed(): void {
     if (!isPlatformBrowser(this.platformId)) return;
@@ -143,131 +140,75 @@ export class FeedService {
     this._error.set(null);
     this._hasMore.set(true);
     this.lastVisibleDoc = null;
-    this.lastHomeFeedDoc = null;
 
-    // Use cached regionId if available, otherwise fetch
-    this.getRegionId(user.uid).then((regionId) => {
-      if (!regionId) {
-        this._error.set('Please complete your profile to view the feed.');
-        this._loading.set(false);
-        return;
-      }
+    // Subscribe to user's feedItems - all posts (public, connections, private)
+    // are distributed via server-side fan-out with discover-style filtering
+    const feedItemsRef = collection(this.firestore, 'users', user.uid, 'feedItems');
+    const feedItemsQuery = query(
+      feedItemsRef,
+      orderBy('createdAt', 'desc'),
+      limit(PAGE_SIZE)
+    );
 
-      // Subscribe to public posts in user's region
-      const postsRef = collection(this.firestore, 'posts');
-      const publicQuery = query(
-        postsRef,
-        where('regionId', '==', regionId),
-        where('visibility', '==', 'public'),
-        where('status', '==', 'active'),
-        orderBy('createdAt', 'desc'),
-        limit(PAGE_SIZE)
-      );
+    this.feedUnsubscribe = onSnapshot(
+      feedItemsQuery,
+      async (snapshot) => {
+        const feedItems = snapshot.docs.map((d) => ({
+          ...(d.data() as FeedItem),
+          _docSnap: d,
+        }));
 
-      // Subscribe to user's feedItems (connections + private)
-      const feedItemsRef = collection(this.firestore, 'users', user.uid, 'feedItems');
-      const feedItemsQuery = query(
-        feedItemsRef,
-        orderBy('createdAt', 'desc'),
-        limit(PAGE_SIZE)
-      );
-
-      let publicPosts: PostDisplay[] = [];
-      let homePosts: PostDisplay[] = [];
-      let publicLoaded = false;
-      let homeLoaded = false;
-
-      const mergeAndApplyFilter = () => {
-        if (!publicLoaded || !homeLoaded) return;
+        let posts: PostDisplay[] = [];
+        if (feedItems.length > 0) {
+          posts = await this.fetchPostsFromFeedItems(feedItems, user.uid);
+          this.lastVisibleDoc = snapshot.docs[snapshot.docs.length - 1] || null;
+        }
 
         // Get current posts for preserving optimistic updates
         const currentPostsMap = new Map<string, PostDisplay>();
         this._allPosts().forEach((post) => currentPostsMap.set(post.id, post));
 
-        // Merge and deduplicate by post ID
-        const allPostsMap = new Map<string, PostDisplay>();
-        
-        // Add public posts first
-        publicPosts.forEach((post) => {
+        // Build set of IDs from server
+        const serverPostIds = new Set(posts.map((p) => p.id));
+
+        // Preserve optimistic like state from cache
+        posts = posts.map((post) => {
           const current = currentPostsMap.get(post.id);
           if (current) {
-            // Preserve optimistic like state and count if we have a cached value
             const cachedLiked = this.likeStatusCache.get(post.id);
             if (cachedLiked !== undefined) {
-              post = { ...post, isLiked: cachedLiked, likeCount: current.likeCount };
+              return { ...post, isLiked: cachedLiked, likeCount: current.likeCount };
             }
           }
-          allPostsMap.set(post.id, post);
-        });
-        
-        // Add home posts, overwriting if duplicate (home has more context)
-        homePosts.forEach((post) => {
-          const current = currentPostsMap.get(post.id);
-          if (current) {
-            // Preserve optimistic like state and count if we have a cached value
-            const cachedLiked = this.likeStatusCache.get(post.id);
-            if (cachedLiked !== undefined) {
-              post = { ...post, isLiked: cachedLiked, likeCount: current.likeCount };
-            }
-          }
-          allPostsMap.set(post.id, post);
+          return post;
         });
 
-        // Sort by createdAt descending and filter out deleted posts
-        const allPosts = Array.from(allPostsMap.values())
-          .filter((post) => !this.deletedPostIds.has(post.id))
-          .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+        // Find optimistic posts not yet in server data (recently created posts)
+        const optimisticPosts = this._allPosts().filter(
+          (post) => !serverPostIds.has(post.id) && post.author.uid === user.uid
+        );
 
-        this._allPosts.set(allPosts);
+        // Merge: optimistic posts first (they're newest), then server posts
+        const mergedPosts = [...optimisticPosts, ...posts];
+
+        // Filter out deleted posts
+        const filteredPosts = mergedPosts.filter((post) => !this.deletedPostIds.has(post.id));
+
+        this._allPosts.set(filteredPosts);
         this.applyFilter();
         this._loading.set(false);
-      };
+        this._hasMore.set(snapshot.docs.length === PAGE_SIZE);
 
-      // Public posts subscription
-      this.exploreFeedUnsubscribe = onSnapshot(
-        publicQuery,
-        async (snapshot) => {
-          publicPosts = await this.processPosts(snapshot.docs, user.uid);
-          this.lastVisibleDoc = snapshot.docs[snapshot.docs.length - 1] || null;
-          publicLoaded = true;
-          mergeAndApplyFilter();
-        },
-        (error) => {
-          console.error('Public feed subscription error:', error);
-          publicLoaded = true;
-          mergeAndApplyFilter();
-        }
-      );
-
-      // Home feed subscription (connections + private)
-      this.homeFeedUnsubscribe = onSnapshot(
-        feedItemsQuery,
-        async (snapshot) => {
-          const feedItems = snapshot.docs.map((d) => ({
-            ...(d.data() as FeedItem),
-            _docSnap: d,
-          }));
-
-          if (feedItems.length > 0) {
-            homePosts = await this.fetchPostsFromFeedItems(feedItems, user.uid);
-            this.lastHomeFeedDoc = snapshot.docs[snapshot.docs.length - 1] || null;
-          } else {
-            homePosts = [];
-          }
-          homeLoaded = true;
-          mergeAndApplyFilter();
-        },
-        (error) => {
-          console.error('Home feed subscription error:', error);
-          homeLoaded = true;
-          mergeAndApplyFilter();
-        }
-      );
-    }).catch((error) => {
-      console.error('Failed to get user regionId:', error);
-      this._error.set('Failed to load feed. Please try again.');
-      this._loading.set(false);
-    });
+        // Subscribe to post documents for real-time metric updates
+        const postIdsToSubscribe = filteredPosts.map((p) => p.id);
+        this.subscribeToPostsMetrics(postIdsToSubscribe);
+      },
+      (error) => {
+        console.error('Feed subscription error:', error);
+        this._error.set('Failed to load feed. Please try again.');
+        this._loading.set(false);
+      }
+    );
   }
 
   /**
@@ -300,29 +241,76 @@ export class FeedService {
   }
 
   /**
+   * Subscribe to post documents for real-time metric updates (likes, comments)
+   * Uses batched queries since Firestore 'in' supports up to 30 items
+   */
+  private subscribeToPostsMetrics(postIds: string[]): void {
+    // Cleanup existing subscriptions
+    this.postsMetricsUnsubscribes.forEach((unsub) => unsub());
+    this.postsMetricsUnsubscribes = [];
+
+    if (postIds.length === 0) return;
+
+    // Batch into groups of 30 (Firestore 'in' query limit)
+    const BATCH_SIZE = 30;
+    for (let i = 0; i < postIds.length; i += BATCH_SIZE) {
+      const batchIds = postIds.slice(i, i + BATCH_SIZE);
+      const postsQuery = query(
+        collection(this.firestore, 'posts'),
+        where(documentId(), 'in', batchIds)
+      );
+
+      const unsub = onSnapshot(
+        postsQuery,
+        (snapshot) => {
+          snapshot.docChanges().forEach((change) => {
+            if (change.type === 'modified') {
+              const postData = change.doc.data() as Post;
+              const postId = change.doc.id;
+
+              // Update metrics in _allPosts
+              this._allPosts.update((posts) =>
+                posts.map((post) =>
+                  post.id === postId
+                    ? {
+                        ...post,
+                        likeCount: postData.metrics?.likeCount ?? post.likeCount,
+                        commentCount: postData.metrics?.commentCount ?? post.commentCount,
+                      }
+                    : post
+                )
+              );
+
+              // Also update _posts (filtered view)
+              this._posts.update((posts) =>
+                posts.map((post) =>
+                  post.id === postId
+                    ? {
+                        ...post,
+                        likeCount: postData.metrics?.likeCount ?? post.likeCount,
+                        commentCount: postData.metrics?.commentCount ?? post.commentCount,
+                      }
+                    : post
+                )
+              );
+            }
+          });
+        },
+        (error) => {
+          // Log but don't crash - real-time metrics are a nice-to-have
+          console.warn('Post metrics subscription error (non-fatal):', error);
+        }
+      );
+
+      this.postsMetricsUnsubscribes.push(unsub);
+    }
+  }
+
+  /**
    * @deprecated Use subscribeToFeed() instead
    */
   subscribeToExploreFeed(): void {
     this.subscribeToFeed();
-  }
-
-  /**
-   * Get user's regionId with caching
-   */
-  private async getRegionId(userId: string): Promise<string | null> {
-    if (this.cachedRegionId) {
-      return this.cachedRegionId;
-    }
-
-    const userRef = doc(this.firestore, 'users', userId);
-    const userDoc = await getDoc(userRef);
-    const regionId = userDoc.data()?.['regionId'] as string | undefined;
-
-    if (regionId) {
-      this.cachedRegionId = regionId;
-    }
-
-    return regionId || null;
   }
 
   /**
@@ -334,7 +322,6 @@ export class FeedService {
 
   /**
    * Load more posts (pagination)
-   * TODO: Implement proper pagination for unified feed
    */
   async loadMore(): Promise<void> {
     if (!isPlatformBrowser(this.platformId)) return;
@@ -342,13 +329,12 @@ export class FeedService {
     const user = this.authService.user();
     if (!user || !this._hasMore() || this._loadingMore()) return;
 
-    // For now, we only paginate public posts since home feed items are limited
     if (!this.lastVisibleDoc) return;
 
     this._loadingMore.set(true);
 
     try {
-      await this.loadMoreExplorePosts(user.uid);
+      await this.loadMoreFeedItems(user.uid);
     } catch (error) {
       console.error('Failed to load more posts:', error);
     } finally {
@@ -356,31 +342,7 @@ export class FeedService {
     }
   }
 
-  private async loadMoreExplorePosts(userId: string): Promise<void> {
-    const regionId = await this.getRegionId(userId);
-
-    if (!regionId || !this.lastVisibleDoc) return;
-
-    const postsRef = collection(this.firestore, 'posts');
-    const q = query(
-      postsRef,
-      where('regionId', '==', regionId),
-      where('visibility', '==', 'public'),
-      where('status', '==', 'active'),
-      orderBy('createdAt', 'desc'),
-      startAfter(this.lastVisibleDoc),
-      limit(PAGE_SIZE)
-    );
-
-    const snapshot = await getDocs(q);
-    const newPosts = await this.processPosts(snapshot.docs, userId);
-    
-    this._posts.update((posts) => [...posts, ...newPosts]);
-    this._hasMore.set(snapshot.docs.length === PAGE_SIZE);
-    this.lastVisibleDoc = snapshot.docs[snapshot.docs.length - 1] || this.lastVisibleDoc;
-  }
-
-  private async loadMoreHomePosts(userId: string): Promise<void> {
+  private async loadMoreFeedItems(userId: string): Promise<void> {
     if (!this.lastVisibleDoc) return;
 
     const feedItemsRef = collection(this.firestore, 'users', userId, 'feedItems');
@@ -627,8 +589,18 @@ export class FeedService {
       const authorData = this.authorDataCache.get(postData.authorId) || {};
       const createdAt = postData.createdAt as Timestamp;
 
-      // Determine source based on the FeedItem's visibility
-      const source: PostSource = feedItem.visibility === 'private' ? 'private' : 'connection';
+      // Determine source based on the FeedItem's reason
+      let source: PostSource;
+      if (feedItem.reason === 'own') {
+        // Author's own post - use visibility to determine source
+        source = feedItem.visibility as PostSource;
+      } else if (feedItem.reason === 'public') {
+        source = 'public';
+      } else if (feedItem.reason === 'approved' || feedItem.visibility === 'private') {
+        source = 'private';
+      } else {
+        source = 'connection';
+      }
 
       posts.push({
         id: postId,
@@ -659,14 +631,13 @@ export class FeedService {
    * Unsubscribe from all feed subscriptions
    */
   private unsubscribeFromFeeds(): void {
-    if (this.exploreFeedUnsubscribe) {
-      this.exploreFeedUnsubscribe();
-      this.exploreFeedUnsubscribe = null;
+    if (this.feedUnsubscribe) {
+      this.feedUnsubscribe();
+      this.feedUnsubscribe = null;
     }
-    if (this.homeFeedUnsubscribe) {
-      this.homeFeedUnsubscribe();
-      this.homeFeedUnsubscribe = null;
-    }
+    // Cleanup posts metrics subscriptions
+    this.postsMetricsUnsubscribes.forEach((unsub) => unsub());
+    this.postsMetricsUnsubscribes = [];
   }
 
   /**
@@ -680,7 +651,8 @@ export class FeedService {
    * Create a new post
    */
   async createPost(request: CreatePostRequest): Promise<CreatePostResponse> {
-    if (!this.authService.user()) {
+    const user = this.authService.user();
+    if (!user) {
       return { success: false, error: 'Must be logged in to create post' };
     }
 
@@ -695,7 +667,34 @@ export class FeedService {
 
       const result = await createPostFn(request);
 
-      // Feed will update automatically via subscription
+      // Optimistic update: immediately add the post to the feed
+      if (result.data.success && result.data.postId) {
+        const visibility = request.visibility || 'public';
+        const optimisticPost: PostDisplay = {
+          id: result.data.postId,
+          author: {
+            uid: user.uid,
+            displayName: user.displayName,
+            photoURL: user.photoURL,
+            reputationTier: undefined,
+            isVerified: false,
+          },
+          content: request.content,
+          visibility,
+          createdAt: new Date(),
+          likeCount: 0,
+          commentCount: 0,
+          isLiked: false,
+          isOwn: true,
+          status: 'active',
+          source: visibility as PostSource,
+        };
+
+        // Prepend to the feed (newest first)
+        this._allPosts.update((posts) => [optimisticPost, ...posts]);
+        this.applyFilter();
+      }
+
       return result.data;
     } catch (err) {
       console.error('Failed to create post:', err);
@@ -1075,9 +1074,7 @@ export class FeedService {
     this._cursor.set(null);
     this._commentsCursor.set(null);
     this._activeFilter.set('all');
-    this.cachedRegionId = null;
     this.lastVisibleDoc = null;
-    this.lastHomeFeedDoc = null;
     // Clear all caches
     this.likeStatusCache.clear();
     this.authorDataCache.clear();

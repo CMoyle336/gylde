@@ -2,12 +2,15 @@
  * Social Feed Cloud Functions
  *
  * Architecture:
- * - Public posts: Query-based (Explore feed)
- * - Connections/Private posts: Fanout-based (Home feed via feedItems)
+ * - All posts: Fanout-based via feedItems subcollection
+ * - Public posts: Fanned out to matching users in the same region
+ *   (uses base discover filters: gender identity + support orientation)
+ * - Connections posts: Fanned out to mutual matches
+ * - Private posts: Fanned out to approved viewers only
  *
  * Handles:
  * - Creating posts (text + photos)
- * - Post fanout to feedItems for connections/private visibility
+ * - Post fanout to feedItems with discover-style filtering
  * - Like/unlike posts
  * - Comment operations
  * - Post deletion
@@ -19,6 +22,7 @@ import {FieldValue, Timestamp} from "firebase-admin/firestore";
 import {db} from "../config/firebase";
 import {getConfig} from "../config/remote-config";
 import * as logger from "firebase-functions/logger";
+import {isBaseMatch, MatchableProfile} from "../services/feed-matching.service";
 
 // ============================================================================
 // Types
@@ -29,7 +33,7 @@ type PostContentType = "text" | "image" | "video";
 type PostStatus = "active" | "flagged" | "removed";
 type CommentStatus = "active" | "removed";
 type ReputationTier = "new" | "active" | "established" | "trusted" | "distinguished";
-type FeedItemReason = "connection" | "approved" | "systemBoost";
+type FeedItemReason = "connection" | "approved" | "systemBoost" | "public" | "own";
 type PrivateAccessGrantType = "author" | "request";
 
 interface ViewerPolicy {
@@ -62,6 +66,11 @@ interface PostMetrics {
   reportCount: number;
 }
 
+interface GeoLocation {
+  latitude: number;
+  longitude: number;
+}
+
 interface Post {
   id: string;
   authorId: string;
@@ -75,6 +84,10 @@ interface Post {
   authorVerified: boolean;
   regionId: string;
   status: PostStatus;
+  // Author attributes for discover-style fan-out filtering
+  authorGenderIdentity: string;
+  authorSupportOrientation: string;
+  authorLocation?: GeoLocation; // For distance-based fan-out
 }
 
 interface FeedItemPreview {
@@ -119,6 +132,10 @@ interface UserProfile {
     city?: string;
     state?: string;
     country?: string;
+    genderIdentity?: string;
+    supportOrientation?: string;
+    interestedIn?: string[];
+    location?: GeoLocation;
   };
 }
 
@@ -140,6 +157,38 @@ const MAX_COMMENT_LENGTH = 280;
 const MAX_MEDIA_ITEMS = 4;
 const EXCERPT_LENGTH = 100;
 const BACKFILL_LIMIT = 20; // Number of posts to backfill on connection/approval
+const MAX_FEED_DISTANCE_MILES = 100; // Maximum distance for public post fan-out
+const MAX_FANOUT_USERS = 1000; // Maximum users to fan out to per post
+
+// ============================================================================
+// Distance Calculation (Haversine formula)
+// ============================================================================
+
+function toRad(deg: number): number {
+  return deg * (Math.PI / 180);
+}
+
+/**
+ * Calculate distance between two coordinates in miles
+ */
+function calculateDistance(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+): number {
+  const R = 3959; // Earth's radius in miles
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) *
+      Math.cos(toRad(lat2)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return Math.round(R * c);
+}
 
 // ============================================================================
 // Helper Functions
@@ -276,6 +325,115 @@ async function getPrivateAccessViewers(authorId: string): Promise<string[]> {
   return accessSnapshot.docs.map((doc) => doc.id);
 }
 
+/**
+ * Get all users who should receive a public post based on discover-style matching
+ * This applies the same base filters as the discover page:
+ * 1. Within MAX_FEED_DISTANCE_MILES of the post author
+ * 2. Gender identity match (author's gender in viewer's "interested in")
+ * 3. Support orientation compatibility (providing↔receiving)
+ * 4. Not blocked (either direction)
+ */
+async function getPublicPostRecipients(post: Post): Promise<string[]> {
+  const authorId = post.authorId;
+  const authorLocation = post.authorLocation;
+
+  // Build author profile for matching
+  const author: MatchableProfile = {
+    genderIdentity: post.authorGenderIdentity || "",
+    supportOrientation: post.authorSupportOrientation || "either",
+    interestedIn: [], // Not needed for author
+  };
+
+  // Query all searchable users
+  // Note: In a production app with many users, consider using geohash-based queries
+  const usersSnapshot = await db.collection("users")
+    .where("onboardingCompleted", "==", true)
+    .where("isSearchable", "==", true)
+    .limit(MAX_FANOUT_USERS * 2) // Over-fetch to account for filtering
+    .get();
+
+  if (usersSnapshot.empty) {
+    logger.info("No searchable users found for public post fanout");
+    return [];
+  }
+
+  // Get blocked users (both directions) for the author
+  const [blockedSnapshot, blockedBySnapshot] = await Promise.all([
+    db.collection("users").doc(authorId).collection("blocks").get(),
+    db.collection("users").doc(authorId).collection("blockedBy").get(),
+  ]);
+  const blockedUserIds = new Set<string>([
+    ...blockedSnapshot.docs.map((d) => d.id),
+    ...blockedBySnapshot.docs.map((d) => d.id),
+  ]);
+
+  const recipientIds: string[] = [];
+  let filteredByDistance = 0;
+  let filteredByMatch = 0;
+
+  for (const userDoc of usersSnapshot.docs) {
+    const userId = userDoc.id;
+
+    // Skip the author (they're added separately)
+    if (userId === authorId) continue;
+
+    // Skip blocked users
+    if (blockedUserIds.has(userId)) continue;
+
+    const userData = userDoc.data();
+    const viewerLocation = userData.onboarding?.location;
+
+    // Distance filter: if both have locations, check distance
+    if (authorLocation && viewerLocation) {
+      const distance = calculateDistance(
+        authorLocation.latitude,
+        authorLocation.longitude,
+        viewerLocation.latitude,
+        viewerLocation.longitude
+      );
+      if (distance > MAX_FEED_DISTANCE_MILES) {
+        filteredByDistance++;
+        continue;
+      }
+    }
+    // If either doesn't have location, skip distance check (allow match)
+
+    // Build viewer profile for matching
+    const viewer: MatchableProfile = {
+      genderIdentity: userData.onboarding?.genderIdentity || "",
+      supportOrientation: userData.onboarding?.supportOrientation || "either",
+      interestedIn: userData.onboarding?.interestedIn || [],
+    };
+
+    // Check if viewer matches author using base discover filters
+    if (isBaseMatch(author, viewer)) {
+      recipientIds.push(userId);
+      // Limit total recipients
+      if (recipientIds.length >= MAX_FANOUT_USERS) {
+        logger.warn(`Reached max fanout limit of ${MAX_FANOUT_USERS} users`);
+        break;
+      }
+    } else {
+      filteredByMatch++;
+    }
+  }
+
+  logger.info(
+    `Public post fanout: ${usersSnapshot.size} users queried, ` +
+    `${blockedUserIds.size} blocked, ${filteredByDistance} filtered by distance, ` +
+    `${filteredByMatch} filtered by match, ${recipientIds.length} recipients`,
+    {
+      authorId,
+      maxDistance: MAX_FEED_DISTANCE_MILES,
+      authorGenderIdentity: author.genderIdentity,
+      authorSupportOrientation: author.supportOrientation,
+      hasAuthorLocation: !!authorLocation,
+    }
+  );
+
+  return recipientIds;
+}
+
 // ============================================================================
 // Callable Functions
 // ============================================================================
@@ -321,6 +479,9 @@ export const createPost = onCall(async (request) => {
   const authorTier = userInfo.private?.reputation?.tier || "new";
   const authorVerified = userInfo.profile.identityVerified === true;
   const regionId = userInfo.profile.regionId;
+  const authorGenderIdentity = userInfo.profile.onboarding?.genderIdentity || "";
+  const authorSupportOrientation = userInfo.profile.onboarding?.supportOrientation || "either";
+  const authorLocation = userInfo.profile.onboarding?.location;
 
   // Build viewer policy with defaults
   const viewerPolicy: ViewerPolicy = {
@@ -347,10 +508,37 @@ export const createPost = onCall(async (request) => {
     authorTier,
     authorVerified,
     regionId,
+    authorGenderIdentity,
+    authorSupportOrientation,
+    ...(authorLocation && {authorLocation}),
     status: "active",
   };
 
   await postRef.set(post);
+
+  // Immediately add to author's own feed for instant display
+  const authorFeedItem: FeedItem = {
+    postId: postRef.id,
+    authorId: userId,
+    createdAt: FieldValue.serverTimestamp(),
+    insertedAt: FieldValue.serverTimestamp(),
+    reason: "own",
+    visibility,
+    regionId: regionId || "",
+    preview: {
+      authorName: userInfo.profile.displayName || "Unknown",
+      authorPhotoURL: userInfo.profile.photoURL,
+      contentExcerpt: content.text?.substring(0, EXCERPT_LENGTH) || "",
+      hasMedia: (content.media?.length || 0) > 0,
+    },
+  };
+
+  await db
+    .collection("users")
+    .doc(userId)
+    .collection("feedItems")
+    .doc(postRef.id)
+    .set(authorFeedItem);
 
   logger.info(`Post ${postRef.id} created by user ${userId} with visibility ${visibility}`);
 
@@ -362,9 +550,9 @@ export const createPost = onCall(async (request) => {
 
 /**
  * Trigger: When a post is created, fanout to feedItems
- * - Public posts: Fanout to connections so they appear in "Connections" filter
- * - Connections posts: Fanout to connections
- * - Private posts: Fanout to approved viewers
+ * - Public posts: Fanout to matching users in the same region (discover-style filtering)
+ * - Connections posts: Fanout to mutual matches
+ * - Private posts: Fanout to approved viewers only
  */
 export const onPostCreated = onDocumentCreated(
   {
@@ -388,13 +576,16 @@ export const onPostCreated = onDocumentCreated(
     let recipientIds: string[] = [];
     let reason: FeedItemReason = "connection";
 
-    if (postData.visibility === "public" || postData.visibility === "connections") {
+    if (postData.visibility === "public") {
+      // Fanout to matching users in the same region using discover-style base filters
+      recipientIds = await getPublicPostRecipients(postData);
+      reason = "public";
+      logger.info(`Post ${postId} (public) fanning out to ${recipientIds.length} matching users in region`);
+    } else if (postData.visibility === "connections") {
       // Fanout to all connections (matches)
-      // For public posts, this enables the "Connections" filter on the client
-      // For connections posts, this is the only way they're distributed
       recipientIds = await getUserConnections(postData.authorId);
       reason = "connection";
-      logger.info(`Post ${postId} (${postData.visibility}) fanning out to ${recipientIds.length} connections`);
+      logger.info(`Post ${postId} (connections) fanning out to ${recipientIds.length} connections`);
     } else if (postData.visibility === "private") {
       // Fanout to approved viewers only
       recipientIds = await getPrivateAccessViewers(postData.authorId);
@@ -402,12 +593,9 @@ export const onPostCreated = onDocumentCreated(
       logger.info(`Post ${postId} (private) fanning out to ${recipientIds.length} approved viewers`);
     }
 
-    // Always include the author so they can see their own posts in filtered views
-    // (connections/private posts wouldn't otherwise appear in the author's feed)
-    if (!recipientIds.includes(postData.authorId)) {
-      recipientIds.push(postData.authorId);
-      logger.info(`Including author ${postData.authorId} in fanout for their own post`);
-    }
+    // Note: Author's feed item is created synchronously in createPost with reason "own"
+    // Remove author from recipients to avoid duplicate writes
+    recipientIds = recipientIds.filter((id) => id !== postData.authorId);
 
     if (recipientIds.length > 0) {
       await fanoutToFeedItems(postData, recipientIds, authorName, authorPhotoURL, reason);

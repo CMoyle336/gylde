@@ -329,14 +329,10 @@ service cloud.firestore {
     // POSTS COLLECTION (Social Feed)
     // ============================================
     match /posts/{postId} {
-      // Helper to check if post is deleted
-      function isDeleted() {
-        return resource.data.status == 'removed' || resource.data.status == 'deleted';
-      }
-      
-      // Authenticated users can read non-deleted posts
-      // (visibility/blocking filters applied at query level and client-side)
-      allow read: if isAuthenticated() && !isDeleted();
+      // Authenticated users can read posts
+      // Deleted post filtering happens at application level in fetchPostsFromFeedItems
+      // (visibility/blocking filters also applied at query level and client-side)
+      allow read: if isAuthenticated();
       
       // Users can create posts for themselves
       allow create: if isAuthenticated() 
