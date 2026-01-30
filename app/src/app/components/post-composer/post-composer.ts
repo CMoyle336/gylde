@@ -5,14 +5,18 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TranslateModule } from '@ngx-translate/core';
+import { Functions, httpsCallable } from '@angular/fire/functions';
 import { FeedService } from '../../core/services/feed.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ImageUploadService, MediaType } from '../../core/services/image-upload.service';
-import { PostVisibility, CreatePostRequest, PostMedia } from '../../core/interfaces';
+import { PostVisibility, CreatePostRequest, PostMedia, LinkPreview } from '../../core/interfaces';
 
 const MAX_CONTENT_LENGTH = 500;
 const MAX_MEDIA = 4;
 const MAX_VIDEOS = 1; // Only 1 video allowed per post
+
+// URL detection regex
+const URL_REGEX = /https?:\/\/[^\s<>"{}|\\^`[\]]+/gi;
 
 interface MediaItem {
   file: File;
@@ -52,6 +56,7 @@ export class PostComposerComponent {
   private readonly feedService = inject(FeedService);
   private readonly authService = inject(AuthService);
   private readonly imageUploadService = inject(ImageUploadService);
+  private readonly functions = inject(Functions);
 
   // Outputs
   readonly postCreated = output<void>();
@@ -62,6 +67,11 @@ export class PostComposerComponent {
   protected readonly visibility = signal<PostVisibility>('public');
   protected readonly uploading = signal(false);
   protected readonly error = signal<string | null>(null);
+  
+  // Link preview state
+  protected readonly linkPreview = signal<LinkPreview | null>(null);
+  protected readonly loadingPreview = signal(false);
+  private lastDetectedUrl: string | null = null;
 
   // Constants
   protected readonly maxContentLength = MAX_CONTENT_LENGTH;
@@ -97,6 +107,59 @@ export class PostComposerComponent {
   protected onContentChange(event: Event): void {
     const target = event.target as HTMLTextAreaElement;
     this.content.set(target.value);
+    this.detectAndFetchLinkPreview(target.value);
+  }
+
+  /**
+   * Detect URLs in text and fetch preview for the first one
+   */
+  private detectAndFetchLinkPreview(text: string): void {
+    // Don't detect if we already have a preview
+    if (this.linkPreview()) return;
+
+    const matches = text.match(URL_REGEX);
+    if (!matches || matches.length === 0) return;
+
+    const url = matches[0];
+    
+    // Don't refetch the same URL
+    if (url === this.lastDetectedUrl) return;
+    this.lastDetectedUrl = url;
+
+    this.fetchLinkPreview(url);
+  }
+
+  /**
+   * Fetch link preview from backend
+   */
+  private async fetchLinkPreview(url: string): Promise<void> {
+    this.loadingPreview.set(true);
+    
+    try {
+      const fetchPreviewFn = httpsCallable<{url: string}, {success: boolean; preview?: LinkPreview}>(
+        this.functions,
+        'fetchLinkPreview'
+      );
+      
+      const result = await fetchPreviewFn({ url });
+      
+      if (result.data.success && result.data.preview) {
+        this.linkPreview.set(result.data.preview);
+      }
+    } catch (err) {
+      console.warn('Failed to fetch link preview:', err);
+      // Silently fail - link previews are optional
+    } finally {
+      this.loadingPreview.set(false);
+    }
+  }
+
+  /**
+   * Remove the link preview
+   */
+  protected removeLinkPreview(): void {
+    this.linkPreview.set(null);
+    this.lastDetectedUrl = null;
   }
 
   protected async onMediaSelect(event: Event): Promise<void> {
@@ -249,6 +312,7 @@ export class PostComposerComponent {
         type: contentType,
         text: this.content().trim() || undefined,
         media: uploadedMedia.length > 0 ? uploadedMedia : undefined,
+        linkPreview: this.linkPreview() || undefined,
       },
       visibility: this.visibility(),
     };
@@ -266,6 +330,8 @@ export class PostComposerComponent {
       });
       this.media.set([]);
       this.visibility.set('public');
+      this.linkPreview.set(null);
+      this.lastDetectedUrl = null;
       
       this.postCreated.emit();
     } else {

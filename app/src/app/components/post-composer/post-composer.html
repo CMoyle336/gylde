@@ -48,6 +48,46 @@
       </div>
     }
 
+    <!-- Link Preview -->
+    @if (loadingPreview()) {
+      <div class="link-preview-loading">
+        <mat-spinner diameter="20"></mat-spinner>
+        <span>{{ 'FEED.LOADING_PREVIEW' | translate }}</span>
+      </div>
+    } @else if (linkPreview()) {
+      <div class="link-preview-card">
+        <button 
+          type="button" 
+          class="remove-preview-btn" 
+          (click)="removeLinkPreview()"
+          [attr.aria-label]="'FEED.REMOVE_PREVIEW' | translate">
+          <mat-icon>close</mat-icon>
+        </button>
+        @if (linkPreview()?.imageUrl) {
+          <div class="preview-image">
+            <img [src]="linkPreview()?.imageUrl" alt="" loading="lazy">
+            @if (linkPreview()?.videoType === 'youtube' || linkPreview()?.videoType === 'vimeo') {
+              <div class="play-overlay">
+                <mat-icon>play_circle_filled</mat-icon>
+              </div>
+            }
+          </div>
+        }
+        <div class="preview-content">
+          @if (linkPreview()?.siteName) {
+            <span class="preview-site">{{ linkPreview()?.siteName }}</span>
+          }
+          @if (linkPreview()?.title) {
+            <h4 class="preview-title">{{ linkPreview()?.title }}</h4>
+          }
+          @if (linkPreview()?.description) {
+            <p class="preview-description">{{ linkPreview()?.description }}</p>
+          }
+          <span class="preview-url">{{ linkPreview()?.url }}</span>
+        </div>
+      </div>
+    }
+
     <!-- Error Message -->
     @if (error()) {
       <div class="error-message">

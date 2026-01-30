@@ -1,12 +1,13 @@
 import { ChangeDetectionStrategy, Component, input, output, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TranslateModule } from '@ngx-translate/core';
-import { PostDisplay } from '../../core/interfaces';
+import { PostDisplay, LinkPreview } from '../../core/interfaces';
 import { ImageGalleryComponent, GalleryState } from '../../pages/messages/components/image-gallery';
 import { ReputationAvatarComponent } from '../reputation-avatar';
 
@@ -28,6 +29,7 @@ import { ReputationAvatarComponent } from '../reputation-avatar';
 })
 export class PostCardComponent {
   private readonly router = inject(Router);
+  private readonly sanitizer = inject(DomSanitizer);
 
   // Inputs
   readonly post = input.required<PostDisplay>();
@@ -42,6 +44,31 @@ export class PostCardComponent {
 
   // Computed
   protected readonly hasMedia = computed(() => (this.post().content.media?.length || 0) > 0);
+  
+  // Link preview computed values
+  protected readonly linkPreview = computed(() => this.post().content.linkPreview);
+  protected readonly hasLinkPreview = computed(() => !!this.linkPreview());
+  protected readonly isVideoEmbed = computed(() => {
+    const preview = this.linkPreview();
+    return preview?.videoType === 'youtube' || preview?.videoType === 'vimeo';
+  });
+  
+  protected readonly videoEmbedUrl = computed((): SafeResourceUrl | null => {
+    const preview = this.linkPreview();
+    if (!preview?.videoId) return null;
+    
+    if (preview.videoType === 'youtube') {
+      const url = `https://www.youtube.com/embed/${preview.videoId}`;
+      return this.sanitizer.bypassSecurityTrustResourceUrl(url);
+    }
+    
+    if (preview.videoType === 'vimeo') {
+      const url = `https://player.vimeo.com/video/${preview.videoId}`;
+      return this.sanitizer.bypassSecurityTrustResourceUrl(url);
+    }
+    
+    return null;
+  });
   protected readonly mediaCount = computed(() => this.post().content.media?.length || 0);
   protected readonly mediaItems = computed(() => {
     const media = this.post().content.media || [];

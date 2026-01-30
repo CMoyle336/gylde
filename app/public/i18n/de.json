@@ -1228,6 +1228,9 @@
     "COMPOSER_PLACEHOLDER": "Was denkst du gerade?",
     "POST_BUTTON": "Posten",
     "REMOVE_PHOTO": "Foto entfernen",
+    "REMOVE_MEDIA": "Medien entfernen",
+    "LOADING_PREVIEW": "Vorschau wird geladen...",
+    "REMOVE_PREVIEW": "Vorschau entfernen",
     "VISIBILITY": {
       "PUBLIC": "Öffentlich",
       "VERIFIED": "Nur Verifizierte",

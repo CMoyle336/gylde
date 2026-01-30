@@ -51,12 +51,34 @@ export interface PostMedia {
 }
 
 /**
+ * Video embed type for link previews
+ */
+export type VideoEmbedType = 'youtube' | 'vimeo' | 'other';
+
+/**
+ * Link preview data from URL metadata (OpenGraph)
+ */
+export interface LinkPreview {
+  url: string;
+  title?: string;
+  description?: string;
+  imageUrl?: string;
+  siteName?: string;
+  /** Video ID for embedded players (YouTube, Vimeo) */
+  videoId?: string;
+  /** Type of video embed */
+  videoType?: VideoEmbedType;
+}
+
+/**
  * Post content structure
  */
 export interface PostContent {
   type: PostContentType;
   text?: string;
   media?: PostMedia[];
+  /** Link preview from pasted URL */
+  linkPreview?: LinkPreview;
 }
 
 /**

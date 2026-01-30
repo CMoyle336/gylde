@@ -1228,6 +1228,9 @@
     "COMPOSER_PLACEHOLDER": "¿Qué tienes en mente?",
     "POST_BUTTON": "Publicar",
     "REMOVE_PHOTO": "Eliminar foto",
+    "REMOVE_MEDIA": "Eliminar medio",
+    "LOADING_PREVIEW": "Cargando vista previa...",
+    "REMOVE_PREVIEW": "Eliminar vista previa",
     "VISIBILITY": {
       "PUBLIC": "Público",
       "VERIFIED": "Solo verificados",

@@ -1228,6 +1228,9 @@
     "COMPOSER_PLACEHOLDER": "What's on your mind?",
     "POST_BUTTON": "Post",
     "REMOVE_PHOTO": "Remove photo",
+    "REMOVE_MEDIA": "Remove media",
+    "LOADING_PREVIEW": "Loading preview...",
+    "REMOVE_PREVIEW": "Remove preview",
     "VISIBILITY": {
       "PUBLIC": "Public",
       "VERIFIED": "Verified Only",

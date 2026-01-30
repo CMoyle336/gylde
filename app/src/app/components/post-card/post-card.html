@@ -94,6 +94,51 @@
         }
       </div>
     }
+
+    <!-- Link Preview -->
+    @if (hasLinkPreview()) {
+      <div class="link-preview">
+        @if (isVideoEmbed() && videoEmbedUrl()) {
+          <!-- YouTube / Vimeo Embed -->
+          <div class="video-embed">
+            <iframe 
+              [src]="videoEmbedUrl()"
+              frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen>
+            </iframe>
+          </div>
+          @if (linkPreview()?.title) {
+            <div class="preview-info">
+              <span class="preview-site">{{ linkPreview()?.siteName }}</span>
+              <a class="preview-title-link" [href]="linkPreview()?.url" target="_blank" rel="noopener noreferrer">
+                {{ linkPreview()?.title }}
+              </a>
+            </div>
+          }
+        } @else {
+          <!-- Regular Link Preview Card -->
+          <a class="preview-card" [href]="linkPreview()?.url" target="_blank" rel="noopener noreferrer">
+            @if (linkPreview()?.imageUrl) {
+              <div class="preview-image">
+                <img [src]="linkPreview()?.imageUrl" alt="" loading="lazy">
+              </div>
+            }
+            <div class="preview-content">
+              @if (linkPreview()?.siteName) {
+                <span class="preview-site">{{ linkPreview()?.siteName }}</span>
+              }
+              @if (linkPreview()?.title) {
+                <h4 class="preview-title">{{ linkPreview()?.title }}</h4>
+              }
+              @if (linkPreview()?.description) {
+                <p class="preview-description">{{ linkPreview()?.description }}</p>
+              }
+            </div>
+          </a>
+        }
+      </div>
+    }
   </div>
 
   <!-- Engagement Stats -->

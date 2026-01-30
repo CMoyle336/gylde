@@ -54,10 +54,23 @@ interface PostMedia {
   duration?: number; // For videos, in seconds
 }
 
+type VideoEmbedType = "youtube" | "vimeo" | "other";
+
+interface LinkPreview {
+  url: string;
+  title?: string;
+  description?: string;
+  imageUrl?: string;
+  siteName?: string;
+  videoId?: string;
+  videoType?: VideoEmbedType;
+}
+
 interface PostContent {
   type: PostContentType;
   text?: string;
   media?: PostMedia[];
+  linkPreview?: LinkPreview;
 }
 
 interface PostMetrics {
@@ -1143,4 +1156,350 @@ export const reportPost = onCall(async (request) => {
   logger.info(`User ${userId} reported post ${postId}`);
 
   return {success: true};
+});
+
+// ============================================================================
+// Link Preview
+// ============================================================================
+
+const FETCH_TIMEOUT_MS = 5000;
+const MAX_RESPONSE_SIZE = 512 * 1024; // 512KB max HTML size
+
+// Blacklisted hosts/patterns for SSRF protection
+const BLACKLISTED_HOSTS = [
+  "localhost",
+  "127.0.0.1",
+  "0.0.0.0",
+  "169.254.169.254", // AWS/GCP metadata endpoint
+  "[::1]", // IPv6 localhost
+];
+
+const PRIVATE_IP_PATTERNS = [
+  /^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/, // 10.x.x.x
+  /^172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}$/, // 172.16-31.x.x
+  /^192\.168\.\d{1,3}\.\d{1,3}$/, // 192.168.x.x
+];
+
+/**
+ * Check if a hostname is blacklisted
+ */
+function isBlacklistedHost(hostname: string): boolean {
+  const lowerHost = hostname.toLowerCase();
+
+  // Check exact matches
+  if (BLACKLISTED_HOSTS.includes(lowerHost)) {
+    return true;
+  }
+
+  // Check private IP patterns
+  for (const pattern of PRIVATE_IP_PATTERNS) {
+    if (pattern.test(hostname)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Extract YouTube video ID from URL
+ */
+function extractYouTubeVideoId(url: string): string | null {
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+    /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/,
+  ];
+
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match) {
+      return match[1];
+    }
+  }
+  return null;
+}
+
+/**
+ * Extract Vimeo video ID from URL
+ */
+function extractVimeoVideoId(url: string): string | null {
+  const match = url.match(/vimeo\.com\/(\d+)/);
+  return match ? match[1] : null;
+}
+
+/**
+ * Parse OpenGraph and meta tags from HTML
+ */
+function parseMetaTags(html: string): Partial<LinkPreview> {
+  const result: Partial<LinkPreview> = {};
+
+  // Helper to extract content from meta tags
+  const getMetaContent = (property: string): string | undefined => {
+    // Try property="..." format (OpenGraph)
+    const propertyMatch = html.match(
+      new RegExp(`<meta[^>]+property=["']${property}["'][^>]+content=["']([^"']+)["']`, "i")
+    );
+    if (propertyMatch) return propertyMatch[1];
+
+    // Try content before property
+    const reverseMatch = html.match(
+      new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+property=["']${property}["']`, "i")
+    );
+    if (reverseMatch) return reverseMatch[1];
+
+    // Try name="..." format (standard meta tags)
+    const nameMatch = html.match(
+      new RegExp(`<meta[^>]+name=["']${property}["'][^>]+content=["']([^"']+)["']`, "i")
+    );
+    if (nameMatch) return nameMatch[1];
+
+    // Try content before name
+    const reverseNameMatch = html.match(
+      new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+name=["']${property}["']`, "i")
+    );
+    if (reverseNameMatch) return reverseNameMatch[1];
+
+    return undefined;
+  };
+
+  // OpenGraph tags (preferred)
+  result.title = getMetaContent("og:title");
+  result.description = getMetaContent("og:description");
+  result.imageUrl = getMetaContent("og:image");
+  result.siteName = getMetaContent("og:site_name");
+
+  // Fallback to standard meta tags
+  if (!result.title) {
+    const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+    if (titleMatch) {
+      result.title = titleMatch[1].trim();
+    }
+  }
+
+  if (!result.description) {
+    result.description = getMetaContent("description");
+  }
+
+  // Twitter card fallbacks
+  if (!result.title) {
+    result.title = getMetaContent("twitter:title");
+  }
+  if (!result.description) {
+    result.description = getMetaContent("twitter:description");
+  }
+  if (!result.imageUrl) {
+    result.imageUrl = getMetaContent("twitter:image");
+  }
+
+  // Decode HTML entities in text fields
+  const decodeHtml = (text: string | undefined): string | undefined => {
+    if (!text) return undefined;
+    return text
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, "\"")
+      .replace(/&#39;/g, "'")
+      .replace(/&#x27;/g, "'")
+      .replace(/&#x2F;/g, "/");
+  };
+
+  result.title = decodeHtml(result.title);
+  result.description = decodeHtml(result.description);
+  result.siteName = decodeHtml(result.siteName);
+
+  return result;
+}
+
+/**
+ * Fetch URL content with timeout
+ */
+async function fetchWithTimeout(url: string): Promise<string> {
+  const https = await import("https");
+  const http = await import("http");
+
+  return new Promise((resolve, reject) => {
+    const parsedUrl = new URL(url);
+    const protocol = parsedUrl.protocol === "https:" ? https : http;
+
+    const request = protocol.get(
+      url,
+      {
+        timeout: FETCH_TIMEOUT_MS,
+        headers: {
+          "User-Agent": "Mozilla/5.0 (compatible; GyldeBot/1.0; +https://gylde.app)",
+          "Accept": "text/html,application/xhtml+xml",
+          "Accept-Language": "en-US,en;q=0.9",
+        },
+      },
+      (response) => {
+        // Handle redirects
+        if (response.statusCode && response.statusCode >= 300 && response.statusCode < 400) {
+          const redirectUrl = response.headers.location;
+          if (redirectUrl) {
+            // Validate redirect URL
+            try {
+              const redirectParsed = new URL(redirectUrl, url);
+              if (isBlacklistedHost(redirectParsed.hostname)) {
+                reject(new Error("Redirect to blacklisted host"));
+                return;
+              }
+              fetchWithTimeout(redirectParsed.href).then(resolve).catch(reject);
+            } catch {
+              reject(new Error("Invalid redirect URL"));
+            }
+            return;
+          }
+        }
+
+        if (response.statusCode !== 200) {
+          reject(new Error(`HTTP ${response.statusCode}`));
+          return;
+        }
+
+        let data = "";
+        let size = 0;
+
+        response.on("data", (chunk: Buffer) => {
+          size += chunk.length;
+          if (size > MAX_RESPONSE_SIZE) {
+            request.destroy();
+            reject(new Error("Response too large"));
+            return;
+          }
+          data += chunk.toString();
+        });
+
+        response.on("end", () => {
+          resolve(data);
+        });
+
+        response.on("error", reject);
+      }
+    );
+
+    request.on("timeout", () => {
+      request.destroy();
+      reject(new Error("Request timeout"));
+    });
+
+    request.on("error", reject);
+  });
+}
+
+/**
+ * Fetch link preview metadata for a URL
+ */
+export const fetchLinkPreview = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "Must be logged in");
+  }
+
+  const {url} = request.data as {url: string};
+
+  if (!url || typeof url !== "string") {
+    throw new HttpsError("invalid-argument", "URL is required");
+  }
+
+  // Validate URL format
+  let parsedUrl: URL;
+  try {
+    parsedUrl = new URL(url);
+  } catch {
+    throw new HttpsError("invalid-argument", "Invalid URL format");
+  }
+
+  // Only allow http/https
+  if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+    throw new HttpsError("invalid-argument", "Only HTTP/HTTPS URLs are allowed");
+  }
+
+  // Check blacklist
+  if (isBlacklistedHost(parsedUrl.hostname)) {
+    throw new HttpsError("invalid-argument", "This URL cannot be previewed");
+  }
+
+  try {
+    // Check for video embeds first (don't need to fetch for known patterns)
+    const youtubeId = extractYouTubeVideoId(url);
+    if (youtubeId) {
+      // For YouTube, we can construct a basic preview without fetching
+      const preview: LinkPreview = {
+        url,
+        siteName: "YouTube",
+        videoId: youtubeId,
+        videoType: "youtube",
+      };
+
+      // Try to fetch for title/description, but don't fail if we can't
+      try {
+        const html = await fetchWithTimeout(url);
+        const meta = parseMetaTags(html);
+        preview.title = meta.title;
+        preview.description = meta.description;
+        preview.imageUrl = meta.imageUrl || `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`;
+      } catch {
+        // Use YouTube thumbnail as fallback
+        preview.imageUrl = `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`;
+      }
+
+      return {success: true, preview};
+    }
+
+    const vimeoId = extractVimeoVideoId(url);
+    if (vimeoId) {
+      const preview: LinkPreview = {
+        url,
+        siteName: "Vimeo",
+        videoId: vimeoId,
+        videoType: "vimeo",
+      };
+
+      try {
+        const html = await fetchWithTimeout(url);
+        const meta = parseMetaTags(html);
+        preview.title = meta.title;
+        preview.description = meta.description;
+        preview.imageUrl = meta.imageUrl;
+      } catch {
+        // Vimeo doesn't have easy thumbnail URLs, leave empty
+      }
+
+      return {success: true, preview};
+    }
+
+    // Fetch and parse HTML for other URLs
+    const html = await fetchWithTimeout(url);
+    const meta = parseMetaTags(html);
+
+    const preview: LinkPreview = {
+      url,
+      title: meta.title,
+      description: meta.description,
+      imageUrl: meta.imageUrl,
+      siteName: meta.siteName || parsedUrl.hostname,
+    };
+
+    // Ensure imageUrl is absolute
+    if (preview.imageUrl && !preview.imageUrl.startsWith("http")) {
+      try {
+        preview.imageUrl = new URL(preview.imageUrl, url).href;
+      } catch {
+        // Invalid image URL, remove it
+        delete preview.imageUrl;
+      }
+    }
+
+    return {success: true, preview};
+  } catch (error) {
+    logger.warn("Failed to fetch link preview", {url, error});
+    // Return basic preview with just the URL
+    return {
+      success: true,
+      preview: {
+        url,
+        siteName: parsedUrl.hostname,
+      } as LinkPreview,
+    };
+  }
 });
