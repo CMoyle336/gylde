@@ -10,26 +10,36 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatTabsModule } from '@angular/material/tabs';
+import { MatBadgeModule } from '@angular/material/badge';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatDialog } from '@angular/material/dialog';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { Firestore, collection, query, where, orderBy, limit, getDocs, startAfter, QueryDocumentSnapshot, DocumentData } from '@angular/fire/firestore';
 import { Functions, httpsCallable } from '@angular/fire/functions';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { UserProfileService } from '../../core/services/user-profile.service';
 import { ImageUploadService } from '../../core/services/image-upload.service';
 import { AuthService } from '../../core/services/auth.service';
-import { PrivateAccessService } from '../../core/services/photo-access.service';
+import { PrivateAccessService, PrivateAccessRequestDisplay, PrivateAccessGrantDisplay } from '../../core/services/photo-access.service';
 import { PlacesService, PlaceSuggestion } from '../../core/services/places.service';
 import { SubscriptionService } from '../../core/services/subscription.service';
 import { RemoteConfigService } from '../../core/services/remote-config.service';
 import { AiChatService } from '../../core/services/ai-chat.service';
 import { AnalyticsService } from '../../core/services/analytics.service';
-import { OnboardingProfile, GeoLocation, ReputationTier, TIER_CONFIG, TIER_DISPLAY } from '../../core/interfaces';
+import { OnboardingProfile, GeoLocation, ReputationTier, TIER_CONFIG, TIER_DISPLAY, PostDisplay, PostVisibility } from '../../core/interfaces';
 import { Photo } from '../../core/interfaces/photo.interface';
 import { ALL_CONNECTION_TYPES, getConnectionTypeLabel, SUPPORT_ORIENTATION_OPTIONS, getSupportOrientationLabel } from '../../core/constants/connection-types';
 import { PrivateAccessDialogComponent } from '../../components/photo-access-dialog';
 import { ReputationBadgeComponent } from '../../components/reputation-badge';
 import { ReputationInfoDialogComponent } from '../../components/reputation-info-dialog';
 import { FounderBadgeComponent } from '../../components/founder-badge';
+import { PostComposerComponent } from '../../components/post-composer';
+import { PostCardComponent } from '../../components/post-card';
 import { environment } from '../../../environments/environment';
+
+export type ProfileTab = 'feed' | 'about' | 'access' | 'photos';
+export type ProfileFeedFilter = 'public' | 'private';
 
 type LocationStatus = 'idle' | 'detecting' | 'success' | 'error';
 
@@ -85,9 +95,15 @@ interface UploadingPhoto {
     MatIconModule,
     MatProgressSpinnerModule,
     MatTooltipModule,
+    MatTabsModule,
+    MatBadgeModule,
+    MatMenuModule,
+    MatSnackBarModule,
     TranslateModule,
     ReputationBadgeComponent,
     FounderBadgeComponent,
+    PostComposerComponent,
+    PostCardComponent,
   ],
 })
 export class ProfileComponent implements OnInit, OnDestroy {
@@ -109,10 +125,220 @@ export class ProfileComponent implements OnInit, OnDestroy {
   private readonly aiChatService = inject(AiChatService);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly dialog = inject(MatDialog);
+  private readonly snackBar = inject(MatSnackBar);
   private readonly functions = inject(Functions);
+  private readonly firestore = inject(Firestore);
 
   // Development mode flag
   protected readonly isDev = !environment.production;
+
+  // ============================================
+  // TAB NAVIGATION STATE
+  // ============================================
+  protected readonly activeTab = signal<ProfileTab>('feed');
+  protected readonly tabIndex = computed(() => {
+    const tab = this.activeTab();
+    switch (tab) {
+      case 'feed': return 0;
+      case 'about': return 1;
+      case 'access': return 2;
+      case 'photos': return 3;
+      default: return 0;
+    }
+  });
+
+  onTabChange(index: number): void {
+    const tabs: ProfileTab[] = ['feed', 'about', 'access', 'photos'];
+    this.activeTab.set(tabs[index]);
+    
+    // Load my posts when switching to feed tab
+    if (tabs[index] === 'feed' && this.myPosts().length === 0) {
+      this.loadMyPosts();
+    }
+  }
+
+  // ============================================
+  // FEED TAB STATE
+  // ============================================
+  protected readonly feedFilter = signal<ProfileFeedFilter>('public');
+  protected readonly myPosts = signal<PostDisplay[]>([]);
+  protected readonly myPostsLoading = signal(false);
+  protected readonly myPostsError = signal<string | null>(null);
+  private lastPostDoc: QueryDocumentSnapshot<DocumentData> | null = null;
+  protected readonly hasMorePosts = signal(true);
+  private readonly POSTS_PER_PAGE = 10;
+
+  // Filtered posts based on feed filter
+  protected readonly filteredPosts = computed(() => {
+    const filter = this.feedFilter();
+    const posts = this.myPosts();
+    if (filter === 'private') {
+      return posts.filter(p => p.visibility === 'private');
+    }
+    return posts.filter(p => p.visibility !== 'private');
+  });
+
+  setFeedFilter(filter: ProfileFeedFilter): void {
+    this.feedFilter.set(filter);
+  }
+
+  async loadMyPosts(loadMore = false): Promise<void> {
+    const user = this.authService.user();
+    if (!user || this.myPostsLoading()) return;
+
+    this.myPostsLoading.set(true);
+    this.myPostsError.set(null);
+
+    try {
+      const postsRef = collection(this.firestore, 'posts');
+      let q = query(
+        postsRef,
+        where('authorId', '==', user.uid),
+        where('status', '==', 'active'),
+        orderBy('createdAt', 'desc'),
+        limit(this.POSTS_PER_PAGE)
+      );
+
+      if (loadMore && this.lastPostDoc) {
+        q = query(
+          postsRef,
+          where('authorId', '==', user.uid),
+          where('status', '==', 'active'),
+          orderBy('createdAt', 'desc'),
+          startAfter(this.lastPostDoc),
+          limit(this.POSTS_PER_PAGE)
+        );
+      }
+
+      const snapshot = await getDocs(q);
+      const posts: PostDisplay[] = [];
+
+      for (const doc of snapshot.docs) {
+        const data = doc.data();
+        const createdAt = data['createdAt']?.toDate?.() || new Date();
+        const visibility = data['visibility'] as PostVisibility;
+        // Map visibility to source (matches -> connection for PostSource type)
+        const source: 'public' | 'connection' | 'private' = 
+          visibility === 'matches' ? 'connection' : visibility;
+        
+        posts.push({
+          id: doc.id,
+          author: {
+            uid: user.uid,
+            displayName: this.profile()?.displayName || 'Me',
+            photoURL: this.profile()?.photoURL || null,
+            reputationTier: this.reputationTier(),
+          },
+          content: data['content'],
+          visibility,
+          likeCount: data['metrics']?.likeCount || 0,
+          commentCount: data['metrics']?.commentCount || 0,
+          isLiked: false, // Could load this separately if needed
+          isOwn: true,
+          createdAt,
+          status: data['status'],
+          source,
+        });
+      }
+
+      if (loadMore) {
+        this.myPosts.update(existing => [...existing, ...posts]);
+      } else {
+        this.myPosts.set(posts);
+      }
+
+      this.lastPostDoc = snapshot.docs[snapshot.docs.length - 1] || null;
+      this.hasMorePosts.set(snapshot.docs.length === this.POSTS_PER_PAGE);
+    } catch (error) {
+      console.error('Error loading my posts:', error);
+      this.myPostsError.set('Failed to load posts');
+    } finally {
+      this.myPostsLoading.set(false);
+    }
+  }
+
+  onPostCreated(): void {
+    // Reload posts to show the new one
+    this.lastPostDoc = null;
+    this.loadMyPosts();
+  }
+
+  async onPostDelete(post: PostDisplay): Promise<void> {
+    // Remove from local list immediately
+    this.myPosts.update(posts => posts.filter(p => p.id !== post.id));
+  }
+
+  // ============================================
+  // PRIVATE ACCESS TAB STATE
+  // ============================================
+  protected readonly pendingRequests = this.privateAccessService.pendingRequests;
+  protected readonly grants = this.privateAccessService.grants;
+
+  async approveRequest(request: PrivateAccessRequestDisplay): Promise<void> {
+    if (this.processingRequestId()) return;
+    this.processingRequestId.set(request.id);
+    try {
+      await this.privateAccessService.respondToRequest(request.id, 'grant');
+      this.snackBar.open(
+        this.translate.instant('PROFILE.ACCESS_APPROVED'),
+        this.translate.instant('COMMON.OK'),
+        { duration: 3000, panelClass: 'success-snackbar' }
+      );
+    } catch (error) {
+      console.error('Failed to approve request:', error);
+      this.snackBar.open(
+        this.translate.instant('PROFILE.ACCESS_ERROR'),
+        this.translate.instant('COMMON.OK'),
+        { duration: 4000, panelClass: 'error-snackbar' }
+      );
+    } finally {
+      this.processingRequestId.set(null);
+    }
+  }
+
+  async denyRequest(request: PrivateAccessRequestDisplay): Promise<void> {
+    if (this.processingRequestId()) return;
+    this.processingRequestId.set(request.id);
+    try {
+      await this.privateAccessService.respondToRequest(request.id, 'deny');
+      this.snackBar.open(
+        this.translate.instant('PROFILE.ACCESS_DENIED'),
+        this.translate.instant('COMMON.OK'),
+        { duration: 3000, panelClass: 'success-snackbar' }
+      );
+    } catch (error) {
+      console.error('Failed to deny request:', error);
+      this.snackBar.open(
+        this.translate.instant('PROFILE.ACCESS_ERROR'),
+        this.translate.instant('COMMON.OK'),
+        { duration: 4000, panelClass: 'error-snackbar' }
+      );
+    } finally {
+      this.processingRequestId.set(null);
+    }
+  }
+
+  async revokeAccess(grant: PrivateAccessGrantDisplay): Promise<void> {
+    if (this.processingRequestId()) return;
+    this.processingRequestId.set(grant.id);
+    try {
+      await this.privateAccessService.revokeAccess(grant.id);
+      this.snackBar.open(
+        this.translate.instant('PROFILE.ACCESS_REVOKED'),
+        this.translate.instant('COMMON.OK'),
+        { duration: 3000, panelClass: 'success-snackbar' }
+      );
+    } catch (error) {
+      console.error('Failed to revoke access:', error);
+      this.snackBar.open(
+        this.translate.instant('PROFILE.ACCESS_ERROR'),
+        this.translate.instant('COMMON.OK'),
+        { duration: 4000, panelClass: 'error-snackbar' }
+      );
+    } finally {
+      this.processingRequestId.set(null);
+    }
+  }
 
   protected readonly uploadError = signal<string | null>(null);
   
@@ -140,6 +366,10 @@ export class ProfileComponent implements OnInit, OnDestroy {
   protected readonly profile = this.userProfileService.profile;
   protected readonly isEditing = signal(false);
   protected readonly saving = signal(false);
+  
+  // Loading states for inline actions
+  protected readonly savingMessagingGate = signal(false);
+  protected readonly processingRequestId = signal<string | null>(null); // ID of request being processed
 
   // Editable photos list (writable for immediate UI updates)
   protected readonly editablePhotos = signal<string[]>([]);
@@ -198,6 +428,41 @@ export class ProfileComponent implements OnInit, OnDestroy {
         return 'PROFILE.MESSAGING_TIER.DISTINGUISHED';
       default:
         return 'PROFILE.MESSAGING_TIER.ANYONE';
+    }
+  }
+
+  /**
+   * Update messaging gate setting directly (without entering edit mode)
+   */
+  async updateMessagingGate(tier: ReputationTier): Promise<void> {
+    const profile = this.profile();
+    if (!profile || this.savingMessagingGate()) return;
+
+    this.savingMessagingGate.set(true);
+    try {
+      await this.userProfileService.updateProfile({
+        settings: {
+          ...profile.settings,
+          messaging: {
+            ...(profile.settings?.messaging ?? {}),
+            minReputationTierToMessageMe: tier,
+          },
+        },
+      });
+      this.snackBar.open(
+        this.translate.instant('PROFILE.MESSAGING_GATE_UPDATED'),
+        this.translate.instant('COMMON.OK'),
+        { duration: 3000, panelClass: 'success-snackbar' }
+      );
+    } catch (error) {
+      console.error('Failed to update messaging gate:', error);
+      this.snackBar.open(
+        this.translate.instant('PROFILE.MESSAGING_GATE_ERROR'),
+        this.translate.instant('COMMON.OK'),
+        { duration: 4000, panelClass: 'error-snackbar' }
+      );
+    } finally {
+      this.savingMessagingGate.set(false);
     }
   }
 
@@ -333,6 +598,9 @@ export class ProfileComponent implements OnInit, OnDestroy {
     if (isPlatformBrowser(this.platformId)) {
       document.addEventListener('click', this.clickOutsideHandler);
     }
+
+    // Load my posts for the feed tab
+    this.loadMyPosts();
   }
 
   ngOnDestroy(): void {

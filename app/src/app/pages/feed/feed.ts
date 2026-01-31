@@ -8,9 +8,9 @@ import { MatMenuModule } from '@angular/material/menu';
 import { TranslateModule } from '@ngx-translate/core';
 import { RemoteConfigService } from '../../core/services/remote-config.service';
 import { FeedService, FeedTab, FeedSubFilter } from '../../core/services/feed.service';
+import { SubscriptionService } from '../../core/services/subscription.service';
 import { PostDisplay, FeedFilter } from '../../core/interfaces';
 import { PostCardComponent } from '../../components/post-card';
-import { PostComposerComponent } from '../../components/post-composer';
 import { PostCommentsComponent, PostCommentsDialogData } from '../../components/post-comments';
 import { FeedSidebarComponent } from '../../components/feed-sidebar';
 
@@ -27,7 +27,6 @@ import { FeedSidebarComponent } from '../../components/feed-sidebar';
     MatMenuModule,
     TranslateModule,
     PostCardComponent,
-    PostComposerComponent,
     FeedSidebarComponent,
   ],
 })
@@ -36,10 +35,14 @@ export class FeedComponent implements OnInit {
   private readonly dialog = inject(MatDialog);
   private readonly remoteConfigService = inject(RemoteConfigService);
   private readonly feedService = inject(FeedService);
+  private readonly subscriptionService = inject(SubscriptionService);
 
   // Remote config state
   readonly configInitialized = this.remoteConfigService.initialized;
   readonly feedEnabled = this.remoteConfigService.featureFeedEnabled;
+
+  // Subscription state
+  readonly isPremium = this.subscriptionService.isPremium;
 
   // Feed state from service
   readonly posts = this.feedService.posts;
@@ -97,6 +100,10 @@ export class FeedComponent implements OnInit {
 
   ngOnInit(): void {
     if (this.feedEnabled()) {
+      // Reset to feed tab if non-premium user had private tab saved
+      if (this.activeTab() === 'private' && !this.isPremium()) {
+        this.feedService.setTab('feed');
+      }
       this.feedService.subscribeToFeed();
     }
   }
@@ -114,6 +121,11 @@ export class FeedComponent implements OnInit {
   }
 
   onTabChange(tab: FeedTab): void {
+    // Show upgrade prompt for non-premium users trying to access private tab
+    if (tab === 'private' && !this.isPremium()) {
+      this.subscriptionService.showUpgradePrompt();
+      return;
+    }
     this.feedService.setTab(tab);
   }
 

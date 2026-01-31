@@ -15,6 +15,14 @@ export interface PrivateAccessGrantDisplay extends PrivateAccessGrant {
   id: string;
 }
 
+export interface PrivateAccessReceivedDisplay {
+  id: string;
+  ownerId: string;
+  ownerName: string;
+  ownerPhoto: string | null;
+  grantedAt: Date;
+}
+
 // Legacy aliases for backward compatibility
 /** @deprecated Use PrivateAccessRequestDisplay instead */
 export type PhotoAccessRequestDisplay = PrivateAccessRequestDisplay;
@@ -37,12 +45,17 @@ export class PrivateAccessService {
   private readonly _pendingRequests = signal<PrivateAccessRequestDisplay[]>([]);
   readonly pendingRequests = this._pendingRequests.asReadonly();
 
-  // Granted access list
+  // Granted access list (users you've granted access to)
   private readonly _grants = signal<PrivateAccessGrantDisplay[]>([]);
   readonly grants = this._grants.asReadonly();
 
+  // Received access list (users who've granted access to you)
+  private readonly _receivedAccess = signal<PrivateAccessReceivedDisplay[]>([]);
+  readonly receivedAccess = this._receivedAccess.asReadonly();
+
   private requestsUnsubscribe?: () => void;
   private grantsUnsubscribe?: () => void;
+  private receivedUnsubscribe?: () => void;
 
   constructor() {
     // Subscribe to pending requests when user is authenticated
@@ -51,6 +64,7 @@ export class PrivateAccessService {
       if (user) {
         this.subscribeToRequests(user.uid);
         this.subscribeToGrants(user.uid);
+        this.subscribeToReceivedAccess(user.uid);
       } else {
         this.cleanup();
       }
@@ -96,12 +110,33 @@ export class PrivateAccessService {
     });
   }
 
+  private subscribeToReceivedAccess(userId: string): void {
+    this.receivedUnsubscribe?.();
+
+    const receivedRef = collection(this.firestore, `users/${userId}/privateAccessReceived`);
+    const q = query(receivedRef, orderBy('grantedAt', 'desc'));
+
+    this.receivedUnsubscribe = onSnapshot(q, (snapshot) => {
+      const received = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ownerId: doc.data()['ownerId'] as string,
+        ownerName: doc.data()['ownerName'] as string,
+        ownerPhoto: doc.data()['ownerPhoto'] as string | null,
+        grantedAt: doc.data()['grantedAt']?.toDate(),
+      })) as PrivateAccessReceivedDisplay[];
+
+      this._receivedAccess.set(received);
+    });
+  }
+
   private cleanup(): void {
     this.requestsUnsubscribe?.();
     this.grantsUnsubscribe?.();
+    this.receivedUnsubscribe?.();
     this._pendingRequests.set([]);
     this._pendingRequestsCount.set(0);
     this._grants.set([]);
+    this._receivedAccess.set([]);
   }
 
   /**

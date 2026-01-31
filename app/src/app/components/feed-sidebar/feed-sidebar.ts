@@ -7,7 +7,7 @@ import { TranslateModule } from '@ngx-translate/core';
 import { FeedTab } from '../../core/services/feed.service';
 import { MatchesService } from '../../core/services/matches.service';
 import { FeedActivityService } from '../../core/services/feed-activity.service';
-import { PrivateAccessService, PrivateAccessRequestDisplay, PrivateAccessGrantDisplay } from '../../core/services/photo-access.service';
+import { PrivateAccessService, PrivateAccessRequestDisplay, PrivateAccessGrantDisplay, PrivateAccessReceivedDisplay } from '../../core/services/photo-access.service';
 import { FeedActivityDisplay } from '../../core/interfaces';
 
 @Component({
@@ -45,6 +45,7 @@ export class FeedSidebarComponent implements OnInit {
   readonly pendingRequests = this.privateAccessService.pendingRequests;
   readonly pendingRequestsCount = this.privateAccessService.pendingRequestsCount;
   readonly grants = this.privateAccessService.grants;
+  readonly receivedAccess = this.privateAccessService.receivedAccess;
 
   // Computed: limit matches to show in sidebar
   readonly displayMatches = computed(() => this.matches().slice(0, 5));
@@ -54,6 +55,9 @@ export class FeedSidebarComponent implements OnInit {
 
   // Computed: limit grants to show in sidebar
   readonly displayGrants = computed(() => this.grants().slice(0, 5));
+
+  // Computed: limit received access to show in sidebar
+  readonly displayReceivedAccess = computed(() => this.receivedAccess().slice(0, 8));
 
   // Computed: show private access card only on private tab
   readonly showPrivateAccessCard = computed(() => this.activeTab() === 'private');

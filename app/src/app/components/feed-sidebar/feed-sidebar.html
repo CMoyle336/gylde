@@ -67,79 +67,37 @@
     </div>
   }
 
-  <!-- Private Access Card (Private tab only) -->
+  <!-- Private Access Card (Private tab only) - Shows who has granted YOU access -->
   @if (showPrivateAccessCard()) {
     <div class="sidebar-card private-access-card">
       <div class="card-header">
         <h3 class="card-title">
-          <mat-icon>lock</mat-icon>
-          {{ 'FEED.SIDEBAR.PRIVATE_ACCESS' | translate }}
+          <mat-icon>lock_open</mat-icon>
+          {{ 'FEED.SIDEBAR.YOUR_ACCESS' | translate }}
         </h3>
-        @if (pendingRequestsCount() > 0) {
-          <span class="badge">{{ pendingRequestsCount() }}</span>
+        @if (receivedAccess().length > 0) {
+          <span class="badge secondary">{{ receivedAccess().length }}</span>
         }
       </div>
       
       <div class="card-content">
-        <!-- Pending Requests -->
-        @if (pendingRequests().length > 0) {
-          <div class="access-section">
-            <h4 class="section-label">{{ 'FEED.SIDEBAR.PENDING_REQUESTS' | translate }}</h4>
-            <div class="access-list">
-              @for (request of pendingRequests(); track request.id) {
-                <div class="access-item">
-                  <button type="button" class="access-user" (click)="navigateToProfile(request.requesterId)">
-                    @if (request.requesterPhoto) {
-                      <img [src]="request.requesterPhoto" [alt]="request.requesterName" class="access-avatar">
-                    } @else {
-                      <div class="avatar-placeholder small">
-                        <mat-icon>person</mat-icon>
-                      </div>
-                    }
-                    <span class="access-name">{{ request.requesterName }}</span>
-                  </button>
-                  <div class="access-actions">
-                    <button type="button" class="action-btn approve" (click)="approveRequest(request)" title="Approve">
-                      <mat-icon>check</mat-icon>
-                    </button>
-                    <button type="button" class="action-btn deny" (click)="denyRequest(request)" title="Deny">
-                      <mat-icon>close</mat-icon>
-                    </button>
+        @if (displayReceivedAccess().length > 0) {
+          <div class="received-access-list">
+            @for (access of displayReceivedAccess(); track access.id) {
+              <button type="button" class="received-access-item" (click)="navigateToProfile(access.ownerId)">
+                @if (access.ownerPhoto) {
+                  <img [src]="access.ownerPhoto" [alt]="access.ownerName" class="access-avatar">
+                } @else {
+                  <div class="avatar-placeholder small">
+                    <mat-icon>person</mat-icon>
                   </div>
-                </div>
-              }
-            </div>
+                }
+                <span class="access-name">{{ access.ownerName }}</span>
+              </button>
+            }
           </div>
-        }
-
-        <!-- Granted Users -->
-        @if (displayGrants().length > 0) {
-          <div class="access-section">
-            <h4 class="section-label">{{ 'FEED.SIDEBAR.GRANTED_ACCESS' | translate }}</h4>
-            <div class="access-list">
-              @for (grant of displayGrants(); track grant.id) {
-                <div class="access-item">
-                  <button type="button" class="access-user" (click)="navigateToProfile(grant.grantedToUserId)">
-                    @if (grant.grantedToPhoto) {
-                      <img [src]="grant.grantedToPhoto" [alt]="grant.grantedToName" class="access-avatar">
-                    } @else {
-                      <div class="avatar-placeholder small">
-                        <mat-icon>person</mat-icon>
-                      </div>
-                    }
-                    <span class="access-name">{{ grant.grantedToName }}</span>
-                  </button>
-                  <button type="button" class="action-btn revoke" (click)="revokeAccess(grant)" title="Revoke">
-                    <mat-icon>person_remove</mat-icon>
-                  </button>
-                </div>
-              }
-            </div>
-          </div>
-        }
-
-        @if (pendingRequests().length === 0 && grants().length === 0) {
-          <p class="empty-text">{{ 'FEED.SIDEBAR.NO_PRIVATE_ACCESS' | translate }}</p>
+        } @else {
+          <p class="empty-text">{{ 'FEED.SIDEBAR.NO_RECEIVED_ACCESS' | translate }}</p>
         }
       </div>
     </div>

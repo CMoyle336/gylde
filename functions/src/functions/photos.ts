@@ -242,6 +242,19 @@ export const respondToPrivateAccessRequest = onCall(async (request) => {
         grantedAt: Timestamp.now(),
       }
     );
+
+    // IMPORTANT: Also write to privateAccess collection for feed system integration
+    // This enables:
+    // 1. getPrivateAccessViewers() to find viewers for private post fanout
+    // 2. onPrivateAccessCreated trigger to backfill existing private posts
+    batch.set(
+      db.collection("users").doc(ownerId).collection("privateAccess").doc(requesterId),
+      {
+        viewerId: requesterId,
+        approvedAt: Timestamp.now(),
+        grantedBy: "request",
+      }
+    );
   }
 
   await batch.commit();
@@ -290,6 +303,11 @@ export const revokePrivateAccess = onCall(async (request) => {
   // Delete the reverse reference
   batch.delete(
     db.collection("users").doc(userId).collection("privateAccessReceived").doc(ownerId)
+  );
+
+  // Delete from privateAccess collection (feed system integration)
+  batch.delete(
+    db.collection("users").doc(ownerId).collection("privateAccess").doc(userId)
   );
 
   // Update the original request status back to denied (so they can request again)

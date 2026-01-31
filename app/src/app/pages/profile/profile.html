@@ -1,97 +1,1026 @@
 <div class="profile-page">
-  <!-- Header -->
-  <header class="profile-header">
-    <h1>{{ 'PROFILE.TITLE' | translate }}</h1>
-    @if (!isEditing()) {
-      <button mat-stroked-button (click)="startEditing()">
-        <mat-icon>edit</mat-icon>
-        {{ 'PROFILE.EDIT_BUTTON' | translate }}
-      </button>
-    } @else {
-      <div class="header-actions">
-        <button mat-button (click)="cancelEditing()">{{ 'PROFILE.CANCEL_BUTTON' | translate }}</button>
-        <button mat-flat-button color="primary" (click)="saveProfile()" [disabled]="saving()">
-          @if (saving()) {
-            <mat-spinner diameter="18"></mat-spinner>
-          } @else {
-            <mat-icon>check</mat-icon>
-          }
-          {{ 'PROFILE.SAVE_BUTTON' | translate }}
-        </button>
-      </div>
-    }
-  </header>
-
   @if (profile(); as profile) {
+    <!-- ============================================
+         PROFILE HEADER
+         ============================================ -->
+    <header class="profile-header-card">
+      <div class="header-content">
+        <div class="header-avatar">
+          @if (profilePhotoUrl()) {
+            <img [src]="profilePhotoUrl()" [alt]="profile.displayName || 'Profile'" class="avatar-image">
+          } @else {
+            <div class="avatar-placeholder-large">
+              <mat-icon>person</mat-icon>
+            </div>
+          }
+        </div>
+        
+        <div class="header-info">
+          <div class="header-name-row">
+            <h1 class="profile-name">{{ profile.displayName || 'Your Profile' }}</h1>
+            <div class="header-badges">
+              <app-reputation-badge [tier]="reputationTier()" mode="badge" size="medium" />
+              @if (isFounder()) {
+                <app-founder-badge [city]="founderCity() ?? undefined" size="medium" />
+              }
+            </div>
+          </div>
+          
+          @if (profile.onboarding?.tagline) {
+            <p class="profile-tagline">{{ profile.onboarding?.tagline }}</p>
+          }
+          
+          @if (profile.onboarding?.city) {
+            <p class="profile-location">
+              <mat-icon>location_on</mat-icon>
+              {{ profile.onboarding?.city }}, {{ profile.onboarding?.country }}
+            </p>
+          }
+        </div>
+      </div>
+    </header>
+
+    <!-- ============================================
+         PROFILE CONTENT (Two-column layout)
+         ============================================ -->
     <div class="profile-content">
-      <!-- Reputation Status Section -->
-      <section class="reputation-section">
-        <div class="reputation-content">
-          <div class="badges-container">
-            <app-reputation-badge [tier]="reputationTier()" mode="full" size="large" />
-            @if (isFounder()) {
-              <app-founder-badge [city]="founderCity() ?? undefined" size="large" />
+      <!-- Main Column: Tabs -->
+      <div class="profile-main">
+        <mat-tab-group 
+          class="profile-tabs"
+          [selectedIndex]="tabIndex()"
+          (selectedIndexChange)="onTabChange($event)"
+          animationDuration="200ms">
+      
+      <!-- FEED TAB -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon>dynamic_feed</mat-icon>
+          <span>{{ 'PROFILE.TAB_FEED' | translate }}</span>
+        </ng-template>
+        
+        <div class="tab-content feed-tab" [class.private-mode]="feedFilter() === 'private'">
+          <!-- Feed Filter Toggle -->
+          <div class="feed-filter-row">
+            <button 
+              type="button" 
+              class="filter-btn" 
+              [class.active]="feedFilter() === 'public'"
+              (click)="setFeedFilter('public')">
+              <mat-icon>public</mat-icon>
+              {{ 'PROFILE.FEED_PUBLIC' | translate }}
+            </button>
+            <button 
+              type="button" 
+              class="filter-btn" 
+              [class.active]="feedFilter() === 'private'"
+              (click)="setFeedFilter('private')">
+              <mat-icon>lock</mat-icon>
+              {{ 'PROFILE.FEED_PRIVATE' | translate }}
+            </button>
+          </div>
+
+          <!-- Post Composer -->
+          <app-post-composer 
+            [activeTab]="feedFilter() === 'private' ? 'private' : 'feed'"
+            (postCreated)="onPostCreated()" />
+
+          <!-- Posts List -->
+          <div class="posts-list">
+            @if (myPostsLoading() && filteredPosts().length === 0) {
+              <div class="loading-state">
+                <mat-spinner diameter="32"></mat-spinner>
+                <p>{{ 'PROFILE.LOADING_POSTS' | translate }}</p>
+              </div>
+            } @else if (myPostsError()) {
+              <div class="error-state">
+                <mat-icon>error_outline</mat-icon>
+                <p>{{ myPostsError() }}</p>
+                <button mat-stroked-button (click)="loadMyPosts()">
+                  {{ 'FEED.TRY_AGAIN' | translate }}
+                </button>
+              </div>
+            } @else if (filteredPosts().length === 0) {
+              <div class="empty-state">
+                <mat-icon>{{ feedFilter() === 'private' ? 'lock' : 'article' }}</mat-icon>
+                <p>{{ (feedFilter() === 'private' ? 'PROFILE.NO_PRIVATE_POSTS' : 'PROFILE.NO_PUBLIC_POSTS') | translate }}</p>
+              </div>
+            } @else {
+              @for (post of filteredPosts(); track post.id) {
+                <app-post-card 
+                  [post]="post"
+                  (deleteClick)="onPostDelete($event)" />
+              }
+              
+              @if (hasMorePosts() && !myPostsLoading()) {
+                <button mat-stroked-button class="load-more-btn" (click)="loadMyPosts(true)">
+                  {{ 'FEED.LOAD_MORE' | translate }}
+                </button>
+              }
+              
+              @if (myPostsLoading()) {
+                <div class="loading-more">
+                  <mat-spinner diameter="24"></mat-spinner>
+                </div>
+              }
             }
           </div>
-          <div class="reputation-details">
-            <div class="reputation-header">
-              <h2>{{ 'PROFILE.REPUTATION_STATUS_TITLE' | translate }}</h2>
-              <button 
-                mat-icon-button 
-                class="info-btn" 
-                (click)="openReputationInfo()"
-                [matTooltip]="'PROFILE.REPUTATION_INFO_TOOLTIP' | translate">
-                <mat-icon>info_outline</mat-icon>
+        </div>
+      </mat-tab>
+
+      <!-- ABOUT TAB -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon>person</mat-icon>
+          <span>{{ 'PROFILE.TAB_ABOUT' | translate }}</span>
+        </ng-template>
+        
+        <div class="tab-content about-tab">
+          <!-- Edit Actions -->
+          <div class="about-actions">
+            @if (!isEditing()) {
+              <button mat-stroked-button (click)="startEditing()">
+                <mat-icon>edit</mat-icon>
+                {{ 'PROFILE.EDIT_BUTTON' | translate }}
               </button>
+            } @else {
+              <button mat-button (click)="cancelEditing()">{{ 'PROFILE.CANCEL_BUTTON' | translate }}</button>
+              <button mat-flat-button color="primary" (click)="saveProfile()" [disabled]="saving()">
+                @if (saving()) {
+                  <mat-spinner diameter="18"></mat-spinner>
+                } @else {
+                  <mat-icon>check</mat-icon>
+                }
+                {{ 'PROFILE.SAVE_BUTTON' | translate }}
+              </button>
+            }
+          </div>
+
+          <!-- Basic Info Section -->
+          <section class="info-section">
+            <h2>{{ 'PROFILE.BASIC_INFO_TITLE' | translate }}</h2>
+            
+            <div class="info-grid">
+              <div class="info-item full-width">
+                <label class="field-label">{{ 'PROFILE.TAGLINE_LABEL' | translate }}</label>
+                @if (isEditing()) {
+                  <div class="input-with-ai">
+                    <mat-form-field appearance="outline" class="full-width-field">
+                      <input matInput [(ngModel)]="editForm.tagline" [placeholder]="'PROFILE.TAGLINE_PLACEHOLDER' | translate" maxlength="100">
+                      <mat-hint align="end">{{ editForm.tagline.length }}/100</mat-hint>
+                    </mat-form-field>
+                    @if (isPremium() && editForm.tagline.length >= 3) {
+                      <button type="button" 
+                              class="ai-polish-btn" 
+                              [class.loading]="polishingField() === 'tagline'"
+                              [disabled]="polishingField() !== null"
+                              (click)="polishText('tagline')"
+                              [matTooltip]="'PROFILE.AI_POLISH_TOOLTIP' | translate">
+                        @if (polishingField() === 'tagline') {
+                          <span class="ai-spinner"></span>
+                        } @else {
+                          <mat-icon>auto_awesome</mat-icon>
+                        }
+                      </button>
+                    }
+                  </div>
+                  @if (polishSuggestions()?.field === 'tagline') {
+                    <div class="ai-suggestions">
+                      <div class="suggestion-header">
+                        <mat-icon>auto_awesome</mat-icon>
+                        <span>{{ 'PROFILE.AI_SUGGESTIONS_TITLE' | translate }}</span>
+                        <button class="close-btn" (click)="dismissPolishSuggestions()">
+                          <mat-icon>close</mat-icon>
+                        </button>
+                      </div>
+                      <div class="suggestion-item primary" (click)="applyPolish(polishSuggestions()!.polished)">
+                        <span>{{ polishSuggestions()!.polished }}</span>
+                        <mat-icon>add</mat-icon>
+                      </div>
+                      @for (alt of polishSuggestions()!.alternatives; track alt) {
+                        <div class="suggestion-item" (click)="applyPolish(alt)">
+                          <span>{{ alt }}</span>
+                          <mat-icon>add</mat-icon>
+                        </div>
+                      }
+                    </div>
+                  }
+                } @else {
+                  <span class="info-value tagline-value" [class.empty]="!profile.onboarding?.tagline">
+                    {{ profile.onboarding?.tagline || ('PROFILE.NOT_SET' | translate) }}
+                  </span>
+                }
+              </div>
+
+              <div class="info-item">
+                <label class="field-label">{{ 'PROFILE.DISPLAY_NAME_LABEL' | translate }}</label>
+                @if (isEditing()) {
+                  <mat-form-field appearance="outline">
+                    <input matInput [(ngModel)]="editForm.displayName" [placeholder]="'PROFILE.DISPLAY_NAME_PLACEHOLDER' | translate">
+                  </mat-form-field>
+                } @else {
+                  <span class="info-value">{{ profile.displayName || ('PROFILE.NOT_SET' | translate) }}</span>
+                }
+              </div>
+
+              <div class="info-item">
+                <label class="field-label">{{ 'PROFILE.LOCATION_LABEL' | translate }}</label>
+                @if (isEditing()) {
+                  <div class="location-autocomplete-wrapper">
+                    <!-- Region Restriction Notice (only shown when US is the only allowed region) -->
+                    @if (showUsOnlyNotice()) {
+                      <div class="region-notice">
+                        <mat-icon>public</mat-icon>
+                        <span>{{ 'PROFILE.US_ONLY_NOTICE' | translate }}</span>
+                      </div>
+                    }
+                    
+                    <!-- Location Status Message -->
+                    @if (locationMessage()) {
+                      <div class="location-status" [class]="locationStatus()">
+                        @if (locationStatus() === 'detecting') {
+                          <span class="location-spinner"></span>
+                        } @else if (locationStatus() === 'success') {
+                          <mat-icon>check_circle</mat-icon>
+                        } @else if (locationStatus() === 'error') {
+                          <mat-icon>error_outline</mat-icon>
+                        }
+                        <span>{{ locationMessage() }}</span>
+                      </div>
+                    }
+                    
+                    <div class="location-input-row">
+                      <div class="autocomplete-container">
+                        <div class="input-wrapper">
+                          <mat-icon class="input-icon">location_on</mat-icon>
+                          <input 
+                            #cityInput
+                            type="text"
+                            class="location-input"
+                            [class.searching]="isSearchingLocation()"
+                            [placeholder]="'PROFILE.CITY_PLACEHOLDER' | translate"
+                            [value]="cityInputValue()"
+                            (input)="onLocationInputChange($any($event.target).value)"
+                            (keydown)="onLocationKeyDown($event)"
+                            (focus)="onLocationInputFocus()"
+                            autocomplete="off"
+                            role="combobox"
+                            aria-autocomplete="list"
+                            [attr.aria-expanded]="showSuggestions()"
+                            aria-haspopup="listbox">
+                          @if (isSearchingLocation()) {
+                            <span class="input-spinner"></span>
+                          }
+                        </div>
+                        
+                        <!-- Autocomplete Suggestions Dropdown -->
+                        @if (showSuggestions()) {
+                          <ul class="suggestions-list" role="listbox">
+                            @for (suggestion of suggestions(); track suggestion.placeId; let i = $index) {
+                              <li 
+                                class="suggestion-item"
+                                [class.highlighted]="highlightedIndex() === i"
+                                role="option"
+                                [attr.aria-selected]="highlightedIndex() === i"
+                                (click)="selectSuggestion(suggestion)"
+                                (mouseenter)="highlightedIndex.set(i)">
+                                <mat-icon class="suggestion-icon">place</mat-icon>
+                                <span class="suggestion-text">
+                                  <span class="suggestion-main">{{ suggestion.mainText }}</span>
+                                  <span class="suggestion-secondary">{{ suggestion.secondaryText }}</span>
+                                </span>
+                              </li>
+                            }
+                          </ul>
+                        }
+                      </div>
+                      
+                      <!-- Geolocation Button -->
+                      <button 
+                        type="button" 
+                        class="geolocation-btn"
+                        [class.detecting]="locationStatus() === 'detecting'"
+                        [disabled]="locationStatus() === 'detecting'"
+                        (click)="requestGeolocation()"
+                        [matTooltip]="'PROFILE.USE_GPS_TOOLTIP' | translate">
+                        @if (locationStatus() === 'detecting') {
+                          <span class="btn-spinner"></span>
+                        } @else {
+                          <mat-icon>my_location</mat-icon>
+                        }
+                      </button>
+                    </div>
+                  </div>
+                } @else {
+                  <span class="info-value">
+                    @if (profile.onboarding; as onboarding) {
+                      @if (onboarding.city) {
+                        {{ onboarding.city }}, {{ onboarding.country }}
+                      } @else {
+                        {{ 'PROFILE.NOT_SET' | translate }}
+                      }
+                    } @else {
+                      {{ 'PROFILE.NOT_SET' | translate }}
+                    }
+                  </span>
+                }
+              </div>
+
+              <div class="info-item">
+                <label class="field-label">{{ 'PROFILE.BIRTHDAY_LABEL' | translate }}</label>
+                <span class="info-value">
+                  @if (profile.onboarding?.birthDate; as birthDate) {
+                    {{ formatBirthDate(birthDate) }} ({{ 'PROFILE.YEARS_OLD' | translate:{ age: calculateAge(birthDate) } }})
+                  } @else {
+                    {{ 'PROFILE.NOT_SET' | translate }}
+                  }
+                </span>
+              </div>
+
             </div>
+          </section>
+
+          <!-- Dating Preferences Section -->
+          <section class="info-section">
+            <h2>{{ 'PROFILE.DATING_PREFERENCES_TITLE' | translate }}</h2>
+            
+            <div class="info-grid">
+              <!-- Row 1: Identity and Age Range -->
+              <div class="info-item">
+                <label class="field-label">{{ 'PROFILE.GENDER_IDENTITY_LABEL' | translate }}</label>
+                @if (isEditing()) {
+                  <mat-form-field appearance="outline">
+                    <mat-select [(ngModel)]="editForm.genderIdentity">
+                      <mat-option value="woman">{{ 'ONBOARDING.STEP_2.IDENTITY_WOMAN' | translate }}</mat-option>
+                      <mat-option value="man">{{ 'ONBOARDING.STEP_2.IDENTITY_MAN' | translate }}</mat-option>
+                      <mat-option value="nonbinary">{{ 'ONBOARDING.STEP_2.IDENTITY_NONBINARY' | translate }}</mat-option>
+                      <mat-option value="self-describe">{{ 'ONBOARDING.STEP_2.IDENTITY_SELF_DESCRIBE' | translate }}</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                } @else {
+                  <span class="info-value">{{ formatGender(profile.onboarding?.genderIdentity) }}</span>
+                }
+              </div>
+
+              <div class="info-item">
+                <label class="field-label">{{ 'PROFILE.AGE_RANGE_LABEL' | translate }}</label>
+                @if (isEditing()) {
+                  <div class="range-inputs">
+                    <mat-form-field appearance="outline" class="age-field">
+                      <mat-label>{{ 'PROFILE.AGE_MIN_LABEL' | translate }}</mat-label>
+                      <input matInput type="number" [(ngModel)]="editForm.ageRangeMin" min="18" max="99">
+                    </mat-form-field>
+                    <span class="range-separator">{{ 'PROFILE.AGE_RANGE_SEPARATOR' | translate }}</span>
+                    <mat-form-field appearance="outline" class="age-field">
+                      <mat-label>{{ 'PROFILE.AGE_MAX_LABEL' | translate }}</mat-label>
+                      <input matInput type="number" [(ngModel)]="editForm.ageRangeMax" min="18" max="99">
+                    </mat-form-field>
+                  </div>
+                } @else {
+                  <span class="info-value">
+                    @if (profile.onboarding; as onboarding) {
+                      @if (onboarding.ageRangeMin) {
+                        {{ onboarding.ageRangeMin }} - {{ onboarding.ageRangeMax }}
+                      } @else {
+                        {{ 'PROFILE.NOT_SET' | translate }}
+                      }
+                    } @else {
+                      {{ 'PROFILE.NOT_SET' | translate }}
+                    }
+                  </span>
+                }
+              </div>
+
+              <!-- Row 2: Interested in - full width for horizontal chips -->
+              <div class="info-item full-width">
+                <label class="field-label">{{ 'PROFILE.INTERESTED_IN_LABEL' | translate }}</label>
+                @if (isEditing()) {
+                  <div class="chip-group">
+                    @for (option of genderOptions; track option.value) {
+                      <button type="button"
+                              mat-stroked-button
+                              [class.selected]="editForm.interestedIn.includes(option.value)"
+                              (click)="toggleInterest(option.value)">
+                        {{ option.labelKey | translate }}
+                      </button>
+                    }
+                  </div>
+                } @else {
+                  <span class="info-value">{{ formatInterests(profile.onboarding?.interestedIn) }}</span>
+                }
+              </div>
+
+              <!-- Row 3: Support orientation - full width for horizontal chips -->
+              <div class="info-item full-width">
+                <label class="field-label">{{ 'PROFILE.SUPPORT_ORIENTATION_LABEL' | translate }}</label>
+                @if (isEditing()) {
+                  <div class="chip-group">
+                    @for (option of supportOrientationOptions; track option.value) {
+                      <button type="button"
+                              mat-stroked-button
+                              [class.selected]="editForm.supportOrientation === option.value"
+                              (click)="selectSupportOrientation(option.value)">
+                        {{ ('ONBOARDING.STEP_4.' + option.labelKey) | translate }}
+                      </button>
+                    }
+                  </div>
+                } @else {
+                  @if (profile.onboarding?.supportOrientation) {
+                    <div class="tag-list">
+                      <span class="tag">{{ formatSupportOrientation(profile.onboarding?.supportOrientation) }}</span>
+                    </div>
+                  } @else {
+                    <span class="info-value empty">{{ 'PROFILE.NOT_SET' | translate }}</span>
+                  }
+                }
+              </div>
+            </div>
+          </section>
+
+          <!-- About Me Section -->
+          <section class="info-section">
+            <h2>{{ 'PROFILE.ABOUT_ME_TITLE' | translate }}</h2>
+            
+            <div class="info-grid full-width">
+              <div class="info-item">
+                <label class="field-label">{{ 'PROFILE.LOOKING_FOR_LABEL' | translate }}</label>
+                @if (isEditing()) {
+                  <div class="chip-group">
+                    @for (option of connectionTypeOptions; track option.value) {
+                      <button type="button"
+                              mat-stroked-button
+                              [class.selected]="editForm.connectionTypes.includes(option.value)"
+                              (click)="toggleConnectionType(option.value)">
+                        {{ ('ONBOARDING.STEP_3.' + option.labelKey) | translate }}
+                      </button>
+                    }
+                  </div>
+                } @else {
+                  @if (profile.onboarding?.connectionTypes?.length) {
+                    <div class="tag-list">
+                      @for (type of profile.onboarding?.connectionTypes || []; track type) {
+                        <span class="tag">{{ getConnectionTypeLabel(type) }}</span>
+                      }
+                    </div>
+                  } @else {
+                    <span class="info-value empty">{{ 'PROFILE.NOT_SET' | translate }}</span>
+                  }
+                }
+              </div>
+
+              <div class="info-item">
+                <label class="field-label">{{ 'PROFILE.IDEAL_RELATIONSHIP_LABEL' | translate }}</label>
+                @if (isEditing()) {
+                  <div class="input-with-ai">
+                    <mat-form-field appearance="outline" class="full-width-field">
+                      <textarea matInput 
+                                [(ngModel)]="editForm.idealRelationship" 
+                                [placeholder]="'PROFILE.IDEAL_RELATIONSHIP_PLACEHOLDER' | translate"
+                                rows="3"></textarea>
+                    </mat-form-field>
+                    @if (isPremium() && editForm.idealRelationship.length >= 10) {
+                      <button type="button" 
+                              class="ai-polish-btn" 
+                              [class.loading]="polishingField() === 'idealRelationship'"
+                              [disabled]="polishingField() !== null"
+                              (click)="polishText('idealRelationship')"
+                              [matTooltip]="'PROFILE.AI_POLISH_TOOLTIP' | translate">
+                        @if (polishingField() === 'idealRelationship') {
+                          <span class="ai-spinner"></span>
+                        } @else {
+                          <mat-icon>auto_awesome</mat-icon>
+                        }
+                      </button>
+                    }
+                  </div>
+                  @if (polishSuggestions()?.field === 'idealRelationship') {
+                    <div class="ai-suggestions">
+                      <div class="suggestion-header">
+                        <mat-icon>auto_awesome</mat-icon>
+                        <span>{{ 'PROFILE.AI_SUGGESTIONS_TITLE' | translate }}</span>
+                        <button class="close-btn" (click)="dismissPolishSuggestions()">
+                          <mat-icon>close</mat-icon>
+                        </button>
+                      </div>
+                      <div class="suggestion-item primary" (click)="applyPolish(polishSuggestions()!.polished)">
+                        <span>{{ polishSuggestions()!.polished }}</span>
+                        <mat-icon>add</mat-icon>
+                      </div>
+                      @for (alt of polishSuggestions()!.alternatives; track alt) {
+                        <div class="suggestion-item" (click)="applyPolish(alt)">
+                          <span>{{ alt }}</span>
+                          <mat-icon>add</mat-icon>
+                        </div>
+                      }
+                    </div>
+                  }
+                } @else {
+                  <span class="info-value multiline">{{ profile.onboarding?.idealRelationship || ('PROFILE.NOT_SET' | translate) }}</span>
+                }
+              </div>
+
+              <div class="info-item">
+                <label class="field-label">{{ 'PROFILE.SUPPORT_MEANING_LABEL' | translate }}</label>
+                @if (isEditing()) {
+                  <div class="input-with-ai">
+                    <mat-form-field appearance="outline" class="full-width-field">
+                      <textarea matInput 
+                                [(ngModel)]="editForm.supportMeaning" 
+                                [placeholder]="'PROFILE.SUPPORT_MEANING_PLACEHOLDER' | translate"
+                                rows="3"></textarea>
+                    </mat-form-field>
+                    @if (isPremium() && editForm.supportMeaning.length >= 10) {
+                      <button type="button" 
+                              class="ai-polish-btn" 
+                              [class.loading]="polishingField() === 'supportMeaning'"
+                              [disabled]="polishingField() !== null"
+                              (click)="polishText('supportMeaning')"
+                              [matTooltip]="'PROFILE.AI_POLISH_TOOLTIP' | translate">
+                        @if (polishingField() === 'supportMeaning') {
+                          <span class="ai-spinner"></span>
+                        } @else {
+                          <mat-icon>auto_awesome</mat-icon>
+                        }
+                      </button>
+                    }
+                  </div>
+                  @if (polishSuggestions()?.field === 'supportMeaning') {
+                    <div class="ai-suggestions">
+                      <div class="suggestion-header">
+                        <mat-icon>auto_awesome</mat-icon>
+                        <span>{{ 'PROFILE.AI_SUGGESTIONS_TITLE' | translate }}</span>
+                        <button class="close-btn" (click)="dismissPolishSuggestions()">
+                          <mat-icon>close</mat-icon>
+                        </button>
+                      </div>
+                      <div class="suggestion-item primary" (click)="applyPolish(polishSuggestions()!.polished)">
+                        <span>{{ polishSuggestions()!.polished }}</span>
+                        <mat-icon>add</mat-icon>
+                      </div>
+                      @for (alt of polishSuggestions()!.alternatives; track alt) {
+                        <div class="suggestion-item" (click)="applyPolish(alt)">
+                          <span>{{ alt }}</span>
+                          <mat-icon>add</mat-icon>
+                        </div>
+                      }
+                    </div>
+                  }
+                } @else {
+                  <span class="info-value multiline">{{ profile.onboarding?.supportMeaning || ('PROFILE.NOT_SET' | translate) }}</span>
+                }
+              </div>
+            </div>
+          </section>
+
+          <!-- Personal Details Section -->
+          <section class="info-section">
+            <h2>{{ 'PROFILE.PERSONAL_DETAILS_TITLE' | translate }}</h2>
+            
+            <div class="info-grid">
+              <div class="info-item">
+                <label class="field-label">{{ 'PROFILE.HEIGHT_LABEL' | translate }}</label>
+                @if (isEditing()) {
+                  <mat-form-field appearance="outline">
+                    <input matInput [(ngModel)]="editForm.height" [placeholder]="'PROFILE.HEIGHT_PLACEHOLDER' | translate">
+                  </mat-form-field>
+                } @else {
+                  <span class="info-value">{{ profile.onboarding?.height || ('PROFILE.NOT_SET' | translate) }}</span>
+                }
+              </div>
+
+              <div class="info-item">
+                <label class="field-label">{{ 'PROFILE.WEIGHT_LABEL' | translate }}</label>
+                @if (isEditing()) {
+                  <mat-form-field appearance="outline">
+                    <input matInput [(ngModel)]="editForm.weight" [placeholder]="'PROFILE.WEIGHT_PLACEHOLDER' | translate">
+                  </mat-form-field>
+                } @else {
+                  <span class="info-value">{{ profile.onboarding?.weight || ('PROFILE.NOT_SET' | translate) }}</span>
+                }
+              </div>
+
+              <div class="info-item">
+                <label class="field-label">{{ 'PROFILE.ETHNICITY_LABEL' | translate }}</label>
+                @if (isEditing()) {
+                  <mat-form-field appearance="outline">
+                    <mat-select [(ngModel)]="editForm.ethnicity" [placeholder]="'PROFILE.SELECT_PLACEHOLDER' | translate">
+                      <mat-option value="">{{ 'PROFILE.NOT_SPECIFIED' | translate }}</mat-option>
+                      @for (option of ethnicityOptions; track option) {
+                        <mat-option [value]="option">{{ option }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+                } @else {
+                  <span class="info-value">{{ profile.onboarding?.ethnicity || ('PROFILE.NOT_SET' | translate) }}</span>
+                }
+              </div>
+
+              <div class="info-item">
+                <label class="field-label">{{ 'PROFILE.RELATIONSHIP_STATUS_LABEL' | translate }}</label>
+                @if (isEditing()) {
+                  <mat-form-field appearance="outline">
+                    <mat-select [(ngModel)]="editForm.relationshipStatus" [placeholder]="'PROFILE.SELECT_PLACEHOLDER' | translate">
+                      <mat-option value="">{{ 'PROFILE.NOT_SPECIFIED' | translate }}</mat-option>
+                      @for (option of relationshipStatusOptions; track option) {
+                        <mat-option [value]="option">{{ option }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+                } @else {
+                  <span class="info-value">{{ profile.onboarding?.relationshipStatus || ('PROFILE.NOT_SET' | translate) }}</span>
+                }
+              </div>
+
+              <div class="info-item">
+                <label class="field-label">{{ 'PROFILE.CHILDREN_LABEL' | translate }}</label>
+                @if (isEditing()) {
+                  <mat-form-field appearance="outline">
+                    <mat-select [(ngModel)]="editForm.children" [placeholder]="'PROFILE.SELECT_PLACEHOLDER' | translate">
+                      <mat-option value="">{{ 'PROFILE.NOT_SPECIFIED' | translate }}</mat-option>
+                      @for (option of childrenOptions; track option) {
+                        <mat-option [value]="option">{{ option }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+                } @else {
+                  <span class="info-value">{{ profile.onboarding?.children || ('PROFILE.NOT_SET' | translate) }}</span>
+                }
+              </div>
+
+              <div class="info-item">
+                <label class="field-label">{{ 'PROFILE.SMOKING_LABEL' | translate }}</label>
+                @if (isEditing()) {
+                  <mat-form-field appearance="outline">
+                    <mat-select [(ngModel)]="editForm.smoker" [placeholder]="'PROFILE.SELECT_PLACEHOLDER' | translate">
+                      <mat-option value="">{{ 'PROFILE.NOT_SPECIFIED' | translate }}</mat-option>
+                      @for (option of smokerOptions; track option) {
+                        <mat-option [value]="option">{{ option }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+                } @else {
+                  <span class="info-value">{{ profile.onboarding?.smoker || ('PROFILE.NOT_SET' | translate) }}</span>
+                }
+              </div>
+
+              <div class="info-item">
+                <label class="field-label">{{ 'PROFILE.DRINKING_LABEL' | translate }}</label>
+                @if (isEditing()) {
+                  <mat-form-field appearance="outline">
+                    <mat-select [(ngModel)]="editForm.drinker" [placeholder]="'PROFILE.SELECT_PLACEHOLDER' | translate">
+                      <mat-option value="">{{ 'PROFILE.NOT_SPECIFIED' | translate }}</mat-option>
+                      @for (option of drinkerOptions; track option) {
+                        <mat-option [value]="option">{{ option }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+                } @else {
+                  <span class="info-value">{{ profile.onboarding?.drinker || ('PROFILE.NOT_SET' | translate) }}</span>
+                }
+              </div>
+
+              <div class="info-item">
+                <label class="field-label">{{ 'PROFILE.EDUCATION_LABEL' | translate }}</label>
+                @if (isEditing()) {
+                  <mat-form-field appearance="outline">
+                    <mat-select [(ngModel)]="editForm.education" [placeholder]="'PROFILE.SELECT_PLACEHOLDER' | translate">
+                      <mat-option value="">{{ 'PROFILE.NOT_SPECIFIED' | translate }}</mat-option>
+                      @for (option of educationOptions; track option) {
+                        <mat-option [value]="option">{{ option }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+                } @else {
+                  <span class="info-value">{{ profile.onboarding?.education || ('PROFILE.NOT_SET' | translate) }}</span>
+                }
+              </div>
+
+              <div class="info-item">
+                <label class="field-label">{{ 'PROFILE.OCCUPATION_LABEL' | translate }}</label>
+                @if (isEditing()) {
+                  <mat-form-field appearance="outline">
+                    <input matInput [(ngModel)]="editForm.occupation" [placeholder]="'PROFILE.OCCUPATION_PLACEHOLDER' | translate">
+                  </mat-form-field>
+                } @else {
+                  <span class="info-value">{{ profile.onboarding?.occupation || ('PROFILE.NOT_SET' | translate) }}</span>
+                }
+              </div>
+
+              <div class="info-item">
+                <label class="field-label">{{ 'PROFILE.INCOME_LABEL' | translate }}</label>
+                @if (isEditing()) {
+                  <mat-form-field appearance="outline">
+                    <mat-select [(ngModel)]="editForm.income" [placeholder]="'PROFILE.SELECT_PLACEHOLDER' | translate">
+                      <mat-option value="">{{ 'PROFILE.NOT_SPECIFIED' | translate }}</mat-option>
+                      @for (option of incomeOptions; track option) {
+                        <mat-option [value]="option">{{ option }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+                } @else {
+                  <span class="info-value">{{ profile.onboarding?.income || ('PROFILE.NOT_SET' | translate) }}</span>
+                }
+              </div>
+            </div>
+          </section>
+        </div>
+      </mat-tab>
+
+      <!-- PRIVATE ACCESS TAB -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon>lock</mat-icon>
+          <span>{{ 'PROFILE.TAB_ACCESS' | translate }}</span>
+          @if (pendingRequestsCount() > 0) {
+            <span class="tab-badge">{{ pendingRequestsCount() }}</span>
+          }
+        </ng-template>
+        
+        <div class="tab-content access-tab">
+          <div class="access-intro">
+            <mat-icon>lock</mat-icon>
+            <div>
+              <h3>{{ 'PROFILE.ACCESS_TITLE' | translate }}</h3>
+              <p>{{ 'PROFILE.ACCESS_DESCRIPTION' | translate }}</p>
+            </div>
+          </div>
+
+          <!-- Two-column layout for access management -->
+          <div class="access-grid">
+            <!-- Pending Requests Column -->
+            <section class="access-column">
+              <div class="column-header pending">
+                <mat-icon>pending</mat-icon>
+                <h3>{{ 'PROFILE.PENDING_REQUESTS' | translate }}</h3>
+                @if (pendingRequestsCount() > 0) {
+                  <span class="count-badge">{{ pendingRequestsCount() }}</span>
+                }
+              </div>
+              
+              <div class="column-content">
+                @if (pendingRequests().length > 0) {
+                  <div class="access-list">
+                    @for (request of pendingRequests(); track request.id) {
+                      <div class="access-item">
+                        <div class="access-user">
+                          @if (request.requesterPhoto) {
+                            <img [src]="request.requesterPhoto" [alt]="request.requesterName" class="access-avatar">
+                          } @else {
+                            <div class="access-avatar-placeholder">
+                              <mat-icon>person</mat-icon>
+                            </div>
+                          }
+                          <span class="access-name">{{ request.requesterName }}</span>
+                        </div>
+                        <div class="access-actions">
+                          @if (processingRequestId() === request.id) {
+                            <mat-spinner diameter="20"></mat-spinner>
+                          } @else {
+                            <button mat-icon-button color="primary" (click)="approveRequest(request)" [matTooltip]="'PROFILE.APPROVE' | translate">
+                              <mat-icon>check_circle</mat-icon>
+                            </button>
+                            <button mat-icon-button (click)="denyRequest(request)" [matTooltip]="'PROFILE.DENY' | translate">
+                              <mat-icon>cancel</mat-icon>
+                            </button>
+                          }
+                        </div>
+                      </div>
+                    }
+                  </div>
+                } @else {
+                  <div class="empty-access">
+                    <mat-icon>inbox</mat-icon>
+                    <p>{{ 'PROFILE.NO_PENDING_REQUESTS' | translate }}</p>
+                  </div>
+                }
+              </div>
+            </section>
+
+            <!-- Granted Access Column -->
+            <section class="access-column">
+              <div class="column-header granted">
+                <mat-icon>verified_user</mat-icon>
+                <h3>{{ 'PROFILE.GRANTED_ACCESS' | translate }}</h3>
+                @if (grants().length > 0) {
+                  <span class="count-badge secondary">{{ grants().length }}</span>
+                }
+              </div>
+              
+              <div class="column-content">
+                @if (grants().length > 0) {
+                  <div class="access-list">
+                    @for (grant of grants(); track grant.id) {
+                      <div class="access-item">
+                        <div class="access-user">
+                          @if (grant.grantedToPhoto) {
+                            <img [src]="grant.grantedToPhoto" [alt]="grant.grantedToName" class="access-avatar">
+                          } @else {
+                            <div class="access-avatar-placeholder">
+                              <mat-icon>person</mat-icon>
+                            </div>
+                          }
+                          <span class="access-name">{{ grant.grantedToName }}</span>
+                        </div>
+                        @if (processingRequestId() === grant.id) {
+                          <mat-spinner diameter="20"></mat-spinner>
+                        } @else {
+                          <button mat-icon-button color="warn" (click)="revokeAccess(grant)" [matTooltip]="'PROFILE.REVOKE' | translate">
+                            <mat-icon>person_remove</mat-icon>
+                          </button>
+                        }
+                      </div>
+                    }
+                  </div>
+                } @else {
+                  <div class="empty-access">
+                    <mat-icon>group_off</mat-icon>
+                    <p>{{ 'PROFILE.NO_GRANTED_ACCESS' | translate }}</p>
+                  </div>
+                }
+              </div>
+            </section>
+          </div>
+        </div>
+      </mat-tab>
+
+      <!-- PHOTOS TAB -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon>photo_library</mat-icon>
+          <span>{{ 'PROFILE.TAB_PHOTOS' | translate }}</span>
+        </ng-template>
+        
+        <div class="tab-content photos-tab">
+          <div class="photos-header">
+            <div class="photos-count">
+              <span>{{ editablePhotos().length }} / {{ maxPhotos() }}</span>
+              <span class="photos-hint">{{ 'PROFILE.PHOTOS_HINT' | translate:{ max: maxPhotos() } }}</span>
+            </div>
+          </div>
+          
+          @if (uploadError()) {
+            <div class="upload-error">
+              <mat-icon>error_outline</mat-icon>
+              <span>{{ uploadError() }}</span>
+            </div>
+          }
+          
+          <div class="photos-grid" cdkDropList cdkDropListOrientation="mixed" (cdkDropListDropped)="onPhotoDrop($event)">
+            @for (photoItem of photosWithPrivacy(); track photoItem.url; let i = $index) {
+              <div class="photo-item" 
+                   cdkDrag
+                   [cdkDragDisabled]="photoItem.isProfilePhoto"
+                   [class.is-profile]="photoItem.isProfilePhoto"
+                   [class.is-private]="photoItem.isPrivate"
+                   [class.is-draggable]="!photoItem.isProfilePhoto">
+                <div class="photo-drag-placeholder" *cdkDragPlaceholder></div>
+                <img [src]="photoItem.url" [attr.alt]="'PROFILE.PHOTO_ALT' | translate:{ index: i + 1 }" draggable="false">
+                <div class="photo-overlay">
+                  @if (!photoItem.isPrivate) {
+                    <button mat-icon-button 
+                            [class.active]="photoItem.isProfilePhoto"
+                            (click)="setAsProfilePhoto(photoItem.url)"
+                            [matTooltip]="'PROFILE.SET_PROFILE_PHOTO_TOOLTIP' | translate">
+                      <mat-icon>{{ photoItem.isProfilePhoto ? 'star' : 'star_outline' }}</mat-icon>
+                    </button>
+                  }
+                  @if (!photoItem.isProfilePhoto) {
+                    <button mat-icon-button 
+                            [class.active]="photoItem.isPrivate"
+                            (click)="togglePhotoPrivacy(photoItem.url)"
+                            [matTooltip]="(photoItem.isPrivate ? 'PROFILE.MAKE_PUBLIC_TOOLTIP' : 'PROFILE.MAKE_PRIVATE_TOOLTIP') | translate">
+                      <mat-icon>{{ photoItem.isPrivate ? 'lock' : 'lock_open' }}</mat-icon>
+                    </button>
+                    <button mat-icon-button 
+                            class="remove-btn"
+                            (click)="removePhoto(photoItem.url)"
+                            [matTooltip]="'PROFILE.REMOVE_PHOTO_TOOLTIP' | translate">
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                  }
+                </div>
+                @if (photoItem.isProfilePhoto) {
+                  <div class="profile-badge">
+                    <mat-icon>star</mat-icon>
+                    {{ 'PROFILE.PROFILE_BADGE' | translate }}
+                  </div>
+                }
+                @if (photoItem.isPrivate) {
+                  <div class="private-badge">
+                    <mat-icon>lock</mat-icon>
+                  </div>
+                }
+                @if (!photoItem.isProfilePhoto) {
+                  <div class="drag-handle">
+                    <mat-icon>drag_indicator</mat-icon>
+                  </div>
+                }
+              </div>
+            }
+            
+            <!-- Uploading photos with individual loading states -->
+            @for (uploading of uploadingPhotos(); track uploading.id) {
+              <div class="photo-item uploading-item" [class.error]="uploading.status === 'error'">
+                <img [src]="uploading.preview" [attr.alt]="'PROFILE.UPLOADING_PHOTO_ALT' | translate" class="uploading-preview">
+                <div class="upload-overlay">
+                  @if (uploading.status === 'uploading') {
+                    <div class="upload-spinner-overlay"></div>
+                    <span class="upload-status">{{ 'PROFILE.UPLOADING_STATUS' | translate }}</span>
+                  } @else if (uploading.status === 'error') {
+                    <mat-icon class="error-icon">error</mat-icon>
+                    <span class="upload-status error">{{ uploading.error || ('PROFILE.UPLOAD_FAILED' | translate) }}</span>
+                  }
+                </div>
+              </div>
+            }
+            
+            <!-- Add photo button -->
+            @if (editablePhotos().length + uploadingPhotos().length < maxPhotos()) {
+              <button type="button" class="add-photo-btn" (click)="openPhotoPicker()">
+                <mat-icon>add_photo_alternate</mat-icon>
+                <span>{{ 'PROFILE.ADD_PHOTO_BUTTON' | translate }}</span>
+              </button>
+            }
+          </div>
+          <input #photoInput type="file" accept="image/*" multiple hidden (change)="onPhotosSelected($event)">
+        </div>
+      </mat-tab>
+        </mat-tab-group>
+      </div>
+
+      <!-- Sidebar Column: Persistent Cards -->
+      <aside class="profile-sidebar">
+        <!-- Reputation Status Card -->
+        <div class="sidebar-card reputation-card">
+          <div class="card-header">
+            <h3>{{ 'PROFILE.REPUTATION_STATUS_TITLE' | translate }}</h3>
+            <button 
+              mat-icon-button 
+              class="info-btn" 
+              (click)="openReputationInfo()"
+              [matTooltip]="'PROFILE.REPUTATION_INFO_TOOLTIP' | translate">
+              <mat-icon>info_outline</mat-icon>
+            </button>
+          </div>
+          <div class="card-content">
+            <div class="badges-row">
+              <app-reputation-badge [tier]="reputationTier()" mode="full" size="medium" />
+              @if (isFounder()) {
+                <app-founder-badge [city]="founderCity() ?? undefined" size="medium" />
+              }
+            </div>
+            
             <p class="reputation-description">
               {{ 'PROFILE.REPUTATION_DESCRIPTION' | translate }}
             </p>
+            
             <div class="messaging-status">
-              <span class="status-item">
-                <mat-icon class="status-icon">forum</mat-icon>
-                @if (higherTierConversationStatus().isUnlimited) {
-                  <strong>{{ 'PROFILE.UNLIMITED' | translate }}</strong> {{ 'PROFILE.HIGHER_TIER_CONVERSATIONS' | translate }}
-                } @else {
-                  <strong>{{ higherTierConversationStatus().remaining }}/{{ higherTierConversationStatus().dailyLimit }}</strong> {{ 'PROFILE.HIGHER_TIER_CONVERSATIONS' | translate }}
-                }
-              </span>
+              <mat-icon class="status-icon">forum</mat-icon>
+              @if (higherTierConversationStatus().isUnlimited) {
+                <span><strong>{{ 'PROFILE.UNLIMITED' | translate }}</strong> {{ 'PROFILE.HIGHER_TIER_CONVERSATIONS' | translate }}</span>
+              } @else {
+                <span><strong>{{ higherTierConversationStatus().remaining }}/{{ higherTierConversationStatus().dailyLimit }}</strong> {{ 'PROFILE.HIGHER_TIER_CONVERSATIONS' | translate }}</span>
+              }
             </div>
 
-            <div class="messaging-gate">
-              <div class="messaging-gate__row">
-                <div class="messaging-gate__label">
-                  <mat-icon>shield</mat-icon>
-                  <span>{{ 'PROFILE.MESSAGING_GATE_LABEL' | translate }}</span>
-                </div>
-                @if (isEditing()) {
-                  <div class="messaging-gate__dropdown">
-                    <select 
-                      [(ngModel)]="editForm.minReputationTierToMessageMe"
-                      class="messaging-gate__native-select">
-                      @for (opt of minReputationTierOptions; track opt.value) {
-                        <option [value]="opt.value">{{ ('PROFILE.MESSAGING_TIER.' + opt.labelKey) | translate }}</option>
-                      }
-                    </select>
-                    <mat-icon class="messaging-gate__dropdown-icon">expand_more</mat-icon>
-                  </div>
-                } @else {
-                  <span class="messaging-gate__chip">{{ minReputationTierLabelKey(minReputationTierToMessageMe()) | translate }}</span>
-                }
+            <div class="messaging-gate-compact">
+              <div class="gate-label">
+                <mat-icon>shield</mat-icon>
+                <span>{{ 'PROFILE.MESSAGING_GATE_LABEL' | translate }}</span>
               </div>
-              <p class="messaging-gate__hint">
-                {{ 'PROFILE.MESSAGING_GATE_HINT' | translate }}
-              </p>
+              <button 
+                type="button"
+                class="gate-chip-btn"
+                [matMenuTriggerFor]="gateMenu"
+                [disabled]="savingMessagingGate()">
+                @if (savingMessagingGate()) {
+                  <mat-spinner diameter="14"></mat-spinner>
+                } @else {
+                  <span class="gate-chip-text">{{ minReputationTierLabelKey(minReputationTierToMessageMe()) | translate }}</span>
+                  <mat-icon class="gate-chip-icon">expand_more</mat-icon>
+                }
+              </button>
+              <mat-menu #gateMenu="matMenu" class="gate-menu">
+                @for (opt of minReputationTierOptions; track opt.value) {
+                  <button 
+                    mat-menu-item 
+                    (click)="updateMessagingGate(opt.value)"
+                    [class.active]="opt.value === minReputationTierToMessageMe()">
+                    <mat-icon>{{ opt.value === minReputationTierToMessageMe() ? 'check' : '' }}</mat-icon>
+                    <span>{{ ('PROFILE.MESSAGING_TIER.' + opt.labelKey) | translate }}</span>
+                  </button>
+                }
+              </mat-menu>
             </div>
+
             <!-- Dev-only refresh button -->
             @if (isDev) {
               <button 
                 class="dev-refresh-btn" 
                 (click)="refreshReputation()" 
-                [disabled]="refreshingReputation()"
-                [attr.title]="'PROFILE.DEV_REFRESH_TOOLTIP' | translate">
+                [disabled]="refreshingReputation()">
                 @if (refreshingReputation()) {
-                  <mat-spinner diameter="16"></mat-spinner>
+                  <mat-spinner diameter="14"></mat-spinner>
                 } @else {
                   <mat-icon>refresh</mat-icon>
                 }
@@ -100,685 +1029,33 @@
             }
           </div>
         </div>
-      </section>
 
-      <!-- Photos Section -->
-      <section class="photos-section">
-        <div class="section-header">
-          <h2>{{ 'PROFILE.PHOTOS_TITLE' | translate }}</h2>
-          <span class="photo-count">{{ editablePhotos().length }} / {{ maxPhotos() }}</span>
-        </div>
-        <p class="section-hint">{{ 'PROFILE.PHOTOS_HINT' | translate:{ max: maxPhotos() } }}</p>
-        
-        @if (uploadError()) {
-          <div class="upload-error">
-            <mat-icon>error_outline</mat-icon>
-            <span>{{ uploadError() }}</span>
+        <!-- Quick Stats Card -->
+        <div class="sidebar-card stats-card">
+          <div class="card-header">
+            <h3>{{ 'PROFILE.QUICK_STATS' | translate }}</h3>
           </div>
-        }
-        
-        <div class="photos-grid" cdkDropList cdkDropListOrientation="mixed" (cdkDropListDropped)="onPhotoDrop($event)">
-          @for (photoItem of photosWithPrivacy(); track photoItem.url; let i = $index) {
-            <div class="photo-item" 
-                 cdkDrag
-                 [cdkDragDisabled]="photoItem.isProfilePhoto"
-                 [class.is-profile]="photoItem.isProfilePhoto"
-                 [class.is-private]="photoItem.isPrivate"
-                 [class.is-draggable]="!photoItem.isProfilePhoto">
-              <div class="photo-drag-placeholder" *cdkDragPlaceholder></div>
-              <img [src]="photoItem.url" [attr.alt]="'PROFILE.PHOTO_ALT' | translate:{ index: i + 1 }" draggable="false">
-              <div class="photo-overlay">
-                @if (!photoItem.isPrivate) {
-                  <button mat-icon-button 
-                          [class.active]="photoItem.isProfilePhoto"
-                          (click)="setAsProfilePhoto(photoItem.url)"
-                          [matTooltip]="'PROFILE.SET_PROFILE_PHOTO_TOOLTIP' | translate">
-                    <mat-icon>{{ photoItem.isProfilePhoto ? 'star' : 'star_outline' }}</mat-icon>
-                  </button>
-                }
-                @if (!photoItem.isProfilePhoto) {
-                  <button mat-icon-button 
-                          [class.active]="photoItem.isPrivate"
-                          (click)="togglePhotoPrivacy(photoItem.url)"
-                          [matTooltip]="(photoItem.isPrivate ? 'PROFILE.MAKE_PUBLIC_TOOLTIP' : 'PROFILE.MAKE_PRIVATE_TOOLTIP') | translate">
-                    <mat-icon>{{ photoItem.isPrivate ? 'lock' : 'lock_open' }}</mat-icon>
-                  </button>
-                  <button mat-icon-button 
-                          class="remove-btn"
-                          (click)="removePhoto(photoItem.url)"
-                          [matTooltip]="'PROFILE.REMOVE_PHOTO_TOOLTIP' | translate">
-                    <mat-icon>delete</mat-icon>
-                  </button>
-                }
-              </div>
-              @if (photoItem.isProfilePhoto) {
-                <div class="profile-badge">
-                  <mat-icon>lock</mat-icon>
-                  {{ 'PROFILE.PROFILE_BADGE' | translate }}
-                </div>
-              }
-              @if (photoItem.isPrivate) {
-                <div class="private-badge">
-                  <mat-icon>lock</mat-icon>
-                </div>
-              }
-              @if (!photoItem.isProfilePhoto) {
-                <div class="drag-handle">
-                  <mat-icon>drag_indicator</mat-icon>
-                </div>
-              }
+          <div class="card-content">
+            <div class="stat-item">
+              <mat-icon>dynamic_feed</mat-icon>
+              <span class="stat-value">{{ myPosts().length }}</span>
+              <span class="stat-label">{{ 'PROFILE.POSTS' | translate }}</span>
             </div>
-          }
-          
-          <!-- Uploading photos with individual loading states -->
-          @for (uploading of uploadingPhotos(); track uploading.id) {
-            <div class="photo-item uploading-item" [class.error]="uploading.status === 'error'">
-              <img [src]="uploading.preview" [attr.alt]="'PROFILE.UPLOADING_PHOTO_ALT' | translate" class="uploading-preview">
-              <div class="upload-overlay">
-                @if (uploading.status === 'uploading') {
-                  <div class="upload-spinner-overlay"></div>
-                  <span class="upload-status">{{ 'PROFILE.UPLOADING_STATUS' | translate }}</span>
-                } @else if (uploading.status === 'error') {
-                  <mat-icon class="error-icon">error</mat-icon>
-                  <span class="upload-status error">{{ uploading.error || ('PROFILE.UPLOAD_FAILED' | translate) }}</span>
-                }
-              </div>
+            <div class="stat-item">
+              <mat-icon>photo_library</mat-icon>
+              <span class="stat-value">{{ editablePhotos().length }}</span>
+              <span class="stat-label">{{ 'PROFILE.PHOTOS' | translate }}</span>
             </div>
-          }
-          
-          <!-- Add photo button -->
-          @if (editablePhotos().length + uploadingPhotos().length < maxPhotos()) {
-            <button type="button" class="add-photo-btn" (click)="openPhotoPicker()">
-              <mat-icon>add_photo_alternate</mat-icon>
-              <span>{{ 'PROFILE.ADD_PHOTO_BUTTON' | translate }}</span>
-            </button>
-          }
-        </div>
-        <input #photoInput type="file" accept="image/*" multiple hidden (change)="onPhotosSelected($event)">
-        
-        <!-- Manage Private Content Access -->
-        @if (hasPrivatePhotos()) {
-          <div class="manage-access-section">
-            <button mat-stroked-button class="manage-access-btn" (click)="openAccessDialog()">
+            <div class="stat-item">
               <mat-icon>lock</mat-icon>
-              {{ 'PROFILE.MANAGE_PRIVATE_ACCESS_BUTTON' | translate }}
-              @if (pendingRequestsCount() > 0) {
-                <span class="request-badge">{{ pendingRequestsCount() }}</span>
-              }
-            </button>
-          </div>
-        }
-      </section>
-
-      <!-- Basic Info Section -->
-      <section class="info-section">
-        <h2>{{ 'PROFILE.BASIC_INFO_TITLE' | translate }}</h2>
-        
-        <div class="info-grid">
-          <div class="info-item full-width">
-            <label class="field-label">{{ 'PROFILE.TAGLINE_LABEL' | translate }}</label>
-            @if (isEditing()) {
-              <div class="input-with-ai">
-                <mat-form-field appearance="outline" class="full-width-field">
-                  <input matInput [(ngModel)]="editForm.tagline" [placeholder]="'PROFILE.TAGLINE_PLACEHOLDER' | translate" maxlength="100">
-                  <mat-hint align="end">{{ editForm.tagline.length }}/100</mat-hint>
-                </mat-form-field>
-                @if (isPremium() && editForm.tagline.length >= 3) {
-                  <button type="button" 
-                          class="ai-polish-btn" 
-                          [class.loading]="polishingField() === 'tagline'"
-                          [disabled]="polishingField() !== null"
-                          (click)="polishText('tagline')"
-                          [matTooltip]="'PROFILE.AI_POLISH_TOOLTIP' | translate">
-                    @if (polishingField() === 'tagline') {
-                      <span class="ai-spinner"></span>
-                    } @else {
-                      <mat-icon>auto_awesome</mat-icon>
-                    }
-                  </button>
-                }
-              </div>
-              @if (polishSuggestions()?.field === 'tagline') {
-                <div class="ai-suggestions">
-                  <div class="suggestion-header">
-                    <mat-icon>auto_awesome</mat-icon>
-                    <span>{{ 'PROFILE.AI_SUGGESTIONS_TITLE' | translate }}</span>
-                    <button class="close-btn" (click)="dismissPolishSuggestions()">
-                      <mat-icon>close</mat-icon>
-                    </button>
-                  </div>
-                  <div class="suggestion-item primary" (click)="applyPolish(polishSuggestions()!.polished)">
-                    <span>{{ polishSuggestions()!.polished }}</span>
-                    <mat-icon>add</mat-icon>
-                  </div>
-                  @for (alt of polishSuggestions()!.alternatives; track alt) {
-                    <div class="suggestion-item" (click)="applyPolish(alt)">
-                      <span>{{ alt }}</span>
-                      <mat-icon>add</mat-icon>
-                    </div>
-                  }
-                </div>
-              }
-            } @else {
-              <span class="info-value tagline-value" [class.empty]="!profile.onboarding?.tagline">
-                {{ profile.onboarding?.tagline || ('PROFILE.NOT_SET' | translate) }}
-              </span>
-            }
-          </div>
-
-          <div class="info-item">
-            <label class="field-label">{{ 'PROFILE.DISPLAY_NAME_LABEL' | translate }}</label>
-            @if (isEditing()) {
-              <mat-form-field appearance="outline">
-                <input matInput [(ngModel)]="editForm.displayName" [placeholder]="'PROFILE.DISPLAY_NAME_PLACEHOLDER' | translate">
-              </mat-form-field>
-            } @else {
-              <span class="info-value">{{ profile.displayName || ('PROFILE.NOT_SET' | translate) }}</span>
-            }
-          </div>
-
-          <div class="info-item">
-            <label class="field-label">{{ 'PROFILE.LOCATION_LABEL' | translate }}</label>
-            @if (isEditing()) {
-              <div class="location-autocomplete-wrapper">
-                <!-- Region Restriction Notice (only shown when US is the only allowed region) -->
-                @if (showUsOnlyNotice()) {
-                  <div class="region-notice">
-                    <mat-icon>public</mat-icon>
-                    <span>{{ 'PROFILE.US_ONLY_NOTICE' | translate }}</span>
-                  </div>
-                }
-                
-                <!-- Location Status Message -->
-                @if (locationMessage()) {
-                  <div class="location-status" [class]="locationStatus()">
-                    @if (locationStatus() === 'detecting') {
-                      <span class="location-spinner"></span>
-                    } @else if (locationStatus() === 'success') {
-                      <mat-icon>check_circle</mat-icon>
-                    } @else if (locationStatus() === 'error') {
-                      <mat-icon>error_outline</mat-icon>
-                    }
-                    <span>{{ locationMessage() }}</span>
-                  </div>
-                }
-                
-                <div class="location-input-row">
-                  <div class="autocomplete-container">
-                    <div class="input-wrapper">
-                      <mat-icon class="input-icon">location_on</mat-icon>
-                      <input 
-                        #cityInput
-                        type="text"
-                        class="location-input"
-                        [class.searching]="isSearchingLocation()"
-                        [placeholder]="'PROFILE.CITY_PLACEHOLDER' | translate"
-                        [value]="cityInputValue()"
-                        (input)="onLocationInputChange($any($event.target).value)"
-                        (keydown)="onLocationKeyDown($event)"
-                        (focus)="onLocationInputFocus()"
-                        autocomplete="off"
-                        role="combobox"
-                        aria-autocomplete="list"
-                        [attr.aria-expanded]="showSuggestions()"
-                        aria-haspopup="listbox">
-                      @if (isSearchingLocation()) {
-                        <span class="input-spinner"></span>
-                      }
-                    </div>
-                    
-                    <!-- Autocomplete Suggestions Dropdown -->
-                    @if (showSuggestions()) {
-                      <ul class="suggestions-list" role="listbox">
-                        @for (suggestion of suggestions(); track suggestion.placeId; let i = $index) {
-                          <li 
-                            class="suggestion-item"
-                            [class.highlighted]="highlightedIndex() === i"
-                            role="option"
-                            [attr.aria-selected]="highlightedIndex() === i"
-                            (click)="selectSuggestion(suggestion)"
-                            (mouseenter)="highlightedIndex.set(i)">
-                            <mat-icon class="suggestion-icon">place</mat-icon>
-                            <span class="suggestion-text">
-                              <span class="suggestion-main">{{ suggestion.mainText }}</span>
-                              <span class="suggestion-secondary">{{ suggestion.secondaryText }}</span>
-                            </span>
-                          </li>
-                        }
-                      </ul>
-                    }
-                  </div>
-                  
-                  <!-- Geolocation Button -->
-                  <button 
-                    type="button" 
-                    class="geolocation-btn"
-                    [class.detecting]="locationStatus() === 'detecting'"
-                    [disabled]="locationStatus() === 'detecting'"
-                    (click)="requestGeolocation()"
-                    [matTooltip]="'PROFILE.USE_GPS_TOOLTIP' | translate">
-                    @if (locationStatus() === 'detecting') {
-                      <span class="btn-spinner"></span>
-                    } @else {
-                      <mat-icon>my_location</mat-icon>
-                    }
-                  </button>
-                </div>
-              </div>
-            } @else {
-              <span class="info-value">
-                @if (profile.onboarding; as onboarding) {
-                  @if (onboarding.city) {
-                    {{ onboarding.city }}, {{ onboarding.country }}
-                  } @else {
-                    {{ 'PROFILE.NOT_SET' | translate }}
-                  }
-                } @else {
-                  {{ 'PROFILE.NOT_SET' | translate }}
-                }
-              </span>
-            }
-          </div>
-
-          <div class="info-item">
-            <label class="field-label">{{ 'PROFILE.BIRTHDAY_LABEL' | translate }}</label>
-            <span class="info-value">
-              @if (profile.onboarding?.birthDate; as birthDate) {
-                {{ formatBirthDate(birthDate) }} ({{ 'PROFILE.YEARS_OLD' | translate:{ age: calculateAge(birthDate) } }})
-              } @else {
-                {{ 'PROFILE.NOT_SET' | translate }}
-              }
-            </span>
-          </div>
-
-        </div>
-      </section>
-
-      <!-- Dating Preferences Section -->
-      <section class="info-section">
-        <h2>{{ 'PROFILE.DATING_PREFERENCES_TITLE' | translate }}</h2>
-        
-        <div class="info-grid">
-          <!-- Row 1: Identity and Age Range -->
-          <div class="info-item">
-            <label class="field-label">{{ 'PROFILE.GENDER_IDENTITY_LABEL' | translate }}</label>
-            @if (isEditing()) {
-              <mat-form-field appearance="outline">
-                <mat-select [(ngModel)]="editForm.genderIdentity">
-                  <mat-option value="woman">{{ 'ONBOARDING.STEP_2.IDENTITY_WOMAN' | translate }}</mat-option>
-                  <mat-option value="man">{{ 'ONBOARDING.STEP_2.IDENTITY_MAN' | translate }}</mat-option>
-                  <mat-option value="nonbinary">{{ 'ONBOARDING.STEP_2.IDENTITY_NONBINARY' | translate }}</mat-option>
-                  <mat-option value="self-describe">{{ 'ONBOARDING.STEP_2.IDENTITY_SELF_DESCRIBE' | translate }}</mat-option>
-                </mat-select>
-              </mat-form-field>
-            } @else {
-              <span class="info-value">{{ formatGender(profile.onboarding?.genderIdentity) }}</span>
-            }
-          </div>
-
-          <div class="info-item">
-            <label class="field-label">{{ 'PROFILE.AGE_RANGE_LABEL' | translate }}</label>
-            @if (isEditing()) {
-              <div class="range-inputs">
-                <mat-form-field appearance="outline" class="age-field">
-                  <mat-label>{{ 'PROFILE.AGE_MIN_LABEL' | translate }}</mat-label>
-                  <input matInput type="number" [(ngModel)]="editForm.ageRangeMin" min="18" max="99">
-                </mat-form-field>
-                <span class="range-separator">{{ 'PROFILE.AGE_RANGE_SEPARATOR' | translate }}</span>
-                <mat-form-field appearance="outline" class="age-field">
-                  <mat-label>{{ 'PROFILE.AGE_MAX_LABEL' | translate }}</mat-label>
-                  <input matInput type="number" [(ngModel)]="editForm.ageRangeMax" min="18" max="99">
-                </mat-form-field>
-              </div>
-            } @else {
-              <span class="info-value">
-                @if (profile.onboarding; as onboarding) {
-                  @if (onboarding.ageRangeMin) {
-                    {{ onboarding.ageRangeMin }} - {{ onboarding.ageRangeMax }}
-                  } @else {
-                    {{ 'PROFILE.NOT_SET' | translate }}
-                  }
-                } @else {
-                  {{ 'PROFILE.NOT_SET' | translate }}
-                }
-              </span>
-            }
-          </div>
-
-          <!-- Row 2: Interested in - full width for horizontal chips -->
-          <div class="info-item full-width">
-            <label class="field-label">{{ 'PROFILE.INTERESTED_IN_LABEL' | translate }}</label>
-            @if (isEditing()) {
-              <div class="chip-group">
-                @for (option of genderOptions; track option.value) {
-                  <button type="button"
-                          mat-stroked-button
-                          [class.selected]="editForm.interestedIn.includes(option.value)"
-                          (click)="toggleInterest(option.value)">
-                    {{ option.labelKey | translate }}
-                  </button>
-                }
-              </div>
-            } @else {
-              <span class="info-value">{{ formatInterests(profile.onboarding?.interestedIn) }}</span>
-            }
-          </div>
-
-          <!-- Row 3: Support orientation - full width for horizontal chips -->
-          <div class="info-item full-width">
-            <label class="field-label">{{ 'PROFILE.SUPPORT_ORIENTATION_LABEL' | translate }}</label>
-            @if (isEditing()) {
-              <div class="chip-group">
-                @for (option of supportOrientationOptions; track option.value) {
-                  <button type="button"
-                          mat-stroked-button
-                          [class.selected]="editForm.supportOrientation === option.value"
-                          (click)="selectSupportOrientation(option.value)">
-                    {{ ('ONBOARDING.STEP_4.' + option.labelKey) | translate }}
-                  </button>
-                }
-              </div>
-            } @else {
-              @if (profile.onboarding?.supportOrientation) {
-                <div class="tag-list">
-                  <span class="tag">{{ formatSupportOrientation(profile.onboarding?.supportOrientation) }}</span>
-                </div>
-              } @else {
-                <span class="info-value empty">{{ 'PROFILE.NOT_SET' | translate }}</span>
-              }
-            }
+              <span class="stat-value">{{ grants().length }}</span>
+              <span class="stat-label">{{ 'PROFILE.PRIVATE_ACCESS_COUNT' | translate }}</span>
+            </div>
           </div>
         </div>
-      </section>
-
-      <!-- About Me Section -->
-      <section class="info-section">
-        <h2>{{ 'PROFILE.ABOUT_ME_TITLE' | translate }}</h2>
-        
-        <div class="info-grid full-width">
-          <div class="info-item">
-            <label class="field-label">{{ 'PROFILE.LOOKING_FOR_LABEL' | translate }}</label>
-            @if (isEditing()) {
-              <div class="chip-group">
-                @for (option of connectionTypeOptions; track option.value) {
-                  <button type="button"
-                          mat-stroked-button
-                          [class.selected]="editForm.connectionTypes.includes(option.value)"
-                          (click)="toggleConnectionType(option.value)">
-                    {{ ('ONBOARDING.STEP_3.' + option.labelKey) | translate }}
-                  </button>
-                }
-              </div>
-            } @else {
-              @if (profile.onboarding?.connectionTypes?.length) {
-                <div class="tag-list">
-                  @for (type of profile.onboarding?.connectionTypes || []; track type) {
-                    <span class="tag">{{ getConnectionTypeLabel(type) }}</span>
-                  }
-                </div>
-              } @else {
-                <span class="info-value empty">{{ 'PROFILE.NOT_SET' | translate }}</span>
-              }
-            }
-          </div>
-
-          <div class="info-item">
-            <label class="field-label">{{ 'PROFILE.IDEAL_RELATIONSHIP_LABEL' | translate }}</label>
-            @if (isEditing()) {
-              <div class="input-with-ai">
-                <mat-form-field appearance="outline" class="full-width-field">
-                  <textarea matInput 
-                            [(ngModel)]="editForm.idealRelationship" 
-                            [placeholder]="'PROFILE.IDEAL_RELATIONSHIP_PLACEHOLDER' | translate"
-                            rows="3"></textarea>
-                </mat-form-field>
-                @if (isPremium() && editForm.idealRelationship.length >= 10) {
-                  <button type="button" 
-                          class="ai-polish-btn" 
-                          [class.loading]="polishingField() === 'idealRelationship'"
-                          [disabled]="polishingField() !== null"
-                          (click)="polishText('idealRelationship')"
-                          [matTooltip]="'PROFILE.AI_POLISH_TOOLTIP' | translate">
-                    @if (polishingField() === 'idealRelationship') {
-                      <span class="ai-spinner"></span>
-                    } @else {
-                      <mat-icon>auto_awesome</mat-icon>
-                    }
-                  </button>
-                }
-              </div>
-              @if (polishSuggestions()?.field === 'idealRelationship') {
-                <div class="ai-suggestions">
-                  <div class="suggestion-header">
-                    <mat-icon>auto_awesome</mat-icon>
-                    <span>{{ 'PROFILE.AI_SUGGESTIONS_TITLE' | translate }}</span>
-                    <button class="close-btn" (click)="dismissPolishSuggestions()">
-                      <mat-icon>close</mat-icon>
-                    </button>
-                  </div>
-                  <div class="suggestion-item primary" (click)="applyPolish(polishSuggestions()!.polished)">
-                    <span>{{ polishSuggestions()!.polished }}</span>
-                    <mat-icon>add</mat-icon>
-                  </div>
-                  @for (alt of polishSuggestions()!.alternatives; track alt) {
-                    <div class="suggestion-item" (click)="applyPolish(alt)">
-                      <span>{{ alt }}</span>
-                      <mat-icon>add</mat-icon>
-                    </div>
-                  }
-                </div>
-              }
-            } @else {
-              <span class="info-value multiline">{{ profile.onboarding?.idealRelationship || ('PROFILE.NOT_SET' | translate) }}</span>
-            }
-          </div>
-
-          <div class="info-item">
-            <label class="field-label">{{ 'PROFILE.SUPPORT_MEANING_LABEL' | translate }}</label>
-            @if (isEditing()) {
-              <div class="input-with-ai">
-                <mat-form-field appearance="outline" class="full-width-field">
-                  <textarea matInput 
-                            [(ngModel)]="editForm.supportMeaning" 
-                            [placeholder]="'PROFILE.SUPPORT_MEANING_PLACEHOLDER' | translate"
-                            rows="3"></textarea>
-                </mat-form-field>
-                @if (isPremium() && editForm.supportMeaning.length >= 10) {
-                  <button type="button" 
-                          class="ai-polish-btn" 
-                          [class.loading]="polishingField() === 'supportMeaning'"
-                          [disabled]="polishingField() !== null"
-                          (click)="polishText('supportMeaning')"
-                          [matTooltip]="'PROFILE.AI_POLISH_TOOLTIP' | translate">
-                    @if (polishingField() === 'supportMeaning') {
-                      <span class="ai-spinner"></span>
-                    } @else {
-                      <mat-icon>auto_awesome</mat-icon>
-                    }
-                  </button>
-                }
-              </div>
-              @if (polishSuggestions()?.field === 'supportMeaning') {
-                <div class="ai-suggestions">
-                  <div class="suggestion-header">
-                    <mat-icon>auto_awesome</mat-icon>
-                    <span>{{ 'PROFILE.AI_SUGGESTIONS_TITLE' | translate }}</span>
-                    <button class="close-btn" (click)="dismissPolishSuggestions()">
-                      <mat-icon>close</mat-icon>
-                    </button>
-                  </div>
-                  <div class="suggestion-item primary" (click)="applyPolish(polishSuggestions()!.polished)">
-                    <span>{{ polishSuggestions()!.polished }}</span>
-                    <mat-icon>add</mat-icon>
-                  </div>
-                  @for (alt of polishSuggestions()!.alternatives; track alt) {
-                    <div class="suggestion-item" (click)="applyPolish(alt)">
-                      <span>{{ alt }}</span>
-                      <mat-icon>add</mat-icon>
-                    </div>
-                  }
-                </div>
-              }
-            } @else {
-              <span class="info-value multiline">{{ profile.onboarding?.supportMeaning || ('PROFILE.NOT_SET' | translate) }}</span>
-            }
-          </div>
-        </div>
-      </section>
-
-      <!-- Personal Details Section -->
-      <section class="info-section">
-        <h2>{{ 'PROFILE.PERSONAL_DETAILS_TITLE' | translate }}</h2>
-        
-        <div class="info-grid">
-          <div class="info-item">
-            <label class="field-label">{{ 'PROFILE.HEIGHT_LABEL' | translate }}</label>
-            @if (isEditing()) {
-              <mat-form-field appearance="outline">
-                <input matInput [(ngModel)]="editForm.height" [placeholder]="'PROFILE.HEIGHT_PLACEHOLDER' | translate">
-              </mat-form-field>
-            } @else {
-              <span class="info-value">{{ profile.onboarding?.height || ('PROFILE.NOT_SET' | translate) }}</span>
-            }
-          </div>
-
-          <div class="info-item">
-            <label class="field-label">{{ 'PROFILE.WEIGHT_LABEL' | translate }}</label>
-            @if (isEditing()) {
-              <mat-form-field appearance="outline">
-                <input matInput [(ngModel)]="editForm.weight" [placeholder]="'PROFILE.WEIGHT_PLACEHOLDER' | translate">
-              </mat-form-field>
-            } @else {
-              <span class="info-value">{{ profile.onboarding?.weight || ('PROFILE.NOT_SET' | translate) }}</span>
-            }
-          </div>
-
-          <div class="info-item">
-            <label class="field-label">{{ 'PROFILE.ETHNICITY_LABEL' | translate }}</label>
-            @if (isEditing()) {
-              <mat-form-field appearance="outline">
-                <mat-select [(ngModel)]="editForm.ethnicity" [placeholder]="'PROFILE.SELECT_PLACEHOLDER' | translate">
-                  <mat-option value="">{{ 'PROFILE.NOT_SPECIFIED' | translate }}</mat-option>
-                  @for (option of ethnicityOptions; track option) {
-                    <mat-option [value]="option">{{ option }}</mat-option>
-                  }
-                </mat-select>
-              </mat-form-field>
-            } @else {
-              <span class="info-value">{{ profile.onboarding?.ethnicity || ('PROFILE.NOT_SET' | translate) }}</span>
-            }
-          </div>
-
-          <div class="info-item">
-            <label class="field-label">{{ 'PROFILE.RELATIONSHIP_STATUS_LABEL' | translate }}</label>
-            @if (isEditing()) {
-              <mat-form-field appearance="outline">
-                <mat-select [(ngModel)]="editForm.relationshipStatus" [placeholder]="'PROFILE.SELECT_PLACEHOLDER' | translate">
-                  <mat-option value="">{{ 'PROFILE.NOT_SPECIFIED' | translate }}</mat-option>
-                  @for (option of relationshipStatusOptions; track option) {
-                    <mat-option [value]="option">{{ option }}</mat-option>
-                  }
-                </mat-select>
-              </mat-form-field>
-            } @else {
-              <span class="info-value">{{ profile.onboarding?.relationshipStatus || ('PROFILE.NOT_SET' | translate) }}</span>
-            }
-          </div>
-
-          <div class="info-item">
-            <label class="field-label">{{ 'PROFILE.CHILDREN_LABEL' | translate }}</label>
-            @if (isEditing()) {
-              <mat-form-field appearance="outline">
-                <mat-select [(ngModel)]="editForm.children" [placeholder]="'PROFILE.SELECT_PLACEHOLDER' | translate">
-                  <mat-option value="">{{ 'PROFILE.NOT_SPECIFIED' | translate }}</mat-option>
-                  @for (option of childrenOptions; track option) {
-                    <mat-option [value]="option">{{ option }}</mat-option>
-                  }
-                </mat-select>
-              </mat-form-field>
-            } @else {
-              <span class="info-value">{{ profile.onboarding?.children || ('PROFILE.NOT_SET' | translate) }}</span>
-            }
-          </div>
-
-          <div class="info-item">
-            <label class="field-label">{{ 'PROFILE.SMOKING_LABEL' | translate }}</label>
-            @if (isEditing()) {
-              <mat-form-field appearance="outline">
-                <mat-select [(ngModel)]="editForm.smoker" [placeholder]="'PROFILE.SELECT_PLACEHOLDER' | translate">
-                  <mat-option value="">{{ 'PROFILE.NOT_SPECIFIED' | translate }}</mat-option>
-                  @for (option of smokerOptions; track option) {
-                    <mat-option [value]="option">{{ option }}</mat-option>
-                  }
-                </mat-select>
-              </mat-form-field>
-            } @else {
-              <span class="info-value">{{ profile.onboarding?.smoker || ('PROFILE.NOT_SET' | translate) }}</span>
-            }
-          </div>
-
-          <div class="info-item">
-            <label class="field-label">{{ 'PROFILE.DRINKING_LABEL' | translate }}</label>
-            @if (isEditing()) {
-              <mat-form-field appearance="outline">
-                <mat-select [(ngModel)]="editForm.drinker" [placeholder]="'PROFILE.SELECT_PLACEHOLDER' | translate">
-                  <mat-option value="">{{ 'PROFILE.NOT_SPECIFIED' | translate }}</mat-option>
-                  @for (option of drinkerOptions; track option) {
-                    <mat-option [value]="option">{{ option }}</mat-option>
-                  }
-                </mat-select>
-              </mat-form-field>
-            } @else {
-              <span class="info-value">{{ profile.onboarding?.drinker || ('PROFILE.NOT_SET' | translate) }}</span>
-            }
-          </div>
-
-          <div class="info-item">
-            <label class="field-label">{{ 'PROFILE.EDUCATION_LABEL' | translate }}</label>
-            @if (isEditing()) {
-              <mat-form-field appearance="outline">
-                <mat-select [(ngModel)]="editForm.education" [placeholder]="'PROFILE.SELECT_PLACEHOLDER' | translate">
-                  <mat-option value="">{{ 'PROFILE.NOT_SPECIFIED' | translate }}</mat-option>
-                  @for (option of educationOptions; track option) {
-                    <mat-option [value]="option">{{ option }}</mat-option>
-                  }
-                </mat-select>
-              </mat-form-field>
-            } @else {
-              <span class="info-value">{{ profile.onboarding?.education || ('PROFILE.NOT_SET' | translate) }}</span>
-            }
-          </div>
-
-          <div class="info-item">
-            <label class="field-label">{{ 'PROFILE.OCCUPATION_LABEL' | translate }}</label>
-            @if (isEditing()) {
-              <mat-form-field appearance="outline">
-                <input matInput [(ngModel)]="editForm.occupation" [placeholder]="'PROFILE.OCCUPATION_PLACEHOLDER' | translate">
-              </mat-form-field>
-            } @else {
-              <span class="info-value">{{ profile.onboarding?.occupation || ('PROFILE.NOT_SET' | translate) }}</span>
-            }
-          </div>
-
-          <div class="info-item">
-            <label class="field-label">{{ 'PROFILE.INCOME_LABEL' | translate }}</label>
-            @if (isEditing()) {
-              <mat-form-field appearance="outline">
-                <mat-select [(ngModel)]="editForm.income" [placeholder]="'PROFILE.SELECT_PLACEHOLDER' | translate">
-                  <mat-option value="">{{ 'PROFILE.NOT_SPECIFIED' | translate }}</mat-option>
-                  @for (option of incomeOptions; track option) {
-                    <mat-option [value]="option">{{ option }}</mat-option>
-                  }
-                </mat-select>
-              </mat-form-field>
-            } @else {
-              <span class="info-value">{{ profile.onboarding?.income || ('PROFILE.NOT_SET' | translate) }}</span>
-            }
-          </div>
-        </div>
-      </section>
-
+      </aside>
     </div>
+
   } @else {
     <div class="loading-state">
       <mat-spinner diameter="40"></mat-spinner>

@@ -17,7 +17,7 @@
  * - Private access management
  */
 import {onCall, HttpsError} from "firebase-functions/v2/https";
-import {onDocumentCreated} from "firebase-functions/v2/firestore";
+import {onDocumentCreated, onDocumentDeleted} from "firebase-functions/v2/firestore";
 import {FieldValue, Timestamp} from "firebase-admin/firestore";
 import {db} from "../config/firebase";
 import {getConfig} from "../config/remote-config";
@@ -748,6 +748,41 @@ export const onPrivateAccessCreated = onDocumentCreated(
     await bulkWriter.close();
 
     logger.info(`Backfilled ${posts.length} private posts for ${viewerId} from ${authorId}`);
+  }
+);
+
+/**
+ * Trigger: When private access is revoked, remove private posts from viewer's feed
+ */
+export const onPrivateAccessDeleted = onDocumentDeleted(
+  {
+    document: "users/{authorId}/privateAccess/{viewerId}",
+    region: "us-central1",
+  },
+  async (event) => {
+    const {authorId, viewerId} = event.params;
+
+    // Find and delete all feed items from this author with visibility "private"
+    const feedItemsSnapshot = await db
+      .collection("users")
+      .doc(viewerId)
+      .collection("feedItems")
+      .where("authorId", "==", authorId)
+      .where("visibility", "==", "private")
+      .get();
+
+    if (feedItemsSnapshot.empty) {
+      logger.info(`No private feed items to remove for ${viewerId} from ${authorId}`);
+      return;
+    }
+
+    const bulkWriter = db.bulkWriter();
+    for (const doc of feedItemsSnapshot.docs) {
+      bulkWriter.delete(doc.ref);
+    }
+    await bulkWriter.close();
+
+    logger.info(`Removed ${feedItemsSnapshot.size} private posts from ${viewerId}'s feed (author: ${authorId})`);
   }
 );
 

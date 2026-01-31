@@ -243,6 +243,29 @@
   color: var(--color-accent);
 }
 
+/* Premium badge on tab */
+.tab-button .premium-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: linear-gradient(135deg, #c9a962 0%, #d4b87a 100%);
+  color: #1a1a1a;
+  border-radius: 10px;
+  margin-left: 0.25rem;
+}
+
+.tab-button.premium-required {
+  opacity: 0.85;
+}
+
+.tab-button.premium-required:hover {
+  opacity: 1;
+}
+
 /* Sub-filter Row */
 .sub-filter-row {
   display: flex;

@@ -30,9 +30,13 @@
               type="button"
               class="tab-button"
               [class.active]="activeTab() === tab.value"
+              [class.premium-required]="tab.value === 'private' && !isPremium()"
               (click)="onTabChange(tab.value)">
               <mat-icon>{{ tab.icon }}</mat-icon>
               <span>{{ tab.labelKey | translate }}</span>
+              @if (tab.value === 'private' && !isPremium()) {
+                <span class="premium-badge">Premium</span>
+              }
             </button>
           }
         </div>
@@ -63,9 +67,6 @@
             </mat-menu>
           </div>
         }
-
-        <!-- Post Composer -->
-        <app-post-composer [activeTab]="activeTab()" (postCreated)="onPostCreated()" />
 
         <!-- Feed Content -->
         <div class="feed-content">
