@@ -1167,9 +1167,17 @@ export class FeedService {
             }
           }
 
+          // Get blocked users to filter comments
+          const blockedUsers = this.blockService.blockedUserIds();
+
           for (const docSnap of snapshot.docs) {
             const data = docSnap.data();
             const authorId = data['authorId'] as string;
+
+            // Skip comments from blocked users (unless it's the current user's own comment)
+            if (blockedUsers.has(authorId) && authorId !== user.uid) {
+              continue;
+            }
             
             // Get author info from cache or fetch
             let authorData = this.authorDataCache.get(authorId);
