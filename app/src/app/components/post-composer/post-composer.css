@@ -445,7 +445,58 @@
   --mdc-circular-progress-active-indicator-color: white;
 }
 
-/* Responsive */
+/* ============================================
+   COLLAPSED STATE (Mobile)
+   ============================================ */
+
+.composer-collapsed {
+  display: none;
+  flex: 1;
+  padding: 10px 14px;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: 24px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.composer-collapsed:hover {
+  background: var(--color-surface-variant);
+  border-color: var(--color-text-muted);
+}
+
+.collapsed-placeholder {
+  color: var(--color-text-tertiary);
+  font-size: 0.9375rem;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+/* Mobile: Collapsed by default, expanded on interaction */
+@media (max-width: 600px) {
+  .post-composer:not(.expanded) .composer-content {
+    display: none;
+  }
+
+  .post-composer:not(.expanded) .composer-collapsed {
+    display: block;
+  }
+
+  .post-composer.expanded .composer-collapsed {
+    display: none;
+  }
+}
+
+/* Desktop: Always show expanded, hide collapsed trigger */
+@media (min-width: 601px) {
+  .composer-collapsed {
+    display: none !important;
+  }
+}
+
 @media (max-width: 480px) {
   .post-composer {
     padding: 12px;

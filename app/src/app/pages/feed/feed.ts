@@ -12,6 +12,7 @@ import { BlockService } from '../../core/services/block.service';
 import { PostDisplay, FeedFilter } from '../../core/interfaces';
 import { PostCardComponent } from '../../components/post-card';
 import { PostCommentsComponent, PostCommentsDialogData } from '../../components/post-comments';
+import { PostComposerComponent } from '../../components/post-composer';
 import { FeedSidebarComponent } from '../../components/feed-sidebar';
 
 @Component({
@@ -27,6 +28,7 @@ import { FeedSidebarComponent } from '../../components/feed-sidebar';
     MatMenuModule,
     TranslateModule,
     PostCardComponent,
+    PostComposerComponent,
     FeedSidebarComponent,
   ],
 })

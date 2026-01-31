@@ -345,6 +345,11 @@
   color: var(--color-accent);
 }
 
+/* Post Composer Section */
+.composer-section {
+  margin-bottom: 1rem;
+}
+
 .feed-content {
   display: flex;
   flex-direction: column;

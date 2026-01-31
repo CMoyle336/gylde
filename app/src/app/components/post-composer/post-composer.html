@@ -1,4 +1,4 @@
-<div class="post-composer" [class.private-mode]="isPrivateMode()">
+<div class="post-composer" [class.private-mode]="isPrivateMode()" [class.expanded]="expanded()">
   <!-- User Avatar -->
   <div class="composer-avatar">
     @if (userPhoto()) {
@@ -10,7 +10,16 @@
     }
   </div>
 
-  <!-- Composer Content -->
+  <!-- Collapsed View (mobile only) -->
+  <button 
+    type="button" 
+    class="composer-collapsed" 
+    (click)="expand()"
+    [attr.aria-label]="'FEED.COMPOSER_PLACEHOLDER' | translate">
+    <span class="collapsed-placeholder">{{ 'FEED.COMPOSER_PLACEHOLDER' | translate }}</span>
+  </button>
+
+  <!-- Composer Content (expanded view) -->
   <div class="composer-content">
     <!-- Private Mode Banner -->
     @if (isPrivateMode()) {
@@ -27,6 +36,7 @@
       [value]="content()"
       (input)="onContentChange($event)"
       (focus)="onFocus()"
+      (blur)="collapse()"
       rows="3"
       [attr.maxlength]="maxContentLength"
     ></textarea>

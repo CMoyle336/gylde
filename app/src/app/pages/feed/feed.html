@@ -62,6 +62,13 @@
           </div>
         }
 
+        <!-- Post Composer -->
+        <div class="composer-section">
+          <app-post-composer 
+            [activeTab]="activeTab()" 
+            (postCreated)="onPostCreated()" />
+        </div>
+
         <!-- Feed Content -->
         <div class="feed-content">
           @if (loading()) {

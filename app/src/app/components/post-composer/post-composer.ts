@@ -71,6 +71,9 @@ export class PostComposerComponent {
   protected readonly uploading = signal(false);
   protected readonly error = signal<string | null>(null);
   
+  // Collapsed state for mobile - expands when user interacts
+  protected readonly expanded = signal(false);
+  
   // Link preview state
   protected readonly linkPreview = signal<LinkPreview | null>(null);
   protected readonly loadingPreview = signal(false);
@@ -393,6 +396,18 @@ export class PostComposerComponent {
   }
 
   protected onFocus(): void {
-    // Could expand the composer on focus
+    // Expand the composer when focused
+    this.expanded.set(true);
+  }
+
+  protected expand(): void {
+    this.expanded.set(true);
+  }
+
+  protected collapse(): void {
+    // Only collapse if there's no content
+    if (this.content().trim().length === 0 && this.media().length === 0 && !this.linkPreview()) {
+      this.expanded.set(false);
+    }
   }
 }
