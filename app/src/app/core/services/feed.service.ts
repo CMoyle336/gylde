@@ -13,6 +13,7 @@ import {
   doc,
   getDoc,
   getDocs,
+  getCountFromServer,
   documentId,
   DocumentSnapshot,
   QueryDocumentSnapshot,
@@ -60,6 +61,9 @@ export class FeedService {
 
   // Active feed subscription
   private feedUnsubscribe: (() => void) | null = null;
+  
+  // Feed stats subscription
+  private feedStatsUnsubscribe: (() => void) | null = null;
 
   // Caches to avoid refetching data we already have
   private likeStatusCache = new Map<string, boolean>(); // postId -> isLiked
@@ -100,6 +104,12 @@ export class FeedService {
   private readonly _deletingPostId = signal<string | null>(null);
   private deletedPostIds = new Set<string>(); // Track deleted posts to filter from subscriptions
 
+  // User feed stats
+  private readonly _userPostsCount = signal<number>(0);
+  private readonly _likesReceivedCount = signal<number>(0);
+  private readonly _commentsReceivedCount = signal<number>(0);
+  private readonly _feedStatsLoading = signal<boolean>(false);
+
   // Public signals
   readonly posts = this._posts.asReadonly();
   readonly loading = this._loading.asReadonly();
@@ -119,8 +129,11 @@ export class FeedService {
   readonly createError = this._createError.asReadonly();
   readonly deletingPostId = this._deletingPostId.asReadonly();
 
-  // Feature flag
-  readonly feedEnabled = this.remoteConfigService.featureFeedEnabled;
+  // Feed stats (posts created, likes received, comments received)
+  readonly userPostsCount = this._userPostsCount.asReadonly();
+  readonly likesReceivedCount = this._likesReceivedCount.asReadonly();
+  readonly commentsReceivedCount = this._commentsReceivedCount.asReadonly();
+  readonly feedStatsLoading = this._feedStatsLoading.asReadonly();
 
   // Tab options for main navigation
   readonly tabOptions: { value: FeedTab; labelKey: string; icon: string }[] = [
@@ -1428,6 +1441,7 @@ export class FeedService {
   private cleanup(): void {
     this.unsubscribeFromFeeds();
     this.unsubscribeFromComments();
+    this.unsubscribeFromFeedStats();
     this._posts.set([]);
     this._allPosts.set([]);
     this._comments.set([]);
@@ -1443,4 +1457,384 @@ export class FeedService {
 
   // Legacy cursor (kept for compatibility)
   private readonly _cursor = signal<string | null>(null);
+
+  // ============================================================================
+  // USER PROFILE POSTS
+  // Fetch posts directly for a specific user (not from fan-out)
+  // ============================================================================
+
+  private userPostsUnsubscribe?: () => void;
+  private readonly _userPosts = signal<PostDisplay[]>([]);
+  private readonly _userPostsLoading = signal(false);
+  private readonly _userPostsLoadingMore = signal(false);
+  private readonly _userPostsHasMore = signal(true);
+  private readonly _userPostsError = signal<string | null>(null);
+  private lastUserPostDoc: QueryDocumentSnapshot | null = null;
+  private currentProfileUserId: string | null = null;
+
+  readonly userPosts = this._userPosts.asReadonly();
+  readonly userPostsLoading = this._userPostsLoading.asReadonly();
+  readonly userPostsLoadingMore = this._userPostsLoadingMore.asReadonly();
+  readonly userPostsHasMore = this._userPostsHasMore.asReadonly();
+  readonly userPostsError = this._userPostsError.asReadonly();
+
+  /**
+   * Subscribe to posts from a specific user
+   * @param userId - The user whose posts to fetch
+   * @param hasPrivateAccess - Whether the current user has private content access
+   */
+  subscribeToUserPosts(userId: string, hasPrivateAccess: boolean): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+
+    const currentUser = this.authService.user();
+    if (!currentUser) return;
+
+    // Cleanup existing subscription
+    this.unsubscribeFromUserPosts();
+    
+    this.currentProfileUserId = userId;
+    this._userPostsLoading.set(true);
+    this._userPostsError.set(null);
+    this._userPostsHasMore.set(true);
+    this._userPosts.set([]);
+    this.lastUserPostDoc = null;
+
+    // Build query for user's posts
+    const postsRef = collection(this.firestore, 'posts');
+    
+    // Determine which visibilities we can see
+    const isOwnProfile = userId === currentUser.uid;
+    let visibilities: PostVisibility[];
+    
+    if (isOwnProfile) {
+      // User can see all their own posts
+      visibilities = ['public', 'matches', 'private'];
+    } else if (hasPrivateAccess) {
+      // Has private access - can see public and private
+      visibilities = ['public', 'private'];
+    } else {
+      // Only public posts
+      visibilities = ['public'];
+    }
+
+    const postsQuery = query(
+      postsRef,
+      where('authorId', '==', userId),
+      where('status', '==', 'active'),
+      where('visibility', 'in', visibilities),
+      orderBy('createdAt', 'desc'),
+      limit(PAGE_SIZE)
+    );
+
+    this.userPostsUnsubscribe = onSnapshot(
+      postsQuery,
+      async (snapshot) => {
+        try {
+          const posts: PostDisplay[] = [];
+
+          // Update last doc for pagination
+          if (snapshot.docs.length > 0) {
+            this.lastUserPostDoc = snapshot.docs[snapshot.docs.length - 1];
+          }
+
+          // Check if we have more
+          this._userPostsHasMore.set(snapshot.docs.length >= PAGE_SIZE);
+
+          // Get author data once (it's the same for all posts)
+          let authorData: { displayName: string | null; photoURL: string | null; reputationTier?: ReputationTier; isVerified?: boolean } | null = null;
+          
+          if (snapshot.docs.length > 0) {
+            const cachedAuthor = this.authorDataCache.get(userId);
+            if (cachedAuthor) {
+              authorData = {
+                displayName: (cachedAuthor['displayName'] as string) || null,
+                photoURL: (cachedAuthor['photoURL'] as string) || null,
+                reputationTier: cachedAuthor['reputationTier'] as ReputationTier,
+                isVerified: cachedAuthor['identityVerified'] === true,
+              };
+            } else {
+              const authorDoc = await getDoc(doc(this.firestore, 'users', userId));
+              if (authorDoc.exists()) {
+                const data = authorDoc.data();
+                this.authorDataCache.set(userId, data);
+                authorData = {
+                  displayName: (data['displayName'] as string) || null,
+                  photoURL: (data['photoURL'] as string) || null,
+                  reputationTier: data['reputationTier'] as ReputationTier,
+                  isVerified: data['identityVerified'] === true,
+                };
+              }
+            }
+          }
+
+          // Check like status for all posts
+          const postIds = snapshot.docs.map(d => d.id);
+          const likeChecks = await Promise.all(
+            postIds.map(async (postId) => {
+              if (this.likeStatusCache.has(postId)) {
+                return { postId, isLiked: this.likeStatusCache.get(postId)! };
+              }
+              const likeDoc = await getDoc(
+                doc(this.firestore, 'posts', postId, 'likes', currentUser.uid)
+              );
+              const isLiked = likeDoc.exists();
+              this.likeStatusCache.set(postId, isLiked);
+              return { postId, isLiked };
+            })
+          );
+          const likeMap = new Map(likeChecks.map(l => [l.postId, l.isLiked]));
+
+          // Build post display objects
+          for (const docSnap of snapshot.docs) {
+            const data = docSnap.data() as Post;
+            const createdAt = (data.createdAt as Timestamp)?.toDate?.() || new Date();
+
+            posts.push({
+              id: docSnap.id,
+              author: {
+                uid: userId,
+                displayName: authorData?.displayName || null,
+                photoURL: authorData?.photoURL || null,
+                reputationTier: authorData?.reputationTier,
+                isVerified: authorData?.isVerified,
+              },
+              content: data.content,
+              visibility: data.visibility,
+              likeCount: data.metrics?.likeCount || 0,
+              commentCount: data.metrics?.commentCount || 0,
+              isLiked: likeMap.get(docSnap.id) || false,
+              isOwn: userId === currentUser.uid,
+              createdAt,
+              status: data.status,
+            });
+          }
+
+          this._userPosts.set(posts);
+        } catch (error) {
+          console.error('Error processing user posts:', error);
+          this._userPostsError.set('Failed to load posts');
+        } finally {
+          this._userPostsLoading.set(false);
+        }
+      },
+      (error) => {
+        console.error('Error subscribing to user posts:', error);
+        this._userPostsError.set('Failed to load posts');
+        this._userPostsLoading.set(false);
+      }
+    );
+  }
+
+  /**
+   * Load more posts for a user profile
+   */
+  async loadMoreUserPosts(userId: string, hasPrivateAccess: boolean): Promise<void> {
+    if (!isPlatformBrowser(this.platformId)) return;
+
+    const currentUser = this.authService.user();
+    if (!currentUser || !this._userPostsHasMore() || this._userPostsLoadingMore()) return;
+    if (!this.lastUserPostDoc) return;
+
+    this._userPostsLoadingMore.set(true);
+
+    try {
+      const postsRef = collection(this.firestore, 'posts');
+      
+      // Same visibility logic
+      const isOwnProfile = userId === currentUser.uid;
+      let visibilities: PostVisibility[];
+      
+      if (isOwnProfile) {
+        visibilities = ['public', 'matches', 'private'];
+      } else if (hasPrivateAccess) {
+        visibilities = ['public', 'private'];
+      } else {
+        visibilities = ['public'];
+      }
+
+      const postsQuery = query(
+        postsRef,
+        where('authorId', '==', userId),
+        where('status', '==', 'active'),
+        where('visibility', 'in', visibilities),
+        orderBy('createdAt', 'desc'),
+        startAfter(this.lastUserPostDoc),
+        limit(PAGE_SIZE)
+      );
+
+      const snapshot = await getDocs(postsQuery);
+      
+      if (snapshot.docs.length > 0) {
+        this.lastUserPostDoc = snapshot.docs[snapshot.docs.length - 1];
+      }
+
+      this._userPostsHasMore.set(snapshot.docs.length >= PAGE_SIZE);
+
+      // Get author data
+      let authorData: { displayName: string | null; photoURL: string | null; reputationTier?: ReputationTier; isVerified?: boolean } | null = null;
+      const cachedAuthor = this.authorDataCache.get(userId);
+      if (cachedAuthor) {
+        authorData = {
+          displayName: (cachedAuthor['displayName'] as string) || null,
+          photoURL: (cachedAuthor['photoURL'] as string) || null,
+          reputationTier: cachedAuthor['reputationTier'] as ReputationTier,
+          isVerified: cachedAuthor['identityVerified'] === true,
+        };
+      } else {
+        const authorDoc = await getDoc(doc(this.firestore, 'users', userId));
+        if (authorDoc.exists()) {
+          const data = authorDoc.data();
+          this.authorDataCache.set(userId, data);
+          authorData = {
+            displayName: (data['displayName'] as string) || null,
+            photoURL: (data['photoURL'] as string) || null,
+            reputationTier: data['reputationTier'] as ReputationTier,
+            isVerified: data['identityVerified'] === true,
+          };
+        }
+      }
+
+      // Check like status
+      const postIds = snapshot.docs.map(d => d.id);
+      const likeChecks = await Promise.all(
+        postIds.map(async (postId) => {
+          if (this.likeStatusCache.has(postId)) {
+            return { postId, isLiked: this.likeStatusCache.get(postId)! };
+          }
+          const likeDoc = await getDoc(
+            doc(this.firestore, 'posts', postId, 'likes', currentUser.uid)
+          );
+          const isLiked = likeDoc.exists();
+          this.likeStatusCache.set(postId, isLiked);
+          return { postId, isLiked };
+        })
+      );
+      const likeMap = new Map(likeChecks.map(l => [l.postId, l.isLiked]));
+
+      // Build new posts
+      const newPosts: PostDisplay[] = [];
+      for (const docSnap of snapshot.docs) {
+        const data = docSnap.data() as Post;
+        const createdAt = (data.createdAt as Timestamp)?.toDate?.() || new Date();
+
+        newPosts.push({
+          id: docSnap.id,
+          author: {
+            uid: userId,
+            displayName: authorData?.displayName || null,
+            photoURL: authorData?.photoURL || null,
+            reputationTier: authorData?.reputationTier,
+            isVerified: authorData?.isVerified,
+          },
+          content: data.content,
+          visibility: data.visibility,
+          likeCount: data.metrics?.likeCount || 0,
+          commentCount: data.metrics?.commentCount || 0,
+          isLiked: likeMap.get(docSnap.id) || false,
+          isOwn: userId === currentUser.uid,
+          createdAt,
+          status: data.status,
+        });
+      }
+
+      // Append to existing posts
+      this._userPosts.update(posts => [...posts, ...newPosts]);
+    } catch (error) {
+      console.error('Failed to load more user posts:', error);
+    } finally {
+      this._userPostsLoadingMore.set(false);
+    }
+  }
+
+  /**
+   * Unsubscribe from user posts
+   */
+  unsubscribeFromUserPosts(): void {
+    this.userPostsUnsubscribe?.();
+    this.userPostsUnsubscribe = undefined;
+    this.currentProfileUserId = null;
+    this.lastUserPostDoc = null;
+  }
+
+  /**
+   * Clear user posts state
+   */
+  clearUserPosts(): void {
+    this.unsubscribeFromUserPosts();
+    this._userPosts.set([]);
+    this._userPostsLoading.set(false);
+    this._userPostsError.set(null);
+    this._userPostsHasMore.set(true);
+  }
+
+  // ============================================================================
+  // USER FEED STATS
+  // ============================================================================
+
+  /**
+   * Subscribe to feed stats for the current user (posts count, likes received, comments received)
+   * Uses real-time subscription to update stats as likes/comments change
+   */
+  subscribeToFeedStats(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+
+    const currentUser = this.authService.user();
+    if (!currentUser) return;
+
+    // Cleanup existing subscription
+    this.unsubscribeFromFeedStats();
+
+    this._feedStatsLoading.set(true);
+
+    const postsRef = collection(this.firestore, 'posts');
+    
+    // Subscribe to user's active posts to get real-time metrics
+    const userPostsQuery = query(
+      postsRef,
+      where('authorId', '==', currentUser.uid),
+      where('status', '==', 'active'),
+      limit(100) // Limit to avoid performance issues
+    );
+    
+    this.feedStatsUnsubscribe = onSnapshot(
+      userPostsQuery,
+      (snapshot) => {
+        let totalLikes = 0;
+        let totalComments = 0;
+        
+        for (const postDoc of snapshot.docs) {
+          const postData = postDoc.data();
+          const metrics = postData['metrics'] as { likeCount?: number; commentCount?: number } | undefined;
+          totalLikes += metrics?.likeCount || 0;
+          totalComments += metrics?.commentCount || 0;
+        }
+        
+        this._userPostsCount.set(snapshot.docs.length);
+        this._likesReceivedCount.set(totalLikes);
+        this._commentsReceivedCount.set(totalComments);
+        this._feedStatsLoading.set(false);
+      },
+      (error) => {
+        console.error('Failed to subscribe to feed stats:', error);
+        this._feedStatsLoading.set(false);
+      }
+    );
+  }
+
+  /**
+   * Unsubscribe from feed stats
+   */
+  private unsubscribeFromFeedStats(): void {
+    if (this.feedStatsUnsubscribe) {
+      this.feedStatsUnsubscribe();
+      this.feedStatsUnsubscribe = null;
+    }
+  }
+
+  /**
+   * @deprecated Use subscribeToFeedStats() instead for real-time updates
+   */
+  async loadUserFeedStats(): Promise<void> {
+    this.subscribeToFeedStats();
+  }
 }

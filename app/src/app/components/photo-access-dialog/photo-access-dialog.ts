@@ -1,12 +1,16 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
-import { PrivateAccessService, PrivateAccessRequestDisplay, PrivateAccessGrantDisplay } from '../../core/services/photo-access.service';
+import { PrivateAccessService, PrivateAccessRequestDisplay } from '../../core/services/photo-access.service';
+
+export interface PrivateAccessDialogData {
+  // The specific request to show (single-user mode)
+  request: PrivateAccessRequestDisplay;
+}
 
 @Component({
   selector: 'app-private-access-dialog',
@@ -18,7 +22,6 @@ import { PrivateAccessService, PrivateAccessRequestDisplay, PrivateAccessGrantDi
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
-    MatTooltipModule,
     RouterLink,
     TranslateModule,
   ],
@@ -26,74 +29,61 @@ import { PrivateAccessService, PrivateAccessRequestDisplay, PrivateAccessGrantDi
 export class PrivateAccessDialogComponent {
   private readonly dialogRef = inject(MatDialogRef<PrivateAccessDialogComponent>);
   private readonly privateAccessService = inject(PrivateAccessService);
+  private readonly data = inject<PrivateAccessDialogData | null>(MAT_DIALOG_DATA, { optional: true });
 
-  // Read from the service's reactive signals
-  protected readonly pendingRequests = this.privateAccessService.pendingRequests;
-  protected readonly grants = this.privateAccessService.grants;
+  // The specific request passed in (single-user mode)
+  protected readonly request = signal<PrivateAccessRequestDisplay | null>(this.data?.request || null);
 
-  // Active tab state
-  protected activeTab: 'requests' | 'granted' = 'requests';
+  // Check if the request is still pending (reactive - updates when pendingRequests changes)
+  protected readonly isPending = computed(() => {
+    const req = this.request();
+    if (!req) return false;
+    return this.privateAccessService.isRequestPending(req.id);
+  });
 
-  // Track which items are being processed
-  protected readonly processingIds = signal<Set<string>>(new Set());
+  // Track processing state
+  protected readonly processing = signal(false);
   protected readonly error = signal<string | null>(null);
+  protected readonly completed = signal<'granted' | 'denied' | null>(null);
 
-  async grantAccess(request: PrivateAccessRequestDisplay): Promise<void> {
-    this.addProcessingId(request.id);
+  async grantAccess(): Promise<void> {
+    const req = this.request();
+    if (!req) return;
+    
+    this.processing.set(true);
     this.error.set(null);
     
     try {
-      await this.privateAccessService.respondToRequest(request.id, 'grant');
+      await this.privateAccessService.respondToRequest(req.id, 'grant');
+      this.completed.set('granted');
+      // Auto-close after a brief moment
+      setTimeout(() => this.dialogRef.close('granted'), 1200);
     } catch (err) {
       console.error('Error granting access:', err);
       this.error.set('Failed to grant access. Please try again.');
     } finally {
-      this.removeProcessingId(request.id);
+      this.processing.set(false);
     }
   }
 
-  async denyAccess(request: PrivateAccessRequestDisplay): Promise<void> {
-    this.addProcessingId(request.id);
+  async denyAccess(): Promise<void> {
+    const req = this.request();
+    if (!req) return;
+    
+    this.processing.set(true);
     this.error.set(null);
     
     try {
-      await this.privateAccessService.respondToRequest(request.id, 'deny');
+      await this.privateAccessService.respondToRequest(req.id, 'deny');
+      this.completed.set('denied');
+      // Auto-close after a brief moment
+      setTimeout(() => this.dialogRef.close('denied'), 1200);
     } catch (err) {
       console.error('Error denying access:', err);
-      this.error.set('Failed to deny access. Please try again.');
+      this.error.set('Failed to deny request. Please try again.');
     } finally {
-      this.removeProcessingId(request.id);
+      this.processing.set(false);
     }
-  }
-
-  async revokeAccess(grant: PrivateAccessGrantDisplay): Promise<void> {
-    this.addProcessingId(grant.id);
-    this.error.set(null);
-    
-    try {
-      await this.privateAccessService.revokeAccess(grant.id);
-    } catch (err) {
-      console.error('Error revoking access:', err);
-      this.error.set('Failed to revoke access. Please try again.');
-    } finally {
-      this.removeProcessingId(grant.id);
-    }
-  }
-
-  isProcessing(id: string): boolean {
-    return this.processingIds().has(id);
-  }
-
-  private addProcessingId(id: string): void {
-    this.processingIds.update(ids => new Set(ids).add(id));
-  }
-
-  private removeProcessingId(id: string): void {
-    this.processingIds.update(ids => {
-      const newSet = new Set(ids);
-      newSet.delete(id);
-      return newSet;
-    });
   }
 
   close(): void {

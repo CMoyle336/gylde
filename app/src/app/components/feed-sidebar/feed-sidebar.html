@@ -11,16 +11,16 @@
     <div class="card-content">
       <div class="stats-grid">
         <div class="stat-item">
-          <span class="stat-value">{{ matchesCount() }}</span>
-          <span class="stat-label">{{ 'FEED.SIDEBAR.STAT_MATCHES' | translate }}</span>
+          <span class="stat-value">{{ userPostsCount() }}</span>
+          <span class="stat-label">{{ 'FEED.SIDEBAR.STAT_POSTS' | translate }}</span>
         </div>
         <div class="stat-item">
-          <span class="stat-value">{{ favoritedMeCount() }}</span>
-          <span class="stat-label">{{ 'FEED.SIDEBAR.STAT_FAVORITES' | translate }}</span>
+          <span class="stat-value">{{ likesReceivedCount() }}</span>
+          <span class="stat-label">{{ 'FEED.SIDEBAR.STAT_LIKES' | translate }}</span>
         </div>
         <div class="stat-item">
-          <span class="stat-value">{{ viewedMeCount() }}</span>
-          <span class="stat-label">{{ 'FEED.SIDEBAR.STAT_VIEWS' | translate }}</span>
+          <span class="stat-value">{{ commentsReceivedCount() }}</span>
+          <span class="stat-label">{{ 'FEED.SIDEBAR.STAT_COMMENTS' | translate }}</span>
         </div>
       </div>
     </div>

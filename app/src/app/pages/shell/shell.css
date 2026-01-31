@@ -275,9 +275,6 @@
   font-size: 0.5625rem;
 }
 
-.sidebar.collapsed .nav-badge.coming-soon {
-  display: none;
-}
 
 .nav-item.active {
   background: rgba(201, 169, 98, 0.1);
@@ -304,14 +301,6 @@
   text-align: center;
 }
 
-.nav-badge.coming-soon {
-  background: transparent;
-  border: 1px solid var(--color-accent);
-  color: var(--color-accent);
-  font-size: 0.625rem;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-}
 
 /* Activity Spacer - grows when activity is collapsed to push it down */
 .activity-spacer {

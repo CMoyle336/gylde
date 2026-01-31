@@ -115,37 +115,15 @@ export class ShellComponent implements OnInit, OnDestroy {
     return matchesCount;
   });
 
-  // Nav items - feed becomes "home" at top when feature is enabled
-  protected readonly navItems = computed(() => {
-    const feedEnabled = this.remoteConfigService.featureFeedEnabled();
-    
-    if (feedEnabled) {
-      // Home at the top when feed is enabled
-      return [
-        { id: 'home', path: '/home', icon: 'home', labelKey: 'HOME' },
-        { id: 'discover', path: '/discover', icon: 'explore', labelKey: 'DISCOVER' },
-        { id: 'matches', path: '/matches', icon: 'favorite', labelKey: 'MATCHES' },
-        { id: 'messages', path: '/messages', icon: 'chat_bubble', labelKey: 'MESSAGES' },
-        { id: 'profile', path: '/profile', icon: 'person', labelKey: 'PROFILE' },
-        { id: 'settings', path: '/settings', icon: 'settings', labelKey: 'SETTINGS' },
-      ];
-    } else {
-      // Feed with "Soon" badge in original position when disabled
-      return [
-        { id: 'discover', path: '/discover', icon: 'explore', labelKey: 'DISCOVER' },
-        { id: 'matches', path: '/matches', icon: 'favorite', labelKey: 'MATCHES' },
-        { id: 'messages', path: '/messages', icon: 'chat_bubble', labelKey: 'MESSAGES' },
-        { id: 'feed', path: '/feed', icon: 'dynamic_feed', labelKey: 'FEED' },
-        { id: 'profile', path: '/profile', icon: 'person', labelKey: 'PROFILE' },
-        { id: 'settings', path: '/settings', icon: 'settings', labelKey: 'SETTINGS' },
-      ];
-    }
-  });
-
-  // Show "soon" badge for feed only when config is initialized AND feature is disabled
-  protected readonly showFeedSoonBadge = computed(() => 
-    this.remoteConfigService.initialized() && !this.remoteConfigService.featureFeedEnabled()
-  );
+  // Nav items
+  protected readonly navItems = [
+    { id: 'home', path: '/home', icon: 'home', labelKey: 'HOME' },
+    { id: 'discover', path: '/discover', icon: 'explore', labelKey: 'DISCOVER' },
+    { id: 'matches', path: '/matches', icon: 'favorite', labelKey: 'MATCHES' },
+    { id: 'messages', path: '/messages', icon: 'chat_bubble', labelKey: 'MESSAGES' },
+    { id: 'profile', path: '/profile', icon: 'person', labelKey: 'PROFILE' },
+    { id: 'settings', path: '/settings', icon: 'settings', labelKey: 'SETTINGS' },
+  ];
 
   // Real-time activity feed
   protected readonly recentActivity = this.activityService.activities;
@@ -299,8 +277,8 @@ export class ShellComponent implements OnInit, OnDestroy {
     // Handle activities without links (like private_access_request which opens a dialog)
     switch (activity.type) {
       case 'private_access_request':
-        // Open dialog to manage private content access (shows all pending requests)
-        this.openPrivateAccessDialog();
+        // Open dialog for this specific user's request
+        this.openPrivateAccessDialog(activity);
         break;
 
       default:
@@ -309,10 +287,19 @@ export class ShellComponent implements OnInit, OnDestroy {
     }
   }
 
-  private openPrivateAccessDialog(): void {
+  private openPrivateAccessDialog(activity: ActivityDisplay): void {
+    // Convert activity to a request display format
+    const request = {
+      id: activity.fromUserId,
+      requesterName: activity.name,
+      requesterPhoto: activity.photo,
+      requestedAt: new Date(activity.time),
+    };
+    
     this.dialog.open(PrivateAccessDialogComponent, {
+      data: { request },
       panelClass: 'private-access-dialog-panel',
-      width: '420px',
+      width: '380px',
       maxWidth: '95vw',
     });
   }

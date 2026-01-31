@@ -1,11 +1,5 @@
-@if (!configInitialized()) {
-  <!-- Loading state while config initializes -->
-  <div class="config-loading-state">
-    <mat-spinner diameter="40"></mat-spinner>
-  </div>
-} @else if (feedEnabled()) {
-  <!-- Actual Feed View - Two Column Layout -->
-  <div class="feed-layout" [class.private-mode]="activeTab() === 'private'">
+<!-- Feed View - Two Column Layout -->
+<div class="feed-layout" [class.private-mode]="activeTab() === 'private'">
     <!-- Main Feed Column -->
     <div class="feed-main">
       <div class="feed-container">
@@ -19,7 +13,7 @@
           </h2>
           <!-- Mobile Drawer Toggle -->
           <button type="button" class="drawer-toggle" (click)="toggleDrawer()">
-            <mat-icon>menu</mat-icon>
+            <mat-icon>insights</mat-icon>
           </button>
         </div>
 
@@ -144,106 +138,4 @@
         <app-feed-sidebar [activeTab]="activeTab()" />
       </div>
     </div>
-  </div>
-} @else {
-  <!-- Coming Soon Placeholder View -->
-  <div class="feed-page">
-    <!-- Hero Section -->
-    <div class="hero-section">
-      <div class="coming-soon-badge">
-        <span class="material-icons-outlined">schedule</span>
-        {{ 'FEED.COMING_SOON' | translate }}
-      </div>
-      <h1 class="hero-title">{{ 'FEED.TITLE' | translate }} <span class="text-accent">{{ 'FEED.TITLE_ACCENT' | translate }}</span></h1>
-      <p class="hero-description">{{ 'FEED.DESCRIPTION' | translate }}</p>
-    </div>
-
-    <!-- Preview Section -->
-    <div class="preview-section">
-      <div class="preview-mockup">
-        <div class="mockup-header">
-          <div class="mockup-avatar"></div>
-          <div class="mockup-meta">
-            <div class="mockup-name"></div>
-            <div class="mockup-time"></div>
-          </div>
-        </div>
-        <div class="mockup-content">
-          <div class="mockup-image"></div>
-        </div>
-        <div class="mockup-actions">
-          <div class="mockup-action">
-            <span class="material-icons-outlined">favorite_border</span>
-          </div>
-          <div class="mockup-action">
-            <span class="material-icons-outlined">chat_bubble_outline</span>
-          </div>
-          <div class="mockup-action">
-            <span class="material-icons-outlined">bookmark_border</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Features Section -->
-    <div class="features-section">
-      <h2 class="section-title">{{ 'FEED.WHAT_TO_EXPECT' | translate }}</h2>
-      <p class="section-description">{{ 'FEED.WHAT_TO_EXPECT_DESCRIPTION' | translate }}</p>
-
-      <div class="features-grid">
-        @for (feature of features; track feature.titleKey) {
-          <div class="feature-card">
-            <div class="feature-icon">
-              <span class="material-icons-outlined">{{ feature.icon }}</span>
-            </div>
-            <h3 class="feature-title">{{ feature.titleKey | translate }}</h3>
-            <p class="feature-description">{{ feature.descriptionKey | translate }}</p>
-          </div>
-        }
-      </div>
-    </div>
-
-    <!-- How It Works Section -->
-    <div class="how-section">
-      <h2 class="section-title">{{ 'FEED.HOW_IT_WORKS' | translate }}</h2>
-      <div class="steps-container">
-        <div class="step">
-          <div class="step-number">1</div>
-          <h3>{{ 'FEED.STEP_1_TITLE' | translate }}</h3>
-          <p>{{ 'FEED.STEP_1_DESCRIPTION' | translate }}</p>
-        </div>
-        <div class="step-connector"></div>
-        <div class="step">
-          <div class="step-number">2</div>
-          <h3>{{ 'FEED.STEP_2_TITLE' | translate }}</h3>
-          <p>{{ 'FEED.STEP_2_DESCRIPTION' | translate }}</p>
-        </div>
-        <div class="step-connector"></div>
-        <div class="step">
-          <div class="step-number">3</div>
-          <h3>{{ 'FEED.STEP_3_TITLE' | translate }}</h3>
-          <p>{{ 'FEED.STEP_3_DESCRIPTION' | translate }}</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Notification Section -->
-    <div class="notify-section">
-      <div class="notify-card">
-        <span class="material-icons-outlined notify-icon">notifications_active</span>
-        <div class="notify-content">
-          <h3>{{ 'FEED.NOTIFY_TITLE' | translate }}</h3>
-          <p>{{ 'FEED.NOTIFY_DESCRIPTION' | translate }}</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Back Link -->
-    <div class="back-section">
-      <a routerLink="/discover" class="back-link">
-        <span class="material-icons-outlined">arrow_back</span>
-        {{ 'FEED.BACK_TO_DISCOVER' | translate }}
-      </a>
-    </div>
-  </div>
-}
+</div>

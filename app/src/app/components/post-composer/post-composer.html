@@ -104,6 +104,14 @@
       </div>
     }
 
+    <!-- Video on Non-Private Warning -->
+    @if (videoOnNonPrivate()) {
+      <div class="warning-message">
+        <mat-icon>videocam_off</mat-icon>
+        <span>{{ 'FEED.VIDEO_PRIVATE_ONLY' | translate }}</span>
+      </div>
+    }
+
     <!-- Composer Actions -->
     <div class="composer-actions">
       <div class="action-buttons">
@@ -111,7 +119,7 @@
         <label class="action-btn" [class.disabled]="media().length >= maxMedia">
           <input
             type="file"
-            accept="image/jpeg,image/png,image/jpg,video/mp4,video/webm,video/quicktime"
+            [accept]="acceptedFileTypes()"
             multiple
             [disabled]="media().length >= maxMedia"
             (change)="onMediaSelect($event)"

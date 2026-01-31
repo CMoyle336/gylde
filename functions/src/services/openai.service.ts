@@ -4,10 +4,37 @@
  */
 import * as logger from "firebase-functions/logger";
 
-// OpenAI moderation categories to reject
-const BLOCKED_CATEGORIES = [
+// OpenAI moderation categories to reject for public content
+const PUBLIC_BLOCKED_CATEGORIES = [
   "sexual",
   "sexual/minors",
+  "harassment",
+  "harassment/threatening",
+  "hate",
+  "hate/threatening",
+  "illicit",
+  "illicit/violent",
+  "self-harm",
+  "self-harm/intent",
+  "self-harm/instructions",
+  "violence",
+  "violence/graphic",
+] as const;
+
+// For private content, allow sexual but block everything else
+const PRIVATE_BLOCKED_CATEGORIES = [
+  "sexual/minors", // Always block minors content
+  "harassment",
+  "harassment/threatening",
+  "hate",
+  "hate/threatening",
+  "illicit",
+  "illicit/violent",
+  "self-harm",
+  "self-harm/intent",
+  "self-harm/instructions",
+  "violence",
+  "violence/graphic",
 ] as const;
 
 export interface ModerationResult {
@@ -16,9 +43,93 @@ export interface ModerationResult {
   error?: string;
 }
 
+export type ContentVisibility = "public" | "private" | "matches";
+
 export interface PersonDetectionResult {
   containsPerson: boolean;
   error?: string;
+}
+
+/**
+ * Get blocked categories based on content visibility
+ */
+function getBlockedCategories(visibility: ContentVisibility): readonly string[] {
+  if (visibility === "private") {
+    return PRIVATE_BLOCKED_CATEGORIES;
+  }
+  return PUBLIC_BLOCKED_CATEGORIES;
+}
+
+/**
+ * Moderate text content using OpenAI's moderation API
+ * Returns flagged categories if content is inappropriate
+ */
+export async function moderateText(
+  text: string,
+  apiKey: string,
+  visibility: ContentVisibility = "public"
+): Promise<ModerationResult> {
+  try {
+    if (!text || text.trim().length === 0) {
+      return {flagged: false};
+    }
+
+    const response = await fetch("https://api.openai.com/v1/moderations", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "omni-moderation-latest",
+        input: text,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      logger.error("OpenAI moderation API error:", {status: response.status, error: errorText});
+      // Don't block on API errors, but log them
+      return {flagged: false, error: `Moderation API error: ${response.status}`};
+    }
+
+    const data = await response.json() as {
+      results: Array<{
+        flagged: boolean;
+        categories: Record<string, boolean>;
+        category_scores: Record<string, number>;
+      }>;
+    };
+
+    if (!data.results || data.results.length === 0) {
+      return {flagged: false};
+    }
+
+    const result = data.results[0];
+    const blockedCategories = getBlockedCategories(visibility);
+
+    // Check if any blocked categories are flagged
+    const flaggedCategories = blockedCategories.filter(
+      (category) => result.categories[category] === true
+    );
+
+    if (flaggedCategories.length > 0) {
+      logger.warn("Text flagged for inappropriate content", {
+        visibility,
+        categories: flaggedCategories,
+        scores: Object.fromEntries(
+          flaggedCategories.map((cat) => [cat, result.category_scores[cat]])
+        ),
+      });
+      return {flagged: true, categories: flaggedCategories};
+    }
+
+    return {flagged: false};
+  } catch (error) {
+    logger.error("Error calling OpenAI moderation API:", error);
+    // Don't block on errors, but log them
+    return {flagged: false, error: "Failed to moderate text"};
+  }
 }
 
 /**
@@ -28,7 +139,8 @@ export interface PersonDetectionResult {
 export async function moderateImage(
   base64Data: string,
   mimeType: string,
-  apiKey: string
+  apiKey: string,
+  visibility: ContentVisibility = "public"
 ): Promise<ModerationResult> {
   try {
     // Remove data URL prefix if present
@@ -74,14 +186,16 @@ export async function moderateImage(
     }
 
     const result = data.results[0];
+    const blockedCategories = getBlockedCategories(visibility);
 
     // Check if any blocked categories are flagged
-    const flaggedCategories = BLOCKED_CATEGORIES.filter(
+    const flaggedCategories = blockedCategories.filter(
       (category) => result.categories[category] === true
     );
 
     if (flaggedCategories.length > 0) {
       logger.warn("Image flagged for inappropriate content", {
+        visibility,
         categories: flaggedCategories,
         scores: Object.fromEntries(
           flaggedCategories.map((cat) => [cat, result.category_scores[cat]])

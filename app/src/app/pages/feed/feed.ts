@@ -6,7 +6,6 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
 import { TranslateModule } from '@ngx-translate/core';
-import { RemoteConfigService } from '../../core/services/remote-config.service';
 import { FeedService, FeedTab, FeedSubFilter } from '../../core/services/feed.service';
 import { SubscriptionService } from '../../core/services/subscription.service';
 import { BlockService } from '../../core/services/block.service';
@@ -34,14 +33,9 @@ import { FeedSidebarComponent } from '../../components/feed-sidebar';
 export class FeedComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly dialog = inject(MatDialog);
-  private readonly remoteConfigService = inject(RemoteConfigService);
   private readonly feedService = inject(FeedService);
   private readonly subscriptionService = inject(SubscriptionService);
   private readonly blockService = inject(BlockService);
-
-  // Remote config state
-  readonly configInitialized = this.remoteConfigService.initialized;
-  readonly feedEnabled = this.remoteConfigService.featureFeedEnabled;
 
   // Subscription state
   readonly isPremium = this.subscriptionService.isPremium;
@@ -66,48 +60,12 @@ export class FeedComponent implements OnInit {
   // Mobile drawer state
   readonly drawerOpen = signal(false);
 
-  // Placeholder features (for coming soon view)
-  readonly features = [
-    {
-      icon: 'dynamic_feed',
-      titleKey: 'FEED.FEATURES.SHARE.TITLE',
-      descriptionKey: 'FEED.FEATURES.SHARE.DESCRIPTION',
-    },
-    {
-      icon: 'favorite',
-      titleKey: 'FEED.FEATURES.ENGAGE.TITLE',
-      descriptionKey: 'FEED.FEATURES.ENGAGE.DESCRIPTION',
-    },
-    {
-      icon: 'link',
-      titleKey: 'FEED.FEATURES.INSPIRE.TITLE',
-      descriptionKey: 'FEED.FEATURES.INSPIRE.DESCRIPTION',
-    },
-    {
-      icon: 'visibility',
-      titleKey: 'FEED.FEATURES.CONNECTED.TITLE',
-      descriptionKey: 'FEED.FEATURES.CONNECTED.DESCRIPTION',
-    },
-    {
-      icon: 'lock',
-      titleKey: 'FEED.FEATURES.PRIVACY.TITLE',
-      descriptionKey: 'FEED.FEATURES.PRIVACY.DESCRIPTION',
-    },
-    {
-      icon: 'verified',
-      titleKey: 'FEED.FEATURES.AUTHENTIC.TITLE',
-      descriptionKey: 'FEED.FEATURES.AUTHENTIC.DESCRIPTION',
-    },
-  ];
-
   ngOnInit(): void {
-    if (this.feedEnabled()) {
-      // Reset to feed tab if non-premium user had private tab saved
-      if (this.activeTab() === 'private' && !this.isPremium()) {
-        this.feedService.setTab('feed');
-      }
-      this.feedService.subscribeToFeed();
+    // Reset to feed tab if non-premium user had private tab saved
+    if (this.activeTab() === 'private' && !this.isPremium()) {
+      this.feedService.setTab('feed');
     }
+    this.feedService.subscribeToFeed();
   }
 
   async loadMore(): Promise<void> {

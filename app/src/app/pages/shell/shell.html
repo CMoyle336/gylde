@@ -50,7 +50,7 @@
     <div class="sidebar-content">
       <!-- Navigation -->
       <nav class="sidebar-nav">
-        @for (item of navItems(); track item.id) {
+        @for (item of navItems; track item.id) {
           <a 
             class="nav-item"
             [routerLink]="item.path"
@@ -65,8 +65,6 @@
               <span class="nav-badge">{{ messageUnreadCount() }}</span>
             } @else if (item.id === 'matches' && matchesBadgeCount() > 0) {
               <span class="nav-badge">{{ matchesBadgeCount() }}</span>
-            } @else if (item.id === 'feed' && showFeedSoonBadge()) {
-              <span class="nav-badge coming-soon">{{ 'DASHBOARD.SIDEBAR.SOON_BADGE' | translate }}</span>
             }
           </a>
         }

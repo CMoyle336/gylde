@@ -109,15 +109,32 @@ export class PostComposerComponent {
 
   // Computed
   protected readonly creating = this.feedService.creating;
-  protected readonly isValid = computed(() => {
-    const text = this.content().trim();
-    const hasMedia = this.media().length > 0;
-    return (text.length > 0 || hasMedia) && text.length <= MAX_CONTENT_LENGTH;
-  });
   
   protected readonly hasVideo = computed(() => 
     this.media().some(m => m.type === 'video')
   );
+  
+  // Videos are only allowed on private posts
+  protected readonly videoOnNonPrivate = computed(() => 
+    this.hasVideo() && this.visibility() !== 'private'
+  );
+  
+  // File accept types - only include video on private posts
+  protected readonly acceptedFileTypes = computed(() => {
+    const imageTypes = 'image/jpeg,image/png,image/jpg';
+    const videoTypes = 'video/mp4,video/webm,video/quicktime';
+    return this.visibility() === 'private' 
+      ? `${imageTypes},${videoTypes}` 
+      : imageTypes;
+  });
+  
+  protected readonly isValid = computed(() => {
+    const text = this.content().trim();
+    const hasMedia = this.media().length > 0;
+    const basicValid = (text.length > 0 || hasMedia) && text.length <= MAX_CONTENT_LENGTH;
+    // Invalid if video on non-private post
+    return basicValid && !this.videoOnNonPrivate();
+  });
 
   protected readonly remainingChars = computed(() => MAX_CONTENT_LENGTH - this.content().length);
   protected readonly charCountClass = computed(() => {
@@ -214,6 +231,12 @@ export class PostComposerComponent {
       // Only allow 1 video per post
       if (isVideo && this.hasVideo()) {
         this.error.set('Only one video is allowed per post');
+        continue;
+      }
+      
+      // Videos are only allowed on private posts
+      if (isVideo && this.visibility() !== 'private') {
+        this.error.set('Videos can only be shared in private posts');
         continue;
       }
       

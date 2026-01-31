@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal, OnInit, OnDestroy, computed, DestroyRef } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal, OnInit, OnDestroy, computed, DestroyRef, ElementRef, ViewChild, AfterViewInit, HostListener } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { distinctUntilChanged, map } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -8,13 +8,14 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTabsModule } from '@angular/material/tabs';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Firestore, doc, getDoc } from '@angular/fire/firestore';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ReportDialogComponent, ReportDialogData } from '../../components/report-dialog';
 import { BlockConfirmDialogComponent, BlockConfirmDialogData } from '../../components/block-confirm-dialog';
-import { UserProfile, ReputationTier, shouldShowPublicBadge, getTierDisplay } from '../../core/interfaces';
+import { UserProfile, ReputationTier, shouldShowPublicBadge, getTierDisplay, PostDisplay } from '../../core/interfaces';
 import { Photo, PrivateAccessSummary } from '../../core/interfaces/photo.interface';
 import { FavoriteService } from '../../core/services/favorite.service';
 import { MessageService } from '../../core/services/message.service';
@@ -24,10 +25,15 @@ import { PrivateAccessService } from '../../core/services/photo-access.service';
 import { BlockService, BlockStatus } from '../../core/services/block.service';
 import { SubscriptionService } from '../../core/services/subscription.service';
 import { AnalyticsService } from '../../core/services/analytics.service';
+import { FeedService } from '../../core/services/feed.service';
 import { ProfileSkeletonComponent } from './components';
 import { ReputationBadgeComponent } from '../../components/reputation-badge';
 import { FounderBadgeComponent } from '../../components/founder-badge';
+import { PostCardComponent } from '../../components/post-card';
+import { PostCommentsComponent, PostCommentsDialogData } from '../../components/post-comments';
 import { ALL_CONNECTION_TYPES, SUPPORT_ORIENTATION_OPTIONS } from '../../core/constants/connection-types';
+
+export type ProfileTab = 'about' | 'posts' | 'private';
 
 @Component({
   selector: 'app-user-profile',
@@ -41,13 +47,15 @@ import { ALL_CONNECTION_TYPES, SUPPORT_ORIENTATION_OPTIONS } from '../../core/co
     MatTooltipModule,
     MatMenuModule,
     MatProgressSpinnerModule,
+    MatTabsModule,
     TranslateModule,
     ProfileSkeletonComponent,
     ReputationBadgeComponent,
     FounderBadgeComponent,
+    PostCardComponent,
   ],
 })
-export class UserProfileComponent implements OnInit, OnDestroy {
+export class UserProfileComponent implements OnInit, OnDestroy, AfterViewInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly firestore = inject(Firestore);
@@ -58,17 +66,44 @@ export class UserProfileComponent implements OnInit, OnDestroy {
   private readonly privateAccessService = inject(PrivateAccessService);
   private readonly blockService = inject(BlockService);
   private readonly subscriptionService = inject(SubscriptionService);
+  private readonly feedService = inject(FeedService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
   private readonly analytics = inject(AnalyticsService);
   private readonly translate = inject(TranslateService);
 
+  @ViewChild('postsContainer') private postsContainer?: ElementRef<HTMLDivElement>;
+
   protected readonly profile = signal<UserProfile | null>(null);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly selectedPhotoIndex = signal(0);
   protected readonly lastViewedMe = signal<Date | null>(null);
+  
+  // Tab state
+  protected readonly activeTab = signal<ProfileTab>('posts');
+  
+  // Posts state (from FeedService)
+  protected readonly userPosts = this.feedService.userPosts;
+  protected readonly postsLoading = this.feedService.userPostsLoading;
+  protected readonly postsLoadingMore = this.feedService.userPostsLoadingMore;
+  protected readonly postsHasMore = this.feedService.userPostsHasMore;
+  protected readonly postsError = this.feedService.userPostsError;
+  
+  // Private posts state (filtered from userPosts)
+  protected readonly privatePosts = computed(() => 
+    this.userPosts().filter(post => post.visibility === 'private')
+  );
+  protected readonly publicPosts = computed(() => 
+    this.userPosts().filter(post => post.visibility !== 'private')
+  );
+  
+  // Revoke access state
+  protected readonly revokingAccess = signal(false);
+  
+  // Post deletion state
+  protected readonly deletingPostId = signal<string | null>(null);
 
   // Private content access state (covers photos and posts)
   protected readonly privateAccess = signal<PrivateAccessSummary>({ hasAccess: false });
@@ -200,9 +235,28 @@ export class UserProfileComponent implements OnInit, OnDestroy {
       });
   }
 
+  ngAfterViewInit(): void {
+    // Set up scroll listener for infinite scrolling on posts tab
+  }
+
   ngOnDestroy(): void {
     // Cleanup real-time subscription
     this.accessStatusUnsubscribe?.();
+    // Cleanup posts subscription
+    this.feedService.clearUserPosts();
+  }
+
+  @HostListener('scroll', ['$event'])
+  onScroll(event: Event): void {
+    if (this.activeTab() !== 'posts') return;
+    
+    const element = event.target as HTMLElement;
+    const threshold = 300;
+    const distanceFromBottom = element.scrollHeight - element.scrollTop - element.clientHeight;
+    
+    if (distanceFromBottom < threshold && this.postsHasMore() && !this.postsLoadingMore()) {
+      this.loadMorePosts();
+    }
   }
 
   private async loadProfile(userId: string): Promise<void> {
@@ -224,7 +278,13 @@ export class UserProfileComponent implements OnInit, OnDestroy {
       this.accessStatusUnsubscribe = this.privateAccessService.subscribeToAccessStatus(
         userId,
         (status) => {
+          const previousAccess = this.privateAccess().hasAccess;
           this.privateAccess.set(status);
+          
+          // If access was just granted, reload posts to include private ones
+          if (status.hasAccess && !previousAccess && this.profile()) {
+            this.feedService.subscribeToUserPosts(userId, true);
+          }
         }
       );
       
@@ -283,6 +343,11 @@ export class UserProfileComponent implements OnInit, OnDestroy {
       // Wait for lastViewedBy since we display it (already started above)
       const lastViewed = await lastViewedPromise;
       this.lastViewedMe.set(lastViewed);
+      
+      // Load posts since it's the default tab
+      // Use current privateAccess state (subscription may have already fired)
+      const hasPrivateAccess = this.privateAccess().hasAccess;
+      this.feedService.subscribeToUserPosts(userData.uid, hasPrivateAccess);
     } catch (err) {
       console.error('Error loading profile:', err);
       this.error.set('USER_PROFILE.ERROR.LOAD_FAILED');
@@ -619,6 +684,126 @@ export class UserProfileComponent implements OnInit, OnDestroy {
       console.error('Error unblocking user:', error);
     } finally {
       this.blockingUser.set(false);
+    }
+  }
+
+  // ============================================================================
+  // TAB NAVIGATION & POSTS
+  // ============================================================================
+
+  protected onTabChange(tab: ProfileTab): void {
+    this.activeTab.set(tab);
+    
+    // Load posts when switching to posts or private tab for the first time
+    if ((tab === 'posts' || tab === 'private') && this.userPosts().length === 0 && !this.postsLoading()) {
+      this.loadUserPosts();
+    }
+  }
+
+  private loadUserPosts(): void {
+    const p = this.profile();
+    if (!p) return;
+    
+    const hasPrivateAccess = this.privateAccess().hasAccess;
+    this.feedService.subscribeToUserPosts(p.uid, hasPrivateAccess);
+  }
+
+  protected loadMorePosts(): void {
+    const p = this.profile();
+    if (!p) return;
+    
+    const hasPrivateAccess = this.privateAccess().hasAccess;
+    this.feedService.loadMoreUserPosts(p.uid, hasPrivateAccess);
+  }
+
+  protected async onLike(post: PostDisplay): Promise<void> {
+    await this.feedService.toggleLike(post);
+  }
+
+  protected onComment(post: PostDisplay): void {
+    this.dialog.open(PostCommentsComponent, {
+      data: { post } as PostCommentsDialogData,
+      panelClass: 'comments-dialog-panel',
+      width: '700px',
+      maxWidth: '95vw',
+      height: '85vh',
+      maxHeight: '90vh',
+    });
+  }
+
+  protected onAuthorClick(post: PostDisplay): void {
+    // Navigate to the author's profile (we're already on a profile page, but may be a different user)
+    this.router.navigate(['/user', post.author.uid]);
+  }
+
+  protected async onDelete(post: PostDisplay): Promise<void> {
+    this.deletingPostId.set(post.id);
+    try {
+      await this.feedService.deletePost(post.id);
+    } finally {
+      this.deletingPostId.set(null);
+    }
+  }
+
+  protected async onReportPost(post: PostDisplay): Promise<void> {
+    await this.feedService.reportPost(post.id);
+  }
+
+  protected async onBlockPostAuthor(post: PostDisplay): Promise<void> {
+    const success = await this.blockService.blockUser(post.author.uid);
+    if (success) {
+      this.feedService.removePostsByUser(post.author.uid);
+    }
+  }
+
+  protected trackByPostId(_index: number, post: PostDisplay): string {
+    return post.id;
+  }
+
+  // ============================================================================
+  // PRIVATE ACCESS MANAGEMENT
+  // ============================================================================
+
+  /**
+   * Revoke the current user's private content access from this profile
+   */
+  protected async revokePrivateAccess(): Promise<void> {
+    const p = this.profile();
+    if (!p) return;
+
+    this.revokingAccess.set(true);
+    try {
+      // Call the service to revoke access (this removes the access from the owner's side)
+      // But we need a method that allows the VIEWER to revoke their own access
+      // Let's check if such method exists, otherwise we need to create one
+      await this.privateAccessService.revokeMyAccess(p.uid);
+      
+      // Update local state
+      this.privateAccess.set({ hasAccess: false });
+      
+      // Clear private posts and reload with public only
+      this.feedService.clearUserPosts();
+      this.feedService.subscribeToUserPosts(p.uid, false);
+      
+      // Switch back to posts tab if on private tab
+      if (this.activeTab() === 'private') {
+        this.activeTab.set('posts');
+      }
+      
+      this.snackBar.open(
+        this.translate.instant('USER_PROFILE.ACCESS_REVOKED'),
+        this.translate.instant('COMMON.OK'),
+        { duration: 3000 }
+      );
+    } catch (error) {
+      console.error('Error revoking access:', error);
+      this.snackBar.open(
+        this.translate.instant('USER_PROFILE.ACCESS_REVOKE_ERROR'),
+        this.translate.instant('COMMON.OK'),
+        { duration: 3000, panelClass: 'error-snackbar' }
+      );
+    } finally {
+      this.revokingAccess.set(false);
     }
   }
 }

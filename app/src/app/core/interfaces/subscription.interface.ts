@@ -115,6 +115,7 @@ export const SUBSCRIPTION_PRICE = {
  */
 export const PREMIUM_FEATURES = [
   { id: 'private-content', labelKey: 'UPGRADE_DIALOG.PREMIUM_FEATURES.PRIVATE_CONTENT', icon: 'lock_open' },
+  { id: 'videos', labelKey: 'UPGRADE_DIALOG.PREMIUM_FEATURES.VIDEOS', icon: 'videocam' },
   { id: 'advanced-filters', labelKey: 'UPGRADE_DIALOG.PREMIUM_FEATURES.ADVANCED_FILTERS', icon: 'tune' },
   { id: 'who-viewed', labelKey: 'UPGRADE_DIALOG.PREMIUM_FEATURES.WHO_VIEWED', icon: 'visibility' },
   { id: 'who-favorited', labelKey: 'UPGRADE_DIALOG.PREMIUM_FEATURES.WHO_FAVORITED', icon: 'favorite' },

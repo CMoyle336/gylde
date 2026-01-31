@@ -12,7 +12,6 @@ export interface RemoteConfigValues {
   // Feature flags
   virtual_phone_enabled: boolean;
   feature_report_issue: boolean;
-  feature_feed_enabled: boolean;
   
   // Pricing & limits (display purposes - server enforces actual limits)
   subscription_monthly_price_cents: number;
@@ -30,7 +29,6 @@ export interface RemoteConfigValues {
 const DEFAULTS: RemoteConfigValues = {
   virtual_phone_enabled: false,
   feature_report_issue: false,
-  feature_feed_enabled: true,
   subscription_monthly_price_cents: 2499,
   premium_max_photos: 20,
   image_max_size_mb: 10,
@@ -69,7 +67,6 @@ export class RemoteConfigService {
   private readonly _initialized = signal(false);
   private readonly _virtualPhoneEnabled = signal(DEFAULTS.virtual_phone_enabled);
   private readonly _featureReportIssue = signal(DEFAULTS.feature_report_issue);
-  private readonly _featureFeedEnabled = signal(DEFAULTS.feature_feed_enabled);
   private readonly _subscriptionMonthlyPriceCents = signal(DEFAULTS.subscription_monthly_price_cents);
   private readonly _premiumMaxPhotos = signal(DEFAULTS.premium_max_photos);
   private readonly _imageMaxSizeMb = signal(DEFAULTS.image_max_size_mb);
@@ -80,7 +77,6 @@ export class RemoteConfigService {
   readonly initialized = this._initialized.asReadonly();
   readonly virtualPhoneEnabled = this._virtualPhoneEnabled.asReadonly();
   readonly featureReportIssue = this._featureReportIssue.asReadonly();
-  readonly featureFeedEnabled = this._featureFeedEnabled.asReadonly();
   readonly subscriptionMonthlyPriceCents = this._subscriptionMonthlyPriceCents.asReadonly();
   readonly premiumMaxPhotos = this._premiumMaxPhotos.asReadonly();
   readonly imageMaxSizeMb = this._imageMaxSizeMb.asReadonly();
@@ -145,7 +141,6 @@ export class RemoteConfigService {
       const values: RemoteConfigValues = {
         virtual_phone_enabled: this.parseBoolean(config.getString('virtual_phone_enabled'), DEFAULTS.virtual_phone_enabled),
         feature_report_issue: this.parseBoolean(config.getString('feature_report_issue'), DEFAULTS.feature_report_issue),
-        feature_feed_enabled: this.parseBoolean(config.getString('feature_feed_enabled'), DEFAULTS.feature_feed_enabled),
         subscription_monthly_price_cents: this.parseNumber(config.getString('subscription_monthly_price_cents'), DEFAULTS.subscription_monthly_price_cents),
         premium_max_photos: this.parseNumber(config.getString('premium_max_photos'), DEFAULTS.premium_max_photos),
         image_max_size_mb: this.parseNumber(config.getString('image_max_size_mb'), DEFAULTS.image_max_size_mb),
@@ -202,7 +197,6 @@ export class RemoteConfigService {
       this.remoteConfig.defaultConfig = {
         virtual_phone_enabled: '',
         feature_report_issue: 'false',
-        feature_feed_enabled: 'false',
         subscription_monthly_price_cents: '2499',
         premium_max_photos: '20',
         image_max_size_mb: '10',
@@ -225,7 +219,6 @@ export class RemoteConfigService {
   private applyValues(values: RemoteConfigValues): void {
     this._virtualPhoneEnabled.set(values.virtual_phone_enabled);
     this._featureReportIssue.set(values.feature_report_issue);
-    this._featureFeedEnabled.set(values.feature_feed_enabled);
     this._subscriptionMonthlyPriceCents.set(values.subscription_monthly_price_cents);
     this._premiumMaxPhotos.set(values.premium_max_photos);
     this._imageMaxSizeMb.set(values.image_max_size_mb);
@@ -239,7 +232,6 @@ export class RemoteConfigService {
   private updateValuesFromClientSdk(): void {
     this._virtualPhoneEnabled.set(this.getBooleanValue('virtual_phone_enabled', DEFAULTS.virtual_phone_enabled));
     this._featureReportIssue.set(this.getBooleanValue('feature_report_issue', DEFAULTS.feature_report_issue));
-    this._featureFeedEnabled.set(this.getBooleanValue('feature_feed_enabled', DEFAULTS.feature_feed_enabled));
     this._subscriptionMonthlyPriceCents.set(this.getNumberValue('subscription_monthly_price_cents', DEFAULTS.subscription_monthly_price_cents));
     this._premiumMaxPhotos.set(this.getNumberValue('premium_max_photos', DEFAULTS.premium_max_photos));
     this._imageMaxSizeMb.set(this.getNumberValue('image_max_size_mb', DEFAULTS.image_max_size_mb));

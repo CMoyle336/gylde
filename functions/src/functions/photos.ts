@@ -388,6 +388,70 @@ export const revokePrivateAccess = onCall(async (request) => {
 });
 
 /**
+ * Revoke my own access to another user's private content
+ * This allows a viewer to remove their own access to someone else's content
+ */
+export const revokeMyPrivateAccess = onCall(async (request) => {
+  const {auth, data} = request;
+
+  if (!auth) {
+    throw new HttpsError("unauthenticated", "Must be authenticated");
+  }
+
+  const {ownerId} = data;
+  const viewerId = auth.uid;
+
+  if (!ownerId || typeof ownerId !== "string") {
+    throw new HttpsError("invalid-argument", "Owner ID is required");
+  }
+
+  // Check if grant exists
+  const grantRef = db
+    .collection("users")
+    .doc(ownerId)
+    .collection("privateAccessGrants")
+    .doc(viewerId);
+
+  const grantDoc = await grantRef.get();
+
+  if (!grantDoc.exists) {
+    throw new HttpsError("not-found", "Access grant not found");
+  }
+
+  const batch = db.batch();
+
+  // Delete the grant
+  batch.delete(grantRef);
+
+  // Delete the reverse reference (my received access)
+  batch.delete(
+    db.collection("users").doc(viewerId).collection("privateAccessReceived").doc(ownerId)
+  );
+
+  // Delete from privateAccess collection (feed system integration)
+  batch.delete(
+    db.collection("users").doc(ownerId).collection("privateAccess").doc(viewerId)
+  );
+
+  // Update the original request status to allow requesting again
+  const requestRef = db
+    .collection("users")
+    .doc(ownerId)
+    .collection("privateAccessRequests")
+    .doc(viewerId);
+
+  const requestDoc = await requestRef.get();
+  if (requestDoc.exists) {
+    // Delete the request so they can request again fresh
+    batch.delete(requestRef);
+  }
+
+  await batch.commit();
+
+  return {success: true, message: "Your access has been revoked"};
+});
+
+/**
  * Check if current user has access to view another user's private content
  */
 export const checkPrivateAccess = onCall(async (request) => {

@@ -23,6 +23,11 @@ import {db} from "../config/firebase";
 import {getConfig} from "../config/remote-config";
 import * as logger from "firebase-functions/logger";
 import {isBaseMatch, MatchableProfile} from "../services/feed-matching.service";
+import {moderateText, ContentVisibility} from "../services/openai.service";
+import {defineString} from "firebase-functions/params";
+
+// OpenAI API key for content moderation
+const openaiApiKey = defineString("OPENAI_API_KEY");
 
 // ============================================================================
 // Types
@@ -485,6 +490,40 @@ export const createPost = onCall(async (request) => {
     throw new HttpsError("invalid-argument", `Maximum ${MAX_MEDIA_ITEMS} media items allowed`);
   }
 
+  // Videos are only allowed on private posts
+  if (visibility !== "private" && content.media) {
+    const hasVideo = content.media.some((m) => m.type === "video");
+    if (hasVideo) {
+      throw new HttpsError(
+        "invalid-argument",
+        "Videos can only be shared in private posts"
+      );
+    }
+  }
+
+  // Moderate text content if present
+  if (content.text) {
+    const apiKey = openaiApiKey.value();
+    if (apiKey) {
+      const moderationResult = await moderateText(
+        content.text,
+        apiKey,
+        visibility as ContentVisibility
+      );
+      if (moderationResult.flagged) {
+        logger.warn("Post content flagged by moderation", {
+          userId,
+          categories: moderationResult.categories,
+          visibility,
+        });
+        throw new HttpsError(
+          "invalid-argument",
+          "Your post contains content that violates our community guidelines. Please revise and try again."
+        );
+      }
+    }
+  }
+
   // Get user info
   const userInfo = await getUserInfo(userId);
   if (!userInfo.profile?.regionId) {
@@ -922,6 +961,26 @@ export const addComment = onCall(async (request) => {
   }
 
   const postData = postDoc.data() as Post;
+
+  // Moderate comment content
+  const apiKey = openaiApiKey.value();
+  if (apiKey) {
+    // Use post visibility to determine moderation strictness
+    const visibility = postData.visibility as ContentVisibility || "public";
+    const moderationResult = await moderateText(content, apiKey, visibility);
+    if (moderationResult.flagged) {
+      logger.warn("Comment flagged by moderation", {
+        userId,
+        postId,
+        categories: moderationResult.categories,
+        visibility,
+      });
+      throw new HttpsError(
+        "invalid-argument",
+        "Your comment contains content that violates our community guidelines. Please revise and try again."
+      );
+    }
+  }
 
   if (postData.authorId !== userId) {
     const blocked = await areUsersBlocked(userId, postData.authorId);

@@ -2,10 +2,7 @@
   <div class="dialog-header">
     <div class="header-content">
       <mat-icon class="header-icon">lock</mat-icon>
-      <div class="header-text">
-        <h2>{{ 'PRIVATE_ACCESS.DIALOG_TITLE' | translate }}</h2>
-        <p class="header-subtitle">{{ 'PRIVATE_ACCESS.DIALOG_SUBTITLE' | translate }}</p>
-      </div>
+      <h2>{{ 'PRIVATE_ACCESS.REQUEST_TITLE' | translate }}</h2>
     </div>
     <button mat-icon-button class="close-btn" (click)="close()">
       <mat-icon>close</mat-icon>
@@ -20,119 +17,85 @@
       </div>
     }
 
-    <!-- Custom Tab Buttons -->
-    <div class="tab-buttons">
-      <button class="tab-btn" 
-              [class.active]="activeTab === 'requests'"
-              (click)="activeTab = 'requests'">
-        <mat-icon>mail</mat-icon>
-        <span>Requests</span>
-        @if (pendingRequests().length > 0) {
-          <span class="tab-badge">{{ pendingRequests().length }}</span>
-        }
-      </button>
-      <button class="tab-btn" 
-              [class.active]="activeTab === 'granted'"
-              (click)="activeTab = 'granted'">
-        <mat-icon>how_to_reg</mat-icon>
-        <span>Granted</span>
-        @if (grants().length > 0) {
-          <span class="tab-badge secondary">{{ grants().length }}</span>
-        }
-      </button>
-    </div>
-
-    <!-- Requests Tab Content -->
-    @if (activeTab === 'requests') {
-      <div class="tab-content">
-        @if (pendingRequests().length === 0) {
-          <div class="empty-state">
-            <div class="empty-icon">
-              <mat-icon>inbox</mat-icon>
-            </div>
-            <h3>{{ 'PRIVATE_ACCESS.NO_PENDING_REQUESTS' | translate }}</h3>
-            <p>{{ 'PRIVATE_ACCESS.REQUESTS_EMPTY_HINT' | translate }}</p>
+    @if (request(); as req) {
+      <!-- Success State (after action taken) -->
+      @if (completed()) {
+        <div class="success-state">
+          <div class="success-icon" [class.denied]="completed() === 'denied'">
+            <mat-icon>{{ completed() === 'granted' ? 'check_circle' : 'cancel' }}</mat-icon>
           </div>
-        } @else {
-          <div class="access-list">
-            @for (request of pendingRequests(); track request.id) {
-              <div class="access-card">
-                <a [routerLink]="['/user', request.id]" class="user-avatar" (click)="close()">
-                  <img [src]="request.requesterPhoto || 'assets/default-avatar.png'" 
-                       [alt]="request.requesterName">
-                </a>
-                <div class="card-content">
-                  <a [routerLink]="['/user', request.id]" class="user-name-link" (click)="close()">
-                    {{ request.requesterName }}
-                  </a>
-                  <span class="request-meta">Requested {{ formatTimeAgo(request.requestedAt) }}</span>
-                </div>
-                <div class="card-actions">
-                  @if (isProcessing(request.id)) {
-                    <mat-spinner diameter="24"></mat-spinner>
-                  } @else {
-                    <button class="action-btn deny" 
-                            (click)="denyAccess(request)"
-                            matTooltip="Deny request">
-                      <mat-icon>close</mat-icon>
-                    </button>
-                    <button class="action-btn approve" 
-                            (click)="grantAccess(request)"
-                            matTooltip="Grant access">
-                      <mat-icon>check</mat-icon>
-                    </button>
-                  }
-                </div>
-              </div>
+          <h3>{{ completed() === 'granted' ? ('PRIVATE_ACCESS.ACCESS_GRANTED' | translate) : ('PRIVATE_ACCESS.REQUEST_DENIED' | translate) }}</h3>
+          <p>
+            @if (completed() === 'granted') {
+              {{ req.requesterName }} {{ 'PRIVATE_ACCESS.CAN_NOW_VIEW' | translate }}
+            } @else {
+              {{ 'PRIVATE_ACCESS.DENIED_MESSAGE' | translate }}
             }
-          </div>
-        }
-      </div>
-    }
-
-    <!-- Granted Tab Content -->
-    @if (activeTab === 'granted') {
-      <div class="tab-content">
-        @if (grants().length === 0) {
-          <div class="empty-state">
-            <div class="empty-icon">
-              <mat-icon>person_off</mat-icon>
+          </p>
+        </div>
+      } @else if (!isPending()) {
+        <!-- Already Handled State -->
+        <div class="already-handled-state">
+          <div class="request-card compact">
+            <a [routerLink]="['/user', req.id]" class="user-avatar" (click)="close()">
+              <img [src]="req.requesterPhoto || 'assets/default-avatar.png'" 
+                   [alt]="req.requesterName">
+            </a>
+            <div class="user-info">
+              <a [routerLink]="['/user', req.id]" class="user-name" (click)="close()">
+                {{ req.requesterName }}
+              </a>
             </div>
-            <h3>{{ 'PRIVATE_ACCESS.NO_ACCESS_GRANTED' | translate }}</h3>
-            <p>{{ 'PRIVATE_ACCESS.GRANTED_EMPTY_HINT' | translate }}</p>
           </div>
-        } @else {
-          <div class="access-list">
-            @for (grant of grants(); track grant.id) {
-              <div class="access-card">
-                <a [routerLink]="['/user', grant.id]" class="user-avatar" (click)="close()">
-                  <img [src]="grant.grantedToPhoto || 'assets/default-avatar.png'" 
-                       [alt]="grant.grantedToName">
-                </a>
-                <div class="card-content">
-                  <a [routerLink]="['/user', grant.id]" class="user-name-link" (click)="close()">
-                    {{ grant.grantedToName }}
-                  </a>
-                  <span class="request-meta">
-                    <mat-icon class="meta-icon">check_circle</mat-icon>
-                    Access granted {{ formatTimeAgo(grant.grantedAt) }}
-                  </span>
-                </div>
-                <div class="card-actions">
-                  @if (isProcessing(grant.id)) {
-                    <mat-spinner diameter="24"></mat-spinner>
-                  } @else {
-                    <button class="revoke-btn" (click)="revokeAccess(grant)">
-                      <mat-icon>block</mat-icon>
-                      Revoke
-                    </button>
-                  }
-                </div>
-              </div>
-            }
+          
+          <div class="handled-message">
+            <mat-icon>check_circle</mat-icon>
+            <p>{{ 'PRIVATE_ACCESS.ALREADY_HANDLED' | translate }}</p>
           </div>
-        }
-      </div>
+
+          <p class="manage-hint">
+            <a routerLink="/profile" (click)="close()">{{ 'PRIVATE_ACCESS.MANAGE_ALL_LINK' | translate }}</a>
+          </p>
+        </div>
+      } @else {
+        <!-- Pending Request - Show approve/deny options -->
+        <div class="request-card">
+          <a [routerLink]="['/user', req.id]" class="user-avatar" (click)="close()">
+            <img [src]="req.requesterPhoto || 'assets/default-avatar.png'" 
+                 [alt]="req.requesterName">
+          </a>
+          <div class="user-info">
+            <a [routerLink]="['/user', req.id]" class="user-name" (click)="close()">
+              {{ req.requesterName }}
+            </a>
+            <span class="request-time">{{ 'PRIVATE_ACCESS.REQUESTED' | translate }} {{ formatTimeAgo(req.requestedAt) }}</span>
+          </div>
+        </div>
+
+        <p class="request-description">{{ 'PRIVATE_ACCESS.REQUEST_DESCRIPTION' | translate }}</p>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+          @if (processing()) {
+            <div class="processing-state">
+              <mat-spinner diameter="32"></mat-spinner>
+            </div>
+          } @else {
+            <button class="action-btn deny" (click)="denyAccess()">
+              <mat-icon>close</mat-icon>
+              {{ 'PRIVATE_ACCESS.DENY_BUTTON' | translate }}
+            </button>
+            <button class="action-btn approve" (click)="grantAccess()">
+              <mat-icon>check</mat-icon>
+              {{ 'PRIVATE_ACCESS.GRANT_BUTTON' | translate }}
+            </button>
+          }
+        </div>
+
+        <p class="manage-hint">
+          <a routerLink="/profile" (click)="close()">{{ 'PRIVATE_ACCESS.MANAGE_ALL_LINK' | translate }}</a>
+        </p>
+      }
     }
   </mat-dialog-content>
 </div>

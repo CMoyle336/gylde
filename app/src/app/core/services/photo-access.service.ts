@@ -191,6 +191,13 @@ export class PrivateAccessService {
   }
 
   /**
+   * Check if a specific request is still pending
+   */
+  isRequestPending(requesterId: string): boolean {
+    return this.pendingRequests().some(req => req.id === requesterId);
+  }
+
+  /**
    * Check if current user has access to view another user's private content
    */
   async checkAccess(targetUserId: string): Promise<PrivateAccessSummary> {
@@ -314,6 +321,19 @@ export class PrivateAccessService {
       'backfillPrivateAccess'
     );
     const result = await fn();
+    return result.data;
+  }
+
+  /**
+   * Revoke my own access to another user's private content
+   * This allows a viewer to remove their own access to someone else's private content
+   */
+  async revokeMyAccess(ownerId: string): Promise<{ success: boolean; message: string }> {
+    const fn = httpsCallable<{ ownerId: string }, { success: boolean; message: string }>(
+      this.functions,
+      'revokeMyPrivateAccess'
+    );
+    const result = await fn({ ownerId });
     return result.data;
   }
 }

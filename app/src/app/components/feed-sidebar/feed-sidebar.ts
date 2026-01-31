@@ -42,6 +42,12 @@ export class FeedSidebarComponent implements OnInit {
   readonly favoritedMeCount = this.matchesService.favoritedMeCount;
   readonly viewedMeCount = this.matchesService.viewedMeCount;
 
+  // Feed stats
+  readonly userPostsCount = this.feedService.userPostsCount;
+  readonly likesReceivedCount = this.feedService.likesReceivedCount;
+  readonly commentsReceivedCount = this.feedService.commentsReceivedCount;
+  readonly feedStatsLoading = this.feedService.feedStatsLoading;
+
   // Feed Activity data (likes, comments on posts)
   readonly feedActivities = this.feedActivityService.feedActivities;
 
@@ -72,6 +78,9 @@ export class FeedSidebarComponent implements OnInit {
   ngOnInit(): void {
     // Load matches data for sidebar
     this.matchesService.setTab('my-matches');
+    
+    // Load feed stats
+    this.feedService.loadUserFeedStats();
   }
 
   navigateToProfile(userId: string): void {

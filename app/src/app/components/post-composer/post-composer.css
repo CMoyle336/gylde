@@ -188,6 +188,27 @@
   margin-top: 1px;
 }
 
+/* Warning Message */
+.warning-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(245, 158, 11, 0.1);
+  border-radius: 8px;
+  color: #f59e0b;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.warning-message mat-icon {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
 /* Link Preview Loading */
 .link-preview-loading {
   display: flex;
@@ -418,6 +439,10 @@
 .submit-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.submit-btn mat-spinner {
+  --mdc-circular-progress-active-indicator-color: white;
 }
 
 /* Responsive */
