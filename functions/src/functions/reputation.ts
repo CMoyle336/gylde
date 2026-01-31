@@ -366,6 +366,8 @@ export const reportUser = onCall<{
   reason: ReportReason;
   details?: string;
   conversationId?: string;
+  postId?: string;
+  commentId?: string;
 }>(
   {region: "us-central1"},
   async (request) => {
@@ -374,7 +376,7 @@ export const reportUser = onCall<{
     }
 
     const reporterId = request.auth.uid;
-    const {userId, reason, details, conversationId} = request.data;
+    const {userId, reason, details, conversationId, postId, commentId} = request.data;
 
     // Validate input
     if (!userId) {
@@ -486,6 +488,8 @@ export const reportUser = onCall<{
         reason,
         details: details?.trim() || null,
         conversationId: conversationId || null,
+        postId: postId || null,
+        commentId: commentId || null,
         status: "pending" as const,
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),

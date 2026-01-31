@@ -123,6 +123,11 @@ export const blockUser = onCall(async (request) => {
       logger.error("Error deleting photo access:", err);
     });
 
+    // 10. Delete post activity between users (likes, comments, feed items)
+    deletePostActivityBetweenUsers(currentUserId, targetUserId).catch((err) => {
+      logger.error("Error deleting post activity:", err);
+    });
+
     return {success: true};
   } catch (error) {
     logger.error("Error blocking user:", error);
@@ -374,4 +379,55 @@ async function deletePhotoAccessBetweenUsers(userId1: string, userId2: string): 
 
   await batch.commit();
   logger.info(`Deleted photo access between ${userId1} and ${userId2}`);
+}
+
+/**
+ * Delete all post-related activity notifications between two users:
+ * - Feed activities (likes, comments notifications) between users
+ * Note: Feed items (fan-out posts) are NOT deleted - they are filtered on the client side
+ *       so posts reappear after unblocking
+ */
+async function deletePostActivityBetweenUsers(userId1: string, userId2: string): Promise<void> {
+  let totalDeleted = 0;
+
+  // Delete feed activities (post/comment likes and comments notifications)
+  // These are permanent deletions as they represent past interactions
+  totalDeleted += await deleteFeedActivitiesForBlockedUser(userId1, userId2);
+  totalDeleted += await deleteFeedActivitiesForBlockedUser(userId2, userId1);
+
+  logger.info(`Deleted ${totalDeleted} feed activity notifications between ${userId1} and ${userId2}`);
+}
+
+/**
+ * Delete feed activities (post/comment like and comment notifications) for activityOwnerId from blockedUserId
+ */
+async function deleteFeedActivitiesForBlockedUser(activityOwnerId: string, blockedUserId: string): Promise<number> {
+  const feedActivitiesRef = db.collection("users").doc(activityOwnerId).collection("feedActivities");
+
+  // Find feed activities from the blocked user
+  const feedActivitiesSnapshot = await feedActivitiesRef
+    .where("fromUserId", "==", blockedUserId)
+    .get();
+
+  if (feedActivitiesSnapshot.empty) return 0;
+
+  // Delete in batches
+  let deleted = 0;
+  for (let i = 0; i < feedActivitiesSnapshot.docs.length; i += 450) {
+    const batch = db.batch();
+    const chunk = feedActivitiesSnapshot.docs.slice(i, i + 450);
+
+    for (const doc of chunk) {
+      batch.delete(doc.ref);
+    }
+
+    await batch.commit();
+    deleted += chunk.length;
+  }
+
+  if (deleted > 0) {
+    logger.info(`Deleted ${deleted} feed activities from ${blockedUserId} for ${activityOwnerId}`);
+  }
+
+  return deleted;
 }

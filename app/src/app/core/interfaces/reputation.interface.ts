@@ -168,6 +168,8 @@ export interface ReportUserRequest {
   reason: ReportReason;
   details?: string;
   conversationId?: string;
+  postId?: string;
+  commentId?: string;
 }
 
 /**

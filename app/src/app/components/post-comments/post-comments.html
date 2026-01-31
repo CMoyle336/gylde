@@ -99,19 +99,27 @@
           @for (comment of topLevelComments(); track comment.id) {
             <!-- Top-level comment -->
             <article class="comment-item">
-              <app-reputation-avatar
-                [photoURL]="comment.author.photoURL"
-                [displayName]="comment.author.displayName"
-                [reputationTier]="comment.author.reputationTier"
-                size="small" />
+              <button 
+                type="button" 
+                class="avatar-link"
+                (click)="navigateToProfile(comment.author.uid)">
+                <app-reputation-avatar
+                  [photoURL]="comment.author.photoURL"
+                  [displayName]="comment.author.displayName"
+                  [reputationTier]="comment.author.reputationTier"
+                  size="small" />
+              </button>
 
               <div class="comment-content">
                 <!-- Bubble row with options button -->
                 <div class="bubble-row">
                   <div class="comment-bubble">
-                    <span class="comment-author">
+                    <button 
+                      type="button" 
+                      class="comment-author author-link"
+                      (click)="navigateToProfile(comment.author.uid)">
                       {{ comment.author.displayName || ('FEED.ANONYMOUS_USER' | translate) }}
-                    </span>
+                    </button>
                     <p class="comment-text">{{ comment.content }}</p>
                   </div>
 
@@ -172,19 +180,27 @@
                   <div class="replies-section">
                     @for (reply of getReplies(comment.id); track reply.id) {
                       <article class="comment-item reply">
-                        <app-reputation-avatar
-                          [photoURL]="reply.author.photoURL"
-                          [displayName]="reply.author.displayName"
-                          [reputationTier]="reply.author.reputationTier"
-                          size="small" />
+                        <button 
+                          type="button" 
+                          class="avatar-link"
+                          (click)="navigateToProfile(reply.author.uid)">
+                          <app-reputation-avatar
+                            [photoURL]="reply.author.photoURL"
+                            [displayName]="reply.author.displayName"
+                            [reputationTier]="reply.author.reputationTier"
+                            size="small" />
+                        </button>
 
                         <div class="comment-content">
                           <!-- Bubble row with options button -->
                           <div class="bubble-row">
                             <div class="comment-bubble">
-                              <span class="comment-author">
+                              <button 
+                                type="button" 
+                                class="comment-author author-link"
+                                (click)="navigateToProfile(reply.author.uid)">
                                 {{ reply.author.displayName || ('FEED.ANONYMOUS_USER' | translate) }}
-                              </span>
+                              </button>
                               <p class="comment-text">{{ reply.content }}</p>
                             </div>
 

@@ -256,6 +256,22 @@
   max-width: calc(100% - 32px);
 }
 
+/* Clickable avatar button */
+.avatar-link {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: opacity 0.15s ease;
+  flex-shrink: 0;
+}
+
+.avatar-link:hover {
+  opacity: 0.85;
+}
+
 .comment-author {
   font-weight: 600;
   font-size: 0.8125rem;
@@ -264,6 +280,25 @@
   align-items: center;
   gap: 4px;
   margin-bottom: 2px;
+}
+
+/* Clickable author name button */
+.comment-author.author-link {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0 0 2px 0;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.8125rem;
+  color: var(--color-text-primary, #f5f3f0);
+  text-align: left;
+  display: block;
+  transition: opacity 0.15s ease;
+}
+
+.comment-author.author-link:hover {
+  opacity: 0.8;
 }
 
 .comment-text {

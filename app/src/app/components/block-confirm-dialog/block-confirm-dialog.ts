@@ -3,6 +3,7 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { BlockService } from '../../core/services/block.service';
 
 export interface BlockConfirmDialogData {
@@ -19,11 +20,13 @@ export interface BlockConfirmDialogData {
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
+    TranslateModule,
   ],
 })
 export class BlockConfirmDialogComponent {
   private readonly dialogRef = inject(MatDialogRef<BlockConfirmDialogComponent>);
   private readonly blockService = inject(BlockService);
+  private readonly translate = inject(TranslateService);
   protected readonly data = inject<BlockConfirmDialogData>(MAT_DIALOG_DATA);
 
   protected readonly loading = signal(false);
@@ -38,12 +41,12 @@ export class BlockConfirmDialogComponent {
       if (success) {
         this.dialogRef.close(true); // Return true to indicate user was blocked
       } else {
-        this.error.set('Failed to block user. Please try again.');
+        this.error.set(this.translate.instant('BLOCK_DIALOG.ERROR'));
         this.loading.set(false);
       }
     } catch (err) {
       console.error('Error blocking user:', err);
-      this.error.set('Failed to block user. Please try again.');
+      this.error.set(this.translate.instant('BLOCK_DIALOG.ERROR'));
       this.loading.set(false);
     }
   }

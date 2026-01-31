@@ -1,16 +1,20 @@
 import { ChangeDetectionStrategy, Component, inject, signal, OnInit, computed, ViewChild, ElementRef } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogRef, MatDialog } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatMenuModule } from '@angular/material/menu';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { FeedService } from '../../core/services/feed.service';
 import { BlockService } from '../../core/services/block.service';
+import { AuthService } from '../../core/services/auth.service';
 import { PostDisplay, CommentDisplay } from '../../core/interfaces';
 import { ReputationAvatarComponent } from '../reputation-avatar';
 import { ImageGalleryComponent, GalleryState } from '../../pages/messages/components/image-gallery';
+import { ReportDialogComponent, ReportDialogData } from '../report-dialog';
+import { BlockConfirmDialogComponent, BlockConfirmDialogData } from '../block-confirm-dialog';
 
 export interface PostCommentsDialogData {
   post: PostDisplay;
@@ -36,8 +40,11 @@ const MAX_COMMENT_LENGTH = 280;
 })
 export class PostCommentsComponent implements OnInit {
   private readonly dialogRef = inject(MatDialogRef<PostCommentsComponent>);
+  private readonly dialog = inject(MatDialog);
+  private readonly router = inject(Router);
   private readonly feedService = inject(FeedService);
   private readonly blockService = inject(BlockService);
+  private readonly authService = inject(AuthService);
   protected readonly data = inject<PostCommentsDialogData>(MAT_DIALOG_DATA);
 
   protected readonly submitting = signal(false);
@@ -184,26 +191,37 @@ export class PostCommentsComponent implements OnInit {
     }
   }
 
-  protected async reportComment(comment: CommentDisplay): Promise<void> {
-    try {
-      // TODO: Add report dialog with reason selection
-      await this.feedService.reportComment(this.data.post.id, comment.id);
-    } catch (err) {
-      console.error('Error reporting comment:', err);
-    }
+  protected reportComment(comment: CommentDisplay): void {
+    this.dialog.open(ReportDialogComponent, {
+      data: {
+        userId: comment.author.uid,
+        displayName: comment.author.displayName || 'This user',
+        postId: this.data.post.id,
+        commentId: comment.id,
+      } as ReportDialogData,
+      panelClass: 'report-dialog-panel',
+      width: '420px',
+      maxWidth: '95vw',
+    });
   }
 
-  protected async blockUser(comment: CommentDisplay): Promise<void> {
-    try {
-      const success = await this.blockService.blockUser(comment.author.uid);
-      if (success) {
-        // Remove the blocked user's comments from the view
-        // The feedService subscription will filter them out on next update
+  protected blockUser(comment: CommentDisplay): void {
+    const blockDialogRef = this.dialog.open(BlockConfirmDialogComponent, {
+      data: {
+        userId: comment.author.uid,
+        displayName: comment.author.displayName || 'This user',
+      } as BlockConfirmDialogData,
+      panelClass: 'block-confirm-dialog-panel',
+      width: '400px',
+      maxWidth: '95vw',
+    });
+
+    blockDialogRef.afterClosed().subscribe((blocked: boolean) => {
+      if (blocked) {
+        // Close the comments dialog since the user was blocked
         this.dialogRef.close();
       }
-    } catch (err) {
-      console.error('Error blocking user:', err);
-    }
+    });
   }
 
   protected formatDate(dateInput: Date | string | { _seconds: number; _nanoseconds: number } | unknown): string {
@@ -246,5 +264,23 @@ export class PostCommentsComponent implements OnInit {
   protected close(): void {
     this.feedService.clearComments();
     this.dialogRef.close();
+  }
+
+  /**
+   * Navigate to user's profile page
+   */
+  protected navigateToProfile(userId: string): void {
+    const currentUser = this.authService.user();
+    
+    // Close the dialog first
+    this.feedService.clearComments();
+    this.dialogRef.close();
+    
+    // Navigate to appropriate profile page
+    if (currentUser && userId === currentUser.uid) {
+      this.router.navigate(['/profile']);
+    } else {
+      this.router.navigate(['/user', userId]);
+    }
   }
 }

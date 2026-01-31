@@ -1,4 +1,4 @@
-import { Injectable, inject, signal, computed, DestroyRef, PLATFORM_ID } from '@angular/core';
+import { Injectable, inject, signal, computed, DestroyRef, PLATFORM_ID, effect, untracked } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Functions, httpsCallable } from '@angular/fire/functions';
 import {
@@ -22,6 +22,7 @@ import {
 import { Subscription } from 'rxjs';
 import { AuthService } from './auth.service';
 import { RemoteConfigService } from './remote-config.service';
+import { BlockService } from './block.service';
 import {
   Post,
   PostDisplay,
@@ -56,6 +57,7 @@ export class FeedService {
   private readonly firestore = inject(Firestore);
   private readonly authService = inject(AuthService);
   private readonly remoteConfigService = inject(RemoteConfigService);
+  private readonly blockService = inject(BlockService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly platformId = inject(PLATFORM_ID);
 
@@ -71,7 +73,7 @@ export class FeedService {
   private authorDataCache = new Map<string, Record<string, unknown>>(); // authorId -> public data
   // Note: We don't cache private data - security rules block reading other users' private docs
   // reputationTier is available on the public user document
-  private blockedAuthorsCache: Set<string> | null = null; // Set of blocked author IDs
+  // Note: We use BlockService.blockedUserIds() for blocked authors - no local cache needed
 
   // Feed state
   private readonly _posts = signal<PostDisplay[]>([]);
@@ -160,6 +162,43 @@ export class FeedService {
   constructor() {
     this.destroyRef.onDestroy(() => {
       this.cleanup();
+    });
+
+    // React to changes in blocked users - filter posts in real-time
+    effect(() => {
+      // Only track blockedUserIds as a dependency
+      const blockedUsers = this.blockService.blockedUserIds();
+      
+      // Use untracked to read posts without creating a dependency (avoids infinite loop)
+      untracked(() => {
+        const currentUser = this.authService.user();
+        if (!currentUser) return;
+        
+        // Only filter if we have posts
+        const allPosts = this._allPosts();
+        if (allPosts.length > 0) {
+          // Filter out posts from blocked users
+          const filteredPosts = allPosts.filter(
+            (post) => !blockedUsers.has(post.author.uid) || post.author.uid === currentUser.uid
+          );
+          // Only update if something was filtered
+          if (filteredPosts.length !== allPosts.length) {
+            this._allPosts.set(filteredPosts);
+            this.applyFilter();
+          }
+        }
+        
+        // Also filter user posts on profile pages
+        const userPosts = this._userPosts();
+        if (userPosts.length > 0) {
+          const filteredUserPosts = userPosts.filter(
+            (post) => !blockedUsers.has(post.author.uid) || post.author.uid === currentUser.uid
+          );
+          if (filteredUserPosts.length !== userPosts.length) {
+            this._userPosts.set(filteredUserPosts);
+          }
+        }
+      });
     });
   }
 
@@ -580,17 +619,11 @@ export class FeedService {
       );
     }
 
-    // Fetch blocked authors if not cached
-    if (this.blockedAuthorsCache === null) {
-      fetchPromises.push(
-        this.fetchBlockedAuthors(currentUserId).then((blocked) => {
-          this.blockedAuthorsCache = blocked;
-        })
-      );
-    }
-
     // Wait for all fetches to complete
     await Promise.all(fetchPromises);
+
+    // Get blocked users from BlockService (real-time source of truth)
+    const blockedUsers = this.blockService.blockedUserIds();
 
     // Build posts array using cached data
     const posts: PostDisplay[] = [];
@@ -600,7 +633,7 @@ export class FeedService {
 
       // Skip blocked authors (except own posts)
       if (
-        this.blockedAuthorsCache?.has(postData.authorId) &&
+        blockedUsers.has(postData.authorId) &&
         postData.authorId !== currentUserId
       ) {
         continue;
@@ -632,25 +665,6 @@ export class FeedService {
     }
 
     return posts;
-  }
-
-  /**
-   * Fetch all blocked user IDs for the current user
-   * This is called once per session and cached
-   */
-  private async fetchBlockedAuthors(currentUserId: string): Promise<Set<string>> {
-    const blockedSet = new Set<string>();
-
-    // Fetch users I blocked and users who blocked me in parallel
-    const [blockedByMe, blockedMe] = await Promise.all([
-      getDocs(collection(this.firestore, 'users', currentUserId, 'blocks')),
-      getDocs(collection(this.firestore, 'users', currentUserId, 'blockedBy')),
-    ]);
-
-    blockedByMe.forEach((docSnap) => blockedSet.add(docSnap.id));
-    blockedMe.forEach((docSnap) => blockedSet.add(docSnap.id));
-
-    return blockedSet;
   }
 
   /**
@@ -727,15 +741,10 @@ export class FeedService {
       );
     }
 
-    if (this.blockedAuthorsCache === null) {
-      fetchPromises.push(
-        this.fetchBlockedAuthors(currentUserId).then((blocked) => {
-          this.blockedAuthorsCache = blocked;
-        })
-      );
-    }
-
     await Promise.all(fetchPromises);
+
+    // Get blocked users from BlockService (real-time source of truth)
+    const blockedUsers = this.blockService.blockedUserIds();
 
     // Build posts array using cached data
     const posts: PostDisplay[] = [];
@@ -743,7 +752,7 @@ export class FeedService {
     for (const { postId, postData, feedItem } of validPosts) {
       // Skip blocked authors (except own posts)
       if (
-        this.blockedAuthorsCache?.has(postData.authorId) &&
+        blockedUsers.has(postData.authorId) &&
         postData.authorId !== currentUserId
       ) {
         continue;
@@ -1452,7 +1461,6 @@ export class FeedService {
     // Clear all caches
     this.likeStatusCache.clear();
     this.authorDataCache.clear();
-    this.blockedAuthorsCache = null;
   }
 
   // Legacy cursor (kept for compatibility)

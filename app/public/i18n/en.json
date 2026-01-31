@@ -1934,7 +1934,19 @@
   },
   "COMMON": {
     "OK": "OK",
+    "CANCEL": "Cancel",
     "PREMIUM": "Premium"
+  },
+  "BLOCK_DIALOG": {
+    "TITLE": "Block {{name}}?",
+    "INTRO": "Blocking this user means:",
+    "EFFECT_DISCOVER": "You won't see each other in Discover or Matches",
+    "EFFECT_FEED": "You won't see each other's posts, comments, or likes",
+    "EFFECT_MESSAGES": "You can't send messages (existing chat preserved)",
+    "EFFECT_HISTORY": "All activity history between you will be deleted",
+    "EFFECT_UNDO": "This action can be undone later in Settings",
+    "CONFIRM_BUTTON": "Block User",
+    "ERROR": "Failed to block user. Please try again."
   },
   "USER_PROFILE": {
     "ERROR_HINT": "This profile may be private or no longer exists.",

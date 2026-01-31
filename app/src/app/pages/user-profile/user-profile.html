@@ -235,11 +235,13 @@
               class="revoke-access-btn"
               [disabled]="revokingAccess()"
               (click)="revokePrivateAccess()">
-              @if (revokingAccess()) {
+  @if (revokingAccess()) {
                 <mat-spinner diameter="18"></mat-spinner>
               } @else {
-                <mat-icon>close</mat-icon>
-                {{ 'USER_PROFILE.REVOKE_ACCESS' | translate }}
+                <ng-container>
+                  <mat-icon>close</mat-icon>
+                  <span>{{ 'USER_PROFILE.REVOKE_ACCESS' | translate }}</span>
+                </ng-container>
               }
             </button>
           </div>

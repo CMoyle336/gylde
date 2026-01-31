@@ -9,8 +9,34 @@ import * as logger from "firebase-functions/logger";
 
 export class ActivityService {
   /**
+   * Check if two users have blocked each other (in either direction)
+   */
+  private static async areUsersBlocked(userId1: string, userId2: string): Promise<boolean> {
+    // Check if userId1 blocked userId2
+    const blockedDoc = await db
+      .collection("users")
+      .doc(userId1)
+      .collection("blocks")
+      .doc(userId2)
+      .get();
+
+    if (blockedDoc.exists) return true;
+
+    // Check if userId2 blocked userId1
+    const blockedByDoc = await db
+      .collection("users")
+      .doc(userId1)
+      .collection("blockedBy")
+      .doc(userId2)
+      .get();
+
+    return blockedByDoc.exists;
+  }
+
+  /**
    * Create an activity record for a user
    * @param link - Navigation link for the activity (null for activities that open dialogs instead)
+   * Note: Will not create activity if users have blocked each other
    */
   static async createActivity(
     toUserId: string,
@@ -19,7 +45,13 @@ export class ActivityService {
     fromUserName: string,
     fromUserPhoto: string | null,
     link: string | null = null
-  ): Promise<string> {
+  ): Promise<string | null> {
+    // Don't create activities between blocked users
+    if (await this.areUsersBlocked(toUserId, fromUserId)) {
+      logger.info(`Skipping activity ${type}: users ${toUserId} and ${fromUserId} are blocked`);
+      return null;
+    }
+
     const activityId = `${type}_${fromUserId}_${Date.now()}`;
 
     const activity: ActivityWrite = {
@@ -50,6 +82,7 @@ export class ActivityService {
    * update it instead of creating a new one.
    * Useful for message activities to avoid duplicates.
    * @param link - Navigation link for the activity (null for activities that open dialogs instead)
+   * Note: Will not create/update activity if users have blocked each other
    */
   static async upsertActivity(
     toUserId: string,
@@ -58,7 +91,13 @@ export class ActivityService {
     fromUserName: string,
     fromUserPhoto: string | null,
     link: string | null = null
-  ): Promise<string> {
+  ): Promise<string | null> {
+    // Don't create/update activities between blocked users
+    if (await this.areUsersBlocked(toUserId, fromUserId)) {
+      logger.info(`Skipping activity upsert ${type}: users ${toUserId} and ${fromUserId} are blocked`);
+      return null;
+    }
+
     const activitiesRef = db
       .collection("users")
       .doc(toUserId)

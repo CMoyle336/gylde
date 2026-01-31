@@ -1919,7 +1919,20 @@
       "YEARS_AGO": "{{years}} año{{years === 1 ? '' : 's'}} atrás"
     },
     "COMMON": {
-      "OK": "OK"
+      "OK": "OK",
+      "CANCEL": "Cancelar",
+      "PREMIUM": "Premium"
+    },
+    "BLOCK_DIALOG": {
+      "TITLE": "¿Bloquear a {{name}}?",
+      "INTRO": "Bloquear a este usuario significa:",
+      "EFFECT_DISCOVER": "No se verán en Descubrir ni en Coincidencias",
+      "EFFECT_FEED": "No verán las publicaciones, comentarios o likes del otro",
+      "EFFECT_MESSAGES": "No podrán enviarse mensajes (el chat existente se conserva)",
+      "EFFECT_HISTORY": "Todo el historial de actividad entre ustedes será eliminado",
+      "EFFECT_UNDO": "Esta acción se puede deshacer más tarde en Configuración",
+      "CONFIRM_BUTTON": "Bloquear usuario",
+      "ERROR": "Error al bloquear usuario. Por favor, inténtalo de nuevo."
     },
     "USER_PROFILE": {
       "ERROR_HINT": "Este perfil puede ser privado o ya no existir.",

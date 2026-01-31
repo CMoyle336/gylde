@@ -14,6 +14,8 @@ import { PostCardComponent } from '../../components/post-card';
 import { PostCommentsComponent, PostCommentsDialogData } from '../../components/post-comments';
 import { PostComposerComponent } from '../../components/post-composer';
 import { FeedSidebarComponent } from '../../components/feed-sidebar';
+import { BlockConfirmDialogComponent, BlockConfirmDialogData } from '../../components/block-confirm-dialog';
+import { ReportDialogComponent, ReportDialogData } from '../../components/report-dialog';
 
 @Component({
   selector: 'app-feed',
@@ -131,17 +133,43 @@ export class FeedComponent implements OnInit {
     await this.feedService.deletePost(post.id);
   }
 
-  async onReport(post: PostDisplay): Promise<void> {
-    // TODO: Add report dialog
-    await this.feedService.reportPost(post.id);
+  onReport(post: PostDisplay): void {
+    const dialogRef = this.dialog.open(ReportDialogComponent, {
+      data: {
+        userId: post.author.uid,
+        displayName: post.author.displayName || 'This user',
+        postId: post.id,
+      } as ReportDialogData,
+      panelClass: 'report-dialog-panel',
+      width: '420px',
+      maxWidth: '95vw',
+    });
+
+    dialogRef.afterClosed().subscribe((reported: boolean) => {
+      if (reported) {
+        // Optionally remove the post from view after reporting
+        // For now, we just let the user know it was reported via the dialog
+      }
+    });
   }
 
-  async onBlock(post: PostDisplay): Promise<void> {
-    const success = await this.blockService.blockUser(post.author.uid);
-    if (success) {
-      // Remove the blocked user's posts from the feed
-      this.feedService.removePostsByUser(post.author.uid);
-    }
+  onBlock(post: PostDisplay): void {
+    const dialogRef = this.dialog.open(BlockConfirmDialogComponent, {
+      data: {
+        userId: post.author.uid,
+        displayName: post.author.displayName || 'This user',
+      } as BlockConfirmDialogData,
+      panelClass: 'block-confirm-dialog-panel',
+      width: '400px',
+      maxWidth: '95vw',
+    });
+
+    dialogRef.afterClosed().subscribe((blocked: boolean) => {
+      if (blocked) {
+        // Remove the blocked user's posts from the feed
+        this.feedService.removePostsByUser(post.author.uid);
+      }
+    });
   }
 
   trackByPostId(index: number, post: PostDisplay): string {

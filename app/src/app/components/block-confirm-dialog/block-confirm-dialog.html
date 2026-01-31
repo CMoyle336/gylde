@@ -1,27 +1,31 @@
 <h2 mat-dialog-title>
   <mat-icon>block</mat-icon>
-  Block {{ data.displayName }}?
+  {{ 'BLOCK_DIALOG.TITLE' | translate:{ name: data.displayName } }}
 </h2>
 
 <div mat-dialog-content>
-  <p class="intro-text">Blocking this user means:</p>
+  <p class="intro-text">{{ 'BLOCK_DIALOG.INTRO' | translate }}</p>
   
   <ul class="block-effects">
     <li>
       <mat-icon>visibility_off</mat-icon>
-      <span>You won't see each other in Discover or Matches</span>
+      <span>{{ 'BLOCK_DIALOG.EFFECT_DISCOVER' | translate }}</span>
+    </li>
+    <li>
+      <mat-icon>dynamic_feed</mat-icon>
+      <span>{{ 'BLOCK_DIALOG.EFFECT_FEED' | translate }}</span>
     </li>
     <li>
       <mat-icon>chat_bubble_outline</mat-icon>
-      <span>You can't send messages (existing chat preserved)</span>
+      <span>{{ 'BLOCK_DIALOG.EFFECT_MESSAGES' | translate }}</span>
     </li>
     <li>
       <mat-icon>delete_outline</mat-icon>
-      <span>All activity history between you will be deleted</span>
+      <span>{{ 'BLOCK_DIALOG.EFFECT_HISTORY' | translate }}</span>
     </li>
     <li>
       <mat-icon>undo</mat-icon>
-      <span>This action can be undone later in Settings</span>
+      <span>{{ 'BLOCK_DIALOG.EFFECT_UNDO' | translate }}</span>
     </li>
   </ul>
 
@@ -35,7 +39,7 @@
 
 <div mat-dialog-actions align="end">
   <button mat-button (click)="close()" [disabled]="loading()">
-    Cancel
+    {{ 'COMMON.CANCEL' | translate }}
   </button>
   <button 
     mat-flat-button 
@@ -45,7 +49,7 @@
     @if (loading()) {
       <mat-spinner diameter="20"></mat-spinner>
     } @else {
-      Block User
+      {{ 'BLOCK_DIALOG.CONFIRM_BUTTON' | translate }}
     }
   </button>
 </div>

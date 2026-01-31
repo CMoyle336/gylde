@@ -16,6 +16,8 @@ export interface ReportDialogData {
   userId: string;
   displayName: string;
   conversationId?: string;
+  postId?: string;
+  commentId?: string;
 }
 
 @Component({
@@ -67,6 +69,8 @@ export class ReportDialogComponent {
         reason: this.selectedReason,
         details: this.details.trim() || undefined,
         conversationId: this.data.conversationId,
+        postId: this.data.postId,
+        commentId: this.data.commentId,
       });
 
       this.submitted.set(true);

@@ -48,6 +48,31 @@ async function getUserDisplayInfo(userId: string): Promise<{ name: string; photo
 }
 
 /**
+ * Check if two users have blocked each other (in either direction)
+ */
+async function areUsersBlocked(userId1: string, userId2: string): Promise<boolean> {
+  // Check if userId1 blocked userId2
+  const blockedDoc = await db
+    .collection("users")
+    .doc(userId1)
+    .collection("blocks")
+    .doc(userId2)
+    .get();
+
+  if (blockedDoc.exists) return true;
+
+  // Check if userId2 blocked userId1
+  const blockedByDoc = await db
+    .collection("users")
+    .doc(userId1)
+    .collection("blockedBy")
+    .doc(userId2)
+    .get();
+
+  return blockedByDoc.exists;
+}
+
+/**
  * Build the feed activity document ID
  */
 function buildFeedActivityId(fromUserId: string, postId: string): string {
@@ -257,6 +282,12 @@ export const onPostLikeCreated = onDocumentCreated(
       return;
     }
 
+    // Skip if users are blocked
+    if (await areUsersBlocked(postAuthorId, likerId)) {
+      logger.info(`Skipping feed activity: users ${postAuthorId} and ${likerId} are blocked`);
+      return;
+    }
+
     // Get liker info
     const likerInfo = await getUserDisplayInfo(likerId);
 
@@ -331,6 +362,12 @@ export const onPostCommentCreated = onDocumentCreated(
     // Skip self-comments
     if (postAuthorId === commenterId) {
       logger.info(`Skipping feed activity for self-comment on post ${postId}`);
+      return;
+    }
+
+    // Skip if users are blocked
+    if (await areUsersBlocked(postAuthorId, commenterId)) {
+      logger.info(`Skipping feed activity: users ${postAuthorId} and ${commenterId} are blocked`);
       return;
     }
 
@@ -490,6 +527,12 @@ export const onCommentLikeCreated = onDocumentCreated(
     // Skip self-likes
     if (commentAuthorId === likerId) {
       logger.info(`Skipping feed activity for self-like on comment ${commentId}`);
+      return;
+    }
+
+    // Skip if users are blocked
+    if (await areUsersBlocked(commentAuthorId, likerId)) {
+      logger.info(`Skipping feed activity: users ${commentAuthorId} and ${likerId} are blocked`);
       return;
     }
 
