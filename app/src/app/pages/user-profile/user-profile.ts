@@ -15,12 +15,12 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ReportDialogComponent, ReportDialogData } from '../../components/report-dialog';
 import { BlockConfirmDialogComponent, BlockConfirmDialogData } from '../../components/block-confirm-dialog';
 import { UserProfile, ReputationTier, shouldShowPublicBadge, getTierDisplay } from '../../core/interfaces';
-import { Photo, PhotoAccessSummary } from '../../core/interfaces/photo.interface';
+import { Photo, PrivateAccessSummary } from '../../core/interfaces/photo.interface';
 import { FavoriteService } from '../../core/services/favorite.service';
 import { MessageService } from '../../core/services/message.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ActivityService } from '../../core/services/activity.service';
-import { PhotoAccessService } from '../../core/services/photo-access.service';
+import { PrivateAccessService } from '../../core/services/photo-access.service';
 import { BlockService, BlockStatus } from '../../core/services/block.service';
 import { SubscriptionService } from '../../core/services/subscription.service';
 import { AnalyticsService } from '../../core/services/analytics.service';
@@ -55,7 +55,7 @@ export class UserProfileComponent implements OnInit, OnDestroy {
   private readonly messageService = inject(MessageService);
   private readonly authService = inject(AuthService);
   private readonly activityService = inject(ActivityService);
-  private readonly photoAccessService = inject(PhotoAccessService);
+  private readonly privateAccessService = inject(PrivateAccessService);
   private readonly blockService = inject(BlockService);
   private readonly subscriptionService = inject(SubscriptionService);
   private readonly destroyRef = inject(DestroyRef);
@@ -70,8 +70,8 @@ export class UserProfileComponent implements OnInit, OnDestroy {
   protected readonly selectedPhotoIndex = signal(0);
   protected readonly lastViewedMe = signal<Date | null>(null);
 
-  // Photo access state
-  protected readonly photoAccess = signal<PhotoAccessSummary>({ hasAccess: false });
+  // Private content access state (covers photos and posts)
+  protected readonly privateAccess = signal<PrivateAccessSummary>({ hasAccess: false });
   protected readonly requestingAccess = signal(false);
   protected readonly photoPrivacyMap = signal<Map<string, boolean>>(new Map());
 
@@ -106,10 +106,10 @@ export class UserProfileComponent implements OnInit, OnDestroy {
     return getTierDisplay(this.reputationTier());
   });
 
-  // Has private photos that viewer can't see
-  protected readonly hasHiddenPrivatePhotos = computed(() => {
+  // Has private content that viewer can't see
+  protected readonly hasHiddenPrivateContent = computed(() => {
     const privacyMap = this.photoPrivacyMap();
-    const access = this.photoAccess();
+    const access = this.privateAccess();
     if (access.hasAccess) return false;
     return Array.from(privacyMap.values()).some(isPrivate => isPrivate);
   });
@@ -120,13 +120,16 @@ export class UserProfileComponent implements OnInit, OnDestroy {
     return Array.from(privacyMap.values()).filter(isPrivate => isPrivate).length;
   });
 
+  // Check if user is on premium tier (for showing premium badge)
+  protected readonly isPremium = this.subscriptionService.isPremium;
+
   // Get photos in display order from photoDetails
   // Also filter out private photos if user doesn't have access
   protected readonly orderedPhotos = computed(() => {
     const p = this.profile();
     const photoDetails = p?.onboarding?.photoDetails || [];
     const photoURL = p?.photoURL;
-    const access = this.photoAccess();
+    const access = this.privateAccess();
     
     // Sort by order field
     const sortedDetails = [...photoDetails].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
@@ -184,7 +187,7 @@ export class UserProfileComponent implements OnInit, OnDestroy {
           // Reset state when navigating to a different profile
           this.selectedPhotoIndex.set(0);
           this.profile.set(null);
-          this.photoAccess.set({ hasAccess: false });
+          this.privateAccess.set({ hasAccess: false });
           this.photoPrivacyMap.set(new Map());
           this.lastViewedMe.set(null);
           this.error.set(null);
@@ -216,12 +219,12 @@ export class UserProfileComponent implements OnInit, OnDestroy {
       
       const userRef = doc(this.firestore, 'users', userId);
       
-      // Set up photo access subscription immediately (doesn't need profile data)
+      // Set up private access subscription immediately (doesn't need profile data)
       this.accessStatusUnsubscribe?.();
-      this.accessStatusUnsubscribe = this.photoAccessService.subscribeToAccessStatus(
+      this.accessStatusUnsubscribe = this.privateAccessService.subscribeToAccessStatus(
         userId,
         (status) => {
-          this.photoAccess.set(status);
+          this.privateAccess.set(status);
         }
       );
       
@@ -399,44 +402,44 @@ export class UserProfileComponent implements OnInit, OnDestroy {
     });
   }
 
-  protected async requestPhotoAccess(): Promise<void> {
+  protected async requestPrivateAccess(): Promise<void> {
     const p = this.profile();
     if (!p) return;
 
-    // Check if user has subscription capability to request private photos
-    if (!this.subscriptionService.canPerformAction('canAccessPrivatePhotos', true)) {
+    // Check if user has subscription capability to request private content
+    if (!this.subscriptionService.canPerformAction('canAccessPrivateContent', true)) {
       return; // Upgrade dialog is shown automatically
     }
 
     this.requestingAccess.set(true);
     try {
-      await this.photoAccessService.requestAccess(p.uid);
-      this.photoAccess.set({ hasAccess: false, requestStatus: 'pending' });
-      this.analytics.trackPhotoAccessRequested();
+      await this.privateAccessService.requestAccess(p.uid);
+      this.privateAccess.set({ hasAccess: false, requestStatus: 'pending' });
+      this.analytics.trackPrivateAccessRequested();
     } catch (error) {
-      console.error('Error requesting photo access:', error);
+      console.error('Error requesting private access:', error);
     } finally {
       this.requestingAccess.set(false);
     }
   }
 
-  protected async cancelPhotoAccessRequest(): Promise<void> {
+  protected async cancelPrivateAccessRequest(): Promise<void> {
     const p = this.profile();
     if (!p) return;
 
     this.requestingAccess.set(true);
     try {
-      await this.photoAccessService.cancelRequest(p.uid);
-      this.photoAccess.set({ hasAccess: false, requestStatus: undefined });
+      await this.privateAccessService.cancelRequest(p.uid);
+      this.privateAccess.set({ hasAccess: false, requestStatus: undefined });
     } catch (error) {
-      console.error('Error cancelling photo access request:', error);
+      console.error('Error cancelling private access request:', error);
     } finally {
       this.requestingAccess.set(false);
     }
   }
 
   protected getAccessStatusText(): string {
-    const access = this.photoAccess();
+    const access = this.privateAccess();
     if (access.hasAccess) return '';
     if (access.requestStatus === 'pending') return 'Request pending';
     if (access.requestStatus === 'denied') return 'Request denied';

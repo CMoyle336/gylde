@@ -1,6 +1,15 @@
 import { expect, Page } from '@playwright/test';
 import { getAdminDb } from './settings-helpers';
 
+// Control verbose logging via environment variable
+const DEBUG = process.env.E2E_DEBUG === 'true';
+
+function debugLog(...args: unknown[]): void {
+  if (DEBUG) {
+    console.log(...args);
+  }
+}
+
 function isLiveEnvironment(): boolean {
   const baseUrl = process.env.BASE_URL || 'http://localhost:4200';
   return baseUrl.includes('gylde.com');
@@ -222,8 +231,27 @@ export async function blockUserFromUserProfile(page: Page, displayName: string):
     await snackbar.first().waitFor({ state: 'hidden', timeout: 8000 }).catch(() => {});
   }
 
-  const menuTrigger = profilePage.locator('button[mattooltip="More options"], button[matMenuTriggerFor]').first();
-  await menuTrigger.waitFor({ state: 'visible', timeout: 15000 });
+  // Use multiple selector strategies for the "More options" menu button
+  // Angular renders [matMenuTriggerFor] as the attribute 'matmenutriggerfor' (lowercase)
+  // The matTooltip uses translation key, so we also look for the icon
+  const menuTrigger = profilePage.locator([
+    'button[matmenutriggerfor]',
+    'button:has(mat-icon:text("more_vert"))',
+    'button.icon-btn:has(mat-icon)',
+  ].join(', ')).last();
+  
+  await menuTrigger.waitFor({ state: 'visible', timeout: 15000 }).catch(async () => {
+    // Debug: log what buttons are visible
+    const buttons = profilePage.locator('button');
+    const count = await buttons.count();
+    debugLog(`[Debug] Found ${count} buttons on profile page`);
+    for (let i = 0; i < Math.min(count, 5); i++) {
+      const classes = await buttons.nth(i).getAttribute('class');
+      const icon = await buttons.nth(i).locator('mat-icon').textContent().catch(() => 'no-icon');
+      debugLog(`[Debug] Button ${i}: class="${classes}", icon="${icon}"`);
+    }
+    throw new Error('Menu trigger button not found on profile page');
+  });
 
   // Avoid scrollIntoViewIfNeeded here; go straight to click with a force fallback.
   await menuTrigger.click({ timeout: 15000 }).catch(async () => {

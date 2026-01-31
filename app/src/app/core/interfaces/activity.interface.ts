@@ -2,7 +2,7 @@
  * Activity types for the activity feed
  */
 
-export type ActivityType = 'favorite' | 'match' | 'message' | 'view' | 'photo_access_request' | 'photo_access_granted' | 'photo_access_denied';
+export type ActivityType = 'favorite' | 'match' | 'message' | 'view' | 'private_access_request' | 'private_access_granted' | 'private_access_denied';
 
 /**
  * Base activity record stored in Firestore

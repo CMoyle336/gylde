@@ -5,6 +5,15 @@ import path from 'path';
 // Load environment variables from e2e/.env (for live env Admin SDK)
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
+// Control verbose logging via environment variable
+const DEBUG = process.env.E2E_DEBUG === 'true';
+
+function debugLog(...args: unknown[]): void {
+  if (DEBUG) {
+    console.log(...args);
+  }
+}
+
 function isLiveEnvironment(): boolean {
   const baseUrl = process.env.BASE_URL || 'http://localhost:4200';
   return baseUrl.includes('gylde.com');
@@ -17,6 +26,7 @@ let adminAuth: any | null = null;
 let adminAuthInitialized = false;
 
 export async function getAdminDb(): Promise<any | null> {
+  // For emulator environments, we can use REST API directly - don't need Admin SDK
   if (!isLiveEnvironment()) return null;
   if (adminInitialized) return adminDb;
 
@@ -33,14 +43,17 @@ export async function getAdminDb(): Promise<any | null> {
 
     adminDb = getFirestore();
     adminInitialized = true;
+    debugLog('[AdminSDK] Firestore initialized successfully');
     return adminDb;
-  } catch {
+  } catch (error) {
+    debugLog('[AdminSDK] ❌ Failed to initialize Firestore:', error);
     adminInitialized = true;
     return null;
   }
 }
 
 export async function getAdminAuth(): Promise<any | null> {
+  // For emulator environments, we can use REST API directly - don't need Admin SDK
   if (!isLiveEnvironment()) return null;
   if (adminAuthInitialized) return adminAuth;
 
@@ -49,16 +62,20 @@ export async function getAdminAuth(): Promise<any | null> {
     const { getAuth } = await import('firebase-admin/auth');
 
     if (getApps().length === 0) {
+      const projectId = process.env.FIREBASE_PROJECT_ID || 'gylde-sandbox';
+      console.log(`[AdminSDK] Initializing with project: ${projectId}`);
       initializeApp({
         credential: applicationDefault(),
-        projectId: process.env.FIREBASE_PROJECT_ID || 'gylde-sandbox',
+        projectId,
       });
     }
 
     adminAuth = getAuth();
     adminAuthInitialized = true;
+    debugLog('[AdminSDK] Auth initialized successfully');
     return adminAuth;
-  } catch {
+  } catch (error) {
+    debugLog('[AdminSDK] ❌ Failed to initialize Auth:', error);
     adminAuthInitialized = true;
     return null;
   }

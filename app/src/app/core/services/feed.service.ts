@@ -38,6 +38,14 @@ import {
 
 const PAGE_SIZE = 20;
 const FILTER_STORAGE_KEY = 'gylde_feed_filter';
+const TAB_STORAGE_KEY = 'gylde_feed_tab';
+const SUBFILTER_STORAGE_KEY = 'gylde_feed_subfilter';
+
+// Tab type for main navigation
+export type FeedTab = 'feed' | 'private';
+
+// Sub-filter type for the Feed tab (excludes 'private')
+export type FeedSubFilter = 'all' | 'matches';
 
 @Injectable({
   providedIn: 'root',
@@ -68,6 +76,8 @@ export class FeedService {
   private readonly _error = signal<string | null>(null);
   private readonly _hasMore = signal(true);
   private readonly _activeFilter = signal<FeedFilter>(this.loadSavedFilter());
+  private readonly _activeTab = signal<FeedTab>(this.loadSavedTab());
+  private readonly _activeSubFilter = signal<FeedSubFilter>(this.loadSavedSubFilter());
   private lastVisibleDoc: DocumentSnapshot | null = null;
 
   // Comments state
@@ -89,6 +99,11 @@ export class FeedService {
   private readonly _deletingPostId = signal<string | null>(null);
   private deletedPostIds = new Set<string>(); // Track deleted posts to filter from subscriptions
 
+  // My posts state (for profile page)
+  private readonly _myPosts = signal<PostDisplay[]>([]);
+  private readonly _myPostsLoading = signal(false);
+  private myPostsUnsubscribe: (() => void) | null = null;
+
   // Public signals
   readonly posts = this._posts.asReadonly();
   readonly loading = this._loading.asReadonly();
@@ -96,6 +111,8 @@ export class FeedService {
   readonly error = this._error.asReadonly();
   readonly hasMore = this._hasMore.asReadonly();
   readonly activeFilter = this._activeFilter.asReadonly();
+  readonly activeTab = this._activeTab.asReadonly();
+  readonly activeSubFilter = this._activeSubFilter.asReadonly();
 
   readonly comments = this._comments.asReadonly();
   readonly commentsLoading = this._commentsLoading.asReadonly();
@@ -106,13 +123,29 @@ export class FeedService {
   readonly createError = this._createError.asReadonly();
   readonly deletingPostId = this._deletingPostId.asReadonly();
 
+  // My posts (for profile page)
+  readonly myPosts = this._myPosts.asReadonly();
+  readonly myPostsLoading = this._myPostsLoading.asReadonly();
+
   // Feature flag
   readonly feedEnabled = this.remoteConfigService.featureFeedEnabled;
 
-  // Filter options for the UI
+  // Tab options for main navigation
+  readonly tabOptions: { value: FeedTab; labelKey: string; icon: string }[] = [
+    { value: 'feed', labelKey: 'FEED.TAB_FEED', icon: 'dynamic_feed' },
+    { value: 'private', labelKey: 'FEED.TAB_PRIVATE', icon: 'lock' },
+  ];
+
+  // Sub-filter options for the Feed tab
+  readonly subFilterOptions: { value: FeedSubFilter; labelKey: string; icon: string }[] = [
+    { value: 'all', labelKey: 'FEED.FILTER_ALL', icon: 'public' },
+    { value: 'matches', labelKey: 'FEED.FILTER_MATCHES', icon: 'people' },
+  ];
+
+  // Legacy filter options for backward compatibility
   readonly filterOptions: { value: FeedFilter; labelKey: string; icon: string }[] = [
     { value: 'all', labelKey: 'FEED.FILTER_ALL', icon: 'public' },
-    { value: 'connections', labelKey: 'FEED.FILTER_CONNECTIONS', icon: 'people' },
+    { value: 'matches', labelKey: 'FEED.FILTER_MATCHES', icon: 'people' },
     { value: 'private', labelKey: 'FEED.FILTER_PRIVATE', icon: 'lock' },
   ];
 
@@ -126,7 +159,7 @@ export class FeedService {
   }
 
   /**
-   * Subscribe to unified feed (public + connections + private)
+   * Subscribe to unified feed (public + matches + private)
    * All posts flow through feedItems via server-side fan-out with discover-style filtering
    */
   subscribeToFeed(): void {
@@ -142,7 +175,7 @@ export class FeedService {
     this._hasMore.set(true);
     this.lastVisibleDoc = null;
 
-    // Subscribe to user's feedItems - all posts (public, connections, private)
+    // Subscribe to user's feedItems - all posts (public, matches, private)
     // are distributed via server-side fan-out with discover-style filtering
     const feedItemsRef = collection(this.firestore, 'users', user.uid, 'feedItems');
     const feedItemsQuery = query(
@@ -220,9 +253,11 @@ export class FeedService {
     const filter = this._activeFilter();
 
     if (filter === 'all') {
-      this._posts.set(allPosts);
-    } else if (filter === 'connections') {
-      // Filter to only posts from connections (source === 'connection')
+      // Show all posts EXCEPT private posts (private posts only visible on Private tab)
+      const filtered = allPosts.filter((post) => post.source !== 'private');
+      this._posts.set(filtered);
+    } else if (filter === 'matches') {
+      // Filter to only posts from matches (source === 'connection')
       const filtered = allPosts.filter((post) => post.source === 'connection');
       this._posts.set(filtered);
     } else if (filter === 'private') {
@@ -240,7 +275,7 @@ export class FeedService {
     
     try {
       const saved = localStorage.getItem(FILTER_STORAGE_KEY);
-      if (saved === 'all' || saved === 'connections' || saved === 'private') {
+      if (saved === 'all' || saved === 'matches' || saved === 'private') {
         return saved;
       }
     } catch {
@@ -263,6 +298,66 @@ export class FeedService {
   }
 
   /**
+   * Load saved tab from localStorage
+   */
+  private loadSavedTab(): FeedTab {
+    if (!isPlatformBrowser(this.platformId)) return 'feed';
+    
+    try {
+      const saved = localStorage.getItem(TAB_STORAGE_KEY);
+      if (saved === 'feed' || saved === 'private') {
+        return saved;
+      }
+    } catch {
+      // localStorage not available
+    }
+    return 'feed';
+  }
+
+  /**
+   * Save tab to localStorage
+   */
+  private saveTab(tab: FeedTab): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    
+    try {
+      localStorage.setItem(TAB_STORAGE_KEY, tab);
+    } catch {
+      // localStorage not available
+    }
+  }
+
+  /**
+   * Load saved sub-filter from localStorage
+   */
+  private loadSavedSubFilter(): FeedSubFilter {
+    if (!isPlatformBrowser(this.platformId)) return 'all';
+    
+    try {
+      const saved = localStorage.getItem(SUBFILTER_STORAGE_KEY);
+      if (saved === 'all' || saved === 'matches') {
+        return saved;
+      }
+    } catch {
+      // localStorage not available
+    }
+    return 'all';
+  }
+
+  /**
+   * Save sub-filter to localStorage
+   */
+  private saveSubFilter(subFilter: FeedSubFilter): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    
+    try {
+      localStorage.setItem(SUBFILTER_STORAGE_KEY, subFilter);
+    } catch {
+      // localStorage not available
+    }
+  }
+
+  /**
    * Set the active filter and apply it
    */
   setFilter(filter: FeedFilter): void {
@@ -270,6 +365,37 @@ export class FeedService {
     this._activeFilter.set(filter);
     this.saveFilter(filter);
     this.applyFilter();
+  }
+
+  /**
+   * Set the active tab and apply corresponding filter
+   */
+  setTab(tab: FeedTab): void {
+    if (this._activeTab() === tab) return;
+    this._activeTab.set(tab);
+    this.saveTab(tab);
+    
+    // Apply the corresponding filter based on tab
+    if (tab === 'private') {
+      this.setFilter('private');
+    } else {
+      // Apply the current sub-filter for the feed tab
+      this.setFilter(this._activeSubFilter());
+    }
+  }
+
+  /**
+   * Set the active sub-filter (for Feed tab)
+   */
+  setSubFilter(subFilter: FeedSubFilter): void {
+    if (this._activeSubFilter() === subFilter) return;
+    this._activeSubFilter.set(subFilter);
+    this.saveSubFilter(subFilter);
+    
+    // Only apply if we're on the feed tab
+    if (this._activeTab() === 'feed') {
+      this.setFilter(subFilter);
+    }
   }
 
   /**
@@ -350,6 +476,67 @@ export class FeedService {
    */
   subscribeToHomeFeed(): void {
     this.subscribeToFeed();
+  }
+
+  /**
+   * Subscribe to the current user's own posts (both public and private)
+   * Used on the profile page to show the user's feed
+   */
+  subscribeToMyPosts(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+
+    const user = this.authService.user();
+    if (!user) return;
+
+    // Cleanup existing subscription
+    this.unsubscribeFromMyPosts();
+    this._myPostsLoading.set(true);
+
+    // Query posts collection for posts authored by the current user
+    const postsRef = collection(this.firestore, 'posts');
+    const myPostsQuery = query(
+      postsRef,
+      where('authorId', '==', user.uid),
+      where('status', '==', 'active'),
+      orderBy('createdAt', 'desc'),
+      limit(50) // Show more posts on profile
+    );
+
+    this.myPostsUnsubscribe = onSnapshot(
+      myPostsQuery,
+      async (snapshot) => {
+        const docs = snapshot.docs;
+        
+        if (docs.length === 0) {
+          this._myPosts.set([]);
+          this._myPostsLoading.set(false);
+          return;
+        }
+
+        // Process the posts
+        const posts = await this.processPosts(docs, user.uid, 'own');
+        
+        // Filter out deleted posts
+        const filteredPosts = posts.filter(p => !this.deletedPostIds.has(p.id));
+        
+        this._myPosts.set(filteredPosts);
+        this._myPostsLoading.set(false);
+      },
+      (error) => {
+        console.error('Error subscribing to my posts:', error);
+        this._myPostsLoading.set(false);
+      }
+    );
+  }
+
+  /**
+   * Unsubscribe from my posts
+   */
+  unsubscribeFromMyPosts(): void {
+    if (this.myPostsUnsubscribe) {
+      this.myPostsUnsubscribe();
+      this.myPostsUnsubscribe = null;
+    }
   }
 
   /**
@@ -1100,8 +1287,10 @@ export class FeedService {
   private cleanup(): void {
     this.unsubscribeFromFeeds();
     this.unsubscribeFromComments();
+    this.unsubscribeFromMyPosts();
     this._posts.set([]);
     this._allPosts.set([]);
+    this._myPosts.set([]);
     this._comments.set([]);
     this._cursor.set(null);
     this._commentsCursor.set(null);

@@ -119,7 +119,7 @@ export class PostCardComponent {
   protected readonly visibilityIcon = computed(() => {
     switch (this.post().visibility) {
       case 'public': return 'public';
-      case 'connections': return 'people';
+      case 'matches': return 'people';
       case 'private': return 'lock';
       default: return 'public';
     }
@@ -128,7 +128,7 @@ export class PostCardComponent {
   protected readonly visibilityLabel = computed(() => {
     switch (this.post().visibility) {
       case 'public': return 'FEED.VISIBILITY_PUBLIC';
-      case 'connections': return 'FEED.VISIBILITY_CONNECTIONS';
+      case 'matches': return 'FEED.VISIBILITY_MATCHES';
       case 'private': return 'FEED.VISIBILITY_PRIVATE';
       default: return 'FEED.VISIBILITY_PUBLIC';
     }

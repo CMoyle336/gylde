@@ -7,11 +7,12 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
 import { TranslateModule } from '@ngx-translate/core';
 import { RemoteConfigService } from '../../core/services/remote-config.service';
-import { FeedService } from '../../core/services/feed.service';
+import { FeedService, FeedTab, FeedSubFilter } from '../../core/services/feed.service';
 import { PostDisplay, FeedFilter } from '../../core/interfaces';
 import { PostCardComponent } from '../../components/post-card';
 import { PostComposerComponent } from '../../components/post-composer';
 import { PostCommentsComponent, PostCommentsDialogData } from '../../components/post-comments';
+import { FeedSidebarComponent } from '../../components/feed-sidebar';
 
 @Component({
   selector: 'app-feed',
@@ -27,6 +28,7 @@ import { PostCommentsComponent, PostCommentsDialogData } from '../../components/
     TranslateModule,
     PostCardComponent,
     PostComposerComponent,
+    FeedSidebarComponent,
   ],
 })
 export class FeedComponent implements OnInit {
@@ -49,6 +51,15 @@ export class FeedComponent implements OnInit {
   readonly activeFilter = this.feedService.activeFilter;
   readonly filterOptions = this.feedService.filterOptions;
   readonly deletingPostId = this.feedService.deletingPostId;
+  
+  // Tab navigation state
+  readonly activeTab = this.feedService.activeTab;
+  readonly activeSubFilter = this.feedService.activeSubFilter;
+  readonly tabOptions = this.feedService.tabOptions;
+  readonly subFilterOptions = this.feedService.subFilterOptions;
+
+  // Mobile drawer state
+  readonly drawerOpen = signal(false);
 
   // Placeholder features (for coming soon view)
   readonly features = [
@@ -100,6 +111,22 @@ export class FeedComponent implements OnInit {
 
   onFilterChange(filter: FeedFilter): void {
     this.feedService.setFilter(filter);
+  }
+
+  onTabChange(tab: FeedTab): void {
+    this.feedService.setTab(tab);
+  }
+
+  onSubFilterChange(subFilter: FeedSubFilter): void {
+    this.feedService.setSubFilter(subFilter);
+  }
+
+  toggleDrawer(): void {
+    this.drawerOpen.update(open => !open);
+  }
+
+  closeDrawer(): void {
+    this.drawerOpen.set(false);
   }
 
   onPostCreated(): void {

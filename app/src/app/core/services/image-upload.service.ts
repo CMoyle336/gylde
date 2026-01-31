@@ -47,7 +47,7 @@ interface ImageInput {
 interface UploadImagesRequest {
   images: ImageInput[];
   folder?: string;
-  visibility?: 'public' | 'connections' | 'private'; // For feed uploads - determines content moderation
+  visibility?: 'public' | 'matches' | 'private'; // For feed uploads - determines content moderation
 }
 
 interface ImageResult {
@@ -154,7 +154,7 @@ export class ImageUploadService {
     files: File[],
     folder: string = 'photos',
     onProgress?: (progress: UploadProgress) => void,
-    visibility?: 'public' | 'connections' | 'private'
+    visibility?: 'public' | 'matches' | 'private'
   ): Promise<UploadResult[]> {
     if (files.length === 0) {
       return [];
@@ -193,7 +193,7 @@ export class ImageUploadService {
     files: File[],
     folder: string,
     onProgress?: (progress: UploadProgress) => void,
-    visibility?: 'public' | 'connections' | 'private'
+    visibility?: 'public' | 'matches' | 'private'
   ): Promise<UploadResult[]> {
     const results: UploadResult[] = [];
     const total = files.length;
@@ -250,7 +250,7 @@ export class ImageUploadService {
   private async uploadImageInternal(
     file: File,
     folder: string,
-    visibility?: 'public' | 'connections' | 'private'
+    visibility?: 'public' | 'matches' | 'private'
   ): Promise<UploadResult> {
     try {
       const base64Data = await this.fileToBase64(file);
@@ -307,7 +307,7 @@ export class ImageUploadService {
     files: File[],
     folder: string,
     onProgress?: (progress: UploadProgress) => void,
-    visibility?: 'public' | 'connections' | 'private'
+    visibility?: 'public' | 'matches' | 'private'
   ): Promise<UploadResult[]> {
     try {
       // Update progress - reading files
@@ -434,7 +434,7 @@ export class ImageUploadService {
   async uploadFeedVideo(
     videoFile: File,
     thumbnailBlob?: Blob,
-    visibility?: 'public' | 'connections' | 'private'
+    visibility?: 'public' | 'matches' | 'private'
   ): Promise<UploadResult> {
     try {
       this._uploadProgress.set({ status: 'reading', progress: 10 });

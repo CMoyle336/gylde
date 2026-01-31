@@ -62,6 +62,10 @@ const VERIFICATION_OPTIONS = ['identity', 'photo', 'income'];
 const REPUTATION_TIERS = ['new', 'active', 'established', 'trusted', 'distinguished'] as const;
 type ReputationTier = typeof REPUTATION_TIERS[number];
 
+// Subscription tiers
+const SUBSCRIPTION_TIERS = ['free', 'premium'] as const;
+type SubscriptionTier = typeof SUBSCRIPTION_TIERS[number];
+
 // Cities in Michigan area for realistic location clustering
 const MICHIGAN_CITIES = [
   { city: 'Detroit', state: 'MI', lat: 42.3314, lng: -83.0458 },
@@ -120,6 +124,13 @@ export interface SeedUser {
     tier: ReputationTier;
     dailyHigherTierConversationLimit: number;
     higherTierConversationsToday: number;
+  };
+  
+  // Subscription tier (full data in private subcollection)
+  subscriptionTier: SubscriptionTier;
+  subscription: {
+    tier: SubscriptionTier;
+    status: 'active' | 'canceled';
   };
   
   settings: {
@@ -207,15 +218,18 @@ export interface SeedPhotoDetail {
   order: number;
 }
 
-export interface SeedPhotoAccessRequest {
+export interface SeedPrivateAccessRequest {
   odId: string;
-  targetUserId: string;  // Owner of the photos
+  targetUserId: string;  // Owner of the private content
   requesterId: string;   // Person requesting access
   requesterName: string;
   requesterPhoto: string | null;
   status: 'pending';
   requestedAt: Date;
 }
+
+// Legacy alias for backward compatibility
+export type SeedPhotoAccessRequest = SeedPrivateAccessRequest;
 
 export interface SeedMessage {
   odId: string;
@@ -382,6 +396,18 @@ export function generateUsers(count: number, seed?: number): SeedUser[] {
       distinguished: -1, // Unlimited
     };
 
+    // Generate subscription tier - roughly 25% of users are premium
+    // Higher reputation users are more likely to be premium
+    const premiumProbability = {
+      new: 0.10,        // 10% of new users are premium
+      active: 0.20,     // 20% of active users are premium
+      established: 0.35, // 35% of established users are premium
+      trusted: 0.50,    // 50% of trusted users are premium
+      distinguished: 0.70, // 70% of distinguished users are premium
+    };
+    const subscriptionTier: SubscriptionTier = 
+      Math.random() < premiumProbability[reputationTier] ? 'premium' : 'free';
+
     const user: SeedUser = {
       uid,
       email,
@@ -404,6 +430,13 @@ export function generateUsers(count: number, seed?: number): SeedUser[] {
         tier: reputationTier,
         dailyHigherTierConversationLimit: dailyHigherTierConversationLimits[reputationTier],
         higherTierConversationsToday: 0,
+      },
+      
+      // Subscription fields
+      subscriptionTier,
+      subscription: {
+        tier: subscriptionTier,
+        status: 'active',
       },
       
       settings: {
@@ -733,19 +766,19 @@ export function generateConversationsAndMessages(
 }
 
 /**
- * Generate photo access requests - everyone requests access from everyone else who has private photos
+ * Generate private content access requests - everyone requests access from everyone else who has private content
  */
-export function generatePhotoAccessRequests(users: SeedUser[]): SeedPhotoAccessRequest[] {
-  const requests: SeedPhotoAccessRequest[] = [];
+export function generatePrivateAccessRequests(users: SeedUser[]): SeedPrivateAccessRequest[] {
+  const requests: SeedPrivateAccessRequest[] = [];
 
-  // Find users with private photos
-  const usersWithPrivatePhotos = users.filter(u => 
+  // Find users with private content (photos or posts)
+  const usersWithPrivateContent = users.filter(u => 
     u.onboarding.photoDetails.some(p => p.isPrivate)
   );
 
-  // Each user requests access to all other users' private photos
+  // Each user requests access to all other users' private content
   for (const requester of users) {
-    for (const owner of usersWithPrivatePhotos) {
+    for (const owner of usersWithPrivateContent) {
       // Skip self
       if (requester.uid === owner.uid) continue;
 
@@ -763,6 +796,9 @@ export function generatePhotoAccessRequests(users: SeedUser[]): SeedPhotoAccessR
 
   return requests;
 }
+
+// Legacy alias for backward compatibility
+export const generatePhotoAccessRequests = generatePrivateAccessRequests;
 
 // ============================================================================
 // MAIN EXPORT FOR BACKWARD COMPATIBILITY

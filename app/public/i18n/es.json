@@ -1214,11 +1214,29 @@
         "DESCRIPTION": "Solo miembros verificados pueden publicar. Sin bots, sin spam—solo personas reales compartiendo momentos reales."
       }
     },
+    "TAB_FEED": "Feed",
+    "TAB_PRIVATE": "Privado",
+    "SIDEBAR": {
+      "TITLE": "Info del Feed",
+      "MATCHES": "Tus Matches",
+      "VIEW_ALL": "Ver todo",
+      "NO_MATCHES": "Sin matches aún",
+      "PRIVATE_ACCESS": "Acceso Privado",
+      "PENDING_REQUESTS": "Solicitudes Pendientes",
+      "GRANTED_ACCESS": "Acceso Concedido",
+      "NO_PRIVATE_ACCESS": "Sin solicitudes ni accesos",
+      "POST_ACTIVITY": "Actividad de Publicaciones",
+      "NO_POST_ACTIVITY": "Sin actividad reciente en tus publicaciones",
+      "STATS": "Tus Estadísticas",
+      "STAT_MATCHES": "Matches",
+      "STAT_FAVORITES": "Favoritos",
+      "STAT_VIEWS": "Vistas"
+    },
     "FILTER_ALL": "Todas las publicaciones",
-    "FILTER_CONNECTIONS": "Conexiones",
+    "FILTER_MATCHES": "Coincidencias",
     "FILTER_PRIVATE": "Privado",
     "VISIBILITY_PUBLIC": "Público",
-    "VISIBILITY_CONNECTIONS": "Solo conexiones",
+    "VISIBILITY_MATCHES": "Solo coincidencias",
     "VISIBILITY_PRIVATE": "Privado",
     "LOADING": "Cargando feed...",
     "TRY_AGAIN": "Intentar de nuevo",
@@ -1232,11 +1250,12 @@
     "REMOVE_MEDIA": "Eliminar medio",
     "LOADING_PREVIEW": "Cargando vista previa...",
     "REMOVE_PREVIEW": "Eliminar vista previa",
+    "PRIVATE_POST_NOTICE": "Esta publicación solo será visible para personas a quienes hayas otorgado acceso privado",
     "VISIBILITY": {
       "PUBLIC": "Público",
       "VERIFIED": "Solo verificados",
       "TRUSTED": "Confiables+",
-      "CONNECTIONS": "Conexiones",
+      "MATCHES": "Coincidencias",
       "PRIVATE": "Privado"
     },
     "ANONYMOUS_USER": "Anónimo",
@@ -1847,7 +1866,12 @@
         "ESTABLISHED_PLUS": "Establecido+",
         "TRUSTED_PLUS": "Confiable+",
         "DISTINGUISHED": "Distinguido"
-      }
+      },
+      "MY_POSTS_TITLE": "Mis Publicaciones",
+      "VIEW_FEED": "Ver Feed",
+      "LOADING_POSTS": "Cargando publicaciones...",
+      "NO_POSTS_YET": "Aún no has creado ninguna publicación",
+      "CREATE_FIRST_POST": "Crear Tu Primera Publicación"
     },
     "CONNECTION_TYPES": {
       "INTENTIONAL_DATING": "Citas intencionales",

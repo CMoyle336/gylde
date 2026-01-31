@@ -4,88 +4,143 @@
     <mat-spinner diameter="40"></mat-spinner>
   </div>
 } @else if (feedEnabled()) {
-  <!-- Actual Feed View -->
-  <div class="feed-container">
-    <!-- Feed Header with Composer and Filter -->
-    <div class="feed-header">
-      <h2 class="feed-title">{{ 'FEED.TITLE' | translate }}</h2>
-      
-      <!-- Filter Dropdown -->
-      <button type="button" [matMenuTriggerFor]="filterMenu" class="filter-button">
-        @for (option of filterOptions; track option.value) {
-          @if (option.value === activeFilter()) {
-            <mat-icon>{{ option.icon }}</mat-icon>
-            <span class="filter-label">{{ option.labelKey | translate }}</span>
-          }
-        }
-        <mat-icon class="dropdown-icon">expand_more</mat-icon>
-      </button>
-      
-      <mat-menu #filterMenu="matMenu">
-        @for (option of filterOptions; track option.value) {
-          <button 
-            mat-menu-item 
-            (click)="onFilterChange(option.value)"
-            [class.active]="option.value === activeFilter()">
-            <mat-icon>{{ option.icon }}</mat-icon>
-            <span>{{ option.labelKey | translate }}</span>
-          </button>
-        }
-      </mat-menu>
-    </div>
-
-    <!-- Post Composer -->
-    <app-post-composer (postCreated)="onPostCreated()" />
-
-    <!-- Feed Content -->
-    <div class="feed-content">
-      @if (loading()) {
-        <div class="loading-state">
-          <mat-spinner diameter="40"></mat-spinner>
-          <p>{{ 'FEED.LOADING' | translate }}</p>
-        </div>
-      } @else if (error()) {
-        <div class="error-state">
-          <mat-icon>error_outline</mat-icon>
-          <p>{{ error() }}</p>
-          <button mat-stroked-button (click)="refresh()">
-            {{ 'FEED.TRY_AGAIN' | translate }}
-          </button>
-        </div>
-      } @else if (isEmpty()) {
-        <div class="empty-state">
-          <mat-icon>dynamic_feed</mat-icon>
-          <h3>{{ 'FEED.EMPTY_TITLE' | translate }}</h3>
-          <p>{{ 'FEED.EMPTY_DESCRIPTION' | translate }}</p>
-        </div>
-      } @else {
-        <!-- Post List -->
-        <div class="posts-list">
-          @for (post of posts(); track trackByPostId($index, post)) {
-            <app-post-card
-              [post]="post"
-              [isDeleting]="deletingPostId() === post.id"
-              (likeClick)="onLike($event)"
-              (commentClick)="onComment($event)"
-              (authorClick)="onAuthorClick($event)"
-              (deleteClick)="onDelete($event)"
-              (reportClick)="onReport($event)" />
-          }
-        </div>
-
-        <!-- Load More -->
-        @if (hasMore()) {
-          <div class="load-more-section">
-            @if (loadingMore()) {
-              <mat-spinner diameter="32"></mat-spinner>
-            } @else {
-              <button mat-stroked-button (click)="loadMore()">
-                {{ 'FEED.LOAD_MORE' | translate }}
-              </button>
+  <!-- Actual Feed View - Two Column Layout -->
+  <div class="feed-layout" [class.private-mode]="activeTab() === 'private'">
+    <!-- Main Feed Column -->
+    <div class="feed-main">
+      <div class="feed-container">
+        <!-- Feed Header -->
+        <div class="feed-header">
+          <h2 class="feed-title">
+            @if (activeTab() === 'private') {
+              <mat-icon class="title-icon">lock</mat-icon>
             }
+            {{ 'FEED.TITLE' | translate }}
+          </h2>
+          <!-- Mobile Drawer Toggle -->
+          <button type="button" class="drawer-toggle" (click)="toggleDrawer()">
+            <mat-icon>menu</mat-icon>
+          </button>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="feed-tabs">
+          @for (tab of tabOptions; track tab.value) {
+            <button 
+              type="button"
+              class="tab-button"
+              [class.active]="activeTab() === tab.value"
+              (click)="onTabChange(tab.value)">
+              <mat-icon>{{ tab.icon }}</mat-icon>
+              <span>{{ tab.labelKey | translate }}</span>
+            </button>
+          }
+        </div>
+
+        <!-- Sub-filter (only visible on Feed tab) -->
+        @if (activeTab() === 'feed') {
+          <div class="sub-filter-row">
+            <button type="button" [matMenuTriggerFor]="subFilterMenu" class="filter-button">
+              @for (option of subFilterOptions; track option.value) {
+                @if (option.value === activeSubFilter()) {
+                  <mat-icon>{{ option.icon }}</mat-icon>
+                  <span class="filter-label">{{ option.labelKey | translate }}</span>
+                }
+              }
+              <mat-icon class="dropdown-icon">expand_more</mat-icon>
+            </button>
+            
+            <mat-menu #subFilterMenu="matMenu">
+              @for (option of subFilterOptions; track option.value) {
+                <button 
+                  mat-menu-item 
+                  (click)="onSubFilterChange(option.value)"
+                  [class.active]="option.value === activeSubFilter()">
+                  <mat-icon>{{ option.icon }}</mat-icon>
+                  <span>{{ option.labelKey | translate }}</span>
+                </button>
+              }
+            </mat-menu>
           </div>
         }
-      }
+
+        <!-- Post Composer -->
+        <app-post-composer [activeTab]="activeTab()" (postCreated)="onPostCreated()" />
+
+        <!-- Feed Content -->
+        <div class="feed-content">
+          @if (loading()) {
+            <div class="loading-state">
+              <mat-spinner diameter="40"></mat-spinner>
+              <p>{{ 'FEED.LOADING' | translate }}</p>
+            </div>
+          } @else if (error()) {
+            <div class="error-state">
+              <mat-icon>error_outline</mat-icon>
+              <p>{{ error() }}</p>
+              <button mat-stroked-button (click)="refresh()">
+                {{ 'FEED.TRY_AGAIN' | translate }}
+              </button>
+            </div>
+          } @else if (isEmpty()) {
+            <div class="empty-state">
+              <mat-icon>dynamic_feed</mat-icon>
+              <h3>{{ 'FEED.EMPTY_TITLE' | translate }}</h3>
+              <p>{{ 'FEED.EMPTY_DESCRIPTION' | translate }}</p>
+            </div>
+          } @else {
+            <!-- Post List -->
+            <div class="posts-list">
+              @for (post of posts(); track trackByPostId($index, post)) {
+                <app-post-card
+                  [post]="post"
+                  [isDeleting]="deletingPostId() === post.id"
+                  (likeClick)="onLike($event)"
+                  (commentClick)="onComment($event)"
+                  (authorClick)="onAuthorClick($event)"
+                  (deleteClick)="onDelete($event)"
+                  (reportClick)="onReport($event)" />
+              }
+            </div>
+
+            <!-- Load More -->
+            @if (hasMore()) {
+              <div class="load-more-section">
+                @if (loadingMore()) {
+                  <mat-spinner diameter="32"></mat-spinner>
+                } @else {
+                  <button mat-stroked-button (click)="loadMore()">
+                    {{ 'FEED.LOAD_MORE' | translate }}
+                  </button>
+                }
+              </div>
+            }
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar Column (Desktop) -->
+    <aside class="feed-sidebar-column">
+      <app-feed-sidebar [activeTab]="activeTab()" />
+    </aside>
+
+    <!-- Mobile Drawer Overlay -->
+    @if (drawerOpen()) {
+      <div class="drawer-overlay" (click)="closeDrawer()"></div>
+    }
+
+    <!-- Mobile Drawer -->
+    <div class="mobile-drawer" [class.open]="drawerOpen()">
+      <div class="drawer-header">
+        <h3>{{ 'FEED.SIDEBAR.TITLE' | translate }}</h3>
+        <button type="button" class="drawer-close" (click)="closeDrawer()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+      <div class="drawer-content">
+        <app-feed-sidebar [activeTab]="activeTab()" />
+      </div>
     </div>
   </div>
 } @else {

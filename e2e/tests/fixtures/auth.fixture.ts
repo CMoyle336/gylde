@@ -3,6 +3,9 @@ import { TEST_USERS, DISCOVER_TEST_USERS, TestUser, getAllTestUsers } from './te
 import dotenv from 'dotenv';
 import path from 'path';
 import { getRunId, makeUniqueUser, provisionUser as provisionUserInternal, type ProvisionedUser } from '../utils/user-provisioning';
+import { mockRemoteConfig, clearRemoteConfigMock, MockRemoteConfigValues, REMOTE_CONFIG_DEFAULTS } from './remote-config.fixture';
+import { generateCustomToken } from '../utils/admin-auth';
+import { getAdminAuth } from '../utils/settings-helpers';
 
 // Load environment variables
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
@@ -54,11 +57,231 @@ function releaseLoginSlot(): void {
 }
 
 /**
- * Login helper - performs UI login with quota-aware retry logic
- * Note: Firebase stores auth in IndexedDB which Playwright can't persist,
- * so we always use UI login but with careful rate limiting.
+ * Login strategy:
+ * - 'custom-token': Use Firebase custom tokens (no rate limits, recommended)
+ * - 'ui': Use UI login flow (subject to rate limits)
  */
-async function loginAs(page: Page, context: BrowserContext, user: TestUser): Promise<void> {
+type LoginStrategy = 'custom-token' | 'ui';
+
+function getLoginStrategy(): LoginStrategy {
+  const override = process.env.E2E_LOGIN_STRATEGY;
+  if (override === 'ui' || override === 'custom-token') {
+    return override;
+  }
+  // Default to UI login - the main rate limit issue is signup (solved by Admin SDK)
+  // Login rate limits are much higher and UI login is more reliable
+  // Custom token injection into IndexedDB is unreliable
+  return 'ui';
+}
+
+/**
+ * Exchange a custom token for an ID token via Firebase REST API
+ * This bypasses the need to access the in-app Firebase SDK
+ */
+async function exchangeCustomTokenForIdToken(customToken: string, apiKey: string): Promise<{
+  idToken: string;
+  refreshToken: string;
+  expiresIn: string;
+}> {
+  const url = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=${apiKey}`;
+  
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      token: customToken,
+      returnSecureToken: true,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(`Token exchange failed: ${error.error?.message || JSON.stringify(error)}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Login via custom token (NO RATE LIMITS!)
+ * This is the preferred method for live environments.
+ * 
+ * Process:
+ * 1. Generate custom token via Admin SDK
+ * 2. Exchange custom token for ID token via Firebase REST API
+ * 3. Inject auth state into browser's IndexedDB
+ * 4. Navigate to app (it will pick up the auth state)
+ */
+async function loginViaCustomToken(page: Page, user: TestUser & { uid?: string }): Promise<void> {
+  if (!user.uid) {
+    throw new Error(`Cannot login with custom token: user ${user.email} has no UID`);
+  }
+
+  console.log(`[Auth] Logging in via custom token: ${user.email}`);
+  
+  // Generate custom token using Admin SDK
+  const customToken = await generateCustomToken(user.uid);
+  
+  // For emulator, fall back to UI login (emulator doesn't have rate limits anyway)
+  const isEmulator = customToken.startsWith('emulator:');
+  if (isEmulator) {
+    console.log(`[Auth] Emulator detected, using UI login (no rate limits in emulator)`);
+    await loginViaUI(page, user);
+    return;
+  }
+
+  // Get the Firebase API key from environment or use the one from the app
+  const apiKey = process.env.FIREBASE_API_KEY || 'AIzaSyC-Kz_yGQK1fhXHsKjT9Q2vMdMq-Zy3qZI';
+  
+  // Exchange custom token for ID token via REST API
+  console.log(`[Auth] Exchanging custom token for ID token...`);
+  const tokenResponse = await exchangeCustomTokenForIdToken(customToken, apiKey);
+  
+  // Navigate to the app first (to set up the correct origin for storage)
+  await page.goto('/');
+  await page.waitForLoadState('domcontentloaded');
+  
+  // Wait for app to initialize
+  await page.waitForSelector('app-root', { timeout: 10000 });
+  await page.waitForTimeout(500);
+  
+  // Inject the auth state into IndexedDB (where Firebase stores auth)
+  // This simulates what Firebase SDK does after successful authentication
+  const authInjected = await page.evaluate(async ({ uid, idToken, refreshToken, email, displayName, apiKey }) => {
+    try {
+      // Firebase stores auth state in IndexedDB under 'firebaseLocalStorageDb'
+      return new Promise<{ success: boolean; error?: string }>((resolve) => {
+        const request = indexedDB.open('firebaseLocalStorageDb', 1);
+        
+        request.onupgradeneeded = (event) => {
+          const db = (event.target as IDBOpenDBRequest).result;
+          if (!db.objectStoreNames.contains('firebaseLocalStorage')) {
+            db.createObjectStore('firebaseLocalStorage');
+          }
+        };
+        
+        request.onsuccess = () => {
+          const db = request.result;
+          
+          // Check if object store exists
+          if (!db.objectStoreNames.contains('firebaseLocalStorage')) {
+            db.close();
+            resolve({ success: false, error: 'firebaseLocalStorage store not found' });
+            return;
+          }
+          
+          const tx = db.transaction('firebaseLocalStorage', 'readwrite');
+          const store = tx.objectStore('firebaseLocalStorage');
+          
+          // Get all keys to find the correct storage key
+          const getAllRequest = store.getAllKeys();
+          getAllRequest.onsuccess = () => {
+            const keys = getAllRequest.result;
+            // Find the key that looks like firebase:authUser:*
+            let authKey = keys.find(k => String(k).includes('authUser'));
+            
+            // If no existing key, create one with the app's API key
+            if (!authKey) {
+              // Use a generic key format that Firebase will recognize
+              authKey = `firebase:authUser:${uid}:[DEFAULT]`;
+            }
+            
+            // Create auth user object that Firebase expects
+            const authUser = {
+              uid,
+              email,
+              displayName: displayName || email?.split('@')[0],
+              emailVerified: true,
+              isAnonymous: false,
+              providerData: [{
+                providerId: 'password',
+                uid: email,
+                displayName: displayName || null,
+                email,
+                phoneNumber: null,
+                photoURL: null,
+              }],
+              stsTokenManager: {
+                refreshToken,
+                accessToken: idToken,
+                expirationTime: Date.now() + 3600 * 1000, // 1 hour from now
+              },
+              createdAt: String(Date.now()),
+              lastLoginAt: String(Date.now()),
+              apiKey,
+              appName: '[DEFAULT]',
+            };
+            
+            const putRequest = store.put({ fbase_key: String(authKey), value: authUser }, authKey);
+            
+            putRequest.onsuccess = () => {
+              db.close();
+              resolve({ success: true });
+            };
+            
+            putRequest.onerror = () => {
+              db.close();
+              resolve({ success: false, error: 'Failed to store auth data' });
+            };
+          };
+          
+          getAllRequest.onerror = () => {
+            db.close();
+            resolve({ success: false, error: 'Failed to get keys' });
+          };
+        };
+        
+        request.onerror = () => {
+          resolve({ success: false, error: 'Failed to open IndexedDB' });
+        };
+        
+        // Timeout after 5 seconds
+        setTimeout(() => resolve({ success: false, error: 'IndexedDB operation timed out' }), 5000);
+      });
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  }, { 
+    uid: user.uid, 
+    idToken: tokenResponse.idToken, 
+    refreshToken: tokenResponse.refreshToken,
+    email: user.email,
+    displayName: user.displayName,
+    apiKey,
+  });
+
+  if (!authInjected.success) {
+    throw new Error(`Failed to inject auth state: ${authInjected.error}`);
+  }
+
+  console.log(`[Auth] Auth state injected, reloading app...`);
+  
+  // Reload the page so the app picks up the injected auth state
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  
+  // Navigate to discover to trigger auth check
+  await page.goto('/discover');
+  await page.waitForURL(/\/(discover|messages|settings|favorites|onboarding)/, { timeout: 30000 });
+  
+  console.log(`[Auth] Login successful: ${user.email}`);
+}
+
+/**
+ * Login helper - uses custom token by default to avoid rate limits
+ */
+async function loginAs(page: Page, context: BrowserContext, user: TestUser & { uid?: string }): Promise<void> {
+  const strategy = getLoginStrategy();
+  
+  if (strategy === 'custom-token' && user.uid) {
+    try {
+      await loginViaCustomToken(page, user);
+      return;
+    } catch (error) {
+      console.warn(`[Auth] Custom token login failed, falling back to UI:`, error);
+      // Fall back to UI login
+    }
+  }
+  
   await loginViaUI(page, user);
 }
 
@@ -172,6 +395,10 @@ export const test = base.extend<{
   loginAsAlice: () => Promise<void>;
   loginAsBob: () => Promise<void>;
   loginAs: (user: TestUser) => Promise<void>;
+
+  // Remote Config mocking
+  mockRemoteConfig: (values: MockRemoteConfigValues) => Promise<void>;
+  clearRemoteConfigMock: () => Promise<void>;
 }>({
   provisionUser: async ({ browser }, use, testInfo) => {
     const runId = getRunId();
@@ -269,8 +496,22 @@ export const test = base.extend<{
       await loginAs(page, context, user);
     });
   },
+
+  // Remote Config mocking - set before navigating to pages that use config
+  mockRemoteConfig: async ({ page }, use) => {
+    await use(async (values: MockRemoteConfigValues) => {
+      await mockRemoteConfig(page, values);
+    });
+  },
+
+  clearRemoteConfigMock: async ({ page }, use) => {
+    await use(async () => {
+      await clearRemoteConfigMock(page);
+    });
+  },
 });
 
 export { expect };
 export { TEST_USERS, DISCOVER_TEST_USERS, getAllTestUsers };
-export type { TestUser };
+export { REMOTE_CONFIG_DEFAULTS };
+export type { TestUser, MockRemoteConfigValues };

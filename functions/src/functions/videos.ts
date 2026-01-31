@@ -167,7 +167,7 @@ interface UploadFeedVideoRequest {
   mimeType: string;
   fileName?: string;
   thumbnailData?: string; // Client-generated thumbnail (base64)
-  visibility?: "public" | "connections" | "private"; // For content moderation
+  visibility?: "public" | "matches" | "private"; // For content moderation
 }
 
 interface UploadFeedVideoResponse {

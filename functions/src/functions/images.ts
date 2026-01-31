@@ -110,7 +110,7 @@ interface ImageInput {
 }
 
 /** Post visibility for feed uploads - determines content moderation rules */
-type FeedVisibility = "public" | "connections" | "private";
+type FeedVisibility = "public" | "matches" | "private";
 
 interface UploadImageRequest {
   imageData: string; // Base64 encoded image data (single image - backwards compatible)

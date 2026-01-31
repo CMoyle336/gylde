@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, output, signal, computed } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, output, signal, computed, input, effect } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -6,7 +6,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TranslateModule } from '@ngx-translate/core';
 import { Functions, httpsCallable } from '@angular/fire/functions';
-import { FeedService } from '../../core/services/feed.service';
+import { FeedService, FeedTab } from '../../core/services/feed.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ImageUploadService, MediaType } from '../../core/services/image-upload.service';
 import { PostVisibility, CreatePostRequest, PostMedia, LinkPreview } from '../../core/interfaces';
@@ -34,7 +34,7 @@ interface VisibilityOption {
 
 const VISIBILITY_OPTIONS: VisibilityOption[] = [
   { value: 'public', labelKey: 'FEED.VISIBILITY.PUBLIC', icon: 'public' },
-  { value: 'connections', labelKey: 'FEED.VISIBILITY.CONNECTIONS', icon: 'people' },
+  { value: 'matches', labelKey: 'FEED.VISIBILITY.MATCHES', icon: 'people' },
   { value: 'private', labelKey: 'FEED.VISIBILITY.PRIVATE', icon: 'lock' },
 ];
 
@@ -58,6 +58,9 @@ export class PostComposerComponent {
   private readonly imageUploadService = inject(ImageUploadService);
   private readonly functions = inject(Functions);
 
+  // Inputs
+  readonly activeTab = input<FeedTab>('feed');
+
   // Outputs
   readonly postCreated = output<void>();
 
@@ -76,7 +79,33 @@ export class PostComposerComponent {
   // Constants
   protected readonly maxContentLength = MAX_CONTENT_LENGTH;
   protected readonly maxMedia = MAX_MEDIA;
-  protected readonly visibilityOptions = VISIBILITY_OPTIONS;
+  protected readonly allVisibilityOptions = VISIBILITY_OPTIONS;
+
+  // Filter visibility options based on active tab
+  protected readonly visibilityOptions = computed(() => {
+    if (this.activeTab() === 'private') {
+      // On private tab, only private visibility is available
+      return this.allVisibilityOptions.filter(o => o.value === 'private');
+    }
+    // On feed tab, public and matches only
+    return this.allVisibilityOptions.filter(o => o.value !== 'private');
+  });
+
+  // Track if we're in private mode
+  protected readonly isPrivateMode = computed(() => this.activeTab() === 'private');
+
+  constructor() {
+    // Sync visibility with tab changes
+    effect(() => {
+      const tab = this.activeTab();
+      if (tab === 'private') {
+        this.visibility.set('private');
+      } else if (this.visibility() === 'private') {
+        // If switching from private tab, reset to public
+        this.visibility.set('public');
+      }
+    });
+  }
 
   // Computed
   protected readonly creating = this.feedService.creating;
@@ -99,7 +128,7 @@ export class PostComposerComponent {
   });
 
   protected readonly selectedVisibility = computed(() => 
-    this.visibilityOptions.find(o => o.value === this.visibility()) || this.visibilityOptions[0]
+    this.visibilityOptions().find(o => o.value === this.visibility()) || this.visibilityOptions()[0]
   );
 
   protected readonly userPhoto = computed(() => this.authService.user()?.photoURL);
@@ -329,7 +358,8 @@ export class PostComposerComponent {
         }
       });
       this.media.set([]);
-      this.visibility.set('public');
+      // Reset visibility based on current tab
+      this.visibility.set(this.activeTab() === 'private' ? 'private' : 'public');
       this.linkPreview.set(null);
       this.lastDetectedUrl = null;
       

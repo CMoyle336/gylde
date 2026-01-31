@@ -109,9 +109,9 @@
                       @case ('message') { chat_bubble }
                       @case ('favorite') { star }
                       @case ('view') { visibility }
-                      @case ('photo_access_request') { lock }
-                      @case ('photo_access_granted') { lock_open }
-                      @case ('photo_access_denied') { lock }
+                      @case ('private_access_request') { lock }
+                      @case ('private_access_granted') { lock_open }
+                      @case ('private_access_denied') { lock }
                     }
                   </span>
                 </span>
@@ -123,9 +123,9 @@
                     @case ('message') { {{ 'DASHBOARD.ACTIVITY.MESSAGE' | translate:{ name: activity.name } }} }
                     @case ('favorite') { {{ 'DASHBOARD.ACTIVITY.FAVORITE' | translate:{ name: activity.name } }} }
                     @case ('view') { {{ 'DASHBOARD.ACTIVITY.VIEW' | translate:{ name: activity.name } }} }
-                    @case ('photo_access_request') { {{ 'DASHBOARD.ACTIVITY.PHOTO_ACCESS_REQUEST' | translate:{ name: activity.name } }} }
-                    @case ('photo_access_granted') { {{ 'DASHBOARD.ACTIVITY.PHOTO_ACCESS_GRANTED' | translate:{ name: activity.name } }} }
-                    @case ('photo_access_denied') { {{ 'DASHBOARD.ACTIVITY.PHOTO_ACCESS_DENIED' | translate:{ name: activity.name } }} }
+                    @case ('private_access_request') { {{ 'DASHBOARD.ACTIVITY.PRIVATE_ACCESS_REQUEST' | translate:{ name: activity.name } }} }
+                    @case ('private_access_granted') { {{ 'DASHBOARD.ACTIVITY.PRIVATE_ACCESS_GRANTED' | translate:{ name: activity.name } }} }
+                    @case ('private_access_denied') { {{ 'DASHBOARD.ACTIVITY.PRIVATE_ACCESS_DENIED' | translate:{ name: activity.name } }} }
                   }
                 </span>
                 <span class="activity-time">{{ activity.timeAgo }}</span>

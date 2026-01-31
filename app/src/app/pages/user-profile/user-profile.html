@@ -16,7 +16,7 @@
         <div class="main-photo">
           @if (profilePhoto()) {
             <img [src]="profilePhoto()" [attr.alt]="profile.displayName || ('USER_PROFILE.PROFILE_PHOTO_ALT' | translate)">
-            @if (isCurrentPhotoPrivate() && photoAccess().hasAccess) {
+            @if (isCurrentPhotoPrivate() && privateAccess().hasAccess) {
               <div class="private-photo-badge">
                 <mat-icon>lock</mat-icon>
                 <span>{{ 'USER_PROFILE.PRIVATE_BADGE' | translate }}</span>
@@ -58,10 +58,10 @@
               <button 
                 class="thumbnail" 
                 [class.active]="i === selectedPhotoIndex()"
-                [class.is-private]="isPhotoPrivate(photo) && photoAccess().hasAccess"
+                [class.is-private]="isPhotoPrivate(photo) && privateAccess().hasAccess"
                 (click)="selectPhoto(i)">
                 <img [src]="photo" [attr.alt]="'USER_PROFILE.PHOTO_ALT' | translate:{ index: i + 1 }" loading="lazy">
-                @if (isPhotoPrivate(photo) && photoAccess().hasAccess) {
+                @if (isPhotoPrivate(photo) && privateAccess().hasAccess) {
                   <div class="thumbnail-private-badge">
                     <mat-icon>lock</mat-icon>
                   </div>
@@ -71,57 +71,62 @@
           </div>
         }
         
-        <!-- Private Photos Notice -->
-        @if (hasHiddenPrivatePhotos()) {
-          <div class="private-photos-notice">
+        <!-- Private Content Notice -->
+        @if (hasHiddenPrivateContent()) {
+          <div class="private-content-notice">
             <div class="notice-content">
               <mat-icon>lock</mat-icon>
               <div class="notice-text">
-                <span class="notice-title">
-                  {{ privatePhotoCount() }}
-                  {{ (privatePhotoCount() === 1 ? 'USER_PROFILE.PRIVATE_PHOTO' : 'USER_PROFILE.PRIVATE_PHOTOS') | translate }}
-                </span>
+                <div class="notice-title-row">
+                  <span class="notice-title">{{ 'USER_PROFILE.PRIVATE_CONTENT' | translate }}</span>
+                  @if (!isPremium()) {
+                    <span class="premium-badge">
+                      <mat-icon>star</mat-icon>
+                      {{ 'COMMON.PREMIUM' | translate }}
+                    </span>
+                  }
+                </div>
                 @if (getAccessStatusText()) {
                   <span class="notice-status">{{ getAccessStatusText() }}</span>
                 } @else {
-                  <span class="notice-hint">{{ 'USER_PROFILE.REQUEST_ACCESS_HINT' | translate }}</span>
+                  <span class="notice-hint">{{ 'USER_PROFILE.REQUEST_PRIVATE_ACCESS_HINT' | translate }}</span>
                 }
               </div>
             </div>
-            @if (!photoAccess().requestStatus) {
+            @if (!privateAccess().requestStatus) {
               <button 
                 mat-stroked-button 
                 color="primary"
                 class="request-access-btn"
                 [disabled]="requestingAccess()"
-                (click)="requestPhotoAccess()">
+                (click)="requestPrivateAccess()">
                 @if (requestingAccess()) {
                   <mat-spinner diameter="18"></mat-spinner>
                 } @else {
                   <ng-container>
                     <mat-icon>vpn_key</mat-icon>
-                    {{ 'USER_PROFILE.REQUEST_ACCESS_BUTTON' | translate }}
+                    {{ 'USER_PROFILE.REQUEST_PRIVATE_ACCESS_BUTTON' | translate }}
                   </ng-container>
                 }
               </button>
-            } @else if (photoAccess().requestStatus === 'pending') {
+            } @else if (privateAccess().requestStatus === 'pending') {
               <button 
                 mat-stroked-button 
                 class="cancel-request-btn"
                 [disabled]="requestingAccess()"
-                (click)="cancelPhotoAccessRequest()">
+                (click)="cancelPrivateAccessRequest()">
                 @if (requestingAccess()) {
                   <mat-spinner diameter="18"></mat-spinner>
                 } @else {
                   {{ 'USER_PROFILE.CANCEL_REQUEST_BUTTON' | translate }}
                 }
               </button>
-            } @else if (photoAccess().requestStatus === 'denied') {
+            } @else if (privateAccess().requestStatus === 'denied') {
               <button 
                 mat-stroked-button 
                 class="request-again-btn"
                 [disabled]="requestingAccess()"
-                (click)="requestPhotoAccess()">
+                (click)="requestPrivateAccess()">
                 @if (requestingAccess()) {
                   <mat-spinner diameter="18"></mat-spinner>
                 } @else {

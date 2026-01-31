@@ -100,7 +100,7 @@ service cloud.firestore {
       
       // ------------------------------------------
       // ACTIVITIES SUBCOLLECTION
-      // User's activity feed (notifications)
+      // User's activity feed (notifications for profile interactions)
       // ------------------------------------------
       match /activities/{activityId} {
         // Owner can read their own activities
@@ -119,6 +119,23 @@ service cloud.firestore {
       }
       
       // ------------------------------------------
+      // FEED ACTIVITIES SUBCOLLECTION
+      // Social feed notifications (likes, comments on posts)
+      // Separate from profile activities
+      // ------------------------------------------
+      match /feedActivities/{activityId} {
+        // Owner can read their own feed activities
+        allow read: if isOwner(userId);
+        
+        // Feed activities are created by Cloud Functions
+        // Users can only update to mark as read
+        allow create: if false; // Cloud Functions only
+        allow update: if isOwner(userId) 
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+        allow delete: if isOwner(userId);
+      }
+      
+      // ------------------------------------------
       // SAVED VIEWS SUBCOLLECTION
       // User's saved discovery filter views
       // ------------------------------------------
@@ -131,11 +148,11 @@ service cloud.firestore {
       }
       
       // ------------------------------------------
-      // PHOTO ACCESS REQUESTS SUBCOLLECTION
-      // Requests this user has made to view others' private photos
+      // PRIVATE ACCESS REQUESTS SUBCOLLECTION
+      // Requests this user has received to view their private content (photos and posts)
       // ------------------------------------------
-      match /photoAccessRequests/{requesterId} {
-        // Owner can read all their outgoing requests
+      match /privateAccessRequests/{requesterId} {
+        // Owner can read all requests they've received
         // Requester can read their own request status
         allow read: if isOwner(userId) || isOwner(requesterId);
         // Writes handled by Cloud Functions
@@ -143,22 +160,22 @@ service cloud.firestore {
       }
       
       // ------------------------------------------
-      // PHOTO ACCESS RECEIVED SUBCOLLECTION
-      // Requests this user has received from others
+      // PRIVATE ACCESS RECEIVED SUBCOLLECTION
+      // Reverse reference: private content access this user has been granted by others
       // ------------------------------------------
-      match /photoAccessReceived/{requesterId} {
-        // Owner can read requests they've received
-        // Requester can also read their own request status
-        allow read: if isOwner(userId) || isOwner(requesterId);
+      match /privateAccessReceived/{ownerId} {
+        // Owner can read access they've been granted
+        // The content owner can also read to verify their grant
+        allow read: if isOwner(userId) || isOwner(ownerId);
         // Writes handled by Cloud Functions
         allow write: if false;
       }
       
       // ------------------------------------------
-      // PHOTO ACCESS GRANTS SUBCOLLECTION
-      // Users this user has granted access to
+      // PRIVATE ACCESS GRANTS SUBCOLLECTION
+      // Users this user has granted private content access to
       // ------------------------------------------
-      match /photoAccessGrants/{grantedUserId} {
+      match /privateAccessGrants/{grantedUserId} {
         // Owner can read their grants
         // Granted user can also read to verify their access
         allow read: if isOwner(userId) || isOwner(grantedUserId);

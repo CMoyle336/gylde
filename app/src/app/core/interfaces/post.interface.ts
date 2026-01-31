@@ -4,10 +4,10 @@ import { ReputationTier } from './reputation.interface';
 /**
  * Post visibility options
  * - public: Visible to everyone in the user's region (query-based explore)
- * - connections: Visible to mutual matches (fanout-based)
+ * - matches: Visible to mutual matches (fanout-based)
  * - private: Visible only to approved users (fanout-based)
  */
-export type PostVisibility = 'public' | 'connections' | 'private';
+export type PostVisibility = 'public' | 'matches' | 'private';
 
 /**
  * Post content type
@@ -203,7 +203,7 @@ export interface PostComment {
 /**
  * Source of the post for filtering purposes
  */
-export type PostSource = 'public' | 'connection' | 'private';
+export type PostSource = 'public' | 'connection' | 'private' | 'own';
 
 /**
  * Display-ready post for the UI
@@ -282,11 +282,11 @@ export interface CreatePostResponse {
 
 /**
  * Feed filter type for unified feed experience
- * - 'all': All posts (public in region + connections + private access)
- * - 'connections': Only posts from mutual favorites
+ * - 'all': All posts (public in region + matches + private access)
+ * - 'matches': Only posts from mutual favorites
  * - 'private': Only posts from users who granted private access
  */
-export type FeedFilter = 'all' | 'connections' | 'private';
+export type FeedFilter = 'all' | 'matches' | 'private';
 
 /**
  * @deprecated Use FeedFilter instead

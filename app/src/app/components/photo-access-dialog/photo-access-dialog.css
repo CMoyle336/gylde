@@ -1,4 +1,4 @@
-.photo-access-dialog {
+.private-access-dialog {
   --color-bg: #1a1720;
   --color-bg-elevated: #252030;
   --color-bg-card: #2a2535;
@@ -385,7 +385,7 @@
    DIALOG CONTENT
    ============================================ */
 
-::ng-deep .photo-access-dialog mat-dialog-content {
+::ng-deep .private-access-dialog mat-dialog-content {
   padding: 1rem 1.5rem 1.5rem;
   max-height: none !important;
 }
@@ -394,14 +394,14 @@
    DIALOG PANEL
    ============================================ */
 
-::ng-deep .photo-access-dialog-panel {
+::ng-deep .private-access-dialog-panel {
   background: #1a1720 !important;
   border-radius: 16px !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
   overflow: hidden !important;
 }
 
-::ng-deep .photo-access-dialog-panel .mat-mdc-dialog-surface {
+::ng-deep .private-access-dialog-panel .mat-mdc-dialog-surface {
   background: transparent !important;
   border-radius: 16px !important;
 }
@@ -411,7 +411,7 @@
    ============================================ */
 
 @media (max-width: 560px) {
-  .photo-access-dialog {
+  .private-access-dialog {
     width: 100%;
   }
 
@@ -419,7 +419,7 @@
     padding: 1rem;
   }
 
-  ::ng-deep .photo-access-dialog mat-dialog-content {
+  ::ng-deep .private-access-dialog mat-dialog-content {
     padding: 1rem;
   }
 

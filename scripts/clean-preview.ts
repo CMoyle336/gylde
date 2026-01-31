@@ -43,7 +43,7 @@ const COLLECTIONS_TO_DELETE = [
   'favorites',
   'blocks',
   'reports',
-  'photoAccessRequests',
+  'privateAccessRequests',
   'subscriptions',
   'founders',
 ];

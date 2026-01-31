@@ -1214,11 +1214,29 @@
         "DESCRIPTION": "Nur verifizierte Mitglieder können posten. Keine Bots, kein Spam—nur echte Menschen, die echte Momente teilen."
       }
     },
+    "TAB_FEED": "Feed",
+    "TAB_PRIVATE": "Privat",
+    "SIDEBAR": {
+      "TITLE": "Feed-Info",
+      "MATCHES": "Deine Matches",
+      "VIEW_ALL": "Alle anzeigen",
+      "NO_MATCHES": "Noch keine Matches",
+      "PRIVATE_ACCESS": "Privater Zugang",
+      "PENDING_REQUESTS": "Ausstehende Anfragen",
+      "GRANTED_ACCESS": "Gewährter Zugang",
+      "NO_PRIVATE_ACCESS": "Keine Anfragen oder Zugänge",
+      "POST_ACTIVITY": "Beitragsaktivität",
+      "NO_POST_ACTIVITY": "Keine aktuelle Aktivität bei deinen Beiträgen",
+      "STATS": "Deine Statistiken",
+      "STAT_MATCHES": "Matches",
+      "STAT_FAVORITES": "Favoriten",
+      "STAT_VIEWS": "Aufrufe"
+    },
     "FILTER_ALL": "Alle Beiträge",
-    "FILTER_CONNECTIONS": "Verbindungen",
+    "FILTER_MATCHES": "Matches",
     "FILTER_PRIVATE": "Privat",
     "VISIBILITY_PUBLIC": "Öffentlich",
-    "VISIBILITY_CONNECTIONS": "Nur Verbindungen",
+    "VISIBILITY_MATCHES": "Nur Matches",
     "VISIBILITY_PRIVATE": "Privat",
     "LOADING": "Feed wird geladen...",
     "TRY_AGAIN": "Erneut versuchen",
@@ -1232,11 +1250,12 @@
     "REMOVE_MEDIA": "Medien entfernen",
     "LOADING_PREVIEW": "Vorschau wird geladen...",
     "REMOVE_PREVIEW": "Vorschau entfernen",
+    "PRIVATE_POST_NOTICE": "Dieser Beitrag ist nur für Personen sichtbar, denen du privaten Zugang gewährt hast",
     "VISIBILITY": {
       "PUBLIC": "Öffentlich",
       "VERIFIED": "Nur Verifizierte",
       "TRUSTED": "Vertraut+",
-      "CONNECTIONS": "Verbindungen",
+      "MATCHES": "Matches",
       "PRIVATE": "Privat"
     },
     "ANONYMOUS_USER": "Anonym",
@@ -1846,7 +1865,12 @@
       "ESTABLISHED_PLUS": "Etabliert+",
       "TRUSTED_PLUS": "Vertrauenswürdig+",
       "DISTINGUISHED": "Herausragend"
-    }
+    },
+    "MY_POSTS_TITLE": "Meine Beiträge",
+    "VIEW_FEED": "Feed anzeigen",
+    "LOADING_POSTS": "Beiträge werden geladen...",
+    "NO_POSTS_YET": "Du hast noch keine Beiträge erstellt",
+    "CREATE_FIRST_POST": "Erstelle deinen ersten Beitrag"
   },
   "CONNECTION_TYPES": {
     "INTENTIONAL_DATING": "Absichtliches Dating",

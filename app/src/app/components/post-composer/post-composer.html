@@ -1,4 +1,4 @@
-<div class="post-composer">
+<div class="post-composer" [class.private-mode]="isPrivateMode()">
   <!-- User Avatar -->
   <div class="composer-avatar">
     @if (userPhoto()) {
@@ -12,6 +12,14 @@
 
   <!-- Composer Content -->
   <div class="composer-content">
+    <!-- Private Mode Banner -->
+    @if (isPrivateMode()) {
+      <div class="private-mode-banner">
+        <mat-icon>lock</mat-icon>
+        <span>{{ 'FEED.PRIVATE_POST_NOTICE' | translate }}</span>
+      </div>
+    }
+
     <!-- Text Input -->
     <textarea
       class="composer-input"
@@ -112,26 +120,34 @@
         </label>
 
         <!-- Visibility Selector -->
-        <button 
-          type="button" 
-          class="action-btn visibility-btn"
-          [matMenuTriggerFor]="visibilityMenu">
-          <mat-icon>{{ selectedVisibility().icon }}</mat-icon>
-          <span class="visibility-label">{{ selectedVisibility().labelKey | translate }}</span>
-          <mat-icon class="dropdown-icon">arrow_drop_down</mat-icon>
-        </button>
+        @if (isPrivateMode()) {
+          <!-- Locked visibility indicator for private tab -->
+          <div class="visibility-locked">
+            <mat-icon>lock</mat-icon>
+            <span class="visibility-label">{{ 'FEED.VISIBILITY.PRIVATE' | translate }}</span>
+          </div>
+        } @else {
+          <button 
+            type="button" 
+            class="action-btn visibility-btn"
+            [matMenuTriggerFor]="visibilityMenu">
+            <mat-icon>{{ selectedVisibility().icon }}</mat-icon>
+            <span class="visibility-label">{{ selectedVisibility().labelKey | translate }}</span>
+            <mat-icon class="dropdown-icon">arrow_drop_down</mat-icon>
+          </button>
 
-        <mat-menu #visibilityMenu="matMenu">
-          @for (option of visibilityOptions; track option.value) {
-            <button 
-              mat-menu-item 
-              (click)="setVisibility(option.value)"
-              [class.selected]="visibility() === option.value">
-              <mat-icon>{{ option.icon }}</mat-icon>
-              <span>{{ option.labelKey | translate }}</span>
-            </button>
-          }
-        </mat-menu>
+          <mat-menu #visibilityMenu="matMenu">
+            @for (option of visibilityOptions(); track option.value) {
+              <button 
+                mat-menu-item 
+                (click)="setVisibility(option.value)"
+                [class.selected]="visibility() === option.value">
+                <mat-icon>{{ option.icon }}</mat-icon>
+                <span>{{ option.labelKey | translate }}</span>
+              </button>
+            }
+          </mat-menu>
+        }
       </div>
 
       <div class="submit-section">

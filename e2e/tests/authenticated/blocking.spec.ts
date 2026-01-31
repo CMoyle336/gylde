@@ -39,19 +39,24 @@ test.describe.serial('Blocking', () => {
     const timeoutMs = isLiveEnvironment() ? 60000 : 30000;
     const url = `/user/${userUid}`;
 
-    await expect
-      .poll(
-        async () => {
-          await page.goto(url);
-          const profilePage = page.locator('.user-profile-page');
-          await profilePage.waitFor({ state: 'visible', timeout: 30000 });
-          const hasError = await profilePage.locator('.error-state').isVisible().catch(() => false);
-          if (hasError) return false;
-          return await profilePage.locator('.profile-name', { hasText: displayName }).isVisible().catch(() => false);
-        },
-        { timeout: timeoutMs }
-      )
-      .toBe(true);
+    // Navigate once
+    await page.goto(url);
+    
+    // Wait for profile page to be visible
+    const profilePage = page.locator('.user-profile-page');
+    await profilePage.waitFor({ state: 'visible', timeout: timeoutMs });
+    
+    // Check there's no error state
+    const errorState = profilePage.locator('.error-state');
+    const hasError = await errorState.isVisible().catch(() => false);
+    if (hasError) {
+      const errorText = await errorState.textContent().catch(() => 'Unknown error');
+      throw new Error(`Profile page shows error state: ${errorText}`);
+    }
+    
+    // Wait for the profile name to be visible
+    const profileName = profilePage.locator('.profile-name', { hasText: displayName });
+    await expect(profileName).toBeVisible({ timeout: timeoutMs });
   }
 
   async function expectProfileUnavailable(page: any, userUid: string): Promise<void> {

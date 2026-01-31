@@ -1,5 +1,5 @@
 /**
- * Photo-related interfaces for private photo feature
+ * Photo-related interfaces for private content feature
  */
 
 /**
@@ -14,10 +14,11 @@ export interface Photo {
 }
 
 /**
- * Photo access request from one user to another
- * Stored in: users/{ownerId}/photoAccessRequests/{requesterId}
+ * Private content access request from one user to another
+ * Covers both private photos and private posts
+ * Stored in: users/{ownerId}/privateAccessRequests/{requesterId}
  */
-export interface PhotoAccessRequest {
+export interface PrivateAccessRequest {
   requesterId: string;
   requesterName: string;
   requesterPhoto: string | null;
@@ -27,10 +28,11 @@ export interface PhotoAccessRequest {
 }
 
 /**
- * Photo access grant - who has been granted access to private photos
- * Stored in: users/{ownerId}/photoAccessGrants/{grantedToUserId}
+ * Private content access grant - who has been granted access to private content
+ * Covers both private photos and private posts
+ * Stored in: users/{ownerId}/privateAccessGrants/{grantedToUserId}
  */
-export interface PhotoAccessGrant {
+export interface PrivateAccessGrant {
   grantedToUserId: string;
   grantedToName: string;
   grantedToPhoto: string | null;
@@ -38,10 +40,18 @@ export interface PhotoAccessGrant {
 }
 
 /**
- * Summary of photo access for display in profile
+ * Summary of private content access for display in profile
  */
-export interface PhotoAccessSummary {
+export interface PrivateAccessSummary {
   hasAccess: boolean;
   requestStatus?: 'pending' | 'granted' | 'denied';
   requestedAt?: Date;
 }
+
+// Legacy aliases for backward compatibility during migration
+/** @deprecated Use PrivateAccessRequest instead */
+export type PhotoAccessRequest = PrivateAccessRequest;
+/** @deprecated Use PrivateAccessGrant instead */
+export type PhotoAccessGrant = PrivateAccessGrant;
+/** @deprecated Use PrivateAccessSummary instead */
+export type PhotoAccessSummary = PrivateAccessSummary;

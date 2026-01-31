@@ -1,0 +1,187 @@
+<div class="feed-sidebar">
+  <!-- Stats Card -->
+  <div class="sidebar-card stats-card">
+    <div class="card-header">
+      <h3 class="card-title">
+        <mat-icon>insights</mat-icon>
+        {{ 'FEED.SIDEBAR.STATS' | translate }}
+      </h3>
+    </div>
+    
+    <div class="card-content">
+      <div class="stats-grid">
+        <div class="stat-item">
+          <span class="stat-value">{{ matchesCount() }}</span>
+          <span class="stat-label">{{ 'FEED.SIDEBAR.STAT_MATCHES' | translate }}</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value">{{ favoritedMeCount() }}</span>
+          <span class="stat-label">{{ 'FEED.SIDEBAR.STAT_FAVORITES' | translate }}</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value">{{ viewedMeCount() }}</span>
+          <span class="stat-label">{{ 'FEED.SIDEBAR.STAT_VIEWS' | translate }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Matches Card (Feed tab only) -->
+  @if (showMatchesCard()) {
+    <div class="sidebar-card matches-card">
+      <div class="card-header">
+        <h3 class="card-title">
+          <mat-icon>people</mat-icon>
+          {{ 'FEED.SIDEBAR.MATCHES' | translate }}
+        </h3>
+        <a routerLink="/matches" class="view-all-link">
+          {{ 'FEED.SIDEBAR.VIEW_ALL' | translate }}
+        </a>
+      </div>
+      
+      <div class="card-content">
+        @if (displayMatches().length > 0) {
+          <div class="matches-list">
+            @for (match of displayMatches(); track match.uid) {
+              <button type="button" class="match-item" (click)="navigateToProfile(match.uid)">
+                <div class="match-avatar">
+                  @if (match.photoURL) {
+                    <img [src]="match.photoURL" [alt]="match.displayName">
+                  } @else {
+                    <div class="avatar-placeholder">
+                      <mat-icon>person</mat-icon>
+                    </div>
+                  }
+                  @if (match.isOnline && match.showOnlineStatus) {
+                    <span class="online-indicator"></span>
+                  }
+                </div>
+                <span class="match-name">{{ match.displayName }}</span>
+              </button>
+            }
+          </div>
+        } @else {
+          <p class="empty-text">{{ 'FEED.SIDEBAR.NO_MATCHES' | translate }}</p>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Private Access Card (Private tab only) -->
+  @if (showPrivateAccessCard()) {
+    <div class="sidebar-card private-access-card">
+      <div class="card-header">
+        <h3 class="card-title">
+          <mat-icon>lock</mat-icon>
+          {{ 'FEED.SIDEBAR.PRIVATE_ACCESS' | translate }}
+        </h3>
+        @if (pendingRequestsCount() > 0) {
+          <span class="badge">{{ pendingRequestsCount() }}</span>
+        }
+      </div>
+      
+      <div class="card-content">
+        <!-- Pending Requests -->
+        @if (pendingRequests().length > 0) {
+          <div class="access-section">
+            <h4 class="section-label">{{ 'FEED.SIDEBAR.PENDING_REQUESTS' | translate }}</h4>
+            <div class="access-list">
+              @for (request of pendingRequests(); track request.id) {
+                <div class="access-item">
+                  <button type="button" class="access-user" (click)="navigateToProfile(request.requesterId)">
+                    @if (request.requesterPhoto) {
+                      <img [src]="request.requesterPhoto" [alt]="request.requesterName" class="access-avatar">
+                    } @else {
+                      <div class="avatar-placeholder small">
+                        <mat-icon>person</mat-icon>
+                      </div>
+                    }
+                    <span class="access-name">{{ request.requesterName }}</span>
+                  </button>
+                  <div class="access-actions">
+                    <button type="button" class="action-btn approve" (click)="approveRequest(request)" title="Approve">
+                      <mat-icon>check</mat-icon>
+                    </button>
+                    <button type="button" class="action-btn deny" (click)="denyRequest(request)" title="Deny">
+                      <mat-icon>close</mat-icon>
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Granted Users -->
+        @if (displayGrants().length > 0) {
+          <div class="access-section">
+            <h4 class="section-label">{{ 'FEED.SIDEBAR.GRANTED_ACCESS' | translate }}</h4>
+            <div class="access-list">
+              @for (grant of displayGrants(); track grant.id) {
+                <div class="access-item">
+                  <button type="button" class="access-user" (click)="navigateToProfile(grant.grantedToUserId)">
+                    @if (grant.grantedToPhoto) {
+                      <img [src]="grant.grantedToPhoto" [alt]="grant.grantedToName" class="access-avatar">
+                    } @else {
+                      <div class="avatar-placeholder small">
+                        <mat-icon>person</mat-icon>
+                      </div>
+                    }
+                    <span class="access-name">{{ grant.grantedToName }}</span>
+                  </button>
+                  <button type="button" class="action-btn revoke" (click)="revokeAccess(grant)" title="Revoke">
+                    <mat-icon>person_remove</mat-icon>
+                  </button>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        @if (pendingRequests().length === 0 && grants().length === 0) {
+          <p class="empty-text">{{ 'FEED.SIDEBAR.NO_PRIVATE_ACCESS' | translate }}</p>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Feed Activity Card (likes, comments on posts) -->
+  <div class="sidebar-card activity-card">
+    <div class="card-header">
+      <h3 class="card-title">
+        <mat-icon>rate_review</mat-icon>
+        {{ 'FEED.SIDEBAR.POST_ACTIVITY' | translate }}
+      </h3>
+    </div>
+    
+    <div class="card-content">
+      @if (displayFeedActivities().length > 0) {
+        <div class="activity-list">
+          @for (activity of displayFeedActivities(); track activity.id) {
+            <button type="button" class="activity-item" [class.unread]="!activity.read" (click)="navigateToProfile(activity.fromUserId)">
+              <div class="activity-avatar">
+                @if (activity.fromUserPhoto) {
+                  <img [src]="activity.fromUserPhoto" [alt]="activity.fromUserName">
+                } @else {
+                  <div class="avatar-placeholder small">
+                    <mat-icon>person</mat-icon>
+                  </div>
+                }
+                <span class="activity-type-icon">
+                  <mat-icon>{{ getFeedActivityIcon(activity) }}</mat-icon>
+                </span>
+              </div>
+              <div class="activity-info">
+                <span class="activity-text">{{ getFeedActivityMessage(activity) }}</span>
+                <span class="activity-time">{{ activity.timeAgo }}</span>
+              </div>
+            </button>
+          }
+        </div>
+      } @else {
+        <p class="empty-text">{{ 'FEED.SIDEBAR.NO_POST_ACTIVITY' | translate }}</p>
+      }
+    </div>
+  </div>
+
+</div>

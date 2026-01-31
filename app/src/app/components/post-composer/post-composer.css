@@ -6,6 +6,53 @@
   border-radius: 16px;
   border: 1px solid var(--color-border);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s ease;
+}
+
+/* Private Mode Styling */
+.post-composer.private-mode {
+  background: linear-gradient(135deg, rgba(201, 169, 98, 0.08) 0%, rgba(201, 169, 98, 0.03) 100%);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 1px rgba(201, 169, 98, 0.1), 0 2px 8px rgba(201, 169, 98, 0.1);
+}
+
+/* Private Mode Banner */
+.private-mode-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: rgba(201, 169, 98, 0.15);
+  border-radius: 10px;
+  border: 1px solid rgba(201, 169, 98, 0.3);
+  color: var(--color-accent);
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.private-mode-banner mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+/* Locked Visibility Indicator */
+.visibility-locked {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: rgba(201, 169, 98, 0.15);
+  color: var(--color-accent);
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.visibility-locked mat-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
 }
 
 /* Avatar */

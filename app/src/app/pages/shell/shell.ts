@@ -18,7 +18,7 @@ import { SubscriptionService } from '../../core/services/subscription.service';
 import { RemoteConfigService } from '../../core/services/remote-config.service';
 import { AnalyticsService } from '../../core/services/analytics.service';
 import { ActivityDisplay, TRUST_TASK_UI } from '../../core/interfaces';
-import { PhotoAccessDialogComponent } from '../../components/photo-access-dialog';
+import { PrivateAccessDialogComponent } from '../../components/photo-access-dialog';
 import { FounderIssueDialogComponent } from '../../components/founder-issue-dialog';
 
 @Component({
@@ -296,11 +296,11 @@ export class ShellComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Handle activities without links (like photo_access_request which opens a dialog)
+    // Handle activities without links (like private_access_request which opens a dialog)
     switch (activity.type) {
-      case 'photo_access_request':
-        // Open dialog to manage photo access (shows all pending requests)
-        this.openPhotoAccessDialog();
+      case 'private_access_request':
+        // Open dialog to manage private content access (shows all pending requests)
+        this.openPrivateAccessDialog();
         break;
 
       default:
@@ -309,9 +309,9 @@ export class ShellComponent implements OnInit, OnDestroy {
     }
   }
 
-  private openPhotoAccessDialog(): void {
-    this.dialog.open(PhotoAccessDialogComponent, {
-      panelClass: 'photo-access-dialog-panel',
+  private openPrivateAccessDialog(): void {
+    this.dialog.open(PrivateAccessDialogComponent, {
+      panelClass: 'private-access-dialog-panel',
       width: '420px',
       maxWidth: '95vw',
     });
@@ -352,12 +352,12 @@ export class ShellComponent implements OnInit, OnDestroy {
         return `${activity.name} favorited you`;
       case 'view':
         return `${activity.name} viewed your profile`;
-      case 'photo_access_request':
-        return `${activity.name} requested access to your private photos`;
-      case 'photo_access_granted':
-        return `${activity.name} granted you access to their private photos`;
-      case 'photo_access_denied':
-        return `${activity.name} denied your photo access request`;
+      case 'private_access_request':
+        return `${activity.name} requested access to your private content`;
+      case 'private_access_granted':
+        return `${activity.name} granted you access to their private content`;
+      case 'private_access_denied':
+        return `${activity.name} denied your access request`;
       default:
         return `${activity.name} interacted with you`;
     }

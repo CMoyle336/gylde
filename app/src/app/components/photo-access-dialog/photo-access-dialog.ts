@@ -5,10 +5,11 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
-import { PhotoAccessService, PhotoAccessRequestDisplay, PhotoAccessGrantDisplay } from '../../core/services/photo-access.service';
+import { TranslateModule } from '@ngx-translate/core';
+import { PrivateAccessService, PrivateAccessRequestDisplay, PrivateAccessGrantDisplay } from '../../core/services/photo-access.service';
 
 @Component({
-  selector: 'app-photo-access-dialog',
+  selector: 'app-private-access-dialog',
   templateUrl: './photo-access-dialog.html',
   styleUrl: './photo-access-dialog.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -19,15 +20,16 @@ import { PhotoAccessService, PhotoAccessRequestDisplay, PhotoAccessGrantDisplay 
     MatProgressSpinnerModule,
     MatTooltipModule,
     RouterLink,
+    TranslateModule,
   ],
 })
-export class PhotoAccessDialogComponent {
-  private readonly dialogRef = inject(MatDialogRef<PhotoAccessDialogComponent>);
-  private readonly photoAccessService = inject(PhotoAccessService);
+export class PrivateAccessDialogComponent {
+  private readonly dialogRef = inject(MatDialogRef<PrivateAccessDialogComponent>);
+  private readonly privateAccessService = inject(PrivateAccessService);
 
   // Read from the service's reactive signals
-  protected readonly pendingRequests = this.photoAccessService.pendingRequests;
-  protected readonly grants = this.photoAccessService.grants;
+  protected readonly pendingRequests = this.privateAccessService.pendingRequests;
+  protected readonly grants = this.privateAccessService.grants;
 
   // Active tab state
   protected activeTab: 'requests' | 'granted' = 'requests';
@@ -36,12 +38,12 @@ export class PhotoAccessDialogComponent {
   protected readonly processingIds = signal<Set<string>>(new Set());
   protected readonly error = signal<string | null>(null);
 
-  async grantAccess(request: PhotoAccessRequestDisplay): Promise<void> {
+  async grantAccess(request: PrivateAccessRequestDisplay): Promise<void> {
     this.addProcessingId(request.id);
     this.error.set(null);
     
     try {
-      await this.photoAccessService.respondToRequest(request.id, 'grant');
+      await this.privateAccessService.respondToRequest(request.id, 'grant');
     } catch (err) {
       console.error('Error granting access:', err);
       this.error.set('Failed to grant access. Please try again.');
@@ -50,12 +52,12 @@ export class PhotoAccessDialogComponent {
     }
   }
 
-  async denyAccess(request: PhotoAccessRequestDisplay): Promise<void> {
+  async denyAccess(request: PrivateAccessRequestDisplay): Promise<void> {
     this.addProcessingId(request.id);
     this.error.set(null);
     
     try {
-      await this.photoAccessService.respondToRequest(request.id, 'deny');
+      await this.privateAccessService.respondToRequest(request.id, 'deny');
     } catch (err) {
       console.error('Error denying access:', err);
       this.error.set('Failed to deny access. Please try again.');
@@ -64,12 +66,12 @@ export class PhotoAccessDialogComponent {
     }
   }
 
-  async revokeAccess(grant: PhotoAccessGrantDisplay): Promise<void> {
+  async revokeAccess(grant: PrivateAccessGrantDisplay): Promise<void> {
     this.addProcessingId(grant.id);
     this.error.set(null);
     
     try {
-      await this.photoAccessService.revokeAccess(grant.id);
+      await this.privateAccessService.revokeAccess(grant.id);
     } catch (err) {
       console.error('Error revoking access:', err);
       this.error.set('Failed to revoke access. Please try again.');
@@ -115,3 +117,7 @@ export class PhotoAccessDialogComponent {
     return date.toLocaleDateString();
   }
 }
+
+// Legacy alias for backward compatibility
+/** @deprecated Use PrivateAccessDialogComponent instead */
+export { PrivateAccessDialogComponent as PhotoAccessDialogComponent };

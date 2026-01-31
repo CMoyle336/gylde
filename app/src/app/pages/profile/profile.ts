@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, ElementRef, OnInit, OnDestroy, ViewChild, effect, inject, signal, computed, PLATFORM_ID, viewChild } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -16,19 +17,21 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { UserProfileService } from '../../core/services/user-profile.service';
 import { ImageUploadService } from '../../core/services/image-upload.service';
 import { AuthService } from '../../core/services/auth.service';
-import { PhotoAccessService } from '../../core/services/photo-access.service';
+import { PrivateAccessService } from '../../core/services/photo-access.service';
 import { PlacesService, PlaceSuggestion } from '../../core/services/places.service';
 import { SubscriptionService } from '../../core/services/subscription.service';
 import { RemoteConfigService } from '../../core/services/remote-config.service';
 import { AiChatService } from '../../core/services/ai-chat.service';
 import { AnalyticsService } from '../../core/services/analytics.service';
-import { OnboardingProfile, GeoLocation, ReputationTier, TIER_CONFIG, TIER_DISPLAY } from '../../core/interfaces';
+import { FeedService } from '../../core/services/feed.service';
+import { OnboardingProfile, GeoLocation, ReputationTier, TIER_CONFIG, TIER_DISPLAY, PostDisplay } from '../../core/interfaces';
 import { Photo } from '../../core/interfaces/photo.interface';
 import { ALL_CONNECTION_TYPES, getConnectionTypeLabel, SUPPORT_ORIENTATION_OPTIONS, getSupportOrientationLabel } from '../../core/constants/connection-types';
-import { PhotoAccessDialogComponent } from '../../components/photo-access-dialog';
+import { PrivateAccessDialogComponent } from '../../components/photo-access-dialog';
 import { ReputationBadgeComponent } from '../../components/reputation-badge';
 import { ReputationInfoDialogComponent } from '../../components/reputation-info-dialog';
 import { FounderBadgeComponent } from '../../components/founder-badge';
+import { PostCardComponent } from '../../components/post-card';
 import { environment } from '../../../environments/environment';
 
 type LocationStatus = 'idle' | 'detecting' | 'success' | 'error';
@@ -76,6 +79,7 @@ interface UploadingPhoto {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     FormsModule,
+    RouterLink,
     DragDropModule,
     MatFormFieldModule,
     MatInputModule,
@@ -88,18 +92,21 @@ interface UploadingPhoto {
     TranslateModule,
     ReputationBadgeComponent,
     FounderBadgeComponent,
+    PostCardComponent,
   ],
 })
 export class ProfileComponent implements OnInit, OnDestroy {
   private readonly userProfileService = inject(UserProfileService);
   private readonly imageUploadService = inject(ImageUploadService);
   private readonly authService = inject(AuthService);
-  private readonly photoAccessService = inject(PhotoAccessService);
+  private readonly privateAccessService = inject(PrivateAccessService);
   private readonly placesService = inject(PlacesService);
   protected readonly subscriptionService = inject(SubscriptionService);
   private readonly remoteConfig = inject(RemoteConfigService);
   private readonly analytics = inject(AnalyticsService);
   private readonly translate = inject(TranslateService);
+  private readonly feedService = inject(FeedService);
+  private readonly router = inject(Router);
   
   // Show US-only notice when the only allowed region is 'us'
   protected readonly showUsOnlyNotice = computed(() => {
@@ -154,7 +161,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
   protected readonly photoPrivacy = signal<Map<string, boolean>>(new Map());
 
   // Pending requests count (for badge)
-  protected readonly pendingRequestsCount = this.photoAccessService.pendingRequestsCount;
+  protected readonly pendingRequestsCount = this.privateAccessService.pendingRequestsCount;
 
   // Max photos allowed based on subscription tier
   protected readonly maxPhotos = computed(() => this.subscriptionService.capabilities().maxPhotos);
@@ -247,6 +254,12 @@ export class ProfileComponent implements OnInit, OnDestroy {
   protected readonly polishingField = signal<string | null>(null);
   protected readonly polishSuggestions = signal<{ field: string; polished: string; alternatives: string[] } | null>(null);
 
+  // My Posts (Feed)
+  protected readonly feedEnabled = this.remoteConfig.featureFeedEnabled;
+  protected readonly myPosts = this.feedService.myPosts;
+  protected readonly myPostsLoading = this.feedService.myPostsLoading;
+  protected readonly deletingPostId = this.feedService.deletingPostId;
+
   // Messaging info - everyone can message everyone now
   // The only limit is on starting NEW conversations with higher-tier users
   protected readonly canMessageInfo = computed(() => {
@@ -333,6 +346,11 @@ export class ProfileComponent implements OnInit, OnDestroy {
     if (isPlatformBrowser(this.platformId)) {
       document.addEventListener('click', this.clickOutsideHandler);
     }
+
+    // Subscribe to user's own posts if feed is enabled
+    if (this.feedEnabled()) {
+      this.feedService.subscribeToMyPosts();
+    }
   }
 
   ngOnDestroy(): void {
@@ -342,6 +360,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
     if (this.searchDebounceTimer) {
       clearTimeout(this.searchDebounceTimer);
     }
+    // Cleanup feed subscription
+    this.feedService.unsubscribeFromMyPosts();
   }
 
   // Edit form data
@@ -775,7 +795,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     const newPrivacy = !currentPrivacy;
 
     try {
-      await this.photoAccessService.togglePhotoPrivacy(photoUrl, newPrivacy);
+      await this.privateAccessService.togglePhotoPrivacy(photoUrl, newPrivacy);
       
       // Update local state
       this.photoPrivacy.update(map => {
@@ -796,10 +816,10 @@ export class ProfileComponent implements OnInit, OnDestroy {
     return this.photoPrivacy().get(photoUrl) || false;
   }
 
-  // Open the photo access management dialog
+  // Open the private content access management dialog
   openAccessDialog(): void {
-    this.dialog.open(PhotoAccessDialogComponent, {
-      panelClass: 'photo-access-dialog-panel',
+    this.dialog.open(PrivateAccessDialogComponent, {
+      panelClass: 'private-access-dialog-panel',
       width: '420px',
       maxWidth: '95vw',
     });
@@ -1253,5 +1273,35 @@ export class ProfileComponent implements OnInit, OnDestroy {
       this.analytics.trackAiPolishUsed(suggestion.field, false);
     }
     this.polishSuggestions.set(null);
+  }
+
+  // ===== Post Interaction Methods =====
+
+  protected onPostLike(post: PostDisplay): void {
+    if (post.isLiked) {
+      this.feedService.unlikePost(post.id);
+    } else {
+      this.feedService.likePost(post.id);
+    }
+  }
+
+  protected onPostComment(post: PostDisplay): void {
+    // Navigate to feed with comments open for this post
+    this.router.navigate(['/home'], { queryParams: { post: post.id, comments: true } });
+  }
+
+  protected onPostAuthorClick(post: PostDisplay): void {
+    // Already on own profile, no action needed
+  }
+
+  protected async onPostDelete(post: PostDisplay): Promise<void> {
+    const confirmMessage = this.translate.instant('FEED.CONFIRM_DELETE');
+    if (confirm(confirmMessage)) {
+      await this.feedService.deletePost(post.id);
+    }
+  }
+
+  protected onPostReport(post: PostDisplay): void {
+    // Can't report own posts, so this shouldn't be triggered
   }
 }

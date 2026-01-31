@@ -28,9 +28,9 @@ export interface SubscriptionCapabilities {
   advancedFilters: boolean;
   priorityVisibility: boolean;
   
-  // Photos
+  // Photos & Private Content
   maxPhotos: number;
-  canAccessPrivatePhotos: boolean;
+  canAccessPrivateContent: boolean;
   
   // Activity
   canSeeWhoViewedProfile: boolean;
@@ -59,9 +59,9 @@ export function getSubscriptionCapabilities(tier: SubscriptionTier): Subscriptio
         advancedFilters: true,
         priorityVisibility: true,
         
-        // Photos
+        // Photos & Private Content
         maxPhotos: 20,
-        canAccessPrivatePhotos: true,
+        canAccessPrivateContent: true,
         
         // Activity
         canSeeWhoViewedProfile: true,
@@ -83,9 +83,9 @@ export function getSubscriptionCapabilities(tier: SubscriptionTier): Subscriptio
         advancedFilters: false,
         priorityVisibility: false,
         
-        // Photos
+        // Photos & Private Content
         maxPhotos: 5,
-        canAccessPrivatePhotos: false,
+        canAccessPrivateContent: false,
         
         // Activity
         canSeeWhoViewedProfile: false,
@@ -114,7 +114,7 @@ export const SUBSCRIPTION_PRICE = {
  * Premium features list for display
  */
 export const PREMIUM_FEATURES = [
-  { id: 'private-photos', labelKey: 'UPGRADE_DIALOG.PREMIUM_FEATURES.PRIVATE_PHOTOS', icon: 'lock_open' },
+  { id: 'private-content', labelKey: 'UPGRADE_DIALOG.PREMIUM_FEATURES.PRIVATE_CONTENT', icon: 'lock_open' },
   { id: 'advanced-filters', labelKey: 'UPGRADE_DIALOG.PREMIUM_FEATURES.ADVANCED_FILTERS', icon: 'tune' },
   { id: 'who-viewed', labelKey: 'UPGRADE_DIALOG.PREMIUM_FEATURES.WHO_VIEWED', icon: 'visibility' },
   { id: 'who-favorited', labelKey: 'UPGRADE_DIALOG.PREMIUM_FEATURES.WHO_FAVORITED', icon: 'favorite' },

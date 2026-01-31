@@ -12,7 +12,7 @@ import * as logger from "firebase-functions/logger";
 // Feed Backfill Types & Constants
 // ============================================================================
 
-const BACKFILL_LIMIT = 10; // Number of posts to backfill on new connection
+const BACKFILL_LIMIT = 10; // Number of posts to backfill on new match
 
 interface FeedItemPreview {
   authorName: string;
@@ -27,7 +27,7 @@ interface FeedItem {
   createdAt: FieldValue | Timestamp;
   insertedAt: FieldValue | Timestamp;
   reason: "connection" | "approved" | "systemBoost";
-  visibility: "public" | "connections" | "private";
+  visibility: "public" | "matches" | "private";
   regionId: string;
   preview: FeedItemPreview;
 }
@@ -36,7 +36,7 @@ interface PostData {
   id: string;
   authorId: string;
   createdAt: Timestamp;
-  visibility: "public" | "connections" | "private";
+  visibility: "public" | "matches" | "private";
   regionId: string;
   content: {
     type: string;
@@ -228,19 +228,19 @@ async function handleUnmatch(
 }
 
 /**
- * Backfill connection posts to a user's feedItems
+ * Backfill matches posts to a user's feedItems
  */
-async function backfillConnectionPosts(
+async function backfillMatchesPosts(
   viewerId: string,
   authorId: string,
   authorName: string,
   authorPhotoURL: string | null
 ): Promise<void> {
-  // Get recent connection posts from author
+  // Get recent matches posts from author
   const postsSnapshot = await db
     .collection("posts")
     .where("authorId", "==", authorId)
-    .where("visibility", "==", "connections")
+    .where("visibility", "==", "matches")
     .where("status", "==", "active")
     .orderBy("createdAt", "desc")
     .limit(BACKFILL_LIMIT)
@@ -283,7 +283,7 @@ async function backfillConnectionPosts(
   }
 
   await bulkWriter.close();
-  logger.info(`Backfilled ${postsSnapshot.size} connection posts for ${viewerId} from ${authorId}`);
+  logger.info(`Backfilled ${postsSnapshot.size} matches posts for ${viewerId} from ${authorId}`);
 }
 
 /**
@@ -352,10 +352,10 @@ async function handleMatch(
   sendEmailNotification(toUserId, "match", fromUser.displayName || "Someone", fromUserId)
     .catch((err) => logger.error("Error sending match email to toUser:", err));
 
-  // Backfill connection posts to each user's feed (async, don't block)
-  // This ensures each user sees recent connection posts from their new match
+  // Backfill matches posts to each user's feed (async, don't block)
+  // This ensures each user sees recent matches posts from their new match
   Promise.all([
-    backfillConnectionPosts(fromUserId, toUserId, toUser.displayName || "Someone", toUser.photoURL || null),
-    backfillConnectionPosts(toUserId, fromUserId, fromUser.displayName || "Someone", fromUser.photoURL || null),
-  ]).catch((err) => logger.error("Error backfilling connection posts:", err));
+    backfillMatchesPosts(fromUserId, toUserId, toUser.displayName || "Someone", toUser.photoURL || null),
+    backfillMatchesPosts(toUserId, fromUserId, fromUser.displayName || "Someone", fromUser.photoURL || null),
+  ]).catch((err) => logger.error("Error backfilling matches posts:", err));
 }

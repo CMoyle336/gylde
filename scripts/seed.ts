@@ -20,12 +20,12 @@ import {
   generateMatches,
   generateActivities,
   generateConversationsAndMessages,
-  generatePhotoAccessRequests,
+  generatePrivateAccessRequests,
   SeedUser,
   SeedMatch,
   SeedActivity,
   SeedProfileView,
-  SeedPhotoAccessRequest,
+  SeedPrivateAccessRequest,
 } from './seed-data/users';
 
 // Configuration
@@ -93,8 +93,8 @@ async function main() {
   const { conversations, messages } = generateConversationsAndMessages(users, 2);
   console.log(`   ✓ Generated ${conversations.length} conversations with ${messages.length} messages`);
 
-  const photoAccessRequests = generatePhotoAccessRequests(users);
-  console.log(`   ✓ Generated ${photoAccessRequests.length} photo access requests`);
+  const privateAccessRequests = generatePrivateAccessRequests(users);
+  console.log(`   ✓ Generated ${privateAccessRequests.length} private access requests`);
 
   // Seed auth users
   console.log('\n🔐 Creating Auth users...');
@@ -124,9 +124,9 @@ async function main() {
   console.log('\n💬 Seeding conversations and messages...');
   await seedConversations(db, conversations, messages);
 
-  // Seed photo access requests
-  console.log('\n🔒 Seeding photo access requests...');
-  await seedPhotoAccessRequests(db, photoAccessRequests, users);
+  // Seed private access requests
+  console.log('\n🔒 Seeding private access requests...');
+  await seedPrivateAccessRequests(db, privateAccessRequests, users);
   
   console.log('\n🎉 Seeding complete!');
   printLoginCredentials(users);
@@ -276,8 +276,14 @@ async function seedFirestoreUsers(db: FirebaseFirestore.Firestore, users: SeedUs
 
   console.log(`✅ Created ${totalCreated} Firestore profiles`);
 
-  // Seed private subcollection with reputation data
-  console.log('  🔐 Creating private data with reputation...');
+  // Wait for Cloud Function triggers to complete before setting private data
+  // This prevents race conditions with onUserCreated trigger
+  console.log('  ⏳ Waiting for triggers to complete...');
+  await new Promise(resolve => setTimeout(resolve, 3000));
+
+  // Seed private subcollection with reputation and subscription data
+  // This runs AFTER triggers, so our data takes precedence
+  console.log('  🔐 Creating private data with reputation and subscription...');
   let privateDataCreated = 0;
 
   for (let i = 0; i < users.length; i += batchSize) {
@@ -309,6 +315,17 @@ async function seedFirestoreUsers(db: FirebaseFirestore.Firestore, users: SeedUs
           lastCalculatedAt: FieldValue.serverTimestamp(),
           tierChangedAt: FieldValue.serverTimestamp(),
         },
+        subscription: {
+          tier: user.subscription.tier,
+          status: user.subscription.status,
+          // Premium users get fake Stripe IDs for testing
+          ...(user.subscription.tier === 'premium' && {
+            stripeCustomerId: `cus_seed_${user.uid.substring(0, 8)}`,
+            stripeSubscriptionId: `sub_seed_${user.uid.substring(0, 8)}`,
+            currentPeriodStart: new Date(),
+            currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+          }),
+        },
       }, { merge: true });
     }
     
@@ -316,7 +333,8 @@ async function seedFirestoreUsers(db: FirebaseFirestore.Firestore, users: SeedUs
     privateDataCreated += batchUsers.length;
   }
 
-  console.log(`  ✓ Created private data for ${privateDataCreated} users`);
+  const premiumCount = users.filter(u => u.subscription.tier === 'premium').length;
+  console.log(`  ✓ Created private data for ${privateDataCreated} users (${premiumCount} premium, ${privateDataCreated - premiumCount} free)`);
 }
 
 async function seedFavorites(
@@ -557,9 +575,9 @@ async function seedConversations(
   console.log(`  ✓ Updated lastMessageSentAt for ${timestampsUpdated} users`);
 }
 
-async function seedPhotoAccessRequests(
+async function seedPrivateAccessRequests(
   db: FirebaseFirestore.Firestore,
-  requests: SeedPhotoAccessRequest[],
+  requests: SeedPrivateAccessRequest[],
   users: SeedUser[]
 ) {
   const batchSize = 500;
@@ -579,11 +597,11 @@ async function seedPhotoAccessRequests(
     const batchRequests = requests.slice(i, i + batchSize);
 
     for (const request of batchRequests) {
-      // Store in target user's photoAccessRequests subcollection
+      // Store in target user's privateAccessRequests subcollection
       const requestRef = db
         .collection('users')
         .doc(request.targetUserId)
-        .collection('photoAccessRequests')
+        .collection('privateAccessRequests')
         .doc(request.requesterId);
       
       batch.set(requestRef, {
@@ -599,7 +617,7 @@ async function seedPhotoAccessRequests(
     totalRequestsCreated += batchRequests.length;
   }
 
-  console.log(`  ✓ Created ${totalRequestsCreated} photo access requests`);
+  console.log(`  ✓ Created ${totalRequestsCreated} private access requests`);
 
   // Update pending counts on user profiles
   const userIds = Array.from(pendingCounts.keys());
@@ -611,7 +629,7 @@ async function seedPhotoAccessRequests(
       const count = pendingCounts.get(userId) || 0;
       const userRef = db.collection('users').doc(userId);
       batch.update(userRef, {
-        pendingPhotoAccessCount: count,
+        pendingPrivateAccessCount: count,
       });
     }
     
@@ -631,30 +649,26 @@ function printLoginCredentials(users: SeedUser[]) {
   console.log('📋 TEST LOGIN CREDENTIALS');
   console.log('='.repeat(95));
   console.log('\nAll passwords: password123\n');
-  console.log('Email                          | Name                    | Reputation    | Support   | Verified');
+  console.log('Email                          | Name                    | Reputation    | Support   | Tier');
   console.log('-'.repeat(95));
   
-  // Show first 10 users
-  const displayUsers = users.slice(0, 10);
+  // Show first 20 users
+  const displayUsers = users.slice(0, 20);
   for (const user of displayUsers) {
     const email = user.email.padEnd(30);
     const name = user.displayName.padEnd(23);
     const reputation = user.reputationTier.padEnd(13);
     const support = user.onboarding.supportOrientation.padEnd(9);
-    const verified = [
-      user.emailVerified ? '✉' : '',
-      user.phoneNumberVerified ? '📱' : '',
-      user.identityVerified ? '🆔' : '',
-    ].join('') || '-';
-    console.log(`${email} | ${name} | ${reputation} | ${support} | ${verified}`);
+    const tier = user.subscriptionTier === 'premium' ? '⭐ premium' : 'free';
+    console.log(`${email} | ${name} | ${reputation} | ${support} | ${tier}`);
   }
   
-  if (users.length > 10) {
-    console.log(`... and ${users.length - 10} more users`);
+  if (users.length > 20) {
+    console.log(`... and ${users.length - 20} more users`);
   }
   
   console.log('-'.repeat(95));
-  console.log('Verification legend: ✉ = Email, 📱 = Phone, 🆔 = Identity');
+  console.log('Subscription tiers: free, ⭐ premium');
   console.log('Reputation tiers: new, active, established, trusted, distinguished');
   console.log('='.repeat(95));
 }

@@ -5,7 +5,7 @@
  * - All posts: Fanout-based via feedItems subcollection
  * - Public posts: Fanned out to matching users in the same region
  *   (uses base discover filters: gender identity + support orientation)
- * - Connections posts: Fanned out to mutual matches
+ * - Matches posts: Fanned out to mutual matches
  * - Private posts: Fanned out to approved viewers only
  *
  * Handles:
@@ -28,7 +28,7 @@ import {isBaseMatch, MatchableProfile} from "../services/feed-matching.service";
 // Types
 // ============================================================================
 
-type PostVisibility = "public" | "connections" | "private";
+type PostVisibility = "public" | "matches" | "private";
 type PostContentType = "text" | "image" | "video";
 type PostStatus = "active" | "flagged" | "removed";
 type CommentStatus = "active" | "removed";
@@ -304,25 +304,25 @@ async function fanoutToFeedItems(
 }
 
 /**
- * Get all connections (matches) for a user
+ * Get all matches (mutual favorites) for a user
  */
-async function getUserConnections(userId: string): Promise<string[]> {
+async function getUserMatches(userId: string): Promise<string[]> {
   // Query matches where user is a participant
   const matchesSnapshot = await db
     .collection("matches")
     .where("users", "array-contains", userId)
     .get();
 
-  const connectionIds: string[] = [];
+  const matchIds: string[] = [];
   for (const doc of matchesSnapshot.docs) {
     const users = doc.data().users as string[];
     const otherId = users.find((id) => id !== userId);
     if (otherId) {
-      connectionIds.push(otherId);
+      matchIds.push(otherId);
     }
   }
 
-  return connectionIds;
+  return matchIds;
 }
 
 /**
@@ -564,7 +564,7 @@ export const createPost = onCall(async (request) => {
 /**
  * Trigger: When a post is created, fanout to feedItems
  * - Public posts: Fanout to matching users in the same region (discover-style filtering)
- * - Connections posts: Fanout to mutual matches
+ * - Matches posts: Fanout to mutual matches
  * - Private posts: Fanout to approved viewers only
  */
 export const onPostCreated = onDocumentCreated(
@@ -594,11 +594,11 @@ export const onPostCreated = onDocumentCreated(
       recipientIds = await getPublicPostRecipients(postData);
       reason = "public";
       logger.info(`Post ${postId} (public) fanning out to ${recipientIds.length} matching users in region`);
-    } else if (postData.visibility === "connections") {
-      // Fanout to all connections (matches)
-      recipientIds = await getUserConnections(postData.authorId);
+    } else if (postData.visibility === "matches") {
+      // Fanout to all matches (mutual favorites)
+      recipientIds = await getUserMatches(postData.authorId);
       reason = "connection";
-      logger.info(`Post ${postId} (connections) fanning out to ${recipientIds.length} connections`);
+      logger.info(`Post ${postId} (matches) fanning out to ${recipientIds.length} matches`);
     } else if (postData.visibility === "private") {
       // Fanout to approved viewers only
       recipientIds = await getPrivateAccessViewers(postData.authorId);
@@ -667,9 +667,9 @@ export const grantPrivateAccess = onCall(async (request) => {
 });
 
 /**
- * Revoke private access from a viewer
+ * Revoke private post access from a viewer
  */
-export const revokePrivateAccess = onCall(async (request) => {
+export const revokePrivatePostAccess = onCall(async (request) => {
   if (!request.auth) {
     throw new HttpsError("unauthenticated", "Must be logged in");
   }

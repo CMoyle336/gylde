@@ -1,24 +1,30 @@
 /**
- * Service for managing private photo access
+ * Service for managing private content access (photos and posts)
  */
 import { Injectable, inject, signal, effect } from '@angular/core';
 import { Functions, httpsCallable } from '@angular/fire/functions';
 import { Firestore, collection, query, where, onSnapshot, orderBy, doc, getDoc } from '@angular/fire/firestore';
 import { AuthService } from './auth.service';
-import { PhotoAccessRequest, PhotoAccessGrant, PhotoAccessSummary } from '../interfaces/photo.interface';
+import { PrivateAccessRequest, PrivateAccessGrant, PrivateAccessSummary } from '../interfaces/photo.interface';
 
-export interface PhotoAccessRequestDisplay extends PhotoAccessRequest {
+export interface PrivateAccessRequestDisplay extends PrivateAccessRequest {
   id: string;
 }
 
-export interface PhotoAccessGrantDisplay extends PhotoAccessGrant {
+export interface PrivateAccessGrantDisplay extends PrivateAccessGrant {
   id: string;
 }
+
+// Legacy aliases for backward compatibility
+/** @deprecated Use PrivateAccessRequestDisplay instead */
+export type PhotoAccessRequestDisplay = PrivateAccessRequestDisplay;
+/** @deprecated Use PrivateAccessGrantDisplay instead */
+export type PhotoAccessGrantDisplay = PrivateAccessGrantDisplay;
 
 @Injectable({
   providedIn: 'root'
 })
-export class PhotoAccessService {
+export class PrivateAccessService {
   private readonly functions = inject(Functions);
   private readonly firestore = inject(Firestore);
   private readonly authService = inject(AuthService);
@@ -28,11 +34,11 @@ export class PhotoAccessService {
   readonly pendingRequestsCount = this._pendingRequestsCount.asReadonly();
 
   // Pending requests list
-  private readonly _pendingRequests = signal<PhotoAccessRequestDisplay[]>([]);
+  private readonly _pendingRequests = signal<PrivateAccessRequestDisplay[]>([]);
   readonly pendingRequests = this._pendingRequests.asReadonly();
 
   // Granted access list
-  private readonly _grants = signal<PhotoAccessGrantDisplay[]>([]);
+  private readonly _grants = signal<PrivateAccessGrantDisplay[]>([]);
   readonly grants = this._grants.asReadonly();
 
   private requestsUnsubscribe?: () => void;
@@ -54,7 +60,7 @@ export class PhotoAccessService {
   private subscribeToRequests(userId: string): void {
     this.requestsUnsubscribe?.();
 
-    const requestsRef = collection(this.firestore, `users/${userId}/photoAccessRequests`);
+    const requestsRef = collection(this.firestore, `users/${userId}/privateAccessRequests`);
     const q = query(
       requestsRef,
       where('status', '==', 'pending'),
@@ -66,7 +72,7 @@ export class PhotoAccessService {
         id: doc.id,
         ...doc.data(),
         requestedAt: doc.data()['requestedAt']?.toDate(),
-      })) as PhotoAccessRequestDisplay[];
+      })) as PrivateAccessRequestDisplay[];
 
       this._pendingRequests.set(requests);
       this._pendingRequestsCount.set(requests.length);
@@ -76,7 +82,7 @@ export class PhotoAccessService {
   private subscribeToGrants(userId: string): void {
     this.grantsUnsubscribe?.();
 
-    const grantsRef = collection(this.firestore, `users/${userId}/photoAccessGrants`);
+    const grantsRef = collection(this.firestore, `users/${userId}/privateAccessGrants`);
     const q = query(grantsRef, orderBy('grantedAt', 'desc'));
 
     this.grantsUnsubscribe = onSnapshot(q, (snapshot) => {
@@ -84,7 +90,7 @@ export class PhotoAccessService {
         id: doc.id,
         ...doc.data(),
         grantedAt: doc.data()['grantedAt']?.toDate(),
-      })) as PhotoAccessGrantDisplay[];
+      })) as PrivateAccessGrantDisplay[];
 
       this._grants.set(grants);
     });
@@ -99,31 +105,31 @@ export class PhotoAccessService {
   }
 
   /**
-   * Request access to view a user's private photos
+   * Request access to view a user's private content (photos and posts)
    */
   async requestAccess(targetUserId: string): Promise<{ success: boolean; message: string }> {
     const fn = httpsCallable<{ targetUserId: string }, { success: boolean; message: string }>(
       this.functions,
-      'requestPhotoAccess'
+      'requestPrivateAccess'
     );
     const result = await fn({ targetUserId });
     return result.data;
   }
 
   /**
-   * Cancel a pending photo access request
+   * Cancel a pending private content access request
    */
   async cancelRequest(targetUserId: string): Promise<{ success: boolean; message: string }> {
     const fn = httpsCallable<{ targetUserId: string }, { success: boolean; message: string }>(
       this.functions,
-      'cancelPhotoAccessRequest'
+      'cancelPrivateAccessRequest'
     );
     const result = await fn({ targetUserId });
     return result.data;
   }
 
   /**
-   * Respond to a photo access request
+   * Respond to a private content access request
    */
   async respondToRequest(
     requesterId: string,
@@ -132,31 +138,31 @@ export class PhotoAccessService {
     const fn = httpsCallable<
       { requesterId: string; response: 'grant' | 'deny' },
       { success: boolean; message: string }
-    >(this.functions, 'respondToPhotoAccessRequest');
+    >(this.functions, 'respondToPrivateAccessRequest');
     const result = await fn({ requesterId, response });
     return result.data;
   }
 
   /**
-   * Revoke previously granted photo access
+   * Revoke previously granted private content access
    */
   async revokeAccess(userId: string): Promise<{ success: boolean; message: string }> {
     const fn = httpsCallable<{ userId: string }, { success: boolean; message: string }>(
       this.functions,
-      'revokePhotoAccess'
+      'revokePrivateAccess'
     );
     const result = await fn({ userId });
     return result.data;
   }
 
   /**
-   * Check if current user has access to view another user's private photos
+   * Check if current user has access to view another user's private content
    */
-  async checkAccess(targetUserId: string): Promise<PhotoAccessSummary> {
+  async checkAccess(targetUserId: string): Promise<PrivateAccessSummary> {
     const fn = httpsCallable<
       { targetUserId: string },
       { hasAccess: boolean; isSelf?: boolean; requestStatus?: string; requestedAt?: Date }
-    >(this.functions, 'checkPhotoAccess');
+    >(this.functions, 'checkPrivateAccess');
     const result = await fn({ targetUserId });
     return {
       hasAccess: result.data.hasAccess,
@@ -217,13 +223,13 @@ export class PhotoAccessService {
   }
 
   /**
-   * Subscribe to real-time photo access status updates for a specific user
+   * Subscribe to real-time private content access status updates for a specific user
    * Used on the user profile page to detect when access is granted/denied
    * @returns Unsubscribe function
    */
   subscribeToAccessStatus(
     targetUserId: string,
-    callback: (status: PhotoAccessSummary) => void
+    callback: (status: PrivateAccessSummary) => void
   ): () => void {
     const currentUser = this.authService.user();
     if (!currentUser) {
@@ -240,7 +246,7 @@ export class PhotoAccessService {
     // Listen to the request document for status changes
     const requestDocRef = doc(
       this.firestore,
-      `users/${targetUserId}/photoAccessRequests/${currentUser.uid}`
+      `users/${targetUserId}/privateAccessRequests/${currentUser.uid}`
     );
 
     const unsubscribe = onSnapshot(requestDocRef, (snapshot) => {
@@ -263,3 +269,7 @@ export class PhotoAccessService {
     return unsubscribe;
   }
 }
+
+// Legacy alias for backward compatibility
+/** @deprecated Use PrivateAccessService instead */
+export { PrivateAccessService as PhotoAccessService };

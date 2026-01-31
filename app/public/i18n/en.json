@@ -1008,9 +1008,9 @@
       "MESSAGE": "{{name}} messaged you",
       "FAVORITE": "{{name}} favorited your profile",
       "VIEW": "{{name}} viewed your profile",
-      "PHOTO_ACCESS_REQUEST": "{{name}} requested access to your private photos",
-      "PHOTO_ACCESS_GRANTED": "{{name}} granted you access to their private photos",
-      "PHOTO_ACCESS_DENIED": "{{name}} denied your photo access request"
+      "PRIVATE_ACCESS_REQUEST": "{{name}} requested access to your private content",
+      "PRIVATE_ACCESS_GRANTED": "{{name}} granted you access to their private content",
+      "PRIVATE_ACCESS_DENIED": "{{name}} denied your access request"
     },
     "STATS_TITLE": "This Week",
     "STATS": {
@@ -1214,11 +1214,29 @@
         "DESCRIPTION": "Only verified members can post. No bots, no spam—just real people sharing real moments."
       }
     },
+    "TAB_FEED": "Feed",
+    "TAB_PRIVATE": "Private",
+    "SIDEBAR": {
+      "TITLE": "Feed Info",
+      "MATCHES": "Your Matches",
+      "VIEW_ALL": "View all",
+      "NO_MATCHES": "No matches yet",
+      "PRIVATE_ACCESS": "Private Access",
+      "PENDING_REQUESTS": "Pending Requests",
+      "GRANTED_ACCESS": "Granted Access",
+      "NO_PRIVATE_ACCESS": "No access requests or grants",
+      "POST_ACTIVITY": "Post Activity",
+      "NO_POST_ACTIVITY": "No recent activity on your posts",
+      "STATS": "Your Stats",
+      "STAT_MATCHES": "Matches",
+      "STAT_FAVORITES": "Favorites",
+      "STAT_VIEWS": "Views"
+    },
     "FILTER_ALL": "All Posts",
-    "FILTER_CONNECTIONS": "Connections",
+    "FILTER_MATCHES": "Matches",
     "FILTER_PRIVATE": "Private",
     "VISIBILITY_PUBLIC": "Public",
-    "VISIBILITY_CONNECTIONS": "Connections only",
+    "VISIBILITY_MATCHES": "Matches only",
     "VISIBILITY_PRIVATE": "Private",
     "LOADING": "Loading feed...",
     "TRY_AGAIN": "Try Again",
@@ -1232,11 +1250,12 @@
     "REMOVE_MEDIA": "Remove media",
     "LOADING_PREVIEW": "Loading preview...",
     "REMOVE_PREVIEW": "Remove preview",
+    "PRIVATE_POST_NOTICE": "This post will only be visible to people you've granted private access",
     "VISIBILITY": {
       "PUBLIC": "Public",
       "VERIFIED": "Verified Only",
       "TRUSTED": "Trusted+",
-      "CONNECTIONS": "Connections",
+      "MATCHES": "Matches",
       "PRIVATE": "Private"
     },
     "ANONYMOUS_USER": "Anonymous",
@@ -1609,9 +1628,9 @@
         "TITLE": "Upload More Photos",
         "DESCRIPTION": "Upload up to 20 photos to showcase more of yourself."
       },
-      "CAN_ACCESS_PRIVATE_PHOTOS": {
-        "TITLE": "Access Private Photos",
-        "DESCRIPTION": "Request and share private photos with your connections."
+      "CAN_ACCESS_PRIVATE_CONTENT": {
+        "TITLE": "Access Private Content",
+        "DESCRIPTION": "Request and share private photos and posts with your matches."
       },
       "ADVANCED_FILTERS": {
         "TITLE": "Advanced Filters",
@@ -1623,7 +1642,7 @@
       }
     },
     "PREMIUM_FEATURES": {
-      "PRIVATE_PHOTOS": "Request & view private photos",
+      "PRIVATE_CONTENT": "Request & view private content",
       "ADVANCED_FILTERS": "Advanced discovery filters",
       "WHO_VIEWED": "See who viewed your profile",
       "WHO_FAVORITED": "See who favorited you",
@@ -1796,7 +1815,7 @@
     "UPLOADING_STATUS": "Uploading...",
     "UPLOAD_FAILED": "Failed",
     "ADD_PHOTO_BUTTON": "Add Photo",
-    "MANAGE_PHOTO_ACCESS_BUTTON": "Manage Private Photo Access",
+    "MANAGE_PRIVATE_ACCESS_BUTTON": "Manage Private Access",
     "BASIC_INFO_TITLE": "Basic Info",
     "TAGLINE_LABEL": "Tagline",
     "TAGLINE_PLACEHOLDER": "A short phrase about you...",
@@ -1848,7 +1867,12 @@
       "ESTABLISHED_PLUS": "Established+",
       "TRUSTED_PLUS": "Trusted+",
       "DISTINGUISHED": "Distinguished"
-    }
+    },
+    "MY_POSTS_TITLE": "My Posts",
+    "VIEW_FEED": "View Feed",
+    "LOADING_POSTS": "Loading posts...",
+    "NO_POSTS_YET": "You haven't created any posts yet",
+    "CREATE_FIRST_POST": "Create Your First Post"
   },
   "CONNECTION_TYPES": {
     "INTENTIONAL_DATING": "Intentional Dating",
@@ -1872,7 +1896,8 @@
     "YEARS_AGO": "{{years}} year{{years === 1 ? '' : 's'}} ago"
   },
   "COMMON": {
-    "OK": "OK"
+    "OK": "OK",
+    "PREMIUM": "Premium"
   },
   "USER_PROFILE": {
     "ERROR_HINT": "This profile may be private or no longer exists.",
@@ -1881,8 +1906,11 @@
     "PRIVATE_BADGE": "Private",
     "PRIVATE_PHOTO": "private photo",
     "PRIVATE_PHOTOS": "private photos",
+    "PRIVATE_CONTENT": "Private Content",
     "REQUEST_ACCESS_HINT": "Request access to view",
     "REQUEST_ACCESS_BUTTON": "Request Access",
+    "REQUEST_PRIVATE_ACCESS_HINT": "This user has private photos and posts you can request access to",
+    "REQUEST_PRIVATE_ACCESS_BUTTON": "Request Access",
     "CANCEL_REQUEST_BUTTON": "Cancel Request",
     "REQUEST_AGAIN_BUTTON": "Request Again",
     "VIEWED_YOUR_PROFILE": "Viewed your profile",
@@ -1931,5 +1959,13 @@
       "BLOCKED": "You cannot message this user."
     },
     "THIS_USER": "This user"
+  },
+  "PRIVATE_ACCESS": {
+    "DIALOG_TITLE": "Private Content Access",
+    "DIALOG_SUBTITLE": "Manage who can view your private photos and posts",
+    "NO_PENDING_REQUESTS": "No pending requests",
+    "REQUESTS_EMPTY_HINT": "When someone requests access to your private content, they'll appear here",
+    "NO_ACCESS_GRANTED": "No access granted",
+    "GRANTED_EMPTY_HINT": "You haven't granted anyone access to your private content yet"
   }
 }

@@ -335,18 +335,29 @@ export const onUserCreated = onDocumentCreated(
     await db.collection("users").doc(userId).update(publicFields);
 
     // Store sensitive data in private subcollection (only user can read, only functions can write)
-    await db.collection("users").doc(userId).collection("private").doc("data").set({
-      // Profile progress data
-      profileProgress: trustData.score,
-      trust: trustData,
+    // First check if private data already exists (e.g., from seeding)
+    const privateDocRef = db.collection("users").doc(userId).collection("private").doc("data");
+    const existingPrivateDoc = await privateDocRef.get();
+    const existingData = existingPrivateDoc.exists ? existingPrivateDoc.data() : null;
 
-      // Subscription data
+    // Only set subscription defaults if subscription doesn't already exist
+    // This preserves subscription data set by seed scripts or other processes
+    const subscriptionData = existingData?.subscription ? {} : {
       subscription: {
         tier: "free",
         status: "active",
         currentPeriodEnd: null,
         cancelAtPeriodEnd: false,
       },
+    };
+
+    await privateDocRef.set({
+      // Profile progress data
+      profileProgress: trustData.score,
+      trust: trustData,
+
+      // Subscription data (only if not already set)
+      ...subscriptionData,
 
       updatedAt: Timestamp.now(),
     }, {merge: true});

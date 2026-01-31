@@ -1,5 +1,5 @@
 /**
- * Photo-related type definitions for Cloud Functions
+ * Photo and private content type definitions for Cloud Functions
  */
 
 import {Timestamp} from "firebase-admin/firestore";
@@ -16,9 +16,10 @@ export interface Photo {
 }
 
 /**
- * Photo access request from one user to another
+ * Private content access request from one user to another
+ * Covers both private photos and private posts
  */
-export interface PhotoAccessRequest {
+export interface PrivateAccessRequest {
   requesterId: string;
   requesterName: string;
   requesterPhoto: string | null;
@@ -28,11 +29,18 @@ export interface PhotoAccessRequest {
 }
 
 /**
- * Photo access grant
+ * Private content access grant
+ * Covers both private photos and private posts
  */
-export interface PhotoAccessGrant {
+export interface PrivateAccessGrant {
   grantedToUserId: string;
   grantedToName: string;
   grantedToPhoto: string | null;
   grantedAt: Timestamp;
 }
+
+// Legacy aliases for backward compatibility during migration
+/** @deprecated Use PrivateAccessRequest instead */
+export type PhotoAccessRequest = PrivateAccessRequest;
+/** @deprecated Use PrivateAccessGrant instead */
+export type PhotoAccessGrant = PrivateAccessGrant;

@@ -3,9 +3,50 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { FIRESTORE_EMULATOR_URL } from '../fixtures/test-users';
 import type { TestUser } from '../fixtures/test-users';
-import { getAdminDb, getCurrentUserUid } from './settings-helpers';
+import { getAdminDb, getAdminAuth, getCurrentUserUid } from './settings-helpers';
+import { 
+  createUserViaAdmin, 
+  generateCustomToken, 
+  completeOnboardingViaAdmin,
+} from './admin-auth';
 
 type ProvisionedUser = TestUser & { uid: string };
+
+// Control verbose logging via environment variable
+// Set E2E_DEBUG=true to enable detailed provisioning logs
+const DEBUG = process.env.E2E_DEBUG === 'true';
+
+function debugLog(...args: unknown[]): void {
+  if (DEBUG) {
+    console.log(...args);
+  }
+}
+
+function debugWarn(...args: unknown[]): void {
+  if (DEBUG) {
+    console.warn(...args);
+  }
+}
+
+/**
+ * Provisioning strategy:
+ * - 'admin': Use Firebase Admin SDK (no rate limits, fastest)
+ * - 'ui': Use UI signup flow (subject to rate limits, but more realistic)
+ * 
+ * Default is 'admin' for live environments to avoid rate limits
+ */
+type ProvisioningStrategy = 'admin' | 'ui';
+
+function getProvisioningStrategy(): ProvisioningStrategy {
+  // Use admin strategy by default for live environments
+  // Can be overridden by env var
+  const override = process.env.E2E_PROVISIONING_STRATEGY;
+  if (override === 'ui' || override === 'admin') {
+    return override;
+  }
+  // Default to admin to avoid rate limits
+  return 'admin';
+}
 
 function isLiveEnvironment(): boolean {
   const baseUrl = process.env.BASE_URL || 'http://localhost:4200';
@@ -142,6 +183,137 @@ async function selectYear(page: Page, targetYear: number): Promise<void> {
   await yearSelector.click({ timeout: 10000 });
 }
 
+async function uploadPhotoWithRetry(page: Page, testImagePath: string, maxRetries = 3): Promise<boolean> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      // Wait for upload button to be visible
+      const uploadBtn = page.locator('.photo-slot.primary .photo-upload-btn');
+      const hasUploadBtn = await uploadBtn.isVisible({ timeout: 5000 }).catch(() => false);
+      
+      if (!hasUploadBtn) {
+        // Already have a photo uploaded
+        const existingPhoto = page.locator('.photo-slot.primary .photo-preview:not(.uploading)');
+        if (await existingPhoto.isVisible({ timeout: 2000 }).catch(() => false)) {
+          return true;
+        }
+      }
+
+      // Set files directly on the input (don't click the label, it opens file picker)
+      const fileInput = page.locator('.photo-slot.primary input[type="file"]');
+      await fileInput.setInputFiles(testImagePath);
+
+      // Wait for upload to complete (preview appears without uploading class)
+      // First wait for any preview to appear
+      await page.locator('.photo-slot.primary .photo-preview').waitFor({ timeout: 60000 });
+      
+      // Then wait for it to finish uploading (no .uploading class)
+      // Also check for error state
+      const uploadComplete = page.locator('.photo-slot.primary img.photo-preview:not(.uploading)');
+      const uploadError = page.locator('.photo-slot.primary .upload-overlay-onboarding .error-icon');
+      const globalError = page.locator('.error-message[role="alert"]');
+
+      // Race between success and error
+      const result = await Promise.race([
+        uploadComplete.waitFor({ timeout: 60000 }).then(() => 'success' as const),
+        uploadError.waitFor({ timeout: 60000 }).then(() => 'upload-error' as const),
+        globalError.waitFor({ timeout: 60000 }).then(() => 'global-error' as const),
+      ]).catch(() => 'timeout' as const);
+
+      if (result === 'success') {
+        // Give a moment for any final state updates
+        await page.waitForTimeout(1000);
+        return true;
+      }
+
+      // Upload failed, log and potentially retry
+      const errorText = await globalError.textContent().catch(() => null) ||
+                        await page.locator('.upload-label.error').textContent().catch(() => null);
+      console.log(`Photo upload attempt ${attempt}/${maxRetries} failed: ${result} - ${errorText || 'unknown error'}`);
+
+      if (attempt < maxRetries) {
+        // Wait before retry
+        await page.waitForTimeout(2000 * attempt);
+        // Try to remove failed photo if present and retry
+        const removeBtn = page.locator('.photo-slot.primary .photo-remove');
+        if (await removeBtn.isVisible({ timeout: 1000 }).catch(() => false)) {
+          await removeBtn.click();
+          await page.waitForTimeout(500);
+        }
+      }
+    } catch (error) {
+      console.log(`Photo upload attempt ${attempt}/${maxRetries} threw: ${error}`);
+      if (attempt === maxRetries) throw error;
+      await page.waitForTimeout(2000 * attempt);
+    }
+  }
+  return false;
+}
+
+async function finishOnboardingWithRetry(page: Page, maxRetries = 3): Promise<void> {
+  const timeout = isLiveEnvironment() ? 60000 : 20000;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      // Check if Next button is enabled
+      const nextBtn = page.locator('.btn-next:not([disabled])');
+      const isEnabled = await nextBtn.isVisible({ timeout: 5000 }).catch(() => false);
+      
+      if (!isEnabled) {
+        // Button is disabled - check why
+        const disabledBtn = page.locator('.btn-next[disabled]');
+        if (await disabledBtn.isVisible({ timeout: 1000 }).catch(() => false)) {
+          console.log(`Attempt ${attempt}: Next button is disabled, checking for missing requirements...`);
+          // Might need a photo - check if we have one
+          const hasPhoto = await page.locator('.photo-slot.primary .photo-preview:not(.uploading)').isVisible().catch(() => false);
+          if (!hasPhoto) {
+            throw new Error('Next button disabled - likely missing required photo');
+          }
+          // Wait a bit and check again
+          await page.waitForTimeout(2000);
+          continue;
+        }
+      }
+
+      await nextBtn.click();
+
+      // Wait for either navigation to discover OR an error message
+      const discoverUrl = page.waitForURL('**/discover', { timeout });
+      const saveError = page.locator('.save-error, [class*="error"]').filter({ hasText: /failed|error/i });
+
+      const result = await Promise.race([
+        discoverUrl.then(() => 'success' as const),
+        saveError.waitFor({ state: 'visible', timeout }).then(() => 'save-error' as const),
+      ]).catch((e) => {
+        // Check if we're already on discover
+        if (page.url().includes('/discover')) return 'success' as const;
+        throw e;
+      });
+
+      if (result === 'success') {
+        return;
+      }
+
+      const errorText = await saveError.textContent().catch(() => 'unknown save error');
+      console.log(`Onboarding save attempt ${attempt}/${maxRetries} failed: ${errorText}`);
+
+      if (attempt < maxRetries) {
+        await page.waitForTimeout(3000 * attempt);
+      }
+    } catch (error) {
+      // Check if we actually made it to discover despite the error
+      if (page.url().includes('/discover')) {
+        return;
+      }
+      
+      console.log(`Onboarding finish attempt ${attempt}/${maxRetries} threw: ${error}`);
+      if (attempt === maxRetries) throw error;
+      await page.waitForTimeout(3000 * attempt);
+    }
+  }
+
+  throw new Error('Failed to complete onboarding after all retries');
+}
+
 async function completeOnboarding(page: Page, user: TestUser): Promise<void> {
   if (!page.url().includes('/onboarding')) return;
 
@@ -184,20 +356,17 @@ async function completeOnboarding(page: Page, user: TestUser): Promise<void> {
   await page.locator('#ideal-relationship').fill('Someone who values honesty.');
   await clickNextButton(page);
 
-  // Step 6: Photos
+  // Step 6: Photos - with retry logic for flaky uploads
   const testImagePath = path.join(__dirname, '..', 'fixtures', user.testImage);
   if (fs.existsSync(testImagePath)) {
-    await page.locator('.photo-upload-btn').first().waitFor();
-    await page.locator('.photo-upload-btn').first().click();
-    await page.waitForTimeout(100);
-    await page.locator('.photo-slot.primary input[type="file"]').setInputFiles(testImagePath);
-    await page.locator('.photo-slot.primary .photo-preview').waitFor({ timeout: 60000 });
-    await page.locator('.photo-slot.primary .photo-preview:not(.uploading)').waitFor({ timeout: 60000 });
-    await page.waitForTimeout(2000);
+    const uploadSuccess = await uploadPhotoWithRetry(page, testImagePath);
+    if (!uploadSuccess) {
+      throw new Error(`Failed to upload photo for user ${user.email}`);
+    }
   }
 
-  await clickNextButton(page, 60000);
-  await page.waitForURL('**/discover', { timeout: isLiveEnvironment() ? 60000 : 20000 });
+  // Final step: complete onboarding with retry logic for save failures
+  await finishOnboardingWithRetry(page);
 }
 
 const TIER_SCORES: Record<string, number> = {
@@ -217,14 +386,68 @@ const TIER_LIMITS: Record<string, number> = {
 };
 
 async function setupPremiumSubscription(uid: string): Promise<boolean> {
+  debugLog(`[Premium] Setting up subscription for ${uid}...`);
+  
   if (isLiveEnvironment()) {
-    const db = await getAdminDb();
-    if (!db) return false;
-    await db.doc(`users/${uid}/private/data`).set(
-      { subscription: { tier: 'premium', status: 'active' } },
-      { merge: true }
-    );
-    return true;
+    try {
+      const db = await getAdminDb();
+      if (!db) {
+        debugLog(`[Premium] ❌ ❌ Admin DB not available for ${uid}`);
+        return false;
+      }
+      
+      debugLog(`[Premium] Writing to users/${uid}/private/data...`);
+      
+      // Use update with field paths to ensure nested fields are updated correctly
+      // This avoids issues with merge behavior on nested objects
+      const docRef = db.doc(`users/${uid}/private/data`);
+      const docSnapshot = await docRef.get();
+      
+      if (docSnapshot.exists) {
+        // Document exists - use update with field paths
+        await docRef.update({
+          'subscription.tier': 'premium',
+          'subscription.status': 'active',
+        });
+        debugLog(`[Premium] Updated existing subscription to premium`);
+      } else {
+        // Document doesn't exist - create it
+        await docRef.set({
+          subscription: { tier: 'premium', status: 'active' },
+        });
+        debugLog(`[Premium] Created new subscription document`);
+      }
+      
+      // Verify the write with a small delay to account for eventual consistency
+      await new Promise(resolve => setTimeout(resolve, 100));
+      const verifyDoc = await docRef.get();
+      const verifyData = verifyDoc.data();
+      debugLog(`[Premium] Verified subscription data:`, JSON.stringify(verifyData?.subscription));
+      
+      if (verifyData?.subscription?.tier !== 'premium') {
+        debugLog(`[Premium] ❌ ❌ Subscription tier is still "${verifyData?.subscription?.tier}" - possible Cloud Function or security rule blocking the change`);
+        // Try one more time with explicit overwrite
+        await docRef.set(
+          { subscription: { ...verifyData?.subscription, tier: 'premium', status: 'active' } },
+          { merge: true }
+        );
+        debugLog(`[Premium] Retried with full subscription object`);
+      }
+      
+      debugLog(`[Premium] Writing isPremium to users/${uid}...`);
+      
+      // Also set denormalized isPremium flag on main user doc (used by some UI components)
+      await db.doc(`users/${uid}`).set(
+        { isPremium: true },
+        { merge: true }
+      );
+      
+      debugLog(`[Premium] ✓ Set up premium subscription for ${uid} (live)`);
+      return true;
+    } catch (error) {
+      debugLog(`[Premium] ❌ ❌ Failed to set premium for ${uid}:`, error);
+      return false;
+    }
   }
 
   const projectId = process.env.FIREBASE_PROJECT_ID || 'gylde-sandbox';
@@ -232,8 +455,10 @@ async function setupPremiumSubscription(uid: string): Promise<boolean> {
     'Content-Type': 'application/json',
     Authorization: 'Bearer owner',
   };
-  const docPath = `projects/${projectId}/databases/(default)/documents/users/${uid}/private/data`;
-  const getUrl = `${FIRESTORE_EMULATOR_URL}/v1/${docPath}`;
+  
+  // Set subscription in private subcollection
+  const privateDocPath = `projects/${projectId}/databases/(default)/documents/users/${uid}/private/data`;
+  const getUrl = `${FIRESTORE_EMULATOR_URL}/v1/${privateDocPath}`;
 
   const getResponse = await fetch(getUrl, { headers: adminHeaders });
   let existingData: Record<string, unknown> = {};
@@ -254,13 +479,35 @@ async function setupPremiumSubscription(uid: string): Promise<boolean> {
     },
   };
 
-  const patchResponse = await fetch(`${FIRESTORE_EMULATOR_URL}/v1/${docPath}`, {
+  const patchResponse = await fetch(`${FIRESTORE_EMULATOR_URL}/v1/${privateDocPath}`, {
     method: 'PATCH',
     headers: adminHeaders,
     body: JSON.stringify({ fields: updatedData }),
   });
 
-  return patchResponse.ok;
+  if (!patchResponse.ok) {
+    debugLog(`[Premium] ❌ Failed to set subscription for ${uid} (emulator)`);
+    return false;
+  }
+  
+  // Also set denormalized isPremium flag on main user doc
+  const userDocPath = `projects/${projectId}/databases/(default)/documents/users/${uid}`;
+  const userPatchResponse = await fetch(`${FIRESTORE_EMULATOR_URL}/v1/${userDocPath}`, {
+    method: 'PATCH',
+    headers: adminHeaders,
+    body: JSON.stringify({ 
+      fields: { 
+        isPremium: { booleanValue: true } 
+      } 
+    }),
+  });
+
+  if (!userPatchResponse.ok) {
+    debugWarn(`[Premium] Failed to set isPremium flag on user doc for ${uid}`);
+  }
+
+  debugLog(`[Premium] Set up premium subscription for ${uid} (emulator)`);
+  return true;
 }
 
 async function setupReputationData(uid: string, tier: string): Promise<boolean> {
@@ -357,7 +604,161 @@ async function setupReputationData(uid: string, tier: string): Promise<boolean> 
   return patchResponse.ok;
 }
 
+/**
+ * Provision a user via Firebase Admin SDK (no rate limits!)
+ * This is the preferred method for live environments.
+ */
+async function provisionUserViaAdmin(
+  uniqueUser: TestUser,
+  opts: { runId: string }
+): Promise<ProvisionedUser> {
+  debugLog(`[Provisioning] Creating user via Admin SDK: ${uniqueUser.email}`);
+  
+  // Step 1: Create user via Admin SDK (no signup rate limits)
+  const { uid, created } = await createUserViaAdmin(
+    uniqueUser.email,
+    uniqueUser.password,
+    uniqueUser.displayName
+  );
+
+  // Step 2: Complete onboarding via direct Firestore writes (no UI interaction needed)
+  await completeOnboardingViaAdmin(uid, {
+    displayName: uniqueUser.displayName,
+    birthDate: uniqueUser.birthDate,
+    city: uniqueUser.city,
+    gender: uniqueUser.gender,
+    interestedIn: uniqueUser.interestedIn,
+    tagline: uniqueUser.tagline,
+    // Note: Photo upload requires special handling for live environments
+    // For now, we skip the photo in admin provisioning
+  });
+
+  // IMPORTANT: Wait for Cloud Functions to complete before modifying private data
+  // The onUserCreated Cloud Function runs when the user doc is created and sets
+  // subscription.tier to "free" and initializes reputation. We need to wait for this
+  // to complete before setting premium/reputation, otherwise our writes get overwritten.
+  // Only wait if this is a newly created user (Cloud Functions only trigger on document creation).
+  if (created && (uniqueUser.isPremium || uniqueUser.reputationTier)) {
+    debugLog(`[Provisioning] Waiting 3s for Cloud Functions to process new user creation...`);
+    await new Promise(resolve => setTimeout(resolve, 3000));
+  }
+
+  // Step 3: Set up premium subscription if needed
+  if (uniqueUser.isPremium) {
+    debugLog(`[Provisioning] Setting up premium subscription for ${uid}...`);
+    const premiumSuccess = await setupPremiumSubscription(uid).catch((err) => {
+      debugLog(`[Provisioning] ❌ Failed to setup premium for ${uid}:`, err);
+      return false;
+    });
+    if (premiumSuccess) {
+      debugLog(`[Provisioning] ✓ Premium subscription set up for ${uid}`);
+    }
+  }
+
+  // Step 4: Set up reputation tier if needed
+  if (uniqueUser.reputationTier) {
+    await setupReputationData(uid, uniqueUser.reputationTier).catch((err) => {
+      debugWarn(`[Provisioning] Failed to setup reputation for ${uid}:`, err);
+    });
+  }
+
+  appendToRegistry(opts.runId, { uid, email: uniqueUser.email });
+  debugLog(`[Provisioning] User ready: ${uniqueUser.email} -> ${uid}`);
+  
+  return { ...uniqueUser, uid };
+}
+
+/**
+ * Provision a user via UI signup flow
+ * This is more realistic but subject to Firebase rate limits.
+ */
+async function provisionUserViaUI(
+  browser: Browser,
+  uniqueUser: TestUser,
+  opts: { runId: string }
+): Promise<ProvisionedUser> {
+  debugLog(`[Provisioning] Creating user via UI: ${uniqueUser.email}`);
+  
+  const context = await browser.newContext();
+  const page = await context.newPage();
+
+  try {
+    await signupViaUI(page, uniqueUser);
+    await completeOnboarding(page, uniqueUser);
+
+    const uid = await getCurrentUserUid(page);
+    if (!uid) {
+      throw new Error(`Could not read UID after signup for ${uniqueUser.email}`);
+    }
+
+    if (uniqueUser.isPremium) {
+      await setupPremiumSubscription(uid).catch(() => {});
+    }
+    if (uniqueUser.reputationTier) {
+      await setupReputationData(uid, uniqueUser.reputationTier).catch(() => {});
+    }
+
+    appendToRegistry(opts.runId, { uid, email: uniqueUser.email });
+    return { ...uniqueUser, uid };
+  } finally {
+    await context.close();
+  }
+}
+
+/**
+ * Provision a user for e2e testing
+ * 
+ * Uses Admin SDK by default to avoid Firebase rate limits.
+ * Set E2E_PROVISIONING_STRATEGY=ui to use UI signup instead.
+ * Set E2E_PROVISIONING_FALLBACK=false to disable fallback to UI on admin failure.
+ */
 export async function provisionUser(
+  browser: Browser,
+  uniqueUser: TestUser,
+  opts: { runId: string }
+): Promise<ProvisionedUser> {
+  const strategy = getProvisioningStrategy();
+  const allowFallback = process.env.E2E_PROVISIONING_FALLBACK !== 'false';
+  
+  debugLog(`[Provisioning] Strategy: ${strategy}, Live: ${isLiveEnvironment()}, Fallback: ${allowFallback}`);
+  
+  if (strategy === 'admin') {
+    try {
+      return await provisionUserViaAdmin(uniqueUser, opts);
+    } catch (error: any) {
+      const errorMessage = error?.message || String(error);
+      debugLog(`[Provisioning] ❌ Admin provisioning FAILED for ${uniqueUser.email}:`);
+      debugLog(`[Provisioning]    Error: ${errorMessage}`);
+      
+      // Check if this is a credentials/configuration error
+      const isConfigError = errorMessage.includes('GOOGLE_APPLICATION_CREDENTIALS') ||
+                            errorMessage.includes('credentials') ||
+                            errorMessage.includes('Admin Auth not available') ||
+                            errorMessage.includes('Admin Firestore not available');
+      
+      if (isConfigError) {
+        debugLog(`[Provisioning] ⚠️  This appears to be a configuration error.`);
+        debugLog(`[Provisioning]    Check that GOOGLE_APPLICATION_CREDENTIALS and FIREBASE_PROJECT_ID are set correctly in e2e/.env`);
+      }
+      
+      if (allowFallback) {
+        debugWarn(`[Provisioning] ⚠️  Falling back to UI provisioning (will be rate-limited!)`);
+        return await provisionUserViaUI(browser, uniqueUser, opts);
+      } else {
+        debugLog(`[Provisioning] ❌ Fallback disabled. Set E2E_PROVISIONING_FALLBACK=true or fix admin credentials.`);
+        throw error;
+      }
+    }
+  }
+  
+  debugLog(`[Provisioning] Using UI strategy for ${uniqueUser.email}`);
+  return await provisionUserViaUI(browser, uniqueUser, opts);
+}
+
+/**
+ * @deprecated Use provisionUser instead
+ */
+export async function provisionUserLegacy(
   browser: Browser,
   uniqueUser: TestUser,
   opts: { runId: string }

@@ -173,6 +173,15 @@ export class RemoteConfigService {
    * Reads from TransferState if available, otherwise fetches via client SDK
    */
   private async initializeBrowser(): Promise<void> {
+    // Check for e2e test override (set by Playwright's addInitScript)
+    const testOverride = (window as any).__remoteConfigOverride as RemoteConfigValues | undefined;
+    if (testOverride) {
+      console.log('[RemoteConfig] Using test override values');
+      this.applyValues({ ...DEFAULTS, ...testOverride });
+      this._initialized.set(true);
+      return;
+    }
+
     // Check if we have values from SSR
     if (this.transferState.hasKey(REMOTE_CONFIG_KEY)) {
       const values = this.transferState.get(REMOTE_CONFIG_KEY, DEFAULTS);

@@ -196,12 +196,12 @@
         </div>
         <input #photoInput type="file" accept="image/*" multiple hidden (change)="onPhotosSelected($event)">
         
-        <!-- Manage Private Photo Access -->
+        <!-- Manage Private Content Access -->
         @if (hasPrivatePhotos()) {
           <div class="manage-access-section">
             <button mat-stroked-button class="manage-access-btn" (click)="openAccessDialog()">
               <mat-icon>lock</mat-icon>
-              {{ 'PROFILE.MANAGE_PHOTO_ACCESS_BUTTON' | translate }}
+              {{ 'PROFILE.MANAGE_PRIVATE_ACCESS_BUTTON' | translate }}
               @if (pendingRequestsCount() > 0) {
                 <span class="request-badge">{{ pendingRequestsCount() }}</span>
               }
@@ -777,6 +777,49 @@
           </div>
         </div>
       </section>
+
+      <!-- My Posts Section -->
+      @if (feedEnabled()) {
+        <section class="info-section posts-section">
+          <div class="section-header">
+            <h2>{{ 'PROFILE.MY_POSTS_TITLE' | translate }}</h2>
+            <a routerLink="/home" class="view-feed-link">
+              {{ 'PROFILE.VIEW_FEED' | translate }}
+              <mat-icon>arrow_forward</mat-icon>
+            </a>
+          </div>
+          
+          <div class="my-posts-content">
+            @if (myPostsLoading()) {
+              <div class="posts-loading">
+                <mat-spinner diameter="32"></mat-spinner>
+                <p>{{ 'PROFILE.LOADING_POSTS' | translate }}</p>
+              </div>
+            } @else if (myPosts().length === 0) {
+              <div class="posts-empty">
+                <mat-icon>article</mat-icon>
+                <p>{{ 'PROFILE.NO_POSTS_YET' | translate }}</p>
+                <a routerLink="/home" mat-stroked-button>
+                  {{ 'PROFILE.CREATE_FIRST_POST' | translate }}
+                </a>
+              </div>
+            } @else {
+              <div class="posts-list">
+                @for (post of myPosts(); track post.id) {
+                  <app-post-card
+                    [post]="post"
+                    [isDeleting]="deletingPostId() === post.id"
+                    (likeClick)="onPostLike($event)"
+                    (commentClick)="onPostComment($event)"
+                    (authorClick)="onPostAuthorClick($event)"
+                    (deleteClick)="onPostDelete($event)"
+                    (reportClick)="onPostReport($event)" />
+                }
+              </div>
+            }
+          </div>
+        </section>
+      }
 
     </div>
   } @else {

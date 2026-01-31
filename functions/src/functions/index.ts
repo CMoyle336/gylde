@@ -19,6 +19,7 @@ export * from "./subscriptions";
 export * from "./reputation";
 export * from "./videos";
 export * from "./feed";
+export * from "./feed-activities";
 export {submitFounderIssue} from "./founders";
 
 // Future function modules:

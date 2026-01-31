@@ -17,6 +17,7 @@ export type AnalyticsCategory =
   | 'matches'
   | 'favorites'
   | 'photos'
+  | 'private_content'
   | 'settings'
   | 'subscription'
   | 'onboarding'
@@ -507,28 +508,28 @@ export class AnalyticsService {
   }
 
   // ============================================
-  // PHOTO ACCESS EVENTS
+  // PRIVATE CONTENT ACCESS EVENTS
   // ============================================
 
   /**
-   * Track photo access requested
+   * Track private content access requested
    */
-  trackPhotoAccessRequested(): void {
-    this.logEvent('photo_access_requested', { category: 'photos' });
+  trackPrivateAccessRequested(): void {
+    this.logEvent('private_access_requested', { category: 'private_content' });
   }
 
   /**
-   * Track photo access granted
+   * Track private content access granted
    */
-  trackPhotoAccessGranted(): void {
-    this.logEvent('photo_access_granted', { category: 'photos' });
+  trackPrivateAccessGranted(): void {
+    this.logEvent('private_access_granted', { category: 'private_content' });
   }
 
   /**
-   * Track photo access denied
+   * Track private content access denied
    */
-  trackPhotoAccessDenied(): void {
-    this.logEvent('photo_access_denied', { category: 'photos' });
+  trackPrivateAccessDenied(): void {
+    this.logEvent('private_access_denied', { category: 'private_content' });
   }
 
   // ============================================

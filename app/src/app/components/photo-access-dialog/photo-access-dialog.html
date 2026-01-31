@@ -1,10 +1,10 @@
-<div class="photo-access-dialog">
+<div class="private-access-dialog">
   <div class="dialog-header">
     <div class="header-content">
       <mat-icon class="header-icon">lock</mat-icon>
       <div class="header-text">
-        <h2>Private Photo Access</h2>
-        <p class="header-subtitle">Manage who can view your private photos</p>
+        <h2>{{ 'PRIVATE_ACCESS.DIALOG_TITLE' | translate }}</h2>
+        <p class="header-subtitle">{{ 'PRIVATE_ACCESS.DIALOG_SUBTITLE' | translate }}</p>
       </div>
     </div>
     <button mat-icon-button class="close-btn" (click)="close()">
@@ -50,8 +50,8 @@
             <div class="empty-icon">
               <mat-icon>inbox</mat-icon>
             </div>
-            <h3>No pending requests</h3>
-            <p>When someone requests access to your private photos, they'll appear here</p>
+            <h3>{{ 'PRIVATE_ACCESS.NO_PENDING_REQUESTS' | translate }}</h3>
+            <p>{{ 'PRIVATE_ACCESS.REQUESTS_EMPTY_HINT' | translate }}</p>
           </div>
         } @else {
           <div class="access-list">
@@ -98,8 +98,8 @@
             <div class="empty-icon">
               <mat-icon>person_off</mat-icon>
             </div>
-            <h3>No access granted</h3>
-            <p>You haven't granted anyone access to your private photos yet</p>
+            <h3>{{ 'PRIVATE_ACCESS.NO_ACCESS_GRANTED' | translate }}</h3>
+            <p>{{ 'PRIVATE_ACCESS.GRANTED_EMPTY_HINT' | translate }}</p>
           </div>
         } @else {
           <div class="access-list">

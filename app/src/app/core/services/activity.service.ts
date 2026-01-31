@@ -446,12 +446,12 @@ export class ActivityService implements OnDestroy {
         return `💬 ${activity.fromUserName} sent you a message`;
       case 'view':
         return `👀 ${activity.fromUserName} viewed your profile`;
-      case 'photo_access_request':
-        return `🔒 ${activity.fromUserName} requested access to your private photos`;
-      case 'photo_access_granted':
-        return `✅ ${activity.fromUserName} granted you access to their private photos`;
-      case 'photo_access_denied':
-        return `❌ ${activity.fromUserName} denied your photo access request`;
+      case 'private_access_request':
+        return `🔒 ${activity.fromUserName} requested access to your private content`;
+      case 'private_access_granted':
+        return `✅ ${activity.fromUserName} granted you access to their private content`;
+      case 'private_access_denied':
+        return `❌ ${activity.fromUserName} denied your access request`;
       default:
         return `${activity.fromUserName} interacted with you`;
     }
