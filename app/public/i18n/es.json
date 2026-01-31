@@ -1866,12 +1866,7 @@
         "ESTABLISHED_PLUS": "Establecido+",
         "TRUSTED_PLUS": "Confiable+",
         "DISTINGUISHED": "Distinguido"
-      },
-      "MY_POSTS_TITLE": "Mis Publicaciones",
-      "VIEW_FEED": "Ver Feed",
-      "LOADING_POSTS": "Cargando publicaciones...",
-      "NO_POSTS_YET": "Aún no has creado ninguna publicación",
-      "CREATE_FIRST_POST": "Crear Tu Primera Publicación"
+      }
     },
     "CONNECTION_TYPES": {
       "INTENTIONAL_DATING": "Citas intencionales",

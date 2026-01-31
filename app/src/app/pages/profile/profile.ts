@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, ElementRef, OnInit, OnDestroy, ViewChild, effect, inject, signal, computed, PLATFORM_ID, viewChild } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -23,15 +22,13 @@ import { SubscriptionService } from '../../core/services/subscription.service';
 import { RemoteConfigService } from '../../core/services/remote-config.service';
 import { AiChatService } from '../../core/services/ai-chat.service';
 import { AnalyticsService } from '../../core/services/analytics.service';
-import { FeedService } from '../../core/services/feed.service';
-import { OnboardingProfile, GeoLocation, ReputationTier, TIER_CONFIG, TIER_DISPLAY, PostDisplay } from '../../core/interfaces';
+import { OnboardingProfile, GeoLocation, ReputationTier, TIER_CONFIG, TIER_DISPLAY } from '../../core/interfaces';
 import { Photo } from '../../core/interfaces/photo.interface';
 import { ALL_CONNECTION_TYPES, getConnectionTypeLabel, SUPPORT_ORIENTATION_OPTIONS, getSupportOrientationLabel } from '../../core/constants/connection-types';
 import { PrivateAccessDialogComponent } from '../../components/photo-access-dialog';
 import { ReputationBadgeComponent } from '../../components/reputation-badge';
 import { ReputationInfoDialogComponent } from '../../components/reputation-info-dialog';
 import { FounderBadgeComponent } from '../../components/founder-badge';
-import { PostCardComponent } from '../../components/post-card';
 import { environment } from '../../../environments/environment';
 
 type LocationStatus = 'idle' | 'detecting' | 'success' | 'error';
@@ -79,7 +76,6 @@ interface UploadingPhoto {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     FormsModule,
-    RouterLink,
     DragDropModule,
     MatFormFieldModule,
     MatInputModule,
@@ -92,7 +88,6 @@ interface UploadingPhoto {
     TranslateModule,
     ReputationBadgeComponent,
     FounderBadgeComponent,
-    PostCardComponent,
   ],
 })
 export class ProfileComponent implements OnInit, OnDestroy {
@@ -105,8 +100,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
   private readonly remoteConfig = inject(RemoteConfigService);
   private readonly analytics = inject(AnalyticsService);
   private readonly translate = inject(TranslateService);
-  private readonly feedService = inject(FeedService);
-  private readonly router = inject(Router);
   
   // Show US-only notice when the only allowed region is 'us'
   protected readonly showUsOnlyNotice = computed(() => {
@@ -254,12 +247,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
   protected readonly polishingField = signal<string | null>(null);
   protected readonly polishSuggestions = signal<{ field: string; polished: string; alternatives: string[] } | null>(null);
 
-  // My Posts (Feed)
-  protected readonly feedEnabled = this.remoteConfig.featureFeedEnabled;
-  protected readonly myPosts = this.feedService.myPosts;
-  protected readonly myPostsLoading = this.feedService.myPostsLoading;
-  protected readonly deletingPostId = this.feedService.deletingPostId;
-
   // Messaging info - everyone can message everyone now
   // The only limit is on starting NEW conversations with higher-tier users
   protected readonly canMessageInfo = computed(() => {
@@ -346,11 +333,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
     if (isPlatformBrowser(this.platformId)) {
       document.addEventListener('click', this.clickOutsideHandler);
     }
-
-    // Subscribe to user's own posts if feed is enabled
-    if (this.feedEnabled()) {
-      this.feedService.subscribeToMyPosts();
-    }
   }
 
   ngOnDestroy(): void {
@@ -360,8 +342,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
     if (this.searchDebounceTimer) {
       clearTimeout(this.searchDebounceTimer);
     }
-    // Cleanup feed subscription
-    this.feedService.unsubscribeFromMyPosts();
   }
 
   // Edit form data
@@ -1273,35 +1253,5 @@ export class ProfileComponent implements OnInit, OnDestroy {
       this.analytics.trackAiPolishUsed(suggestion.field, false);
     }
     this.polishSuggestions.set(null);
-  }
-
-  // ===== Post Interaction Methods =====
-
-  protected onPostLike(post: PostDisplay): void {
-    if (post.isLiked) {
-      this.feedService.unlikePost(post.id);
-    } else {
-      this.feedService.likePost(post.id);
-    }
-  }
-
-  protected onPostComment(post: PostDisplay): void {
-    // Navigate to feed with comments open for this post
-    this.router.navigate(['/home'], { queryParams: { post: post.id, comments: true } });
-  }
-
-  protected onPostAuthorClick(post: PostDisplay): void {
-    // Already on own profile, no action needed
-  }
-
-  protected async onPostDelete(post: PostDisplay): Promise<void> {
-    const confirmMessage = this.translate.instant('FEED.CONFIRM_DELETE');
-    if (confirm(confirmMessage)) {
-      await this.feedService.deletePost(post.id);
-    }
-  }
-
-  protected onPostReport(post: PostDisplay): void {
-    // Can't report own posts, so this shouldn't be triggered
   }
 }

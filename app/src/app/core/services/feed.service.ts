@@ -99,11 +99,6 @@ export class FeedService {
   private readonly _deletingPostId = signal<string | null>(null);
   private deletedPostIds = new Set<string>(); // Track deleted posts to filter from subscriptions
 
-  // My posts state (for profile page)
-  private readonly _myPosts = signal<PostDisplay[]>([]);
-  private readonly _myPostsLoading = signal(false);
-  private myPostsUnsubscribe: (() => void) | null = null;
-
   // Public signals
   readonly posts = this._posts.asReadonly();
   readonly loading = this._loading.asReadonly();
@@ -122,10 +117,6 @@ export class FeedService {
   readonly creating = this._creating.asReadonly();
   readonly createError = this._createError.asReadonly();
   readonly deletingPostId = this._deletingPostId.asReadonly();
-
-  // My posts (for profile page)
-  readonly myPosts = this._myPosts.asReadonly();
-  readonly myPostsLoading = this._myPostsLoading.asReadonly();
 
   // Feature flag
   readonly feedEnabled = this.remoteConfigService.featureFeedEnabled;
@@ -476,67 +467,6 @@ export class FeedService {
    */
   subscribeToHomeFeed(): void {
     this.subscribeToFeed();
-  }
-
-  /**
-   * Subscribe to the current user's own posts (both public and private)
-   * Used on the profile page to show the user's feed
-   */
-  subscribeToMyPosts(): void {
-    if (!isPlatformBrowser(this.platformId)) return;
-
-    const user = this.authService.user();
-    if (!user) return;
-
-    // Cleanup existing subscription
-    this.unsubscribeFromMyPosts();
-    this._myPostsLoading.set(true);
-
-    // Query posts collection for posts authored by the current user
-    const postsRef = collection(this.firestore, 'posts');
-    const myPostsQuery = query(
-      postsRef,
-      where('authorId', '==', user.uid),
-      where('status', '==', 'active'),
-      orderBy('createdAt', 'desc'),
-      limit(50) // Show more posts on profile
-    );
-
-    this.myPostsUnsubscribe = onSnapshot(
-      myPostsQuery,
-      async (snapshot) => {
-        const docs = snapshot.docs;
-        
-        if (docs.length === 0) {
-          this._myPosts.set([]);
-          this._myPostsLoading.set(false);
-          return;
-        }
-
-        // Process the posts
-        const posts = await this.processPosts(docs, user.uid, 'own');
-        
-        // Filter out deleted posts
-        const filteredPosts = posts.filter(p => !this.deletedPostIds.has(p.id));
-        
-        this._myPosts.set(filteredPosts);
-        this._myPostsLoading.set(false);
-      },
-      (error) => {
-        console.error('Error subscribing to my posts:', error);
-        this._myPostsLoading.set(false);
-      }
-    );
-  }
-
-  /**
-   * Unsubscribe from my posts
-   */
-  unsubscribeFromMyPosts(): void {
-    if (this.myPostsUnsubscribe) {
-      this.myPostsUnsubscribe();
-      this.myPostsUnsubscribe = null;
-    }
   }
 
   /**
@@ -1287,10 +1217,8 @@ export class FeedService {
   private cleanup(): void {
     this.unsubscribeFromFeeds();
     this.unsubscribeFromComments();
-    this.unsubscribeFromMyPosts();
     this._posts.set([]);
     this._allPosts.set([]);
-    this._myPosts.set([]);
     this._comments.set([]);
     this._cursor.set(null);
     this._commentsCursor.set(null);

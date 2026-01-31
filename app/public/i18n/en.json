@@ -1867,12 +1867,7 @@
       "ESTABLISHED_PLUS": "Established+",
       "TRUSTED_PLUS": "Trusted+",
       "DISTINGUISHED": "Distinguished"
-    },
-    "MY_POSTS_TITLE": "My Posts",
-    "VIEW_FEED": "View Feed",
-    "LOADING_POSTS": "Loading posts...",
-    "NO_POSTS_YET": "You haven't created any posts yet",
-    "CREATE_FIRST_POST": "Create Your First Post"
+    }
   },
   "CONNECTION_TYPES": {
     "INTENTIONAL_DATING": "Intentional Dating",

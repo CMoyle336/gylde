@@ -203,7 +203,7 @@ export interface PostComment {
 /**
  * Source of the post for filtering purposes
  */
-export type PostSource = 'public' | 'connection' | 'private' | 'own';
+export type PostSource = 'public' | 'connection' | 'private';
 
 /**
  * Display-ready post for the UI

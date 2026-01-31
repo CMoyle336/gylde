@@ -1865,12 +1865,7 @@
       "ESTABLISHED_PLUS": "Etabliert+",
       "TRUSTED_PLUS": "Vertrauenswürdig+",
       "DISTINGUISHED": "Herausragend"
-    },
-    "MY_POSTS_TITLE": "Meine Beiträge",
-    "VIEW_FEED": "Feed anzeigen",
-    "LOADING_POSTS": "Beiträge werden geladen...",
-    "NO_POSTS_YET": "Du hast noch keine Beiträge erstellt",
-    "CREATE_FIRST_POST": "Erstelle deinen ersten Beitrag"
+    }
   },
   "CONNECTION_TYPES": {
     "INTENTIONAL_DATING": "Absichtliches Dating",
