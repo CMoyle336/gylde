@@ -26,6 +26,7 @@ import {
 } from "../types/trust.types";
 import {tryGrantFounderStatus} from "./founders";
 import {initializeReputation} from "./reputation";
+import {backfillFeedForNewUser} from "./feed";
 
 /**
  * Extract file path from a storage URL (handles both emulator and production formats)
@@ -502,6 +503,17 @@ export const onUserUpdated = onDocumentUpdated(
         // Still initialize reputation even without city
         await initializeReputation(userId);
       }
+
+      // Backfill feed with recent matching posts (async, don't wait)
+      const onboarding = afterData.onboarding;
+      backfillFeedForNewUser(userId, {
+        genderIdentity: onboarding?.genderIdentity,
+        supportOrientation: onboarding?.supportOrientation,
+        interestedIn: onboarding?.interestedIn,
+        location: onboarding?.location,
+      }).catch((err) => {
+        logger.error(`Failed to backfill feed for user ${userId}:`, err);
+      });
     }
   }
 );

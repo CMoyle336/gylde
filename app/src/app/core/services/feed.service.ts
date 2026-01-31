@@ -37,6 +37,7 @@ import {
 } from '../interfaces';
 
 const PAGE_SIZE = 20;
+const FILTER_STORAGE_KEY = 'gylde_feed_filter';
 
 @Injectable({
   providedIn: 'root',
@@ -66,7 +67,7 @@ export class FeedService {
   private readonly _loadingMore = signal(false);
   private readonly _error = signal<string | null>(null);
   private readonly _hasMore = signal(true);
-  private readonly _activeFilter = signal<FeedFilter>('all');
+  private readonly _activeFilter = signal<FeedFilter>(this.loadSavedFilter());
   private lastVisibleDoc: DocumentSnapshot | null = null;
 
   // Comments state
@@ -232,11 +233,42 @@ export class FeedService {
   }
 
   /**
+   * Load saved filter from localStorage
+   */
+  private loadSavedFilter(): FeedFilter {
+    if (!isPlatformBrowser(this.platformId)) return 'all';
+    
+    try {
+      const saved = localStorage.getItem(FILTER_STORAGE_KEY);
+      if (saved === 'all' || saved === 'connections' || saved === 'private') {
+        return saved;
+      }
+    } catch {
+      // localStorage not available
+    }
+    return 'all';
+  }
+
+  /**
+   * Save filter to localStorage
+   */
+  private saveFilter(filter: FeedFilter): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    
+    try {
+      localStorage.setItem(FILTER_STORAGE_KEY, filter);
+    } catch {
+      // localStorage not available
+    }
+  }
+
+  /**
    * Set the active filter and apply it
    */
   setFilter(filter: FeedFilter): void {
     if (this._activeFilter() === filter) return;
     this._activeFilter.set(filter);
+    this.saveFilter(filter);
     this.applyFilter();
   }
 

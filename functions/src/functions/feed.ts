@@ -1503,3 +1503,177 @@ export const fetchLinkPreview = onCall(async (request) => {
     };
   }
 });
+
+// ============================================================================
+// Feed Backfill for New Users
+// ============================================================================
+
+const NEW_USER_BACKFILL_LIMIT = 50; // Max posts to backfill for new users
+const BACKFILL_DAYS = 7; // Only backfill posts from the last N days
+
+interface BackfillUserProfile {
+  genderIdentity?: string;
+  supportOrientation?: string;
+  interestedIn?: string[];
+  location?: {latitude: number; longitude: number};
+}
+
+/**
+ * Backfill a new user's feed with recent public posts from matching users.
+ * Called when a user completes onboarding to avoid empty feed experience.
+ */
+export async function backfillFeedForNewUser(
+  userId: string,
+  userProfile: BackfillUserProfile
+): Promise<void> {
+  if (!(await isFeedEnabled())) {
+    logger.info("Feed feature disabled, skipping backfill");
+    return;
+  }
+
+  logger.info(`Starting feed backfill for new user ${userId}`);
+
+  // Build viewer profile for matching
+  const viewer: MatchableProfile = {
+    genderIdentity: userProfile.genderIdentity || "",
+    supportOrientation: userProfile.supportOrientation || "either",
+    interestedIn: userProfile.interestedIn || [],
+  };
+
+  const viewerLocation = userProfile.location;
+
+  // Query recent public posts
+  const cutoffDate = new Date();
+  cutoffDate.setDate(cutoffDate.getDate() - BACKFILL_DAYS);
+
+  const postsSnapshot = await db.collection("posts")
+    .where("visibility", "==", "public")
+    .where("status", "==", "active")
+    .where("createdAt", ">=", cutoffDate)
+    .orderBy("createdAt", "desc")
+    .limit(NEW_USER_BACKFILL_LIMIT * 3) // Over-fetch to account for filtering
+    .get();
+
+  if (postsSnapshot.empty) {
+    logger.info("No recent public posts to backfill");
+    return;
+  }
+
+  // Get blocked users for the new user
+  const [blockedSnapshot, blockedBySnapshot] = await Promise.all([
+    db.collection("users").doc(userId).collection("blocks").get(),
+    db.collection("users").doc(userId).collection("blockedBy").get(),
+  ]);
+  const blockedUserIds = new Set<string>([
+    ...blockedSnapshot.docs.map((d) => d.id),
+    ...blockedBySnapshot.docs.map((d) => d.id),
+  ]);
+
+  // Filter posts based on discover-style matching
+  const matchingPosts: Post[] = [];
+  let filteredByDistance = 0;
+  let filteredByMatch = 0;
+  let filteredByBlocked = 0;
+
+  for (const postDoc of postsSnapshot.docs) {
+    if (matchingPosts.length >= NEW_USER_BACKFILL_LIMIT) break;
+
+    const postData = postDoc.data() as Post;
+
+    // Skip own posts (shouldn't happen but just in case)
+    if (postData.authorId === userId) continue;
+
+    // Skip blocked authors
+    if (blockedUserIds.has(postData.authorId)) {
+      filteredByBlocked++;
+      continue;
+    }
+
+    // Distance filter
+    const authorLocation = postData.authorLocation;
+    if (viewerLocation && authorLocation) {
+      const distance = calculateDistance(
+        viewerLocation.latitude,
+        viewerLocation.longitude,
+        authorLocation.latitude,
+        authorLocation.longitude
+      );
+      if (distance > MAX_FEED_DISTANCE_MILES) {
+        filteredByDistance++;
+        continue;
+      }
+    }
+
+    // Build author profile for matching
+    const author: MatchableProfile = {
+      genderIdentity: postData.authorGenderIdentity || "",
+      supportOrientation: postData.authorSupportOrientation || "either",
+      interestedIn: [], // Not needed for author
+    };
+
+    // Check if viewer matches author
+    if (isBaseMatch(author, viewer)) {
+      matchingPosts.push(postData);
+    } else {
+      filteredByMatch++;
+    }
+  }
+
+  if (matchingPosts.length === 0) {
+    logger.info("No matching posts to backfill after filtering", {
+      totalPosts: postsSnapshot.size,
+      filteredByDistance,
+      filteredByMatch,
+      filteredByBlocked,
+    });
+    return;
+  }
+
+  // Batch write feed items
+  const bulkWriter = db.bulkWriter();
+  let addedCount = 0;
+
+  for (const post of matchingPosts) {
+    // Get author info for preview
+    const authorDoc = await db.collection("users").doc(post.authorId).get();
+    const authorData = authorDoc.data();
+    const authorName = authorData?.displayName || "Unknown";
+    const authorPhotoURL = authorData?.photoURL;
+
+    const feedItem: FeedItem = {
+      postId: post.id,
+      authorId: post.authorId,
+      createdAt: post.createdAt,
+      insertedAt: FieldValue.serverTimestamp(),
+      reason: "public",
+      visibility: post.visibility,
+      regionId: post.regionId || "",
+      preview: {
+        authorName,
+        authorPhotoURL,
+        contentExcerpt: post.content.text?.substring(0, EXCERPT_LENGTH) || "",
+        hasMedia: (post.content.media?.length || 0) > 0,
+      },
+    };
+
+    const feedItemRef = db
+      .collection("users")
+      .doc(userId)
+      .collection("feedItems")
+      .doc(post.id);
+
+    bulkWriter.set(feedItemRef, feedItem);
+    addedCount++;
+  }
+
+  await bulkWriter.close();
+
+  logger.info(`Feed backfill complete for user ${userId}`, {
+    totalPosts: postsSnapshot.size,
+    matchingPosts: matchingPosts.length,
+    addedToFeed: addedCount,
+    filteredByDistance,
+    filteredByMatch,
+    filteredByBlocked,
+  });
+}

@@ -50,7 +50,7 @@
     <div class="sidebar-content">
       <!-- Navigation -->
       <nav class="sidebar-nav">
-        @for (item of navItems; track item.id) {
+        @for (item of navItems(); track item.id) {
           <a 
             class="nav-item"
             [routerLink]="item.path"

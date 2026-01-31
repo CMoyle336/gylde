@@ -115,14 +115,32 @@ export class ShellComponent implements OnInit, OnDestroy {
     return matchesCount;
   });
 
-  protected readonly navItems = [
-    { id: 'discover', path: '/discover', icon: 'explore', labelKey: 'DISCOVER' },
-    { id: 'matches', path: '/matches', icon: 'favorite', labelKey: 'MATCHES' },
-    { id: 'messages', path: '/messages', icon: 'chat_bubble', labelKey: 'MESSAGES' },
-    { id: 'feed', path: '/feed', icon: 'dynamic_feed', labelKey: 'FEED' },
-    { id: 'profile', path: '/profile', icon: 'person', labelKey: 'PROFILE' },
-    { id: 'settings', path: '/settings', icon: 'settings', labelKey: 'SETTINGS' },
-  ];
+  // Nav items - feed becomes "home" at top when feature is enabled
+  protected readonly navItems = computed(() => {
+    const feedEnabled = this.remoteConfigService.featureFeedEnabled();
+    
+    if (feedEnabled) {
+      // Home at the top when feed is enabled
+      return [
+        { id: 'home', path: '/home', icon: 'home', labelKey: 'HOME' },
+        { id: 'discover', path: '/discover', icon: 'explore', labelKey: 'DISCOVER' },
+        { id: 'matches', path: '/matches', icon: 'favorite', labelKey: 'MATCHES' },
+        { id: 'messages', path: '/messages', icon: 'chat_bubble', labelKey: 'MESSAGES' },
+        { id: 'profile', path: '/profile', icon: 'person', labelKey: 'PROFILE' },
+        { id: 'settings', path: '/settings', icon: 'settings', labelKey: 'SETTINGS' },
+      ];
+    } else {
+      // Feed with "Soon" badge in original position when disabled
+      return [
+        { id: 'discover', path: '/discover', icon: 'explore', labelKey: 'DISCOVER' },
+        { id: 'matches', path: '/matches', icon: 'favorite', labelKey: 'MATCHES' },
+        { id: 'messages', path: '/messages', icon: 'chat_bubble', labelKey: 'MESSAGES' },
+        { id: 'feed', path: '/feed', icon: 'dynamic_feed', labelKey: 'FEED' },
+        { id: 'profile', path: '/profile', icon: 'person', labelKey: 'PROFILE' },
+        { id: 'settings', path: '/settings', icon: 'settings', labelKey: 'SETTINGS' },
+      ];
+    }
+  });
 
   // Show "soon" badge for feed only when config is initialized AND feature is disabled
   protected readonly showFeedSoonBadge = computed(() => 
