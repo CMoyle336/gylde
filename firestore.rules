@@ -394,6 +394,19 @@ service cloud.firestore {
         
         // Only Cloud Functions handle comment updates/deletes (soft delete)
         allow update, delete: if false;
+        
+        // ------------------------------------------
+        // COMMENT LIKES SUBCOLLECTION
+        // ------------------------------------------
+        match /likes/{userId} {
+          // Anyone can read comment likes
+          allow read: if isAuthenticated();
+          
+          // Users can like/unlike comments for themselves
+          allow create: if isOwner(userId);
+          allow delete: if isOwner(userId);
+          allow update: if false;
+        }
       }
       
       // ------------------------------------------

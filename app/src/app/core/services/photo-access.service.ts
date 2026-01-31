@@ -303,6 +303,19 @@ export class PrivateAccessService {
 
     return unsubscribe;
   }
+
+  /**
+   * Backfill privateAccess collection for existing grants
+   * This syncs privateAccessGrants to privateAccess for the feed system
+   */
+  async backfillPrivateAccess(): Promise<{ success: boolean; message: string; count: number }> {
+    const fn = httpsCallable<void, { success: boolean; message: string; count: number }>(
+      this.functions,
+      'backfillPrivateAccess'
+    );
+    const result = await fn();
+    return result.data;
+  }
 }
 
 // Legacy alias for backward compatibility

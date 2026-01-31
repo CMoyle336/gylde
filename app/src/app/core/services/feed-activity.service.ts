@@ -126,6 +126,8 @@ export class FeedActivityService implements OnDestroy {
       commentCount: activity.commentCount,
       timeAgo: this.getTimeAgo(date),
       read: activity.read,
+      commentId: activity.commentId,
+      isCommentLike: activity.isCommentLike,
     };
   }
 
@@ -198,6 +200,11 @@ export class FeedActivityService implements OnDestroy {
    */
   getActivityMessage(activity: FeedActivityDisplay): string {
     const name = activity.fromUserName;
+    
+    // Handle comment likes separately
+    if (activity.isCommentLike) {
+      return `${name} liked your comment`;
+    }
     
     if (activity.liked && activity.commented) {
       return `${name} liked and commented on your post`;

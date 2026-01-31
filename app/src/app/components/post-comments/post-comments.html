@@ -88,7 +88,7 @@
         <div class="loading-state">
           <mat-spinner diameter="32"></mat-spinner>
         </div>
-      } @else if (comments().length === 0) {
+      } @else if (topLevelComments().length === 0) {
         <div class="empty-state">
           <mat-icon>chat_bubble_outline</mat-icon>
           <p>{{ 'FEED.NO_COMMENTS' | translate }}</p>
@@ -96,40 +96,152 @@
         </div>
       } @else {
         <div class="comments-list">
-          @for (comment of comments(); track comment.id) {
+          @for (comment of topLevelComments(); track comment.id) {
+            <!-- Top-level comment -->
             <article class="comment-item">
-              <!-- Author Avatar -->
               <app-reputation-avatar
                 [photoURL]="comment.author.photoURL"
                 [displayName]="comment.author.displayName"
                 [reputationTier]="comment.author.reputationTier"
                 size="small" />
 
-              <div class="comment-bubble">
-                <span class="comment-author">
-                  {{ comment.author.displayName || ('FEED.ANONYMOUS_USER' | translate) }}
-                </span>
-                <p class="comment-text">{{ comment.content }}</p>
-              </div>
+              <div class="comment-content">
+                <!-- Bubble row with options button -->
+                <div class="bubble-row">
+                  <div class="comment-bubble">
+                    <span class="comment-author">
+                      {{ comment.author.displayName || ('FEED.ANONYMOUS_USER' | translate) }}
+                    </span>
+                    <p class="comment-text">{{ comment.content }}</p>
+                  </div>
 
-              <div class="comment-meta">
-                <span class="comment-time">{{ formatDate(comment.createdAt) }}</span>
-                @if (comment.isOwn) {
+                  <!-- Options menu - to the right of bubble -->
                   <button 
                     type="button" 
                     mat-icon-button
                     [matMenuTriggerFor]="commentMenu"
-                    class="comment-options"
-                    [attr.aria-label]="'FEED.COMMENT_OPTIONS' | translate">
+                    class="comment-options">
                     <mat-icon>more_horiz</mat-icon>
                   </button>
 
                   <mat-menu #commentMenu="matMenu">
-                    <button mat-menu-item (click)="deleteComment(comment)">
-                      <mat-icon>delete</mat-icon>
-                      <span>{{ 'FEED.DELETE_COMMENT' | translate }}</span>
-                    </button>
+                    @if (comment.isOwn) {
+                      <button mat-menu-item (click)="deleteComment(comment)">
+                        <mat-icon>delete</mat-icon>
+                        <span>{{ 'FEED.DELETE_COMMENT' | translate }}</span>
+                      </button>
+                    } @else {
+                      <button mat-menu-item (click)="reportComment(comment)">
+                        <mat-icon>flag</mat-icon>
+                        <span>{{ 'FEED.REPORT_COMMENT' | translate }}</span>
+                      </button>
+                      <button mat-menu-item (click)="blockUser(comment)">
+                        <mat-icon>block</mat-icon>
+                        <span>{{ 'FEED.BLOCK_USER' | translate }}</span>
+                      </button>
+                    }
                   </mat-menu>
+                </div>
+
+                <!-- Actions row: time, like, reply, like count -->
+                <div class="comment-actions">
+                  <span class="comment-time">{{ formatDate(comment.createdAt) }}</span>
+                  <button 
+                    type="button" 
+                    class="action-btn" 
+                    [class.liked]="comment.isLiked"
+                    (click)="toggleLike(comment)">
+                    {{ 'FEED.LIKE' | translate }}
+                  </button>
+                  <button 
+                    type="button" 
+                    class="action-btn"
+                    (click)="startReply(comment)">
+                    {{ 'FEED.REPLY' | translate }}
+                  </button>
+                  @if (comment.likeCount > 0) {
+                    <span class="like-count">
+                      <mat-icon>favorite</mat-icon>
+                      {{ comment.likeCount }}
+                    </span>
+                  }
+                </div>
+
+                <!-- Nested replies -->
+                @if (getReplies(comment.id).length > 0) {
+                  <div class="replies-section">
+                    @for (reply of getReplies(comment.id); track reply.id) {
+                      <article class="comment-item reply">
+                        <app-reputation-avatar
+                          [photoURL]="reply.author.photoURL"
+                          [displayName]="reply.author.displayName"
+                          [reputationTier]="reply.author.reputationTier"
+                          size="small" />
+
+                        <div class="comment-content">
+                          <!-- Bubble row with options button -->
+                          <div class="bubble-row">
+                            <div class="comment-bubble">
+                              <span class="comment-author">
+                                {{ reply.author.displayName || ('FEED.ANONYMOUS_USER' | translate) }}
+                              </span>
+                              <p class="comment-text">{{ reply.content }}</p>
+                            </div>
+
+                            <!-- Options menu - to the right of bubble -->
+                            <button 
+                              type="button" 
+                              mat-icon-button
+                              [matMenuTriggerFor]="replyMenu"
+                              class="comment-options">
+                              <mat-icon>more_horiz</mat-icon>
+                            </button>
+
+                            <mat-menu #replyMenu="matMenu">
+                              @if (reply.isOwn) {
+                                <button mat-menu-item (click)="deleteComment(reply)">
+                                  <mat-icon>delete</mat-icon>
+                                  <span>{{ 'FEED.DELETE_COMMENT' | translate }}</span>
+                                </button>
+                              } @else {
+                                <button mat-menu-item (click)="reportComment(reply)">
+                                  <mat-icon>flag</mat-icon>
+                                  <span>{{ 'FEED.REPORT_COMMENT' | translate }}</span>
+                                </button>
+                                <button mat-menu-item (click)="blockUser(reply)">
+                                  <mat-icon>block</mat-icon>
+                                  <span>{{ 'FEED.BLOCK_USER' | translate }}</span>
+                                </button>
+                              }
+                            </mat-menu>
+                          </div>
+
+                          <div class="comment-actions">
+                            <span class="comment-time">{{ formatDate(reply.createdAt) }}</span>
+                            <button 
+                              type="button" 
+                              class="action-btn" 
+                              [class.liked]="reply.isLiked"
+                              (click)="toggleLike(reply)">
+                              {{ 'FEED.LIKE' | translate }}
+                            </button>
+                            <button 
+                              type="button" 
+                              class="action-btn"
+                              (click)="startReply(comment, reply.author.displayName || undefined)">
+                              {{ 'FEED.REPLY' | translate }}
+                            </button>
+                            @if (reply.likeCount > 0) {
+                              <span class="like-count">
+                                <mat-icon>favorite</mat-icon>
+                                {{ reply.likeCount }}
+                              </span>
+                            }
+                          </div>
+                        </div>
+                      </article>
+                    }
+                  </div>
                 }
               </div>
             </article>
@@ -149,29 +261,42 @@
 
   <!-- Fixed Comment Input -->
   <footer class="comment-input-section">
-    <div class="current-user-avatar">
-      <mat-icon>person</mat-icon>
-    </div>
-    <div class="comment-input-wrapper">
-      <input
-        type="text"
-        class="comment-input"
-        [placeholder]="'FEED.ADD_COMMENT_PLACEHOLDER' | translate"
-        [(ngModel)]="commentText"
-        [maxlength]="maxCommentLength"
-        (keydown.enter)="submitComment()">
-      
-      <button
-        type="button"
-        class="send-btn"
-        [disabled]="!canSubmit"
-        (click)="submitComment()">
-        @if (submitting()) {
-          <mat-spinner diameter="18"></mat-spinner>
-        } @else {
-          <mat-icon>send</mat-icon>
-        }
-      </button>
+    <!-- Reply indicator -->
+    @if (replyingTo()) {
+      <div class="reply-indicator">
+        <span>{{ 'FEED.REPLYING_TO' | translate }} <strong>{{ replyingTo()?.author?.displayName }}</strong></span>
+        <button type="button" mat-icon-button (click)="cancelReply()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+    }
+    
+    <div class="input-row">
+      <div class="current-user-avatar">
+        <mat-icon>person</mat-icon>
+      </div>
+      <div class="comment-input-wrapper">
+        <input
+          #commentInput
+          type="text"
+          class="comment-input"
+          [placeholder]="replyingTo() ? ('FEED.WRITE_REPLY_PLACEHOLDER' | translate) : ('FEED.ADD_COMMENT_PLACEHOLDER' | translate)"
+          [(ngModel)]="commentText"
+          [maxlength]="maxCommentLength"
+          (keydown.enter)="submitComment()">
+        
+        <button
+          type="button"
+          class="send-btn"
+          [disabled]="!canSubmit"
+          (click)="submitComment()">
+          @if (submitting()) {
+            <mat-spinner diameter="18"></mat-spinner>
+          } @else {
+            <mat-icon>send</mat-icon>
+          }
+        </button>
+      </div>
     </div>
   </footer>
 </div>

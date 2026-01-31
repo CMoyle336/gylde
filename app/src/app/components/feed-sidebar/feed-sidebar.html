@@ -116,7 +116,7 @@
       @if (displayFeedActivities().length > 0) {
         <div class="activity-list">
           @for (activity of displayFeedActivities(); track activity.id) {
-            <button type="button" class="activity-item" [class.unread]="!activity.read" (click)="navigateToProfile(activity.fromUserId)">
+            <button type="button" class="activity-item" [class.unread]="!activity.read" (click)="openPostFromActivity(activity)">
               <div class="activity-avatar">
                 @if (activity.fromUserPhoto) {
                   <img [src]="activity.fromUserPhoto" [alt]="activity.fromUserName">

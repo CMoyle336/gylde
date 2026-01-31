@@ -646,6 +646,12 @@
   border: 1px solid var(--color-border);
   border-radius: 12px;
   margin-bottom: 1.5rem;
+  align-items: flex-start;
+}
+
+.access-intro .sync-access-btn {
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
 .access-intro > mat-icon {

@@ -25,6 +25,17 @@ async function getPostAuthorId(postId: string): Promise<string | null> {
 }
 
 /**
+ * Get comment author ID from comment document
+ */
+async function getCommentAuthorId(postId: string, commentId: string): Promise<string | null> {
+  const commentDoc = await db.collection("posts").doc(postId).collection("comments").doc(commentId).get();
+  if (!commentDoc.exists) {
+    return null;
+  }
+  return commentDoc.data()?.authorId || null;
+}
+
+/**
  * Get user display info
  */
 async function getUserDisplayInfo(userId: string): Promise<{ name: string; photo: string | null }> {
@@ -371,5 +382,158 @@ export const onPostCommentDeleted = onDocumentDeleted(
 
     // Handle comment deletion
     await handleCommentDeleteFeedActivity(postAuthorId, postId, commenterId);
+  }
+);
+
+// ============================================================================
+// Comment Like Triggers
+// ============================================================================
+
+/**
+ * Upsert a feed activity for a comment like action
+ * Notifies the comment author that someone liked their comment
+ */
+async function upsertCommentLikeFeedActivity(
+  commentAuthorId: string,
+  postId: string,
+  commentId: string,
+  likerId: string,
+  likerName: string,
+  likerPhoto: string | null
+): Promise<void> {
+  // Use a different ID pattern to distinguish from post activities
+  const activityId = `comment_${likerId}_${commentId}`;
+  const activityRef = db
+    .collection("users")
+    .doc(commentAuthorId)
+    .collection("feedActivities")
+    .doc(activityId);
+
+  const now = Timestamp.now();
+
+  // For comment likes, we just create/update a simple activity
+  const existingDoc = await activityRef.get();
+
+  if (existingDoc.exists) {
+    await activityRef.update({
+      lastInteractionAt: now,
+      read: false,
+    });
+    logger.info(`Updated feed activity ${activityId} for comment like`);
+  } else {
+    const activity: FeedActivity = {
+      id: activityId,
+      postId,
+      commentId, // Include comment ID for context
+      postAuthorId: commentAuthorId, // The recipient is the comment author
+      fromUserId: likerId,
+      fromUserName: likerName,
+      fromUserPhoto: likerPhoto,
+      liked: true,
+      commented: false,
+      commentCount: 0,
+      lastInteractionAt: now,
+      createdAt: now,
+      read: false,
+      isCommentLike: true, // Flag to distinguish from post likes
+    };
+    await activityRef.set(activity);
+    logger.info(`Created feed activity ${activityId} for comment like`);
+  }
+}
+
+/**
+ * Handle comment unlike - delete the feed activity
+ */
+async function handleCommentUnlikeFeedActivity(
+  commentAuthorId: string,
+  commentId: string,
+  likerId: string
+): Promise<void> {
+  const activityId = `comment_${likerId}_${commentId}`;
+  const activityRef = db
+    .collection("users")
+    .doc(commentAuthorId)
+    .collection("feedActivities")
+    .doc(activityId);
+
+  const existingDoc = await activityRef.get();
+  if (!existingDoc.exists) {
+    logger.info(`No feed activity found for comment unlike: ${activityId}`);
+    return;
+  }
+
+  await activityRef.delete();
+  logger.info(`Deleted feed activity ${activityId} after comment unlike`);
+}
+
+/**
+ * Trigger: When a like is created on a comment
+ */
+export const onCommentLikeCreated = onDocumentCreated(
+  {
+    document: "posts/{postId}/comments/{commentId}/likes/{userId}",
+    region: "us-central1",
+  },
+  async (event) => {
+    const { postId, commentId, userId: likerId } = event.params;
+
+    logger.info(`Like created on comment ${commentId} (post ${postId}) by user ${likerId}`);
+
+    // Get comment author
+    const commentAuthorId = await getCommentAuthorId(postId, commentId);
+    if (!commentAuthorId) {
+      logger.warn(`Comment ${commentId} not found, skipping feed activity`);
+      return;
+    }
+
+    // Skip self-likes
+    if (commentAuthorId === likerId) {
+      logger.info(`Skipping feed activity for self-like on comment ${commentId}`);
+      return;
+    }
+
+    // Get liker info
+    const likerInfo = await getUserDisplayInfo(likerId);
+
+    // Create feed activity
+    await upsertCommentLikeFeedActivity(
+      commentAuthorId,
+      postId,
+      commentId,
+      likerId,
+      likerInfo.name,
+      likerInfo.photo
+    );
+  }
+);
+
+/**
+ * Trigger: When a like is deleted from a comment
+ */
+export const onCommentLikeDeleted = onDocumentDeleted(
+  {
+    document: "posts/{postId}/comments/{commentId}/likes/{userId}",
+    region: "us-central1",
+  },
+  async (event) => {
+    const { postId, commentId, userId: likerId } = event.params;
+
+    logger.info(`Like deleted on comment ${commentId} (post ${postId}) by user ${likerId}`);
+
+    // Get comment author
+    const commentAuthorId = await getCommentAuthorId(postId, commentId);
+    if (!commentAuthorId) {
+      logger.warn(`Comment ${commentId} not found, skipping feed activity cleanup`);
+      return;
+    }
+
+    // Skip self-likes
+    if (commentAuthorId === likerId) {
+      return;
+    }
+
+    // Handle unlike
+    await handleCommentUnlikeFeedActivity(commentAuthorId, commentId, likerId);
   }
 );

@@ -9,6 +9,7 @@ import { TranslateModule } from '@ngx-translate/core';
 import { RemoteConfigService } from '../../core/services/remote-config.service';
 import { FeedService, FeedTab, FeedSubFilter } from '../../core/services/feed.service';
 import { SubscriptionService } from '../../core/services/subscription.service';
+import { BlockService } from '../../core/services/block.service';
 import { PostDisplay, FeedFilter } from '../../core/interfaces';
 import { PostCardComponent } from '../../components/post-card';
 import { PostCommentsComponent, PostCommentsDialogData } from '../../components/post-comments';
@@ -36,6 +37,7 @@ export class FeedComponent implements OnInit {
   private readonly remoteConfigService = inject(RemoteConfigService);
   private readonly feedService = inject(FeedService);
   private readonly subscriptionService = inject(SubscriptionService);
+  private readonly blockService = inject(BlockService);
 
   // Remote config state
   readonly configInitialized = this.remoteConfigService.initialized;
@@ -172,6 +174,14 @@ export class FeedComponent implements OnInit {
   async onReport(post: PostDisplay): Promise<void> {
     // TODO: Add report dialog
     await this.feedService.reportPost(post.id);
+  }
+
+  async onBlock(post: PostDisplay): Promise<void> {
+    const success = await this.blockService.blockUser(post.author.uid);
+    if (success) {
+      // Remove the blocked user's posts from the feed
+      this.feedService.removePostsByUser(post.author.uid);
+    }
   }
 
   trackByPostId(index: number, post: PostDisplay): string {

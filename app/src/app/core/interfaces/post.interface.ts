@@ -260,6 +260,14 @@ export interface CommentDisplay {
   content: string;
   createdAt: Date;
   isOwn: boolean;            // Is current user the author?
+  
+  // Like support
+  likeCount: number;
+  isLiked: boolean;
+  
+  // Reply support
+  parentCommentId?: string;  // If this is a reply, the parent comment ID
+  replies?: CommentDisplay[]; // Nested replies (populated on frontend)
 }
 
 /**

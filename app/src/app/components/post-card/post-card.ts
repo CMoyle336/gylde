@@ -41,6 +41,7 @@ export class PostCardComponent {
   readonly authorClick = output<PostDisplay>();
   readonly deleteClick = output<PostDisplay>();
   readonly reportClick = output<PostDisplay>();
+  readonly blockClick = output<PostDisplay>();
 
   // Computed
   protected readonly hasMedia = computed(() => (this.post().content.media?.length || 0) > 0);
@@ -171,6 +172,10 @@ export class PostCardComponent {
 
   protected onReport(): void {
     this.reportClick.emit(this.post());
+  }
+
+  protected onBlock(): void {
+    this.blockClick.emit(this.post());
   }
 
   protected viewProfile(): void {

@@ -17,7 +17,7 @@
  * - Private access management
  */
 import {onCall, HttpsError} from "firebase-functions/v2/https";
-import {onDocumentCreated, onDocumentDeleted} from "firebase-functions/v2/firestore";
+import {onDocumentCreated, onDocumentDeleted, onDocumentUpdated} from "firebase-functions/v2/firestore";
 import {FieldValue, Timestamp} from "firebase-admin/firestore";
 import {db} from "../config/firebase";
 import {getConfig} from "../config/remote-config";
@@ -133,6 +133,8 @@ interface PostComment {
   content: string;
   createdAt: FieldValue | Timestamp;
   status: CommentStatus;
+  likeCount?: number;
+  parentCommentId?: string; // For replies - references parent comment ID
 }
 
 interface UserProfile {
@@ -894,7 +896,11 @@ export const addComment = onCall(async (request) => {
   }
 
   const userId = request.auth.uid;
-  const {postId, content} = request.data as {postId: string; content: string};
+  const {postId, content, parentCommentId} = request.data as {
+    postId: string;
+    content: string;
+    parentCommentId?: string;
+  };
 
   if (!postId) {
     throw new HttpsError("invalid-argument", "Post ID is required");
@@ -931,6 +937,8 @@ export const addComment = onCall(async (request) => {
     content: content.trim(),
     createdAt: FieldValue.serverTimestamp(),
     status: "active",
+    likeCount: 0,
+    ...(parentCommentId && {parentCommentId}),
   };
 
   const batch = db.batch();
@@ -1007,6 +1015,9 @@ export const getPostComments = onCall(async (request) => {
     content: string;
     createdAt: Date;
     isOwn: boolean;
+    likeCount: number;
+    isLiked: boolean;
+    parentCommentId?: string;
   }> = [];
 
   for (const doc of snapshot.docs) {
@@ -1015,6 +1026,10 @@ export const getPostComments = onCall(async (request) => {
     const commentData = doc.data() as PostComment;
     const authorInfo = await getUserInfo(commentData.authorId);
     const createdAt = commentData.createdAt as Timestamp;
+
+    // Check if current user has liked this comment
+    const likeDoc = await doc.ref.collection("likes").doc(userId).get();
+    const isLiked = likeDoc.exists;
 
     comments.push({
       id: doc.id,
@@ -1027,6 +1042,9 @@ export const getPostComments = onCall(async (request) => {
       content: commentData.content,
       createdAt: createdAt?.toDate() || new Date(),
       isOwn: commentData.authorId === userId,
+      likeCount: commentData.likeCount || 0,
+      isLiked,
+      ...(commentData.parentCommentId && {parentCommentId: commentData.parentCommentId}),
     });
   }
 
@@ -1086,6 +1104,89 @@ export const deleteComment = onCall(async (request) => {
 });
 
 /**
+ * Like a comment
+ */
+export const likeComment = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "Must be logged in to like comments");
+  }
+
+  if (!(await isFeedEnabled())) {
+    throw new HttpsError("failed-precondition", "Feed feature is not enabled");
+  }
+
+  const userId = request.auth.uid;
+  const {postId, commentId} = request.data as {postId: string; commentId: string};
+
+  if (!postId || !commentId) {
+    throw new HttpsError("invalid-argument", "Post ID and Comment ID are required");
+  }
+
+  const commentRef = db.collection("posts").doc(postId).collection("comments").doc(commentId);
+  const likeRef = commentRef.collection("likes").doc(userId);
+
+  // Check if already liked
+  const existingLike = await likeRef.get();
+  if (existingLike.exists) {
+    return {success: true, alreadyLiked: true};
+  }
+
+  const batch = db.batch();
+  batch.set(likeRef, {
+    userId,
+    createdAt: FieldValue.serverTimestamp(),
+  });
+  batch.update(commentRef, {
+    likeCount: FieldValue.increment(1),
+  });
+  await batch.commit();
+
+  logger.info(`User ${userId} liked comment ${commentId}`);
+
+  return {success: true};
+});
+
+/**
+ * Unlike a comment
+ */
+export const unlikeComment = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "Must be logged in to unlike comments");
+  }
+
+  if (!(await isFeedEnabled())) {
+    throw new HttpsError("failed-precondition", "Feed feature is not enabled");
+  }
+
+  const userId = request.auth.uid;
+  const {postId, commentId} = request.data as {postId: string; commentId: string};
+
+  if (!postId || !commentId) {
+    throw new HttpsError("invalid-argument", "Post ID and Comment ID are required");
+  }
+
+  const commentRef = db.collection("posts").doc(postId).collection("comments").doc(commentId);
+  const likeRef = commentRef.collection("likes").doc(userId);
+
+  // Check if like exists
+  const existingLike = await likeRef.get();
+  if (!existingLike.exists) {
+    return {success: true, wasNotLiked: true};
+  }
+
+  const batch = db.batch();
+  batch.delete(likeRef);
+  batch.update(commentRef, {
+    likeCount: FieldValue.increment(-1),
+  });
+  await batch.commit();
+
+  logger.info(`User ${userId} unliked comment ${commentId}`);
+
+  return {success: true};
+});
+
+/**
  * Delete a post (soft delete)
  */
 export const deletePost = onCall(async (request) => {
@@ -1122,13 +1223,58 @@ export const deletePost = onCall(async (request) => {
     updatedAt: FieldValue.serverTimestamp(),
   });
 
-  // Note: feedItems are not removed - they become stale and are filtered on read
-  // A cleanup job could remove them periodically
-
   logger.info(`User ${userId} deleted post ${postId}`);
 
   return {success: true};
 });
+
+/**
+ * Trigger: When a post status changes to removed, clean up all feedItems
+ */
+export const onPostUpdated = onDocumentUpdated(
+  {
+    document: "posts/{postId}",
+    region: "us-central1",
+  },
+  async (event) => {
+    const before = event.data?.before.data() as Post | undefined;
+    const after = event.data?.after.data() as Post | undefined;
+
+    if (!before || !after) return;
+
+    // Only act when status changes to "removed"
+    if (before.status !== "removed" && after.status === "removed") {
+      const postId = event.params.postId;
+
+      logger.info(`Post ${postId} was deleted, cleaning up feedItems`);
+
+      // Find all feedItems for this post across all users and delete them
+      const usersSnapshot = await db.collection("users").get();
+
+      const bulkWriter = db.bulkWriter();
+      let deletedCount = 0;
+
+      for (const userDoc of usersSnapshot.docs) {
+        const feedItemRef = db
+          .collection("users")
+          .doc(userDoc.id)
+          .collection("feedItems")
+          .doc(postId);
+
+        // Check if the feedItem exists before deleting
+        const feedItemDoc = await feedItemRef.get();
+        if (feedItemDoc.exists) {
+          bulkWriter.delete(feedItemRef);
+          deletedCount++;
+        }
+      }
+
+      await bulkWriter.close();
+
+      logger.info(`Cleaned up ${deletedCount} feedItems for deleted post ${postId}`);
+    }
+  }
+);
 
 /**
  * Report a post

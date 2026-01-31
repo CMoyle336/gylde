@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal, OnInit, computed } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal, OnInit, computed, ViewChild, ElementRef } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -7,6 +7,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { FeedService } from '../../core/services/feed.service';
+import { BlockService } from '../../core/services/block.service';
 import { PostDisplay, CommentDisplay } from '../../core/interfaces';
 import { ReputationAvatarComponent } from '../reputation-avatar';
 import { ImageGalleryComponent, GalleryState } from '../../pages/messages/components/image-gallery';
@@ -36,15 +37,27 @@ const MAX_COMMENT_LENGTH = 280;
 export class PostCommentsComponent implements OnInit {
   private readonly dialogRef = inject(MatDialogRef<PostCommentsComponent>);
   private readonly feedService = inject(FeedService);
+  private readonly blockService = inject(BlockService);
   protected readonly data = inject<PostCommentsDialogData>(MAT_DIALOG_DATA);
 
   protected readonly submitting = signal(false);
   protected readonly error = signal<string | null>(null);
   protected commentText = '';
+  
+  // Reply state
+  protected readonly replyingTo = signal<CommentDisplay | null>(null);
+
+  // Reference to the comment input
+  @ViewChild('commentInput') private commentInput!: ElementRef<HTMLInputElement>;
 
   // From feed service
   protected readonly comments = this.feedService.comments;
   protected readonly loading = this.feedService.commentsLoading;
+
+  // Computed: top-level comments (no parentCommentId)
+  protected readonly topLevelComments = computed(() => 
+    this.comments().filter(c => !c.parentCommentId)
+  );
 
   protected readonly maxCommentLength = MAX_COMMENT_LENGTH;
   
@@ -111,9 +124,11 @@ export class PostCommentsComponent implements OnInit {
     this.error.set(null);
 
     try {
-      const success = await this.feedService.addComment(this.data.post.id, content);
+      const parentCommentId = this.replyingTo()?.id;
+      const success = await this.feedService.addComment(this.data.post.id, content, parentCommentId);
       if (success) {
         this.commentText = '';
+        this.replyingTo.set(null);
       } else {
         this.error.set('Failed to add comment. Please try again.');
       }
@@ -125,6 +140,40 @@ export class PostCommentsComponent implements OnInit {
     }
   }
 
+  // Get replies for a specific comment
+  protected getReplies(commentId: string): CommentDisplay[] {
+    return this.comments().filter(c => c.parentCommentId === commentId);
+  }
+
+  // Start replying to a comment
+  // If replying to a reply, we reply to the parent but @mention the reply author
+  protected startReply(comment: CommentDisplay, replyAuthorName?: string): void {
+    this.replyingTo.set(comment);
+    
+    // If this is a reply to a reply, pre-fill with @mention
+    if (replyAuthorName) {
+      this.commentText = `@${replyAuthorName} `;
+    }
+    
+    // Focus the input after a brief delay to ensure DOM update
+    setTimeout(() => {
+      if (this.commentInput?.nativeElement) {
+        this.commentInput.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        this.commentInput.nativeElement.focus();
+      }
+    }, 100);
+  }
+
+  // Cancel reply
+  protected cancelReply(): void {
+    this.replyingTo.set(null);
+  }
+
+  // Toggle like on a comment
+  protected async toggleLike(comment: CommentDisplay): Promise<void> {
+    await this.feedService.toggleCommentLike(this.data.post.id, comment);
+  }
+
   protected async deleteComment(comment: CommentDisplay): Promise<void> {
     if (!comment.isOwn) return;
 
@@ -132,6 +181,28 @@ export class PostCommentsComponent implements OnInit {
       await this.feedService.deleteComment(this.data.post.id, comment.id);
     } catch (err) {
       console.error('Error deleting comment:', err);
+    }
+  }
+
+  protected async reportComment(comment: CommentDisplay): Promise<void> {
+    try {
+      // TODO: Add report dialog with reason selection
+      await this.feedService.reportComment(this.data.post.id, comment.id);
+    } catch (err) {
+      console.error('Error reporting comment:', err);
+    }
+  }
+
+  protected async blockUser(comment: CommentDisplay): Promise<void> {
+    try {
+      const success = await this.blockService.blockUser(comment.author.uid);
+      if (success) {
+        // Remove the blocked user's comments from the view
+        // The feedService subscription will filter them out on next update
+        this.dialogRef.close();
+      }
+    } catch (err) {
+      console.error('Error blocking user:', err);
     }
   }
 

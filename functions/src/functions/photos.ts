@@ -266,6 +266,63 @@ export const respondToPrivateAccessRequest = onCall(async (request) => {
 });
 
 /**
+ * Backfill privateAccess collection for existing grants
+ * This is a one-time migration function to sync privateAccessGrants to privateAccess
+ * which is needed for the feed system to work correctly
+ */
+export const backfillPrivateAccess = onCall(async (request) => {
+  const {auth} = request;
+
+  if (!auth) {
+    throw new HttpsError("unauthenticated", "Must be authenticated");
+  }
+
+  const userId = auth.uid;
+
+  // Get all grants this user has made
+  const grantsSnapshot = await db
+    .collection("users")
+    .doc(userId)
+    .collection("privateAccessGrants")
+    .get();
+
+  if (grantsSnapshot.empty) {
+    return {success: true, message: "No grants to backfill", count: 0};
+  }
+
+  const batch = db.batch();
+  let count = 0;
+
+  for (const grantDoc of grantsSnapshot.docs) {
+    const grantedToUserId = grantDoc.id;
+    const grantData = grantDoc.data();
+
+    // Check if privateAccess document already exists
+    const privateAccessRef = db
+      .collection("users")
+      .doc(userId)
+      .collection("privateAccess")
+      .doc(grantedToUserId);
+
+    const existingAccess = await privateAccessRef.get();
+    if (!existingAccess.exists) {
+      batch.set(privateAccessRef, {
+        viewerId: grantedToUserId,
+        approvedAt: grantData.grantedAt || Timestamp.now(),
+        grantedBy: "backfill",
+      });
+      count++;
+    }
+  }
+
+  if (count > 0) {
+    await batch.commit();
+  }
+
+  return {success: true, message: `Backfilled ${count} grants`, count};
+});
+
+/**
  * Revoke previously granted private content access
  */
 export const revokePrivateAccess = onCall(async (request) => {

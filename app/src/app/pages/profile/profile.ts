@@ -15,7 +15,7 @@ import { MatBadgeModule } from '@angular/material/badge';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { Firestore, collection, query, where, orderBy, limit, getDocs, startAfter, QueryDocumentSnapshot, DocumentData } from '@angular/fire/firestore';
+import { Firestore, collection, query, where, orderBy, limit, getDocs, startAfter, QueryDocumentSnapshot, DocumentData, onSnapshot, Unsubscribe } from '@angular/fire/firestore';
 import { Functions, httpsCallable } from '@angular/fire/functions';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { UserProfileService } from '../../core/services/user-profile.service';
@@ -36,6 +36,8 @@ import { ReputationInfoDialogComponent } from '../../components/reputation-info-
 import { FounderBadgeComponent } from '../../components/founder-badge';
 import { PostComposerComponent } from '../../components/post-composer';
 import { PostCardComponent } from '../../components/post-card';
+import { PostCommentsComponent, PostCommentsDialogData } from '../../components/post-comments';
+import { FeedService } from '../../core/services/feed.service';
 import { environment } from '../../../environments/environment';
 
 export type ProfileTab = 'feed' | 'about' | 'access' | 'photos';
@@ -128,6 +130,8 @@ export class ProfileComponent implements OnInit, OnDestroy {
   private readonly snackBar = inject(MatSnackBar);
   private readonly functions = inject(Functions);
   private readonly firestore = inject(Firestore);
+  private readonly feedService = inject(FeedService);
+  protected readonly deletingPostId = this.feedService.deletingPostId;
 
   // Development mode flag
   protected readonly isDev = !environment.production;
@@ -151,9 +155,9 @@ export class ProfileComponent implements OnInit, OnDestroy {
     const tabs: ProfileTab[] = ['feed', 'about', 'access', 'photos'];
     this.activeTab.set(tabs[index]);
     
-    // Load my posts when switching to feed tab
-    if (tabs[index] === 'feed' && this.myPosts().length === 0) {
-      this.loadMyPosts();
+    // Subscribe to my posts when switching to feed tab (if not already subscribed)
+    if (tabs[index] === 'feed' && !this.postsUnsubscribe) {
+      this.subscribeToMyPosts();
     }
   }
 
@@ -164,9 +168,11 @@ export class ProfileComponent implements OnInit, OnDestroy {
   protected readonly myPosts = signal<PostDisplay[]>([]);
   protected readonly myPostsLoading = signal(false);
   protected readonly myPostsError = signal<string | null>(null);
-  private lastPostDoc: QueryDocumentSnapshot<DocumentData> | null = null;
-  protected readonly hasMorePosts = signal(true);
-  private readonly POSTS_PER_PAGE = 10;
+  private postsUnsubscribe: Unsubscribe | null = null;
+  private readonly POSTS_LIMIT = 50; // Show more posts since it's real-time
+  
+  // Cache for like status to preserve across real-time updates
+  private readonly likeStatusCache = new Map<string, boolean>();
 
   // Filtered posts based on feed filter
   protected readonly filteredPosts = computed(() => {
@@ -182,90 +188,146 @@ export class ProfileComponent implements OnInit, OnDestroy {
     this.feedFilter.set(filter);
   }
 
-  async loadMyPosts(loadMore = false): Promise<void> {
+  /**
+   * Subscribe to real-time updates for my posts
+   */
+  private subscribeToMyPosts(): void {
     const user = this.authService.user();
-    if (!user || this.myPostsLoading()) return;
+    if (!user) return;
+
+    // Unsubscribe from any existing subscription
+    this.postsUnsubscribe?.();
 
     this.myPostsLoading.set(true);
     this.myPostsError.set(null);
 
-    try {
-      const postsRef = collection(this.firestore, 'posts');
-      let q = query(
-        postsRef,
-        where('authorId', '==', user.uid),
-        where('status', '==', 'active'),
-        orderBy('createdAt', 'desc'),
-        limit(this.POSTS_PER_PAGE)
-      );
+    const postsRef = collection(this.firestore, 'posts');
+    const q = query(
+      postsRef,
+      where('authorId', '==', user.uid),
+      where('status', '==', 'active'),
+      orderBy('createdAt', 'desc'),
+      limit(this.POSTS_LIMIT)
+    );
 
-      if (loadMore && this.lastPostDoc) {
-        q = query(
-          postsRef,
-          where('authorId', '==', user.uid),
-          where('status', '==', 'active'),
-          orderBy('createdAt', 'desc'),
-          startAfter(this.lastPostDoc),
-          limit(this.POSTS_PER_PAGE)
-        );
-      }
-
-      const snapshot = await getDocs(q);
-      const posts: PostDisplay[] = [];
-
-      for (const doc of snapshot.docs) {
-        const data = doc.data();
-        const createdAt = data['createdAt']?.toDate?.() || new Date();
-        const visibility = data['visibility'] as PostVisibility;
-        // Map visibility to source (matches -> connection for PostSource type)
-        const source: 'public' | 'connection' | 'private' = 
-          visibility === 'matches' ? 'connection' : visibility;
-        
-        posts.push({
-          id: doc.id,
-          author: {
-            uid: user.uid,
-            displayName: this.profile()?.displayName || 'Me',
-            photoURL: this.profile()?.photoURL || null,
-            reputationTier: this.reputationTier(),
-          },
-          content: data['content'],
-          visibility,
-          likeCount: data['metrics']?.likeCount || 0,
-          commentCount: data['metrics']?.commentCount || 0,
-          isLiked: false, // Could load this separately if needed
-          isOwn: true,
-          createdAt,
-          status: data['status'],
-          source,
+    this.postsUnsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const posts: PostDisplay[] = snapshot.docs.map(doc => {
+          const data = doc.data();
+          const createdAt = data['createdAt']?.toDate?.() || new Date();
+          const visibility = data['visibility'] as PostVisibility;
+          // Map visibility to source (matches -> connection for PostSource type)
+          const source: 'public' | 'connection' | 'private' = 
+            visibility === 'matches' ? 'connection' : visibility;
+          
+          // Use cached like status if available, otherwise default to false
+          const cachedLikeStatus = this.likeStatusCache.get(doc.id);
+          const isLiked = cachedLikeStatus ?? false;
+          
+          return {
+            id: doc.id,
+            author: {
+              uid: user.uid,
+              displayName: this.profile()?.displayName || 'Me',
+              photoURL: this.profile()?.photoURL || null,
+              reputationTier: this.reputationTier(),
+            },
+            content: data['content'],
+            visibility,
+            likeCount: data['metrics']?.likeCount || 0,
+            commentCount: data['metrics']?.commentCount || 0,
+            isLiked,
+            isOwn: true,
+            createdAt,
+            status: data['status'],
+            source,
+          };
         });
-      }
 
-      if (loadMore) {
-        this.myPosts.update(existing => [...existing, ...posts]);
-      } else {
         this.myPosts.set(posts);
+        this.myPostsLoading.set(false);
+      },
+      (error) => {
+        console.error('Error subscribing to my posts:', error);
+        this.myPostsError.set('Failed to load posts');
+        this.myPostsLoading.set(false);
       }
+    );
+  }
 
-      this.lastPostDoc = snapshot.docs[snapshot.docs.length - 1] || null;
-      this.hasMorePosts.set(snapshot.docs.length === this.POSTS_PER_PAGE);
-    } catch (error) {
-      console.error('Error loading my posts:', error);
-      this.myPostsError.set('Failed to load posts');
-    } finally {
-      this.myPostsLoading.set(false);
-    }
+  /**
+   * Clean up posts subscription
+   */
+  private unsubscribeFromPosts(): void {
+    this.postsUnsubscribe?.();
+    this.postsUnsubscribe = null;
   }
 
   onPostCreated(): void {
-    // Reload posts to show the new one
-    this.lastPostDoc = null;
-    this.loadMyPosts();
+    // Real-time subscription will automatically pick up the new post
+    // No need to manually reload
+  }
+
+  retryLoadPosts(): void {
+    // Re-establish the subscription after an error
+    this.subscribeToMyPosts();
   }
 
   async onPostDelete(post: PostDisplay): Promise<void> {
-    // Remove from local list immediately
-    this.myPosts.update(posts => posts.filter(p => p.id !== post.id));
+    try {
+      // Delete from backend - feedService handles the loading state
+      // The real-time subscription will remove the post when status changes
+      await this.feedService.deletePost(post.id);
+      
+      // Also remove from local state immediately after successful delete
+      this.myPosts.update(posts => posts.filter(p => p.id !== post.id));
+    } catch (error) {
+      console.error('Failed to delete post:', error);
+      this.snackBar.open(
+        this.translate.instant('FEED.DELETE_ERROR'),
+        this.translate.instant('COMMON.OK'),
+        { duration: 4000, panelClass: 'error-snackbar' }
+      );
+    }
+  }
+
+  async onLike(post: PostDisplay): Promise<void> {
+    // Optimistic update for profile feed
+    const newIsLiked = !post.isLiked;
+    const likeCountDelta = newIsLiked ? 1 : -1;
+    
+    // Update the cache so real-time updates preserve the like status
+    this.likeStatusCache.set(post.id, newIsLiked);
+    
+    this.myPosts.update(posts => posts.map(p => 
+      p.id === post.id 
+        ? { ...p, isLiked: newIsLiked, likeCount: Math.max(0, p.likeCount + likeCountDelta) }
+        : p
+    ));
+
+    try {
+      await this.feedService.toggleLike(post);
+    } catch (error) {
+      // Revert optimistic update on failure
+      this.likeStatusCache.set(post.id, post.isLiked);
+      this.myPosts.update(posts => posts.map(p => 
+        p.id === post.id 
+          ? { ...p, isLiked: post.isLiked, likeCount: post.likeCount }
+          : p
+      ));
+    }
+  }
+
+  onComment(post: PostDisplay): void {
+    this.dialog.open(PostCommentsComponent, {
+      data: { post } as PostCommentsDialogData,
+      panelClass: 'comments-dialog-panel',
+      width: '700px',
+      maxWidth: '95vw',
+      height: '85vh',
+      maxHeight: '90vh',
+    });
   }
 
   // ============================================
@@ -340,6 +402,28 @@ export class ProfileComponent implements OnInit, OnDestroy {
     }
   }
 
+  async syncPrivateAccess(): Promise<void> {
+    if (this.syncingAccess()) return;
+    this.syncingAccess.set(true);
+    try {
+      const result = await this.privateAccessService.backfillPrivateAccess();
+      this.snackBar.open(
+        this.translate.instant('PROFILE.SYNC_ACCESS_SUCCESS', { count: result.count }),
+        this.translate.instant('COMMON.OK'),
+        { duration: 3000, panelClass: 'success-snackbar' }
+      );
+    } catch (error) {
+      console.error('Failed to sync private access:', error);
+      this.snackBar.open(
+        this.translate.instant('PROFILE.SYNC_ACCESS_ERROR'),
+        this.translate.instant('COMMON.OK'),
+        { duration: 4000, panelClass: 'error-snackbar' }
+      );
+    } finally {
+      this.syncingAccess.set(false);
+    }
+  }
+
   protected readonly uploadError = signal<string | null>(null);
   
   // Reputation refresh state (dev only)
@@ -370,6 +454,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
   // Loading states for inline actions
   protected readonly savingMessagingGate = signal(false);
   protected readonly processingRequestId = signal<string | null>(null); // ID of request being processed
+  protected readonly syncingAccess = signal(false);
 
   // Editable photos list (writable for immediate UI updates)
   protected readonly editablePhotos = signal<string[]>([]);
@@ -599,11 +684,14 @@ export class ProfileComponent implements OnInit, OnDestroy {
       document.addEventListener('click', this.clickOutsideHandler);
     }
 
-    // Load my posts for the feed tab
-    this.loadMyPosts();
+    // Subscribe to my posts for the feed tab (real-time updates)
+    this.subscribeToMyPosts();
   }
 
   ngOnDestroy(): void {
+    // Clean up posts subscription
+    this.unsubscribeFromPosts();
+    
     if (isPlatformBrowser(this.platformId)) {
       document.removeEventListener('click', this.clickOutsideHandler);
     }

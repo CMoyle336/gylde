@@ -63,6 +63,7 @@ export class FeedService {
 
   // Caches to avoid refetching data we already have
   private likeStatusCache = new Map<string, boolean>(); // postId -> isLiked
+  private commentLikeStatusCache = new Map<string, boolean>(); // commentId -> isLiked
   private authorDataCache = new Map<string, Record<string, unknown>>(); // authorId -> public data
   // Note: We don't cache private data - security rules block reading other users' private docs
   // reputationTier is available on the public user document
@@ -1014,6 +1015,86 @@ export class FeedService {
   }
 
   /**
+   * Report a comment
+   * TODO: Add backend function for this
+   */
+  async reportComment(postId: string, commentId: string, reason?: string): Promise<boolean> {
+    if (!this.authService.user()) return false;
+
+    try {
+      // TODO: Add reportComment cloud function
+      console.log(`Reported comment ${commentId} on post ${postId} with reason: ${reason}`);
+      return true;
+    } catch (err) {
+      console.error('Failed to report comment:', err);
+      return false;
+    }
+  }
+
+  /**
+   * Remove all posts by a specific user from the local feed
+   * Used when blocking a user
+   */
+  removePostsByUser(userId: string): void {
+    this._allPosts.update((posts) => posts.filter((post) => post.author.uid !== userId));
+    this._posts.update((posts) => posts.filter((post) => post.author.uid !== userId));
+  }
+
+  /**
+   * Fetch a single post by ID
+   * Returns null if post not found or user doesn't have access
+   */
+  async getPostById(postId: string): Promise<PostDisplay | null> {
+    const user = this.authService.user();
+    if (!user) return null;
+
+    try {
+      const postDoc = await getDoc(doc(this.firestore, 'posts', postId));
+      if (!postDoc.exists()) return null;
+
+      const postData = postDoc.data() as Post;
+      if (postData.status !== 'active') return null;
+
+      // Fetch author data
+      const authorDoc = await getDoc(doc(this.firestore, 'users', postData.authorId));
+      const authorData = authorDoc.data() || {};
+
+      // Check if current user liked this post
+      const likeDoc = await getDoc(doc(this.firestore, 'posts', postId, 'likes', user.uid));
+      const isLiked = likeDoc.exists();
+
+      const createdAt = postData.createdAt as Timestamp;
+
+      return {
+        id: postId,
+        author: {
+          uid: postData.authorId,
+          displayName: (authorData['displayName'] as string) || null,
+          photoURL: (authorData['photoURL'] as string) || null,
+          isVerified: (authorData['isVerified'] as boolean) || false,
+          reputationTier: (authorData['reputationTier'] as ReputationTier) || undefined,
+        },
+        content: {
+          type: postData.content?.type || 'text',
+          text: postData.content?.text || undefined,
+          media: postData.content?.media || [],
+        },
+        createdAt: createdAt?.toDate() || new Date(),
+        likeCount: postData.metrics?.likeCount || 0,
+        commentCount: postData.metrics?.commentCount || 0,
+        isLiked,
+        isOwn: postData.authorId === user.uid,
+        source: 'public',
+        visibility: postData.visibility || 'public',
+        status: postData.status || 'active',
+      };
+    } catch (error) {
+      console.error('Error fetching post:', error);
+      return null;
+    }
+  }
+
+  /**
    * Subscribe to comments for a post (realtime)
    */
   subscribeToComments(postId: string): void {
@@ -1040,38 +1121,72 @@ export class FeedService {
     this.commentsUnsubscribe = onSnapshot(
       commentsQuery,
       async (snapshot) => {
-        const comments: CommentDisplay[] = [];
+        try {
+          const comments: CommentDisplay[] = [];
 
-        for (const docSnap of snapshot.docs) {
-          const data = docSnap.data();
-          const authorId = data['authorId'] as string;
+          // First, check likes for any comments not in cache
+          const commentIdsToCheck = snapshot.docs
+            .map(d => d.id)
+            .filter(id => !this.commentLikeStatusCache.has(id));
           
-          // Get author info from cache or fetch
-          let authorData = this.authorDataCache.get(authorId);
-          if (!authorData) {
-            const authorDoc = await getDoc(doc(this.firestore, 'users', authorId));
-            authorData = authorDoc.data() || {};
-            this.authorDataCache.set(authorId, authorData);
+          if (commentIdsToCheck.length > 0) {
+            try {
+              const likeChecks = await Promise.all(
+                commentIdsToCheck.map(commentId =>
+                  getDoc(doc(this.firestore, 'posts', postId, 'comments', commentId, 'likes', user.uid))
+                )
+              );
+              commentIdsToCheck.forEach((commentId, i) => {
+                this.commentLikeStatusCache.set(commentId, likeChecks[i].exists());
+              });
+            } catch (likeErr) {
+              console.warn('Failed to check comment likes:', likeErr);
+              // Continue without like status - default to false
+            }
           }
 
-          const createdAt = data['createdAt'] as Timestamp;
+          for (const docSnap of snapshot.docs) {
+            const data = docSnap.data();
+            const authorId = data['authorId'] as string;
+            
+            // Get author info from cache or fetch
+            let authorData = this.authorDataCache.get(authorId);
+            if (!authorData) {
+              try {
+                const authorDoc = await getDoc(doc(this.firestore, 'users', authorId));
+                authorData = authorDoc.data() || {};
+                this.authorDataCache.set(authorId, authorData);
+              } catch {
+                authorData = {};
+              }
+            }
 
-          comments.push({
-            id: docSnap.id,
-            author: {
-              uid: authorId,
-              displayName: (authorData['displayName'] as string) || null,
-              photoURL: (authorData['photoURL'] as string) || null,
-              reputationTier: (authorData['reputationTier'] as ReputationTier) || undefined,
-            },
-            content: data['content'] as string,
-            createdAt: createdAt?.toDate() || new Date(),
-            isOwn: authorId === user.uid,
-          });
+            const createdAt = data['createdAt'] as Timestamp;
+
+            comments.push({
+              id: docSnap.id,
+              author: {
+                uid: authorId,
+                displayName: (authorData['displayName'] as string) || null,
+                photoURL: (authorData['photoURL'] as string) || null,
+                reputationTier: (authorData['reputationTier'] as ReputationTier) || undefined,
+              },
+              content: data['content'] as string,
+              createdAt: createdAt?.toDate() || new Date(),
+              isOwn: authorId === user.uid,
+              likeCount: (data['likeCount'] as number) || 0,
+              isLiked: this.commentLikeStatusCache.get(docSnap.id) ?? false,
+              parentCommentId: (data['parentCommentId'] as string) || undefined,
+            });
+          }
+
+          this._comments.set(comments);
+          this._commentsLoading.set(false);
+        } catch (err) {
+          console.error('Error processing comments:', err);
+          this._commentsError.set('Failed to load comments');
+          this._commentsLoading.set(false);
         }
-
-        this._comments.set(comments);
-        this._commentsLoading.set(false);
       },
       (error) => {
         console.error('Comments subscription error:', error);
@@ -1143,17 +1258,18 @@ export class FeedService {
 
   /**
    * Add a comment to a post
+   * @param parentCommentId - If replying to a comment, the parent comment ID
    */
-  async addComment(postId: string, content: string): Promise<boolean> {
+  async addComment(postId: string, content: string, parentCommentId?: string): Promise<boolean> {
     if (!this.authService.user()) return false;
 
     try {
       const addCommentFn = httpsCallable<
-        { postId: string; content: string },
+        { postId: string; content: string; parentCommentId?: string },
         { success: boolean; commentId?: string }
       >(this.functions, 'addComment');
 
-      const result = await addCommentFn({ postId, content });
+      const result = await addCommentFn({ postId, content, parentCommentId });
       // The realtime subscription will automatically pick up the new comment
       // and the post subscription will update the comment count
       return result.data.success;
@@ -1195,6 +1311,101 @@ export class FeedService {
     } catch (err) {
       console.error('Failed to delete comment:', err);
       return false;
+    }
+  }
+
+  /**
+   * Like a comment
+   */
+  async likeComment(postId: string, commentId: string): Promise<boolean> {
+    if (!this.authService.user()) return false;
+
+    // Update cache
+    this.commentLikeStatusCache.set(commentId, true);
+
+    // Optimistic update
+    this._comments.update((comments) =>
+      comments.map((comment) =>
+        comment.id === commentId
+          ? { ...comment, isLiked: true, likeCount: comment.likeCount + 1 }
+          : comment
+      )
+    );
+
+    try {
+      const likeCommentFn = httpsCallable<
+        { postId: string; commentId: string },
+        { success: boolean }
+      >(this.functions, 'likeComment');
+
+      await likeCommentFn({ postId, commentId });
+      return true;
+    } catch (err) {
+      console.error('Failed to like comment:', err);
+      // Revert cache
+      this.commentLikeStatusCache.set(commentId, false);
+      // Revert optimistic update
+      this._comments.update((comments) =>
+        comments.map((comment) =>
+          comment.id === commentId
+            ? { ...comment, isLiked: false, likeCount: Math.max(0, comment.likeCount - 1) }
+            : comment
+        )
+      );
+      return false;
+    }
+  }
+
+  /**
+   * Unlike a comment
+   */
+  async unlikeComment(postId: string, commentId: string): Promise<boolean> {
+    if (!this.authService.user()) return false;
+
+    // Update cache
+    this.commentLikeStatusCache.set(commentId, false);
+
+    // Optimistic update
+    this._comments.update((comments) =>
+      comments.map((comment) =>
+        comment.id === commentId
+          ? { ...comment, isLiked: false, likeCount: Math.max(0, comment.likeCount - 1) }
+          : comment
+      )
+    );
+
+    try {
+      const unlikeCommentFn = httpsCallable<
+        { postId: string; commentId: string },
+        { success: boolean }
+      >(this.functions, 'unlikeComment');
+
+      await unlikeCommentFn({ postId, commentId });
+      return true;
+    } catch (err) {
+      console.error('Failed to unlike comment:', err);
+      // Revert cache
+      this.commentLikeStatusCache.set(commentId, true);
+      // Revert optimistic update
+      this._comments.update((comments) =>
+        comments.map((comment) =>
+          comment.id === commentId
+            ? { ...comment, isLiked: true, likeCount: comment.likeCount + 1 }
+            : comment
+        )
+      );
+      return false;
+    }
+  }
+
+  /**
+   * Toggle like on a comment
+   */
+  async toggleCommentLike(postId: string, comment: CommentDisplay): Promise<boolean> {
+    if (comment.isLiked) {
+      return this.unlikeComment(postId, comment.id);
+    } else {
+      return this.likeComment(postId, comment.id);
     }
   }
 

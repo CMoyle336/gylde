@@ -96,7 +96,7 @@
               <div class="error-state">
                 <mat-icon>error_outline</mat-icon>
                 <p>{{ myPostsError() }}</p>
-                <button mat-stroked-button (click)="loadMyPosts()">
+                <button mat-stroked-button (click)="retryLoadPosts()">
                   {{ 'FEED.TRY_AGAIN' | translate }}
                 </button>
               </div>
@@ -109,19 +109,10 @@
               @for (post of filteredPosts(); track post.id) {
                 <app-post-card 
                   [post]="post"
+                  [isDeleting]="deletingPostId() === post.id"
+                  (likeClick)="onLike($event)"
+                  (commentClick)="onComment($event)"
                   (deleteClick)="onPostDelete($event)" />
-              }
-              
-              @if (hasMorePosts() && !myPostsLoading()) {
-                <button mat-stroked-button class="load-more-btn" (click)="loadMyPosts(true)">
-                  {{ 'FEED.LOAD_MORE' | translate }}
-                </button>
-              }
-              
-              @if (myPostsLoading()) {
-                <div class="loading-more">
-                  <mat-spinner diameter="24"></mat-spinner>
-                </div>
               }
             }
           </div>
@@ -743,6 +734,20 @@
               <h3>{{ 'PROFILE.ACCESS_TITLE' | translate }}</h3>
               <p>{{ 'PROFILE.ACCESS_DESCRIPTION' | translate }}</p>
             </div>
+            @if (isDev) {
+              <button 
+                mat-icon-button 
+                class="sync-access-btn"
+                (click)="syncPrivateAccess()" 
+                [disabled]="syncingAccess()"
+                [matTooltip]="'PROFILE.SYNC_ACCESS_TOOLTIP' | translate">
+                @if (syncingAccess()) {
+                  <mat-spinner diameter="20"></mat-spinner>
+                } @else {
+                  <mat-icon>sync</mat-icon>
+                }
+              </button>
+            }
           </div>
 
           <!-- Two-column layout for access management -->

@@ -51,6 +51,10 @@
           <mat-icon>flag</mat-icon>
           <span>{{ 'FEED.REPORT_POST' | translate }}</span>
         </button>
+        <button mat-menu-item (click)="onBlock()">
+          <mat-icon>block</mat-icon>
+          <span>{{ 'FEED.BLOCK_USER' | translate }}</span>
+        </button>
       }
     </mat-menu>
   </header>
