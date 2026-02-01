@@ -28,7 +28,7 @@ interface FeedItem {
   insertedAt: FieldValue | Timestamp;
   reason: "connection" | "approved" | "systemBoost";
   visibility: "public" | "matches" | "private";
-  regionId: string;
+  regionId?: string; // Optional - may not be set for users without location
   preview: FeedItemPreview;
 }
 

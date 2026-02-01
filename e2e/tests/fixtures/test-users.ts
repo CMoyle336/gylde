@@ -47,6 +47,7 @@ export interface TestUser {
   isVerified?: boolean;
   reputationTier?: ReputationTier;
   testImage: string; // Which test image to use
+  hasPrivateContent?: boolean; // If true, user will have private photos set up
 }
 
 // Helper to create a date for a specific age
@@ -79,7 +80,7 @@ export const TEST_USERS: Record<string, TestUser> = {
     testImage: 'test-user-woman.jpg',
   },
 
-  // Primary user - man, 28, free, verified, active tier
+  // Primary user - man, 28, free, verified, active tier, has private content
   bob: {
     id: 'test-user-b',
     email: 'test-user-b@e2e.test',
@@ -95,6 +96,7 @@ export const TEST_USERS: Record<string, TestUser> = {
     isVerified: true,
     reputationTier: 'active',
     testImage: 'test-user-man.png',
+    hasPrivateContent: true, // Bob has private photos for testing access requests
   },
 };
 

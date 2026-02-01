@@ -345,6 +345,7 @@ export async function completeOnboardingViaAdmin(
     interestedIn: ('men' | 'women' | 'nonbinary')[];
     tagline: string;
     photoUrl?: string;
+    hasPrivateContent?: boolean;
   }
 ): Promise<void> {
   const db = await getAdminDb();
@@ -373,18 +374,41 @@ async function completeOnboardingViaAdminSdk(
     interestedIn: ('men' | 'women' | 'nonbinary')[];
     tagline: string;
     photoUrl?: string;
+    hasPrivateContent?: boolean;
   }
 ): Promise<void> {
   const now = new Date();
   
   // Build photo details array matching the expected structure
-  const photoDetails = userData.photoUrl ? [{
-    id: `photo-${Date.now()}`,
-    url: userData.photoUrl,
-    isPrivate: false,
-    uploadedAt: now,
-    order: 0,
-  }] : [];
+  const photoDetails: Array<{
+    id: string;
+    url: string;
+    isPrivate: boolean;
+    uploadedAt: Date;
+    order: number;
+  }> = [];
+  
+  if (userData.photoUrl) {
+    // First photo is always public (profile photo)
+    photoDetails.push({
+      id: `photo-${Date.now()}-0`,
+      url: userData.photoUrl,
+      isPrivate: false,
+      uploadedAt: now,
+      order: 0,
+    });
+    
+    // If hasPrivateContent, add a private photo
+    if (userData.hasPrivateContent) {
+      photoDetails.push({
+        id: `photo-${Date.now()}-1`,
+        url: userData.photoUrl, // Reuse the same image for testing
+        isPrivate: true,
+        uploadedAt: now,
+        order: 1,
+      });
+    }
+  }
   
   // Create the user document matching UserProfile interface
   const userDoc = {
@@ -451,6 +475,7 @@ async function completeOnboardingViaEmulator(
     interestedIn: ('men' | 'women' | 'nonbinary')[];
     tagline: string;
     photoUrl?: string;
+    hasPrivateContent?: boolean;
   }
 ): Promise<void> {
   const projectId = process.env.FIREBASE_PROJECT_ID || 'gylde-sandbox';
@@ -462,17 +487,37 @@ async function completeOnboardingViaEmulator(
   const birthDateStr = userData.birthDate.toISOString().split('T')[0]; // YYYY-MM-DD
 
   // Build photoDetails array in Firestore REST format
-  const photoDetailsValues = userData.photoUrl ? [{
-    mapValue: {
-      fields: {
-        id: { stringValue: `photo-${Date.now()}` },
-        url: { stringValue: userData.photoUrl },
-        isPrivate: { booleanValue: false },
-        uploadedAt: { timestampValue: now },
-        order: { integerValue: '0' },
+  const photoDetailsValues: Array<{ mapValue: { fields: Record<string, any> } }> = [];
+  
+  if (userData.photoUrl) {
+    // First photo is always public (profile photo)
+    photoDetailsValues.push({
+      mapValue: {
+        fields: {
+          id: { stringValue: `photo-${Date.now()}-0` },
+          url: { stringValue: userData.photoUrl },
+          isPrivate: { booleanValue: false },
+          uploadedAt: { timestampValue: now },
+          order: { integerValue: '0' },
+        },
       },
-    },
-  }] : [];
+    });
+    
+    // If hasPrivateContent, add a private photo
+    if (userData.hasPrivateContent) {
+      photoDetailsValues.push({
+        mapValue: {
+          fields: {
+            id: { stringValue: `photo-${Date.now()}-1` },
+            url: { stringValue: userData.photoUrl }, // Reuse the same image for testing
+            isPrivate: { booleanValue: true },
+            uploadedAt: { timestampValue: now },
+            order: { integerValue: '1' },
+          },
+        },
+      });
+    }
+  }
 
   // Convert to Firestore REST format - matching UserProfile interface
   const fields: Record<string, any> = {
@@ -573,6 +618,22 @@ async function completeOnboardingViaEmulator(
   if (!response.ok) {
     const error = await response.text();
     throw new Error(`Failed to complete onboarding via emulator: ${error}`);
+  }
+
+  // Verify the document was written correctly
+  const verifyUrl = `${firestoreEmulatorUrl}/v1/${docPath}`;
+  const verifyResponse = await fetch(verifyUrl, {
+    headers: { 'Authorization': 'Bearer owner' },
+  });
+  
+  if (verifyResponse.ok) {
+    const doc = await verifyResponse.json();
+    const onboardingCompleted = doc?.fields?.onboardingCompleted?.booleanValue;
+    if (onboardingCompleted !== true) {
+      console.warn(`[AdminAuth] WARNING: Document written but onboardingCompleted is ${onboardingCompleted}`);
+    } else {
+      debugLog(`[AdminAuth] Verified: onboardingCompleted = true for ${uid}`);
+    }
   }
 
   debugLog(`[AdminAuth] Completed onboarding for user via emulator: ${uid}`);

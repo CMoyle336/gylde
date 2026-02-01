@@ -491,8 +491,10 @@ async function setupPremiumSubscription(uid: string): Promise<boolean> {
   }
   
   // Also set denormalized isPremium flag on main user doc
+  // IMPORTANT: Use updateMask to avoid overwriting the entire document
   const userDocPath = `projects/${projectId}/databases/(default)/documents/users/${uid}`;
-  const userPatchResponse = await fetch(`${FIRESTORE_EMULATOR_URL}/v1/${userDocPath}`, {
+  const userPatchUrl = `${FIRESTORE_EMULATOR_URL}/v1/${userDocPath}?updateMask.fieldPaths=isPremium`;
+  const userPatchResponse = await fetch(userPatchUrl, {
     method: 'PATCH',
     headers: adminHeaders,
     body: JSON.stringify({ 
@@ -622,6 +624,9 @@ async function provisionUserViaAdmin(
   );
 
   // Step 2: Complete onboarding via direct Firestore writes (no UI interaction needed)
+  // Use a placeholder photo URL for testing (a public image that works in tests)
+  const placeholderPhotoUrl = 'https://storage.googleapis.com/gylde-sandbox.appspot.com/test-assets/placeholder-profile.jpg';
+  
   await completeOnboardingViaAdmin(uid, {
     displayName: uniqueUser.displayName,
     birthDate: uniqueUser.birthDate,
@@ -629,8 +634,8 @@ async function provisionUserViaAdmin(
     gender: uniqueUser.gender,
     interestedIn: uniqueUser.interestedIn,
     tagline: uniqueUser.tagline,
-    // Note: Photo upload requires special handling for live environments
-    // For now, we skip the photo in admin provisioning
+    photoUrl: placeholderPhotoUrl,
+    hasPrivateContent: uniqueUser.hasPrivateContent,
   });
 
   // IMPORTANT: Wait for Cloud Functions to complete before modifying private data

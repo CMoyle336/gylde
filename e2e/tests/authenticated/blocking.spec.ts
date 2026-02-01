@@ -89,7 +89,12 @@ test.describe.serial('Blocking', () => {
 
   async function waitForConversationToBeVisibleToRecipient(uidA: string, uidB: string): Promise<void> {
     const db = await getAdminDb();
-    if (!db) return;
+    if (!db) {
+      // If Admin DB isn't available, wait a fixed time for the conversation to sync
+      console.log('[waitForConversationToBeVisibleToRecipient] Admin DB unavailable, waiting 10s for sync');
+      await new Promise(resolve => setTimeout(resolve, 10000));
+      return;
+    }
 
     const hasLastMessage = async (): Promise<boolean> => {
       const snap = await db.collection('conversations').where('participants', 'array-contains', uidA).get();
@@ -113,11 +118,9 @@ test.describe.serial('Blocking', () => {
   }) => {
     test.setTimeout(360000);
 
-    const aliceUid = await getUidByEmail(alice.email);
-    const bobUid = await getUidByEmail(bob.email);
-    if (!aliceUid || !bobUid) {
-      throw new Error('Missing Alice/Bob UID. Live env Admin SDK auth may not be configured.');
-    }
+    // Use uid directly from the provisioned user (ProvisionedUser includes uid)
+    const aliceUid = alice.uid;
+    const bobUid = bob.uid;
 
     // Seed mutual favorites/views/activity so the block cleanup is meaningful.
     await adminClearAllBlocksForUser(aliceUid);
@@ -198,11 +201,9 @@ test.describe.serial('Blocking', () => {
   test('mutual block requires BOTH to unblock', async ({ page, loginAs, suiteAlice: alice, suiteBob: bob }) => {
     test.setTimeout(360000);
 
-    const aliceUid = await getUidByEmail(alice.email);
-    const bobUid = await getUidByEmail(bob.email);
-    if (!aliceUid || !bobUid) {
-      throw new Error('Missing Alice/Bob UID. Live env Admin SDK auth may not be configured.');
-    }
+    // Use uid directly from the provisioned user (ProvisionedUser includes uid)
+    const aliceUid = alice.uid;
+    const bobUid = bob.uid;
     await adminClearAllBlocksForUser(aliceUid);
     await adminClearAllBlocksForUser(bobUid);
     await adminEnsureUnblocked(aliceUid, bobUid);

@@ -355,6 +355,17 @@ export async function expectNotVisibleInAllMatchesTabs(page: Page, displayName: 
 export async function expectConversationBlockedInMessages(page: Page, otherDisplayName: string): Promise<void> {
   await page.goto('/messages');
   await page.locator('app-messages, .messages-page').first().waitFor({ state: 'visible', timeout: 30000 });
+  
+  // Wait for conversations to load - either show "No conversations" or conversation items
+  const noConversations = page.locator('text=No conversations yet');
+  const conversationItems = page.locator('button.conversation-item');
+  await Promise.race([
+    noConversations.waitFor({ state: 'visible', timeout: 15000 }).catch(() => {}),
+    conversationItems.first().waitFor({ state: 'visible', timeout: 15000 }).catch(() => {}),
+  ]);
+  
+  // Give a moment for the list to fully render
+  await page.waitForTimeout(1000);
 
   const convoBtn = page
     .locator('button.conversation-item')

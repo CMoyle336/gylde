@@ -122,7 +122,7 @@ interface FeedItem {
   insertedAt: FieldValue | Timestamp;
   reason: FeedItemReason;
   visibility: PostVisibility;
-  regionId: string;
+  regionId?: string; // Optional - may not be set for users without location
   preview: FeedItemPreview;
 }
 
@@ -270,7 +270,8 @@ function createFeedItem(
     insertedAt: FieldValue.serverTimestamp(),
     reason,
     visibility: post.visibility,
-    regionId: post.regionId,
+    // Only include regionId if defined (Firestore doesn't accept undefined)
+    ...(post.regionId && {regionId: post.regionId}),
     preview: {
       authorName,
       ...(authorPhotoURL && {authorPhotoURL}),

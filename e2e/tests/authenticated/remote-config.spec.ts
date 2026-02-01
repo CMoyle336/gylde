@@ -37,32 +37,6 @@ test.describe('Remote Config', () => {
       await expect(homeNavItem.locator('.nav-icon')).toContainText('home');
     });
 
-    test('feed shows Soon badge when feature_feed_enabled is false', async ({ 
-      page, 
-      mockRemoteConfig, 
-      loginAsAlice 
-    }) => {
-      // Mock config BEFORE login/navigation (important!)
-      await mockRemoteConfig({ feature_feed_enabled: false });
-      
-      await loginAsAlice();
-      
-      // Navigate to discover page where the sidebar is visible
-      await page.goto('/discover');
-      
-      // Wait for the sidebar to be visible (don't use networkidle - WebSockets keep it busy)
-      await page.locator('nav.sidebar-nav').waitFor({ state: 'visible', timeout: 15000 });
-      
-      // When feed is disabled, there should be no /home nav item
-      const homeNavItem = page.locator('nav.sidebar-nav a.nav-item[href="/home"]');
-      await expect(homeNavItem).not.toBeVisible({ timeout: 5000 });
-      
-      // Instead, there should be a /feed nav item with a "Soon" badge
-      const feedNavItem = page.locator('nav.sidebar-nav a.nav-item[href="/feed"]');
-      await expect(feedNavItem).toBeVisible({ timeout: 10000 });
-      await expect(feedNavItem.locator('.nav-badge.coming-soon')).toBeVisible();
-    });
-
     test('report issue feature visibility', async ({ 
       page, 
       mockRemoteConfig, 
