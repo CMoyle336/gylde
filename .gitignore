@@ -80,3 +80,5 @@ typings/
 build/
 
 .tmp/
+
+gylde-sandbox.json

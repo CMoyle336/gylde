@@ -63,16 +63,16 @@ test.describe('Private Content Access', () => {
     test('free user cannot request private access', async ({ 
       page, 
       loginAs,
-      alice,  // Free user (no premium)
-      suiteBob: bob,  // Has private content (we use suite user so they persist)
+      bob,  // Bob is free (isPremium: false in test-users.ts)
+      suiteAlice: alice,  // Alice has premium and can have private content
     }) => {
       test.setTimeout(90000);
       
-      // Login as free user Alice (alice fixture doesn't have premium set up)
-      await loginAs(alice);
+      // Login as free user Bob (bob has isPremium: false in test-users.ts)
+      await loginAs(bob);
       
-      // Navigate to Bob's profile
-      await goToUserProfile(page, bob.uid);
+      // Navigate to Alice's profile (Alice is premium and could have private content)
+      await goToUserProfile(page, alice.uid);
       
       // Check if private content notice is visible
       const hasNotice = await hasPrivateContentNotice(page);
@@ -99,7 +99,7 @@ test.describe('Private Content Access', () => {
           expect(hasUpgradePrompt || hasSnackbarError || !hasCancelBtn).toBe(true);
         }
       }
-      // If no private content notice, test passes (Bob may not have private content set up)
+      // If no private content notice, test passes (Alice may not have private content set up)
     });
 
     test('premium user can request private access', async ({ 

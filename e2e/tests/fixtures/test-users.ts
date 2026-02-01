@@ -62,7 +62,7 @@ function ageToDate(age: number): Date {
  * Note: emails match existing users in Firebase Auth emulator
  */
 export const TEST_USERS: Record<string, TestUser> = {
-  // Primary user - woman, 25, premium, verified, established tier
+  // Primary user - woman, 25, premium, verified, established tier, has private content
   alice: {
     id: 'test-user-a',
     email: 'test-user-a@e2e.test',
@@ -78,6 +78,7 @@ export const TEST_USERS: Record<string, TestUser> = {
     isVerified: true,
     reputationTier: 'established',
     testImage: 'test-user-woman.jpg',
+    hasPrivateContent: true, // Alice has private photos for testing access requests
   },
 
   // Primary user - man, 28, free, verified, active tier, has private content
